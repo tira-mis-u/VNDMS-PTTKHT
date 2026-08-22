@@ -1,0 +1,3504 @@
+/* Shell sizing and independent scrolling */
+.app-shell {
+  height: 100vh;
+  overflow: hidden;
+}
+.topbar {
+  height: 86px;
+  background: #f3f6fa;
+  border-bottom-color: #dce2e9;
+  padding: 0 24px;
+}
+.app-body {
+  height: calc(100vh - 86px);
+  min-height: 0;
+  overflow: hidden;
+}
+.workspace {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  background: #f7f8fa;
+}
+.sidebar {
+  top: 86px;
+  height: calc(100vh - 86px);
+  background: #fcfdff;
+  border-right-color: #dde3ea;
+}
+.sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  padding-top: 8px;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+.sidebar-tools {
+  height: 42px;
+  flex: none;
+  padding: 7px 10px 4px;
+  border-bottom: 1px solid #edf0f4;
+  display: flex;
+  align-items: center;
+}
+.sidebar-tools .collapse-btn {
+  height: 30px;
+  border-radius: 6px;
+}
+.sidebar-tools .collapse-btn:hover {
+  background: #eef3f8;
+  color: #344054;
+}
+.sidebar-collapsed .sidebar-tools {
+  justify-content: center;
+  padding-inline: 7px;
+}
+.sidebar-collapsed .sidebar-tools .collapse-btn {
+  padding: 0;
+  justify-content: center;
+}
+.sidebar-collapsed .sidebar-tools .collapse-btn svg {
+  transform: rotate(180deg);
+}
+.sidebar-footer {
+  display: none;
+}
+
+/* Larger header and controls */
+.brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+}
+.brand-copy strong {
+  font-size: 19px;
+}
+.brand-copy span {
+  font-size: 14.5px;
+}
+.scope-switch {
+  min-width: 218px;
+  height: 43px;
+  padding: 7px 12px 7px 14px;
+  position: relative;
+  cursor: pointer;
+}
+.scope-switch small {
+  font-size: 13.5px;
+}
+.scope-switch strong {
+  font-size: 17px;
+}
+.scope-switch select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.topbar .btn-icon {
+  width: 46px;
+  height: 46px;
+}
+.account {
+  min-height: 52px;
+  padding: 6px 9px;
+}
+.account .avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 17px;
+}
+.account strong {
+  font-size: 16px;
+}
+.account small {
+  font-size: 14.5px;
+}
+.rotate-account {
+  transform: rotate(180deg);
+  transition: transform 0.16s ease;
+}
+.account-popover {
+  position: absolute;
+  z-index: 80;
+  right: 0;
+  top: 51px;
+  width: 245px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 12px 34px rgba(16, 24, 40, 0.15);
+}
+.account-popover-head {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 9px 8px 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #edf0f2;
+}
+.account-popover-head > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.account-popover-head b {
+  font-size: 14.5px;
+}
+.account-popover-head small {
+  font-size: 13px;
+  color: #7c8799;
+}
+.account-popover > button {
+  width: 100%;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.account-popover > button:hover {
+  background: #f2f4f7;
+}
+.account-popover > button.logout {
+  color: #b42318;
+  border-top: 1px solid #edf0f2;
+  border-radius: 0;
+  margin-top: 4px;
+}
+
+/* Typography scale */
+.nav-item {
+  height: auto;
+  min-height: 38px;
+  padding-block: 7px;
+  font-size: 14.5px;
+}
+.nav-group-title {
+  font-size: 13.5px;
+  padding-bottom: 7px;
+}
+.collapse-btn {
+  font-size: 14.5px;
+}
+.page-header h1 {
+  font-size: 33px;
+}
+.page-header p,
+.cc-page-context {
+  font-size: 16px;
+}
+.breadcrumbs {
+  font-size: 14.5px;
+}
+.section-heading h2 {
+  font-size: 18px;
+}
+.section-heading p {
+  font-size: 13.5px;
+}
+.text-action,
+.btn-md,
+.row-action {
+  font-size: 14.5px;
+}
+.badge {
+  font-size: 13px;
+  padding: 3px 7px;
+}
+.data-table th,
+.incident-list-head,
+.task-list-head,
+.team-list-head,
+.cc-incident-head {
+  font-size: 13px;
+}
+.data-table td,
+.incident-list-row,
+.task-list-row,
+.team-list-row {
+  font-size: 14.5px;
+}
+.entity-cell b,
+.incident-primary b,
+.task-primary b,
+.team-primary b,
+.cc-incident-identity b {
+  font-size: 14.5px;
+}
+.entity-cell span,
+.incident-primary small,
+.task-primary small,
+.team-primary small,
+.cc-incident-identity small {
+  font-size: 13px;
+}
+.cc-action-body h3 {
+  font-size: 16px;
+}
+.cc-action-meta,
+.cc-action-titleline {
+  font-size: 13px;
+}
+.cc-timeline-event p,
+.timeline-item p,
+.incident-timeline p,
+.field-update-list p {
+  font-size: 13.5px;
+}
+.cc-timeline-event span,
+.timeline-item span,
+.incident-timeline article div span {
+  font-size: 13px;
+}
+.incident-heading-row h1 {
+  font-size: 28.5px;
+}
+.incident-heading-row p,
+.incident-code-line {
+  font-size: 13.5px;
+}
+.incident-context-panel dt,
+.incident-context-panel dd {
+  font-size: 13px;
+}
+.field > span {
+  font-size: 13.5px;
+}
+.field input,
+.field select,
+.field textarea {
+  font-size: 13.5px;
+}
+.workspace p {
+  font-size: max(12px, 0.78rem);
+}
+.workspace small {
+  font-size: 13px;
+}
+.workspace button,
+.workspace input,
+.workspace select,
+.workspace textarea {
+  line-height: 1.35;
+}
+
+/* Dark theme */
+html[data-theme="dark"] {
+  --border: #2a3544;
+  --muted: #9aa7b8;
+  --subtle: #1a2330;
+  color: #e6ebf2;
+}
+html[data-theme="dark"] body,
+html[data-theme="dark"] .app-shell {
+  background: #0f141b;
+  color: #e6ebf2;
+}
+html[data-theme="dark"] .topbar {
+  background: #19222e;
+  border-color: #2b3746;
+}
+html[data-theme="dark"] .sidebar {
+  background: #121923;
+  border-color: #2b3746;
+}
+html[data-theme="dark"] .workspace {
+  background: #0f141b;
+}
+html[data-theme="dark"] .sidebar-tools {
+  border-color: #26313f;
+}
+html[data-theme="dark"] .sidebar-tools .collapse-btn:hover,
+html[data-theme="dark"] .nav-item:hover {
+  background: #1c2633;
+  color: #eef3f8;
+}
+html[data-theme="dark"] .nav-item {
+  color: #aeb9c8;
+}
+html[data-theme="dark"] .nav-item svg {
+  color: #8e9cad;
+}
+html[data-theme="dark"] .nav-item.active {
+  background: #1b3151;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .nav-item.active svg {
+  color: #76a9fa;
+}
+html[data-theme="dark"] .nav-group-title {
+  color: #758398;
+}
+html[data-theme="dark"] .scope-switch,
+html[data-theme="dark"] .btn-secondary,
+html[data-theme="dark"] .notification-popover,
+html[data-theme="dark"] .account-popover {
+  background: #202a37;
+  border-color: #344151;
+  color: #e5ebf3;
+}
+html[data-theme="dark"] .account:hover,
+html[data-theme="dark"] .btn-ghost:hover,
+html[data-theme="dark"] .account-popover > button:hover {
+  background: #253140;
+}
+html[data-theme="dark"] .topbar-divider,
+html[data-theme="dark"] .account-popover-head,
+html[data-theme="dark"] .account-popover > button.logout {
+  border-color: #344151;
+}
+html[data-theme="dark"] .brand-copy span,
+html[data-theme="dark"] .account small {
+  color: #94a2b4;
+}
+html[data-theme="dark"] .content-section,
+html[data-theme="dark"] .side-section,
+html[data-theme="dark"] .cc-situation,
+html[data-theme="dark"] .cc-quick-actions,
+html[data-theme="dark"] .situation-band,
+html[data-theme="dark"] .incident-worklist,
+html[data-theme="dark"] .task-worklist,
+html[data-theme="dark"] .team-worklist,
+html[data-theme="dark"] .incident-detail-section,
+html[data-theme="dark"] .incident-context-panel,
+html[data-theme="dark"] .placeholder-page,
+html[data-theme="dark"] .team-operational-summary {
+  background: #171f2a;
+  border-color: #2a3544;
+  box-shadow: none;
+}
+html[data-theme="dark"] .section-heading,
+html[data-theme="dark"] .attention-row,
+html[data-theme="dark"] .cc-action-item,
+html[data-theme="dark"] .cc-incident-row,
+html[data-theme="dark"] .incident-list-row,
+html[data-theme="dark"] .task-list-row,
+html[data-theme="dark"] .team-list-row,
+html[data-theme="dark"] .team-member-row,
+html[data-theme="dark"] .field-report-list article,
+html[data-theme="dark"] .incident-task-list article {
+  background: #171f2a;
+  border-color: #273240;
+}
+html[data-theme="dark"] .cc-action-item:hover,
+html[data-theme="dark"] .cc-incident-row:hover,
+html[data-theme="dark"] .incident-list-row:hover,
+html[data-theme="dark"] .task-list-row:hover,
+html[data-theme="dark"] .team-list-row:hover {
+  background: #1b2531;
+}
+html[data-theme="dark"] .incident-result-bar,
+html[data-theme="dark"] .incident-list-head,
+html[data-theme="dark"] .task-list-head,
+html[data-theme="dark"] .team-list-head,
+html[data-theme="dark"] .cc-incident-head,
+html[data-theme="dark"] .team-member-head,
+html[data-theme="dark"] .add-event-row {
+  background: #141b24;
+  border-color: #2a3544;
+}
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] .section-heading h2,
+html[data-theme="dark"] .incident-heading-row h1,
+html[data-theme="dark"] .cc-action-body h3,
+html[data-theme="dark"] .incident-primary b,
+html[data-theme="dark"] .task-primary b,
+html[data-theme="dark"] .team-primary b,
+html[data-theme="dark"] .cc-incident-identity b,
+html[data-theme="dark"] .team-member-row b {
+  color: #eef3f8;
+}
+html[data-theme="dark"] p,
+html[data-theme="dark"] small,
+html[data-theme="dark"] .breadcrumbs,
+html[data-theme="dark"] .cc-action-meta,
+html[data-theme="dark"] .team-list-row,
+html[data-theme="dark"] .task-list-row,
+html[data-theme="dark"] .incident-list-row {
+  color: #9aa7b8;
+}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] .filter-select,
+html[data-theme="dark"] .date-filter,
+html[data-theme="dark"] .incident-search,
+html[data-theme="dark"] .input-with-icon {
+  background: #111821;
+  border-color: #344151;
+  color: #e6ebf2;
+}
+html[data-theme="dark"] .incident-detail-header,
+html[data-theme="dark"] .task-detail-header,
+html[data-theme="dark"] .team-detail-header {
+  background: #151d27;
+  border-color: #2a3544;
+}
+html[data-theme="dark"] .incident-form-dialog,
+html[data-theme="dark"] .action-dialog,
+html[data-theme="dark"] .confirm-dialog,
+html[data-theme="dark"] .detail-drawer {
+  background: #171f2a;
+  color: #e6ebf2;
+}
+html[data-theme="dark"] .incident-form-dialog header,
+html[data-theme="dark"] .incident-form-dialog footer,
+html[data-theme="dark"] .detail-drawer header,
+html[data-theme="dark"] .detail-drawer footer {
+  border-color: #2a3544;
+}
+html[data-theme="dark"] .dispatch-team-list > button {
+  background: #171f2a;
+  border-color: #2a3544;
+  color: #dbe3ed;
+}
+html[data-theme="dark"] .dispatch-team-list > button:hover,
+html[data-theme="dark"] .dispatch-team-list > button.selected {
+  background: #1b2b40;
+}
+html[data-theme="dark"] .progress-track {
+  background: #2a3544;
+}
+html[data-theme="dark"] .map-canvas {
+  filter: brightness(0.78) contrast(1.08) saturate(0.82);
+}
+html[data-theme="dark"] .map-toolbar,
+html[data-theme="dark"] .map-toolbar button,
+html[data-theme="dark"] .map-legend,
+html[data-theme="dark"] .team-map-legend,
+html[data-theme="dark"] .incident-map-legend,
+html[data-theme="dark"] .cc-layer-control,
+html[data-theme="dark"] .incident-map-layers {
+  background: #202a37;
+  border-color: #3a4656;
+  color: #e6ebf2;
+}
+html[data-theme="dark"] .badge-neutral {
+  background: #202a37;
+  border-color: #3b4757;
+  color: #bac4d1;
+}
+html[data-theme="dark"] .support-strip,
+html[data-theme="dark"] .dispatch-team-context {
+  background: #172436;
+  border-color: #2b425f;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    top: 0;
+    height: 100vh;
+  }
+  .sidebar-tools {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .topbar {
+    height: 74px;
+    padding: 0 12px;
+  }
+  .app-body {
+    height: calc(100vh - 74px);
+  }
+  .scope-switch {
+    display: none;
+  }
+  .brand-copy strong {
+    font-size: 18px;
+  }
+  .topbar .btn-icon {
+    width: 42px;
+    height: 42px;
+  }
+  .account {
+    min-height: 46px;
+  }
+}
+
+/* Production-like readability and spacing pass */
+:root {
+  --font-body: 16px;
+  --font-meta: 13px;
+  --font-control: 14.5px;
+  --space-section: 24px;
+  --radius-control: 8px;
+  --shadow-card: 0 2px 8px rgba(16, 24, 40, 0.055);
+}
+body {
+  font-size: var(--font-body);
+  line-height: 1.55;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  font-size: var(--font-control);
+}
+.workspace-content {
+  padding: 32px 34px 56px;
+}
+.page-header {
+  margin-bottom: 28px;
+  gap: 24px;
+}
+.page-header h1,
+.admin-page-header h1 {
+  font-size: 36.5px;
+  line-height: 1.22;
+}
+.page-header p,
+.admin-page-header p,
+.cc-page-context {
+  margin-top: 8px;
+  font-size: 17px;
+  line-height: 1.55;
+}
+.breadcrumbs {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+.section-heading {
+  min-height: 78px;
+  padding: 18px 22px;
+}
+.section-heading h2,
+.cc-panel-header > div > span {
+  font-size: 20.5px;
+  line-height: 1.35;
+}
+.section-heading p,
+.cc-panel-header small {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.content-section,
+.side-section {
+  border-radius: 11px;
+  box-shadow: var(--shadow-card);
+}
+.main-column,
+.right-column,
+.overview-grid {
+  gap: var(--space-section);
+}
+.workspace :where(p, li, dd, td, label) {
+  line-height: 1.55;
+}
+.workspace small {
+  font-size: var(--font-meta);
+  line-height: 1.45;
+}
+.badge {
+  min-height: 23px;
+  padding: 3px 8px;
+  font-size: 14px;
+  line-height: 1.35;
+  border-radius: 6px;
+}
+.btn-md {
+  min-height: 40px;
+  padding-inline: 15px;
+  font-size: 17px;
+  border-radius: var(--radius-control);
+}
+.btn-sm {
+  min-height: 35px;
+  padding-inline: 12px;
+  font-size: 16px;
+}
+.btn-icon {
+  width: 40px;
+  height: 40px;
+}
+.text-action,
+.row-action {
+  font-size: 16px;
+  gap: 5px;
+}
+.data-table th,
+.admin-table th,
+.incident-list-head,
+.task-list-head,
+.team-list-head,
+.cc-incident-head {
+  height: 40px;
+  padding-inline: 15px;
+  font-size: 14.5px;
+}
+.data-table td,
+.admin-table td {
+  min-height: 58px;
+  padding: 11px 15px;
+  font-size: 16.5px;
+}
+.entity-cell b,
+.incident-primary b,
+.task-primary b,
+.team-primary b,
+.cc-incident-identity b {
+  font-size: 17px;
+  line-height: 1.4;
+}
+.entity-cell span,
+.incident-primary small,
+.task-primary small,
+.team-primary small,
+.cc-incident-identity small {
+  font-size: 14.5px;
+}
+.empty-state {
+  padding: 36px 24px;
+}
+.empty-state b {
+  font-size: 19px;
+}
+.empty-state p {
+  font-size: 16.5px;
+  line-height: 1.6;
+}
+
+/* One consistent native-select treatment preserves platform keyboard behavior. */
+select {
+  min-height: 40px;
+  color: #344054;
+  border-color: #cfd6df;
+  border-radius: var(--radius-control);
+  padding: 0 36px 0 12px;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 15px;
+  appearance: none;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+select:hover {
+  border-color: #98a2b3;
+}
+select:focus-visible {
+  outline: none;
+  border-color: #528bdb;
+  box-shadow: 0 0 0 3px rgba(82, 139, 219, 0.17);
+}
+select option {
+  min-height: 38px;
+  padding: 10px 12px;
+  font-size: 17px;
+}
+.filter-select,
+.date-filter,
+.admin-filters label,
+.analytics-filters label {
+  min-height: 40px;
+  border-radius: var(--radius-control);
+}
+.filter-select select,
+.admin-filters label select,
+.analytics-filters label select {
+  min-height: 38px;
+}
+.field input,
+.field select,
+.field textarea,
+.admin-user-drawer input,
+.admin-user-drawer select,
+.admin-filters input,
+.admin-filters select,
+.analytics-filters input,
+.analytics-filters select {
+  font-size: 17px;
+}
+.field input,
+.field select,
+.admin-user-drawer input,
+.admin-user-drawer select {
+  min-height: 42px;
+}
+.field textarea {
+  padding: 11px 12px;
+}
+
+/* Header, profile menu and visual identity */
+.topbar {
+  grid-template-columns: minmax(360px, 1fr) auto minmax(360px, 1fr);
+  height: 76px;
+  padding-inline: 26px;
+}
+.app-body {
+  height: calc(100vh - 76px);
+}
+.sidebar {
+  top: 76px;
+  height: calc(100vh - 76px);
+}
+.brand {
+  gap: 12px;
+}
+.brand-mark {
+  width: 42px;
+  height: 42px;
+}
+.brand-copy strong {
+  font-size: 21.5px;
+  line-height: 1.2;
+}
+.brand-copy span {
+  font-size: 15px;
+  line-height: 1.35;
+}
+.scope-switch {
+  min-width: 230px;
+  height: 46px;
+}
+.scope-switch small {
+  font-size: 14px;
+}
+.scope-switch strong {
+  font-size: 17px;
+}
+.account {
+  min-height: 48px;
+  gap: 10px;
+  padding: 5px 9px;
+}
+.account .avatar {
+  width: 38px;
+  height: 38px;
+  font-size: 16px;
+}
+.account strong {
+  font-size: 17px;
+}
+.account small {
+  font-size: 15px;
+}
+.avatar {
+  overflow: hidden;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.account-popover {
+  top: 55px;
+  width: 290px;
+  padding: 8px;
+  border-radius: 11px;
+}
+.account-popover-head {
+  padding: 11px 10px 14px;
+  gap: 11px;
+  align-items: flex-start;
+}
+.account-popover-head .avatar {
+  width: 40px;
+  height: 40px;
+}
+.account-popover-head > span {
+  min-width: 0;
+  gap: 2px;
+}
+.account-popover-head b {
+  font-size: 17px;
+}
+.account-popover-head small {
+  font-size: 15px;
+  color: #475467;
+}
+.account-popover-head em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #7c8799;
+  font-size: 14px;
+  font-style: normal;
+}
+.account-popover > button {
+  height: 40px;
+  padding-inline: 10px;
+  gap: 10px;
+  font-size: 16.5px;
+}
+.notification-popover {
+  top: 58px;
+  width: 330px;
+  padding: 17px;
+}
+.popover-title {
+  font-size: 18px;
+}
+.notification-popover p,
+.popover-link {
+  font-size: 16px;
+}
+
+/* Sidebar hierarchy and semantic counters */
+.sidebar-tools {
+  height: 52px;
+  padding: 9px 11px 6px;
+}
+.sidebar-tools .collapse-btn {
+  height: 35px;
+  font-size: 16px;
+}
+.sidebar-scroll {
+  padding: 18px 11px 28px;
+}
+.nav-group + .nav-group {
+  margin-top: 21px;
+}
+.nav-group-title {
+  padding: 0 10px 9px;
+  font-size: 14px;
+}
+.nav-items {
+  gap: 4px;
+}
+.nav-item {
+  min-height: 40px;
+  padding-inline: 11px;
+  gap: 11px;
+  border-radius: 8px;
+  font-size: 14.5px;
+  white-space: nowrap;
+}
+.nav-item svg {
+  width: 21px;
+  height: 21px;
+}
+.nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.nav-count,
+.nav-item.active .nav-count {
+  min-width: 22px;
+  min-height: 20px;
+  display: inline-grid;
+  place-items: center;
+  padding: 1px 6px;
+  border-radius: 7px;
+  background: #d92d20;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Command Center hierarchy and exception cards */
+.cc-command-center {
+  max-width: 1540px;
+}
+.cc-layout {
+  gap: 24px;
+}
+.cc-quick-actions {
+  min-height: 56px;
+  padding: 10px 13px 10px 18px;
+  border-radius: 10px;
+}
+.cc-quick-actions > span {
+  font-size: 14px;
+}
+.cc-quick-actions button {
+  min-height: 36px;
+  padding-inline: 12px;
+  font-size: 16px;
+  gap: 8px;
+}
+.cc-situation {
+  padding: 22px 24px;
+  border-radius: 11px;
+  box-shadow: var(--shadow-card);
+}
+.cc-situation-icon {
+  width: 44px;
+  height: 44px;
+}
+.cc-kicker {
+  font-size: 13.5px;
+  margin-bottom: 7px;
+}
+.cc-level h2 {
+  font-size: 21.5px;
+}
+.cc-level > span,
+.cc-situation-context p {
+  font-size: 15px;
+}
+.cc-summary-metrics > div {
+  min-width: 118px;
+  padding-inline: 18px;
+}
+.cc-summary-metrics strong {
+  font-size: 27.5px;
+}
+.cc-summary-metrics span {
+  font-size: 14px;
+}
+.cc-action-item {
+  min-height: 98px;
+  gap: 14px;
+  padding: 16px 16px 16px 20px;
+}
+.cc-action-titleline,
+.cc-action-titleline b {
+  font-size: 14px;
+}
+.cc-action-body h3 {
+  margin: 7px 0;
+  font-size: 18px;
+  line-height: 1.45;
+}
+.cc-action-meta {
+  gap: 15px;
+  font-size: 14px;
+}
+.cc-panel {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  box-shadow: var(--shadow-card);
+}
+.cc-panel-header {
+  min-height: 76px;
+  padding: 17px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  border-bottom: 1px solid #edf0f3;
+}
+.cc-panel-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cc-panel-header > div > span {
+  color: #101828;
+  font-weight: 700;
+}
+.cc-panel-header small {
+  color: #667085;
+}
+.cc-panel-header > button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 9px;
+  background: transparent;
+  color: #175cd3;
+  font-size: 16px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.cc-panel-header > button:hover {
+  background: #eff5ff;
+}
+.cc-playbook-list {
+  padding: 16px 18px 18px;
+}
+.cc-playbook-list > button {
+  min-height: 142px;
+  grid-template-columns: 46px minmax(0, 1fr) 20px;
+  gap: 14px;
+  padding: 17px;
+  border-radius: 9px;
+  border-color: #dce3eb;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.035);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+.cc-playbook-list > button:hover {
+  border-color: #b9c9db;
+  box-shadow: 0 5px 16px rgba(16, 24, 40, 0.08);
+  transform: translateY(-1px);
+}
+.cc-playbook-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+}
+.cc-playbook-icon svg {
+  width: 21px;
+  height: 21px;
+}
+.cc-playbook-copy {
+  gap: 8px;
+}
+.cc-playbook-copy > span > b {
+  font-size: 17.5px;
+  line-height: 1.45;
+  color: #253248;
+}
+.cc-playbook-current,
+.cc-playbook-next {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  font-size: 15px !important;
+  line-height: 1.45;
+}
+.cc-playbook-current > span,
+.cc-playbook-next > span {
+  flex: none;
+  color: #475467;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+.cc-playbook-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 11px;
+  align-items: center;
+}
+.cc-playbook-progress .progress-track {
+  height: 7px;
+  margin: 0;
+}
+.cc-playbook-progress > b {
+  color: #175cd3;
+  font-size: 17px;
+  text-align: right;
+}
+.cc-playbook-copy strong {
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: #fef3f2;
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+.recovery-exception-list {
+  gap: 12px;
+  padding: 16px 18px 18px;
+}
+.recovery-exception-list button {
+  min-height: 92px;
+  gap: 12px;
+  padding: 15px;
+  border-radius: 9px;
+  border-color: #dce3eb;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+.recovery-exception-list button:hover {
+  border-color: #c1cedc;
+  box-shadow: 0 4px 13px rgba(16, 24, 40, 0.07);
+  transform: translateY(-1px);
+}
+.recovery-exception-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  flex: none;
+}
+.recovery-exception-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.recovery-exception-list button > span:nth-child(2) {
+  gap: 5px;
+}
+.recovery-exception-list button > span:nth-child(2) b {
+  color: #253248;
+  font-size: 17px;
+  line-height: 1.4;
+}
+.recovery-exception-list small {
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+.progress-track {
+  height: 6px;
+}
+
+/* Profile is personal; no role/scope mutation controls are exposed here. */
+.profile-page {
+  max-width: 1120px;
+}
+.profile-page-header {
+  align-items: flex-start;
+}
+.profile-card {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.78fr) minmax(420px, 1.22fr);
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #dfe4ea;
+  border-radius: 13px;
+  box-shadow: 0 8px 28px rgba(16, 24, 40, 0.07);
+}
+.profile-avatar-panel {
+  padding: 38px 34px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  background: linear-gradient(180deg, #f7faff 0%, #fff 100%);
+  border-right: 1px solid #e6eaf0;
+}
+.profile-avatar-wrap {
+  position: relative;
+}
+.profile-avatar-wrap > .avatar {
+  width: 112px;
+  height: 112px;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 18px rgba(16, 24, 40, 0.15);
+  font-size: 34px;
+}
+.profile-avatar-wrap > .profile-avatar-camera {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #175cd3;
+  color: #fff;
+}
+.profile-avatar-panel h2 {
+  margin: 18px 0 4px;
+  color: #101828;
+  font-size: 26px;
+}
+.profile-avatar-panel > div:nth-child(2) p {
+  margin: 0;
+  color: #667085;
+  font-size: 17px;
+}
+.profile-file-input {
+  display: none;
+}
+.profile-avatar-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 24px;
+}
+.profile-avatar-panel > small {
+  margin-top: 12px;
+  color: #7c8799;
+}
+.profile-message {
+  margin: 14px 0 0;
+  padding: 9px 11px;
+  border-radius: 7px;
+  background: #eff8ff;
+  color: #175cd3;
+  font-size: 15px;
+}
+.profile-details {
+  padding: 34px 36px;
+}
+.profile-details > header {
+  min-height: 64px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #edf0f3;
+  color: #175cd3;
+}
+.profile-details > header span {
+  color: #667085;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+}
+.profile-details > header h2 {
+  margin: 5px 0 0;
+  color: #101828;
+  font-size: 22.5px;
+}
+.profile-details dl {
+  margin: 7px 0 0;
+}
+.profile-details dl > div {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  border-bottom: 1px solid #edf0f3;
+}
+.profile-details dt {
+  color: #667085;
+  font-size: 16px;
+}
+.profile-details dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #253248;
+  font-size: 17px;
+  font-weight: 650;
+}
+.profile-details dd svg {
+  color: #667085;
+}
+.profile-security-note {
+  margin-top: 22px;
+  padding: 13px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid #cfe0f4;
+  border-radius: 8px;
+  background: #f5f9ff;
+  color: #315f87;
+}
+.profile-security-note svg {
+  flex: none;
+  margin-top: 2px;
+}
+.profile-security-note p {
+  margin: 0;
+  font-size: 15px;
+}
+
+/* Larger but balanced icon rhythm */
+.topbar button > svg,
+.workspace button > svg {
+  flex: none;
+}
+.page-header svg,
+.section-heading svg,
+.cc-panel-header svg {
+  width: 18px;
+  height: 18px;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+}
+
+html[data-theme="dark"] select {
+  color: #e6ebf2;
+  border-color: #344151;
+  background-color: #111821;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aa7b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+html[data-theme="dark"] .cc-panel,
+html[data-theme="dark"] .profile-card {
+  background: #171f2a;
+  border-color: #2a3544;
+}
+html[data-theme="dark"] .cc-panel-header,
+html[data-theme="dark"] .profile-details > header,
+html[data-theme="dark"] .profile-details dl > div {
+  border-color: #2a3544;
+}
+html[data-theme="dark"] .cc-panel-header > div > span,
+html[data-theme="dark"] .profile-details h2,
+html[data-theme="dark"] .profile-details dd,
+html[data-theme="dark"] .profile-avatar-panel h2 {
+  color: #eef3f8;
+}
+html[data-theme="dark"] .profile-avatar-panel {
+  background: #151d27;
+  border-color: #2a3544;
+}
+html[data-theme="dark"] .profile-security-note {
+  background: #172436;
+  border-color: #2b425f;
+  color: #a9c7ea;
+}
+html[data-theme="dark"] .cc-playbook-list > button,
+html[data-theme="dark"] .recovery-exception-list button {
+  background: #171f2a;
+  border-color: #344151;
+}
+html[data-theme="dark"] .cc-playbook-copy > span > b,
+html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
+  color: #e6ebf2;
+}
+
+@media (max-width: 1180px) {
+  .topbar {
+    grid-template-columns: minmax(300px, 1fr) auto minmax(300px, 1fr);
+    padding-inline: 18px;
+  }
+  .brand-copy span {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .workspace-content {
+    padding-inline: 26px;
+  }
+}
+@media (max-width: 900px) {
+  .topbar {
+    height: 70px;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .app-body {
+    height: calc(100vh - 70px);
+  }
+  .sidebar {
+    top: 0;
+    height: 100vh;
+  }
+  .workspace-content {
+    padding: 26px 20px 46px;
+  }
+  .profile-card {
+    grid-template-columns: 1fr;
+  }
+  .profile-avatar-panel {
+    border-right: 0;
+    border-bottom: 1px solid #e6eaf0;
+  }
+  .recovery-exception-list {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  :root {
+    --font-body: 15px;
+  }
+  .topbar {
+    height: 64px;
+    padding-inline: 10px;
+  }
+  .app-body {
+    height: calc(100vh - 64px);
+  }
+  .workspace-content {
+    padding: 21px 14px 38px;
+  }
+  .page-header {
+    margin-bottom: 20px;
+  }
+  .page-header h1,
+  .admin-page-header h1 {
+    font-size: 29.5px;
+  }
+  .page-header p {
+    font-size: 16px;
+  }
+  .section-heading {
+    min-height: 68px;
+    padding: 15px 16px;
+  }
+  .section-heading h2,
+  .cc-panel-header > div > span {
+    font-size: 19px;
+  }
+  .section-heading p {
+    display: block;
+    font-size: 14.5px;
+  }
+  .btn-md {
+    min-height: 38px;
+  }
+  .brand-copy span {
+    display: none;
+  }
+  .account-popover {
+    position: fixed;
+    top: 60px;
+    right: 8px;
+    width: min(290px, calc(100vw - 16px));
+  }
+  .cc-layout {
+    gap: 17px;
+  }
+  .cc-situation {
+    padding: 18px 16px;
+  }
+  .cc-action-item {
+    min-height: 100px;
+  }
+  .cc-panel-header {
+    min-height: 70px;
+    padding: 15px 16px;
+  }
+  .cc-panel-header > button {
+    font-size: 0;
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+  .cc-panel-header > button svg {
+    width: 18px;
+    height: 18px;
+  }
+  .cc-playbook-list,
+  .recovery-exception-list {
+    padding: 12px;
+  }
+  .cc-playbook-list > button {
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding: 14px;
+  }
+  .cc-playbook-list > button > svg {
+    display: none;
+  }
+  .cc-playbook-copy > span {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .cc-playbook-current,
+  .cc-playbook-next {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .profile-avatar-panel,
+  .profile-details {
+    padding: 26px 20px;
+  }
+  .profile-details dl > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    align-content: center;
+  }
+}
+
+/* Cross-feature minimum readable scale */
+.workspace p {
+  font-size: 16.5px;
+  line-height: 1.58;
+}
+.workspace button,
+.workspace input,
+.workspace textarea {
+  font-size: 16.5px;
+}
+.workspace label {
+  font-size: 16px;
+}
+.workspace td {
+  font-size: 16px;
+}
+.workspace th {
+  font-size: 14px;
+}
+.workspace h2 {
+  line-height: 1.35;
+}
+.workspace h3 {
+  line-height: 1.42;
+}
+.timeline-item p,
+.cc-timeline-event p,
+.incident-timeline p,
+.field-update-list p {
+  font-size: 15px;
+}
+.timeline-item span,
+.cc-timeline-event span,
+.incident-timeline article div span {
+  font-size: 14px;
+}
+.incident-list-row,
+.task-list-row,
+.team-list-row {
+  min-height: 64px;
+  font-size: 16px;
+}
+.admin-page {
+  padding: 30px 32px 54px;
+}
+.admin-page-header {
+  margin-bottom: 22px;
+}
+.admin-page-header > div > span {
+  font-size: 14px;
+}
+.admin-page-header > button {
+  min-height: 40px;
+  padding-inline: 13px;
+  font-size: 16px;
+}
+.admin-summary {
+  margin-bottom: 18px;
+  border-radius: 10px;
+}
+.admin-summary > div {
+  padding: 17px 18px;
+}
+.admin-summary b {
+  font-size: 27.5px;
+}
+.admin-summary span {
+  font-size: 15px;
+}
+.admin-content {
+  border-radius: 10px;
+}
+.admin-filters {
+  gap: 10px;
+  padding: 14px;
+}
+.admin-table td {
+  font-size: 16px;
+}
+.user-identity b {
+  font-size: 16.5px;
+}
+.user-identity small,
+.admin-table td small {
+  font-size: 14px;
+}
+.user-identity > span {
+  width: 34px;
+  height: 34px;
+  font-size: 13.5px;
+}
+.account-state,
+.audit-result {
+  min-height: 23px;
+  padding: 3px 7px;
+  font-size: 14px;
+}
+.admin-user-drawer {
+  width: min(480px, 100vw);
+}
+.admin-user-drawer > header {
+  padding: 22px;
+}
+.admin-user-drawer h2 {
+  font-size: 22.5px;
+}
+.admin-user-drawer header small,
+.admin-user-drawer header span {
+  font-size: 14.5px;
+}
+.admin-user-drawer section {
+  padding: 19px 22px;
+}
+.admin-user-drawer h3 {
+  margin-bottom: 14px;
+  font-size: 18px;
+}
+.admin-user-drawer label {
+  font-size: 15px;
+}
+.permission-list {
+  gap: 6px;
+}
+.permission-list span {
+  padding: 4px 7px;
+  font-size: 13.5px;
+}
+
+/* Larger, calmer login form */
+.login-page {
+  grid-template-columns: minmax(390px, 42%) 1fr;
+}
+.login-identity {
+  padding: 50px 58px;
+}
+.login-brand {
+  gap: 14px;
+}
+.login-brand > span {
+  width: 48px;
+  height: 48px;
+  border-radius: 11px;
+}
+.login-brand > span svg {
+  width: 29px;
+  height: 29px;
+}
+.login-brand b {
+  font-size: 24px;
+}
+.login-brand small {
+  max-width: 360px;
+  margin-top: 4px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.login-context {
+  max-width: 520px;
+}
+.login-context > span {
+  font-size: 14.5px;
+}
+.login-context h1 {
+  margin: 13px 0 10px;
+  font-size: 43.5px;
+  line-height: 1.2;
+}
+.login-context > p {
+  margin-bottom: 30px;
+  font-size: 18px;
+  line-height: 1.7;
+}
+.login-context ul {
+  gap: 14px;
+}
+.login-context li {
+  gap: 11px;
+  font-size: 17px;
+}
+.login-context li svg {
+  width: 18px;
+  height: 18px;
+}
+.login-identity footer {
+  font-size: 14.5px;
+}
+.login-form-side {
+  padding: 42px;
+}
+.login-card {
+  width: min(520px, 100%);
+  padding: 36px 38px;
+  border-radius: 13px;
+  box-shadow: 0 12px 36px rgba(16, 24, 40, 0.09);
+}
+.login-card > header {
+  gap: 13px;
+  margin-bottom: 28px;
+}
+.login-card > header > span {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+}
+.login-card > header > span svg {
+  width: 23px;
+  height: 23px;
+}
+.login-card h2 {
+  font-size: 25px;
+}
+.login-card header p {
+  margin-top: 5px;
+  font-size: 16px;
+}
+.login-card > label {
+  margin-bottom: 19px;
+  font-size: 16.5px;
+}
+.login-card > label > div {
+  height: 48px;
+  margin-top: 8px;
+  padding-inline: 13px;
+  gap: 10px;
+  border-radius: 8px;
+}
+.login-card > label > div > svg {
+  width: 19px;
+  height: 19px;
+}
+.login-card input {
+  font-size: 18px;
+}
+.login-card label button svg {
+  width: 19px;
+  height: 19px;
+}
+.login-submit {
+  height: 48px;
+  gap: 9px;
+  border-radius: 8px;
+  font-size: 18px;
+}
+.login-submit svg {
+  width: 19px;
+  height: 19px;
+}
+.login-error {
+  padding: 11px 12px;
+  margin-bottom: 18px;
+  font-size: 16px;
+}
+.demo-account-hint {
+  margin-top: 24px;
+  padding-top: 20px;
+}
+.demo-account-hint > b {
+  font-size: 16.5px;
+}
+.demo-account-hint > p {
+  margin: 5px 0 12px;
+  font-size: 15px;
+}
+.demo-account-hint > div {
+  gap: 8px;
+}
+.demo-account-hint button {
+  min-height: 51px;
+  padding: 8px 10px;
+  border-radius: 7px;
+}
+.demo-account-hint button span {
+  font-size: 15px;
+  font-weight: 650;
+}
+.demo-account-hint button small {
+  margin-top: 3px;
+  font-size: 14px;
+}
+.local-security-note {
+  margin-top: 18px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+@media (max-width: 800px) {
+  .login-form-side {
+    padding: 24px;
+  }
+  .login-card {
+    padding: 32px;
+  }
+  .admin-page {
+    padding: 23px 16px 44px;
+  }
+}
+@media (max-width: 480px) {
+  .login-form-side {
+    align-items: flex-start;
+    padding: 14px;
+  }
+  .login-card {
+    padding: 25px 20px;
+  }
+  .login-card h2 {
+    font-size: 22.5px;
+  }
+  .demo-account-hint > div {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Final select normalization after feature-level shorthand declarations */
+.workspace select {
+  min-height: 40px;
+  border-radius: 8px;
+  padding: 0 36px 0 12px;
+  font-size: 17px;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 15px;
+  appearance: none;
+}
+.filter-select {
+  min-height: 42px;
+  border-radius: 8px;
+  padding-inline: 11px;
+}
+.filter-select select {
+  min-height: 38px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 0;
+  background-image: none;
+  box-shadow: none;
+}
+html[data-theme="dark"] .workspace select {
+  background-color: #111821;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aa7b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+html[data-theme="dark"] .filter-select select {
+  background-image: none;
+}
+
+/* Session panel, profile and theme hardening */
+:root {
+  --surface-app: #f7f8fa;
+  --surface-shell: #f3f6fa;
+  --surface-card: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-muted: #f7f9fc;
+  --surface-hover: #f2f5f8;
+  --text-primary: #172033;
+  --text-secondary: #526174;
+  --text-muted: #7c8799;
+  --control-border: #cfd6df;
+  --focus-ring: rgba(46, 112, 210, 0.2);
+  --danger-surface: #fef3f2;
+  --warning-surface: #fffaeb;
+  --success-surface: #ecfdf3;
+}
+html[data-theme="dark"] {
+  --surface-app: #0e141c;
+  --surface-shell: #151e29;
+  --surface-card: #17212d;
+  --surface-raised: #1c2734;
+  --surface-muted: #121b25;
+  --surface-hover: #222f3e;
+  --text-primary: #edf2f8;
+  --text-secondary: #bdc8d6;
+  --text-muted: #8f9daf;
+  --control-border: #3a4859;
+  --focus-ring: rgba(108, 164, 244, 0.28);
+  --danger-surface: #351d22;
+  --warning-surface: #342818;
+  --success-surface: #163126;
+  color-scheme: dark;
+}
+
+.topbar {
+  grid-template-columns: minmax(320px, 1fr) auto;
+}
+.topbar-actions {
+  justify-self: end;
+}
+.account-wrap {
+  position: relative;
+}
+.account-popover {
+  top: 64px;
+  width: min(340px, calc(100vw - 24px));
+  padding: 9px;
+  border-radius: 13px;
+  background: var(--surface-raised);
+  border-color: var(--control-border);
+  box-shadow: 0 18px 48px rgba(16, 24, 40, 0.18);
+  transform-origin: top right;
+  animation: account-panel-in 0.16s ease-out;
+}
+@keyframes account-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.985);
+  }
+}
+.account-popover-head {
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 11px 14px;
+  border-color: var(--border);
+}
+.account-popover-head .avatar {
+  width: 46px;
+  height: 46px;
+  font-size: 17px;
+}
+.account-popover-head > span {
+  gap: 3px;
+}
+.account-popover-head b {
+  color: var(--text-primary);
+  font-size: 18px;
+}
+.account-popover-head small {
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+.account-active-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #067647;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 650;
+}
+.account-active-state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #12b76a;
+}
+.account-session-context {
+  padding: 8px 3px;
+  border-bottom: 1px solid var(--border);
+}
+.account-session-context > div {
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.account-session-context > div:hover {
+  background: var(--surface-hover);
+}
+.account-context-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #edf4ff;
+  color: #175cd3;
+}
+.account-session-context > div > span:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.account-session-context small {
+  color: var(--text-muted);
+  font-size: 13.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+}
+.account-session-context b {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-popover-actions {
+  padding-top: 6px;
+}
+.account-popover-actions > button {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 16.5px;
+  cursor: pointer;
+}
+.account-popover-actions > button:hover,
+.account-popover-actions > button:focus-visible {
+  background: var(--surface-hover);
+}
+.account-popover-actions > button.logout {
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
+  color: #b42318;
+}
+html[data-theme="dark"] .account-active-state {
+  color: #75e0a7;
+}
+html[data-theme="dark"] .account-context-icon {
+  background: #1b3151;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .account-popover-actions > button.logout {
+  color: #ff9b91;
+}
+
+.profile-page {
+  max-width: 1180px;
+}
+.profile-hero {
+  min-height: 230px;
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 28px;
+  padding: 34px 38px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+}
+.profile-avatar-wrap > .avatar {
+  width: 124px;
+  height: 124px;
+  background: #eaf2ff;
+  border: 4px solid var(--surface-card);
+  color: #1849a9;
+  font-size: 36.5px;
+}
+.profile-avatar-wrap > .profile-avatar-camera {
+  right: 1px;
+  bottom: 4px;
+  width: 36px;
+  height: 36px;
+  border-color: var(--surface-card);
+}
+.profile-hero-identity {
+  min-width: 0;
+}
+.profile-status-line {
+  margin-bottom: 8px;
+}
+.profile-status-active {
+  min-height: 25px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--success-surface);
+  color: #067647;
+  font-size: 14px;
+  font-weight: 700;
+}
+.profile-hero-identity h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 34px;
+  letter-spacing: -0.025em;
+}
+.profile-hero-identity > p {
+  margin: 5px 0 0;
+  color: var(--text-secondary);
+  font-size: 18px;
+}
+.profile-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 17px;
+}
+.profile-hero-badges > span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+}
+.profile-avatar-controls {
+  max-width: 230px;
+  display: flex;
+  align-items: stretch;
+  flex-direction: column;
+  gap: 9px;
+}
+.profile-avatar-controls > small {
+  margin-top: 3px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.profile-file-input {
+  display: none;
+}
+.profile-message {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 14px 0 0;
+  padding: 10px 13px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 16px;
+}
+.profile-message.success {
+  border-color: #abefc6;
+  background: var(--success-surface);
+  color: #067647;
+}
+.profile-message.error {
+  border-color: #fecdca;
+  background: var(--danger-surface);
+  color: #b42318;
+}
+.profile-information {
+  margin-top: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+}
+.profile-information > header {
+  min-height: 104px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 30px;
+  border-bottom: 1px solid var(--border);
+  color: #175cd3;
+}
+.profile-information > header span {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+}
+.profile-information > header h2 {
+  margin: 5px 0 0;
+  color: var(--text-primary);
+  font-size: 24px;
+}
+.profile-information > header p {
+  max-width: 700px;
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+.profile-information-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+  padding: 5px 30px;
+}
+.profile-information-grid > div {
+  min-height: 82px;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border);
+}
+.profile-information-grid > div:nth-child(odd) {
+  padding-right: 28px;
+}
+.profile-information-grid > div:nth-child(even) {
+  padding-left: 28px;
+  border-left: 1px solid var(--border);
+}
+.profile-information-grid dt {
+  color: var(--text-muted);
+  font-size: 14.5px;
+}
+.profile-information-grid dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 17px;
+  font-weight: 650;
+}
+.profile-information-grid dd svg {
+  color: var(--text-muted);
+}
+.profile-information-grid .profile-active-value {
+  color: #067647;
+}
+.profile-information > .profile-security-note {
+  margin: 22px 30px 28px;
+}
+html[data-theme="dark"] .profile-status-active,
+html[data-theme="dark"] .profile-message.success,
+html[data-theme="dark"] .profile-active-value {
+  color: #75e0a7;
+}
+html[data-theme="dark"] .profile-message.error {
+  color: #ff9b91;
+}
+
+/* Login theme control and full dark surface */
+.login-page {
+  position: relative;
+  background: var(--surface-app);
+  color: var(--text-primary);
+}
+.login-theme-toggle {
+  position: fixed;
+  z-index: 10;
+  top: 20px;
+  right: 22px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--control-border);
+  border-radius: 9px;
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.07);
+  cursor: pointer;
+}
+.login-theme-toggle:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.login-card {
+  width: min(540px, 100%);
+  padding: 40px;
+}
+.login-card > label > div,
+.login-submit {
+  height: 50px;
+}
+html[data-theme="dark"] .login-identity,
+html[data-theme="dark"] .login-card,
+html[data-theme="dark"] .demo-account-hint button,
+html[data-theme="dark"] .access-denied-page {
+  background: var(--surface-card);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .login-form-side {
+  background: var(--surface-app);
+}
+html[data-theme="dark"] .login-brand small,
+html[data-theme="dark"] .login-context > p,
+html[data-theme="dark"] .login-context li,
+html[data-theme="dark"] .login-card header p,
+html[data-theme="dark"] .demo-account-hint > p,
+html[data-theme="dark"] .demo-account-hint button small,
+html[data-theme="dark"] .local-security-note,
+html[data-theme="dark"] .login-identity footer {
+  color: var(--text-secondary);
+}
+html[data-theme="dark"] .login-card h2,
+html[data-theme="dark"] .login-context h1,
+html[data-theme="dark"] .login-brand b,
+html[data-theme="dark"] .demo-account-hint button span,
+html[data-theme="dark"] .login-card > label {
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .login-card > label > div {
+  background: var(--surface-muted);
+  border-color: var(--control-border);
+}
+html[data-theme="dark"] .login-card input {
+  background: transparent;
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .demo-account-hint code {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
+
+/* Cross-module dark-mode surface sweep */
+html[data-theme="dark"]
+  :where(
+    .analytics-filters,
+    .analytics-metric,
+    .analytics-section,
+    .analytics-project-list button,
+    .report-builder,
+    .operational-report,
+    .admin-summary,
+    .admin-content,
+    .admin-user-drawer,
+    .cc-header-controls > button:not(.btn),
+    .cc-quick-actions,
+    .cc-situation,
+    .cc-incident-row,
+    .detail-drawer,
+    .action-dialog,
+    .incident-worklist,
+    .incident-list-row,
+    .incident-form-dialog,
+    .dispatch-team-list > button,
+    .confirm-dialog,
+    .incident-detail-header,
+    .incident-more-menu,
+    .incident-detail-section,
+    .incident-context-panel,
+    .playbook-status-strip,
+    .playbook-row,
+    .playbook-detail-header,
+    .execution-header,
+    .execution-context-bar,
+    .execution-sequence,
+    .step-detail-panel,
+    .execution-step,
+    .linked-records button,
+    .cc-playbook-list > button,
+    .recovery-strip,
+    .assessment-row,
+    .project-row,
+    .assessment-detail-header,
+    .project-detail-header,
+    .recovery-related-list button,
+    .project-basis button,
+    .project-overview-strip,
+    .project-resource-columns > div > button,
+    .recovery-exception-list button,
+    .incident-recovery-lists button,
+    .relief-summary,
+    .relief-worklist,
+    .relief-row,
+    .warehouse-row,
+    .relief-detail-header,
+    .warehouse-detail-header,
+    .detail-section,
+    .reservation-list article,
+    .shipment-list article,
+    .shipment-list.compact button,
+    .warehouse-request-list button,
+    .warehouse-overview,
+    .logistics-exception-list button,
+    .situation-band,
+    .content-section,
+    .side-section,
+    .placeholder-page,
+    .shelter-summary,
+    .shelter-worklist,
+    .shelter-row,
+    .shelter-detail-header,
+    .simulation-denied,
+    .simulation-controls,
+    .simulation-controls button,
+    .simulation-stage,
+    .simulation-stage span,
+    .simulation-stage b,
+    .simulation-panel,
+    .sos-queue-summary,
+    .sos-worklist,
+    .sos-row,
+    .sos-detail-header,
+    .sos-link-grid > button,
+    .task-worklist,
+    .task-list-row,
+    .task-detail-header,
+    .team-operational-summary,
+    .team-worklist,
+    .team-list-row,
+    .team-detail-header,
+    .profile-hero,
+    .profile-information
+  ) {
+  background: var(--surface-card);
+  border-color: var(--border);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+html[data-theme="dark"]
+  :where(
+    .incident-list-head,
+    .task-list-head,
+    .team-list-head,
+    .cc-incident-head,
+    .team-member-head,
+    .relief-list-head,
+    .shelter-list-head,
+    .sos-list-head,
+    .assessment-list-head,
+    .project-list-head,
+    .admin-table th,
+    .data-table th,
+    .simulation-log-table th
+  ) {
+  background: var(--surface-muted);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+html[data-theme="dark"]
+  :where(
+    .admin-table td,
+    .data-table td,
+    .simulation-log-table td,
+    .section-heading,
+    .cc-panel-header,
+    .detail-section > header,
+    .profile-information > header,
+    .profile-information-grid > div
+  ) {
+  border-color: var(--border);
+}
+html[data-theme="dark"]
+  :where(
+    input,
+    textarea,
+    select,
+    .filter-select,
+    .date-filter,
+    .incident-search,
+    .input-with-icon,
+    .admin-filters label,
+    .analytics-filters label
+  ) {
+  background-color: var(--surface-muted);
+  border-color: var(--control-border);
+  color: var(--text-primary);
+}
+html[data-theme="dark"] :where(input, textarea)::placeholder {
+  color: #77869a;
+}
+html[data-theme="dark"] :where(button, input, textarea, select):focus-visible {
+  outline-color: #6ca4f4;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+html[data-theme="dark"] :where(button, input, textarea, select):disabled {
+  color: #6f7d8e;
+  background-color: #141d27;
+  border-color: #2b3745;
+  opacity: 0.72;
+}
+html[data-theme="dark"]
+  :where(
+    .admin-table tbody tr:hover,
+    .data-table tbody tr:hover,
+    .incident-list-row:hover,
+    .task-list-row:hover,
+    .team-list-row:hover,
+    .shelter-row:hover,
+    .sos-row:hover,
+    .relief-row:hover,
+    .warehouse-row:hover,
+    .assessment-row:hover,
+    .project-row:hover,
+    .execution-step:hover,
+    .execution-step.selected
+  ) {
+  background: var(--surface-hover);
+}
+html[data-theme="dark"] .btn-secondary,
+html[data-theme="dark"] .analytics-secondary,
+html[data-theme="dark"] .admin-page-header > button,
+html[data-theme="dark"] .access-denied-page button,
+html[data-theme="dark"] .deactivate {
+  background: var(--surface-raised);
+  border-color: var(--control-border);
+  color: var(--text-secondary);
+}
+html[data-theme="dark"] .badge-red,
+html[data-theme="dark"] .account-state.inactive,
+html[data-theme="dark"] .audit-result.failed,
+html[data-theme="dark"] .audit-result.denied {
+  background: var(--danger-surface);
+  border-color: #71343b;
+  color: #ff9b91;
+}
+html[data-theme="dark"] .badge-amber {
+  background: var(--warning-surface);
+  border-color: #6a4b21;
+  color: #f7c66a;
+}
+html[data-theme="dark"] .badge-green,
+html[data-theme="dark"] .account-state.active,
+html[data-theme="dark"] .audit-result.success {
+  background: var(--success-surface);
+  border-color: #286246;
+  color: #75e0a7;
+}
+html[data-theme="dark"] .badge-blue {
+  background: #172b45;
+  border-color: #315b88;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .nav-count,
+html[data-theme="dark"] .nav-item.active .nav-count {
+  background: #c7352b;
+  color: #fff;
+}
+html[data-theme="dark"] .notification-popover,
+html[data-theme="dark"] .account-popover {
+  background: var(--surface-raised);
+  border-color: var(--control-border);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+}
+html[data-theme="dark"] .map-loading,
+html[data-theme="dark"] .simulation-map-notice,
+html[data-theme="dark"] .simulation-map-legend {
+  background: var(--surface-raised);
+  border-color: var(--control-border);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .profile-hero {
+    grid-template-columns: 112px minmax(0, 1fr);
+    padding: 28px;
+  }
+  .profile-avatar-wrap > .avatar {
+    width: 108px;
+    height: 108px;
+  }
+  .profile-avatar-controls {
+    max-width: none;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .profile-avatar-controls > small {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 640px) {
+  .account-popover {
+    top: 58px;
+  }
+  .profile-hero {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 18px;
+    padding: 26px 20px;
+    text-align: center;
+  }
+  .profile-hero-badges {
+    justify-content: center;
+  }
+  .profile-avatar-controls {
+    width: 100%;
+    display: flex;
+  }
+  .profile-information-grid {
+    grid-template-columns: 1fr;
+    padding-inline: 20px;
+  }
+  .profile-information-grid > div:nth-child(odd),
+  .profile-information-grid > div:nth-child(even) {
+    padding-inline: 0;
+    border-left: 0;
+  }
+  .profile-information > header {
+    padding: 20px;
+  }
+  .profile-information > .profile-security-note {
+    margin: 18px 20px 22px;
+  }
+  .login-theme-toggle {
+    top: 13px;
+    right: 13px;
+  }
+}
+
+/* Targeted dark-mode fixes found by rendered-route audit */
+html[data-theme="dark"] .cc-header-controls > button:not(.btn) {
+  background: var(--surface-raised);
+  border-color: var(--control-border);
+  color: var(--text-secondary);
+}
+html[data-theme="dark"] .workspace .text-action {
+  background: transparent;
+  color: #9fc2ff;
+}
+html[data-theme="dark"]
+  :where(
+    .relief-table-head,
+    .playbook-table-head,
+    .assessment-table-head,
+    .project-table-head
+  ) {
+  background: var(--surface-muted);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+html[data-theme="dark"] .simulation-thresholds > div {
+  background: var(--surface-muted);
+  border-color: #536173;
+  color: var(--text-secondary);
+}
+html[data-theme="dark"] .simulation-thresholds > div.exceeded {
+  background: var(--danger-surface);
+  border-color: #d65c54;
+}
+html[data-theme="dark"] .map-attribution {
+  background: rgba(23, 33, 45, 0.88);
+  color: var(--text-muted);
+}
+
+/* WCAG contrast hardening confirmed by rendered route audit */
+html:not([data-theme="dark"]) .nav-group-title > span,
+html:not([data-theme="dark"]) .login-page footer,
+html:not([data-theme="dark"]) .local-security-note {
+  color: #667085;
+}
+html:not([data-theme="dark"]) .app-shell .app-body .workspace :where(small, dt),
+html:not([data-theme="dark"]) .incident-result-bar > span,
+html:not([data-theme="dark"]) .breadcrumbs,
+html:not([data-theme="dark"]) .breadcrumbs > span,
+html:not([data-theme="dark"]) .cc-action-meta > span,
+html:not([data-theme="dark"]) .cc-timeline-event > div > span,
+html:not([data-theme="dark"]) .sos-immediate-grid span,
+html:not([data-theme="dark"]) .sos-contact span,
+html:not([data-theme="dark"]) .sos-location-note span,
+html:not([data-theme="dark"]) .simulation-stage > div > div > b {
+  color: #5d6879;
+}
+html:not([data-theme="dark"]) .cc-action-rank {
+  color: #667085;
+}
+html[data-theme="dark"] .collapse-btn > span,
+html[data-theme="dark"]
+  .app-shell
+  .app-body
+  .workspace
+  :where(p, span, small, dt, dd, td, th, label, button) {
+  color: #b9c5d4;
+}
+html[data-theme="dark"]
+  .app-shell
+  .app-body
+  .workspace
+  :where(h1, h2, h3, h4, h5, h6, strong, b) {
+  color: #f0f4fa;
+}
+html[data-theme="dark"]
+  .app-shell
+  .app-body
+  .workspace
+  :where(
+    .text-action,
+    .analytics-entity-link,
+    .back-link,
+    .context-heading > button,
+    .incident-tabs > .active,
+    .incident-detail-tabs > .active,
+    .admin-page-header > div > span
+  ) {
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .audit-notice {
+  background: #332c18;
+  border-color: #6f5b20;
+}
+html[data-theme="dark"]
+  .app-shell
+  .app-body
+  .workspace
+  :where(
+    .badge-red,
+    .priority-block.p1,
+    .audit-result.denied,
+    .audit-result.failed,
+    .account-state.inactive
+  ) {
+  color: #ff9b94;
+}
+html[data-theme="dark"]
+  .app-shell
+  .app-body
+  .workspace
+  :where(.badge-green, .audit-result.success, .account-state.active) {
+  color: #75e0a7;
+}
+html[data-theme="dark"] .app-shell .app-body .workspace :where(.badge-amber) {
+  color: #fec84b;
+}
+html[data-theme="dark"]
+  .app-shell
+  .app-body
+  .workspace
+  :where(.badge-blue, .badge-neutral) {
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .app-shell .app-body .workspace :where(time, li) {
+  color: #b9c5d4;
+}
+html[data-theme="dark"] .app-shell .app-body .workspace .btn-primary {
+  color: #fff;
+}
+html[data-theme="dark"]
+  .app-shell
+  .app-body
+  .workspace
+  :where(.overdue, .overdue > b, .shortage > b) {
+  color: #ff9b94;
+}
+html[data-theme="dark"] .incident-recovery-summary > div {
+  background: var(--surface-raised);
+  border-color: var(--border);
+}
+html[data-theme="dark"] .priority-block.p1 {
+  background: #4a201f;
+  color: #ff9b94;
+}
+html[data-theme="dark"] .profile-avatar-wrap > .avatar {
+  background: #23334a;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .metric-basis.recorded {
+  background: #17352a;
+  color: #75e0a7;
+}
+html[data-theme="dark"] .metric-basis.derived {
+  background: #1a304d;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .analytics-section-count {
+  background: #4a201f;
+  color: #ff9b94;
+}
+html[data-theme="dark"] .simulation-banner {
+  background: #332c18;
+  border-color: #6f5b20;
+}
+html[data-theme="dark"] .simulation-banner > b {
+  color: #ffe69c;
+}
+html[data-theme="dark"] .simulation-banner > span {
+  color: #d8c98e;
+}
+html[data-theme="dark"] .simulation-status {
+  background: #253140;
+  color: #d3dce8;
+}
+html[data-theme="dark"] .simulation-page .primary {
+  color: #fff;
+}
+html[data-theme="dark"] .simulation-page em {
+  color: #aebbc9;
+}
+html[data-theme="dark"] .user-identity > span {
+  background: #23334a;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .audit-table code {
+  color: #9fc2ff;
+}
+html:not([data-theme="dark"])
+  .app-shell
+  .app-body
+  .workspace
+  :where(
+    .incident-type > b,
+    .incident-impact-grid span,
+    .task-operational-facts span,
+    .team-operational-summary > p,
+    .team-current-task > span,
+    .team-readiness span,
+    .team-readiness-meta > span,
+    .linked-incident > span,
+    .sos-queue-summary > p,
+    .profile-information > header span
+  ) {
+  color: #5d6879;
+}
+html:not([data-theme="dark"]) .priority-block.p1 {
+  color: #a92920;
+}
+.app-shell select,
+.login-page select {
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 16px 16px;
+}
+.app-shell .app-body .workspace select {
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 16px 16px;
+}
+html:not([data-theme="dark"])
+  .app-shell
+  .app-body
+  .workspace
+  :where(
+    .progress-milestones > span,
+    .field-update-list article > div > span,
+    .sos-reporter-grid > div > span
+  ) {
+  color: #5d6879;
+}
+html[data-theme="dark"] .login-context > span {
+  color: #9fc2ff;
+}
+html[data-theme="dark"]
+  .app-shell
+  .app-body
+  .workspace
+  :where(.shelter-row, .sos-row, .relief-row, .playbook-row, .assessment-row)
+  :where(b, strong, span, small) {
+  color: #c5d0dd;
+}
+html[data-theme="dark"]
+  .app-shell
+  .app-body
+  .workspace
+  :where(.shelter-row, .sos-row, .relief-row, .playbook-row, .assessment-row)
+  :where(b, strong) {
+  color: #f0f4fa;
+}
+html[data-theme="dark"] .analytics-status.neutral {
+  background: #253140;
+  color: #c5d0dd;
+}
+html[data-theme="dark"]
+  .app-shell
+  .app-body
+  .workspace
+  .simulation-page
+  .primary {
+  color: #fff;
+}
+html[data-theme="dark"] .app-shell .workspace .shelter-row,
+html[data-theme="dark"] .app-shell .workspace .sos-row,
+html[data-theme="dark"] .app-shell .workspace .relief-row,
+html[data-theme="dark"] .app-shell .workspace .playbook-row,
+html[data-theme="dark"] .app-shell .workspace .assessment-row {
+  background: #17212d;
+}
+html[data-theme="dark"] .app-shell .workspace .shelter-row *,
+html[data-theme="dark"] .app-shell .workspace .sos-row *,
+html[data-theme="dark"] .app-shell .workspace .relief-row *,
+html[data-theme="dark"] .app-shell .workspace .playbook-row *,
+html[data-theme="dark"] .app-shell .workspace .assessment-row * {
+  color: #c5d0dd;
+}
+html[data-theme="dark"] .app-shell .workspace .shelter-row :where(b, strong),
+html[data-theme="dark"] .app-shell .workspace .sos-row :where(b, strong),
+html[data-theme="dark"] .app-shell .workspace .relief-row :where(b, strong),
+html[data-theme="dark"] .app-shell .workspace .playbook-row :where(b, strong),
+html[data-theme="dark"]
+  .app-shell
+  .workspace
+  .assessment-row
+  :where(b, strong) {
+  color: #f0f4fa;
+}
+
+/* ============================================================
+   Dark-mode parity pass — mọi bề mặt sáng còn sót lại (pill/tag,
+   input trong filter bar, hover trắng, callout pastel) được đưa
+   về token/surface tối tương ứng để chữ không bao giờ cùng màu
+   với nền. Phát hiện bằng audit tĩnh toàn bộ stylesheet.
+   ============================================================ */
+html[data-theme="dark"] .analytics-status {
+  background: #232e3c;
+  color: #c3cedb;
+}
+html[data-theme="dark"] .analytics-status.danger {
+  background: var(--danger-surface);
+  color: #ff9b91;
+}
+html[data-theme="dark"] .analytics-status.warning {
+  background: var(--warning-surface);
+  color: #f7c66a;
+}
+html[data-theme="dark"] .analytics-status.success {
+  background: var(--success-surface);
+  color: #75e0a7;
+}
+html[data-theme="dark"] .report-types button {
+  background: #1c2633;
+  color: var(--text-secondary);
+}
+html[data-theme="dark"] .report-types button.active {
+  background: #172b45;
+  border-color: #315b88;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .ai-execution-result {
+  background: var(--success-surface);
+  border-color: #286246;
+  color: #75e0a7;
+}
+html[data-theme="dark"] .login-page {
+  background: var(--surface-app);
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .login-error {
+  background: var(--danger-surface);
+  border-color: #71343b;
+  color: #ff9b91;
+}
+html[data-theme="dark"] .demo-account-hint button:hover {
+  background: var(--surface-hover);
+}
+html[data-theme="dark"] .permission-list span {
+  background: #232e3c;
+  color: #c3cedb;
+}
+html[data-theme="dark"] .cc-quick-actions button {
+  background: #1c2633;
+  color: var(--text-secondary);
+}
+html[data-theme="dark"] .cc-quick-actions button:hover,
+html[data-theme="dark"] .cc-layer-control button:hover,
+html[data-theme="dark"] .detail-drawer header button:hover,
+html[data-theme="dark"] .action-dialog header > button:hover,
+html[data-theme="dark"] .incident-form-dialog header button:hover,
+html[data-theme="dark"] .incident-more-menu button:hover {
+  background: #253140;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .incident-tabs button span,
+html[data-theme="dark"] .incident-detail-tabs span,
+html[data-theme="dark"] .task-tabs button span,
+html[data-theme="dark"] .team-tabs button span {
+  background: #2a3646;
+  color: #c3cedb;
+}
+html[data-theme="dark"] .confirm-dialog > span {
+  background: var(--danger-surface);
+  color: #ff9b91;
+}
+html[data-theme="dark"] .context-workflow i,
+html[data-theme="dark"] .task-state-machine i {
+  background: var(--surface-card);
+  border-color: #536173;
+}
+html[data-theme="dark"] .incident-form-dialog > footer {
+  background: #1c2734;
+}
+html[data-theme="dark"] .cc-playbook-copy strong {
+  background: var(--danger-surface);
+  color: #ffb4ab;
+}
+html[data-theme="dark"] .playbook-row:hover {
+  background: #1b2531;
+}
+html[data-theme="dark"] .active-execution-link,
+html[data-theme="dark"] .playbook-warning {
+  background: #172b45;
+  border-color: #315b88;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .execution-error,
+html[data-theme="dark"] .criteria-blocked {
+  background: var(--danger-surface);
+  border-color: #71343b;
+  color: #ff9b91;
+}
+html[data-theme="dark"] .execution-step.selected {
+  background: #1b2531;
+}
+html[data-theme="dark"] .step-owner,
+html[data-theme="dark"] .step-notes {
+  background: #1c2633;
+}
+html[data-theme="dark"] .damage-impact-grid > div {
+  background: #1a2330;
+}
+html[data-theme="dark"] .verification-record {
+  background: var(--success-surface);
+  border-color: #286246;
+  color: #75e0a7;
+}
+html[data-theme="dark"] .verification-record.rejected,
+html[data-theme="dark"] .completion-block {
+  background: var(--danger-surface);
+  border-color: #71343b;
+  color: #ff9b91;
+}
+html[data-theme="dark"] .warehouse-table-head,
+html[data-theme="dark"] .relief-table-head,
+html[data-theme="dark"] .project-table-head,
+html[data-theme="dark"] .fulfillment-table > div:first-child,
+html[data-theme="dark"] .inventory-table > div:first-child,
+html[data-theme="dark"] .damage-item-table > div:first-child,
+html[data-theme="dark"] .shelter-facility-table > div:first-child {
+  background: #141b24;
+  color: var(--text-muted);
+}
+html[data-theme="dark"] .relief-page .text-action,
+html[data-theme="dark"] .text-action {
+  border-color: #3a4859;
+}
+html[data-theme="dark"] .shortage-callout,
+html[data-theme="dark"] .relief-confirm {
+  background: var(--warning-surface);
+  border-color: #6a4b21;
+  color: #f7c66a;
+}
+html[data-theme="dark"] .shipment-list article.has-incident {
+  background: rgba(240, 68, 56, 0.08);
+  border-color: #71343b;
+}
+html[data-theme="dark"] .justification {
+  background: #1c2633;
+}
+html[data-theme="dark"] .allocation-editor .unavailable {
+  background: #1c2633;
+  color: var(--text-muted);
+}
+html[data-theme="dark"] .dispatch-summary {
+  background: var(--surface-muted);
+}
+html[data-theme="dark"] .inventory-alert {
+  background: rgba(247, 144, 9, 0.09);
+}
+html[data-theme="dark"] .btn-secondary:hover {
+  background: var(--surface-hover);
+}
+html[data-theme="dark"] .map-toolbar button:hover {
+  background: #253140;
+}
+html[data-theme="dark"] .map-layers {
+  background: var(--surface-raised);
+  border-color: var(--control-border);
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .mobile-incident-list button {
+  background: var(--surface-card);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .shelter-alert {
+  background: var(--danger-surface);
+  border-color: #71343b;
+  color: #ff9b91;
+}
+html[data-theme="dark"] .shelter-readiness-grid > div > span {
+  background: #232e3c;
+  color: #9aa7b8;
+}
+html[data-theme="dark"] .simulation-kind.model {
+  background: #232e3c;
+  color: #c3cedb;
+}
+html[data-theme="dark"] .sos-link-grid > button > span {
+  background: #232e3c;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .sos-evacuation-strip {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+html[data-theme="dark"] .sos-confirm.danger {
+  background: var(--danger-surface);
+  border-color: #71343b;
+  color: #ff9b91;
+}
+html[data-theme="dark"] .eligible-team-list label.selected,
+html[data-theme="dark"] .eligible-shelter-list label.selected {
+  background: #172b45;
+  border-color: #315b88;
+}
+html[data-theme="dark"] .triage-reasons span {
+  background: var(--warning-surface);
+  border-left-color: #f79009;
+  color: #f7c66a;
+}
+html[data-theme="dark"] .status-mất-liên-lạc,
+html[data-theme="dark"] .status-không-khả-dụng {
+  background: var(--danger-surface);
+  color: #ff9b91;
+}
+html[data-theme="dark"] .status-tạm-nghỉ,
+html[data-theme="dark"] .member-avatar,
+html[data-theme="dark"] .vehicle-icon {
+  background: #232e3c;
+  color: #9aa7b8;
+}
+html[data-theme="dark"] .team-form-error {
+  background: var(--danger-surface);
+  border-color: #71343b;
+  color: #ff9b91;
+}
+
+/* Dark-mode parity pass 2 — chip/icon cận trắng, nền chờ của bản đồ,
+   track tiến trình và các tint trạng thái còn sót sau pass 1. */
+html[data-theme="dark"] .avatar,
+html[data-theme="dark"] .drawer-avatar,
+html[data-theme="dark"] .login-card > header > span,
+html[data-theme="dark"] .ai-welcome-icon,
+html[data-theme="dark"] .ai-assistant-mark,
+html[data-theme="dark"] .placeholder-page > span,
+html[data-theme="dark"] .action-dialog header > span,
+html[data-theme="dark"] .team-emblem,
+html[data-theme="dark"] .priority-block,
+html[data-theme="dark"] .field-update-icon,
+html[data-theme="dark"] .readiness-indicator,
+html[data-theme="dark"] .propagation-tick,
+html[data-theme="dark"] .simulation-kind.mutation {
+  background: #1b2b45;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .playbook-emblem,
+html[data-theme="dark"] .step-number,
+html[data-theme="dark"] .cc-playbook-icon,
+html[data-theme="dark"] .incident-playbook-icon,
+html[data-theme="dark"] .recovery-emblem,
+html[data-theme="dark"] .evidence-icon,
+html[data-theme="dark"] .recovery-exception-icon.assessment,
+html[data-theme="dark"] .warehouse-icon,
+html[data-theme="dark"] .entity-icon {
+  background: #232e3c;
+  color: #9fb4c8;
+}
+html[data-theme="dark"] .execution-step-copy > span small,
+html[data-theme="dark"] .milestone-sequence article > div > span small,
+html[data-theme="dark"] .step-detail-panel li > span {
+  background: #232e3c;
+  color: #c3cedb;
+}
+html[data-theme="dark"] .analytics-bar-track,
+html[data-theme="dark"] .mini-progress,
+html[data-theme="dark"] .table-progress,
+html[data-theme="dark"] .simulation-progress {
+  background: #2a3544;
+}
+html[data-theme="dark"] .map-shell,
+html[data-theme="dark"] .cc-map-shell,
+html[data-theme="dark"] .incident-detail-map,
+html[data-theme="dark"] .recovery-map,
+html[data-theme="dark"] .relief-map,
+html[data-theme="dark"] .shelter-operational-map,
+html[data-theme="dark"] .sos-operational-map,
+html[data-theme="dark"] .task-detail-map,
+html[data-theme="dark"] .team-operational-map,
+html[data-theme="dark"] .relief-map-fallback {
+  background: #121b25;
+  color: var(--text-muted);
+}
+html[data-theme="dark"] .map-toolbar span {
+  background: #3a4859;
+}
+html[data-theme="dark"] .cc-panel-header > button:hover {
+  background: #253140;
+}
+html[data-theme="dark"] .profile-message {
+  background: #172b45;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .simulation-status.green,
+html[data-theme="dark"] .status-sẵn-sàng,
+html[data-theme="dark"] .simulation-stage .complete span,
+html[data-theme="dark"] .milestone-state.hoàn-thành,
+html[data-theme="dark"] .execution-step.status-hoàn-thành .execution-step-state,
+html[data-theme="dark"] .criteria-ok {
+  background: var(--success-surface);
+  border-color: #286246;
+  color: #75e0a7;
+}
+html[data-theme="dark"] .simulation-status.blue,
+html[data-theme="dark"] .milestone-state.đang-thực-hiện,
+html[data-theme="dark"] .execution-step.status-đang-thực-hiện .execution-step-state {
+  background: #172b45;
+  border-color: #315b88;
+  color: #9fc2ff;
+}
+html[data-theme="dark"] .exception-icon.danger,
+html[data-theme="dark"] .execution-step.status-bị-chặn .execution-step-state {
+  background: var(--danger-surface);
+  border-color: #71343b;
+  color: #ff9b91;
+}
+
+/* Situation band warning chip trong dark mode */
+html[data-theme="dark"] .cc-situation-icon {
+  background: var(--warning-surface);
+  color: #f7c66a;
+}
+
+/* Tiêu đề section ở cột hẹp: hành động xuống dòng thay vì ép vỡ tiêu đề */
+.section-heading {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.section-heading > div:first-child {
+  min-width: min(100%, 170px);
+}
+.section-heading .text-action {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   ĐỢT 2026-08-22b — HỆ THỐNG CONTROL / BUTTON / HEADER / SIDEBAR
+   Chuẩn hóa: control cao 40px, chữ form 14.5px, select có chevron
+   tùy chế, button secondary/ghost nhìn "có design", icon header
+   + sidebar to rõ, badge chuông không che icon.
+   ============================================================ */
+
+/* ---- Sidebar: nhãn 1 dòng, icon to vừa, không xuống dòng ---- */
+.nav-item {
+  white-space: nowrap;
+  text-align: left;
+}
+.nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-count {
+  flex: none;
+  margin-left: auto;
+}
+
+/* ---- Header: nút icon to ra, badge ra ngoài mép ---- */
+.topbar-actions {
+  gap: 6px;
+}
+.topbar .btn-icon {
+  width: 48px;
+  height: 48px;
+}
+.topbar .btn-icon svg {
+  color: #3b4b63;
+}
+.topbar .btn-icon:hover {
+  background: #eef2f7;
+}
+.topbar .btn-icon .notification-count {
+  top: -3px;
+  right: -5px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  font-size: 12.5px;
+  border: 2px solid #f2f4f7;
+  z-index: 2;
+}
+html[data-theme="dark"] .topbar .btn-icon .notification-count {
+  border-color: #10151d;
+}
+html[data-theme="dark"] .topbar .btn-icon svg {
+  color: #c2cedd;
+}
+
+/* ---- Button system ---- */
+.btn {
+  letter-spacing: 0.01em;
+}
+.btn-md {
+  height: 38px;
+  padding: 0 15px;
+  border-radius: 8px;
+  font-weight: 650;
+}
+.btn-sm {
+  height: 33px;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-weight: 650;
+}
+.btn-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+}
+.btn-secondary {
+  background: #fff;
+  border: 1px solid #c6cfdb;
+  color: #33415c;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.07);
+}
+.btn-secondary:hover {
+  background: #f1f5f9;
+  border-color: #a8b4c4;
+  color: #1d2939;
+}
+.btn-secondary:active {
+  background: #e8edf3;
+}
+.btn-ghost {
+  color: #3f4e66;
+}
+.btn-ghost:hover {
+  background: #edf1f6;
+  color: #101828;
+}
+.btn-danger {
+  background: #fff;
+  border: 1px solid #f3b7af;
+  color: #b42318;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+.btn-danger:hover {
+  background: #fef3f2;
+  border-color: #e08d84;
+  color: #912018;
+}
+/* nút hành động trong hàng bảng / card: từ link chữ -> chip rõ ràng */
+.row-action {
+  border: 1px solid #cbd4e0;
+  border-radius: 7px;
+  background: #fff;
+  padding: 5px 11px;
+  color: #1d4ed8;
+  font-weight: 650;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+.row-action:hover {
+  background: #eff4ff;
+  border-color: #9fbbf2;
+}
+html[data-theme="dark"] .row-action {
+  background: #16202c;
+  border-color: #38465a;
+  color: #8fb4ff;
+}
+html[data-theme="dark"] .row-action:hover {
+  background: #1c2c45;
+  border-color: #46659c;
+}
+html[data-theme="dark"] .btn-secondary {
+  background: #18212d;
+  border-color: #3a485c;
+  color: #dfe7f1;
+}
+html[data-theme="dark"] .btn-secondary:hover {
+  background: #222d3b;
+  border-color: #54627a;
+}
+html[data-theme="dark"] .btn-ghost:hover {
+  background: #1c2633;
+  color: #eef3f8;
+}
+html[data-theme="dark"] .btn-danger {
+  background: #231318;
+  border-color: #7f2d24;
+  color: #f09590;
+}
+html[data-theme="dark"] .btn-danger:hover {
+  background: #2f171c;
+  border-color: #9c3a2f;
+}
+
+/* ---- Form control system: input / select / textarea ---- */
+.workspace-content
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
+.workspace-content select,
+.workspace-content textarea,
+.ai-drawer textarea,
+.ai-drawer input {
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.35;
+  color: #1d2939;
+  background: #fff;
+  border: 1px solid #c8d1dc;
+  border-radius: 8px;
+  padding: 8px 13px;
+  min-height: 40px;
+  outline: none;
+}
+.workspace-content textarea,
+.ai-drawer textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.workspace-content input::placeholder {
+  color: #8e99aa;
+  font-size: inherit;
+}
+.workspace-content select:not(.scope-switch) {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%23677884' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+.workspace-content
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus-visible,
+.workspace-content select:focus-visible,
+.workspace-content textarea:focus-visible,
+.ai-drawer textarea:focus-visible {
+  border-color: #3f8cff;
+  box-shadow: 0 0 0 3px rgba(59, 140, 255, 0.15);
+}
+
+/* Các wrapper lọc đã tự vẽ khung: dẹp khung bên trong, đồng bộ 40px */
+.incident-search,
+.input-with-icon,
+.filter-select,
+.date-filter {
+  min-height: 40px;
+  border-radius: 8px;
+  border-color: #c8d1dc;
+  position: relative;
+}
+.workspace-content .incident-search input,
+.workspace-content .input-with-icon input,
+.workspace-content .filter-select select {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent none;
+  background-image: none;
+  box-shadow: none;
+  min-width: 0;
+}
+.workspace-content .date-filter input,
+.workspace-content .date-filter select {
+  background-image: none;
+}
+.incident-search,
+.input-with-icon {
+  padding: 0 12px;
+  gap: 8px;
+}
+.incident-search:focus-within,
+.input-with-icon:focus-within,
+.filter-select:focus-within,
+.date-filter:focus-within {
+  border-color: #3f8cff;
+  box-shadow: 0 0 0 3px rgba(59, 140, 255, 0.15);
+}
+.filter-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  flex: 1;
+}
+.filter-select > svg:last-child {
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0;
+  pointer-events: none;
+}
+.filter-select {
+  padding-right: 32px;
+}
+.workspace-content .date-filter input {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent none;
+}
+.date-filter input[type="date"]::-webkit-calendar-picker-indicator {
+  margin: 0;
+}
+
+/* Dark cho form control */
+html[data-theme="dark"] .workspace-content
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
+html[data-theme="dark"] .workspace-content select,
+html[data-theme="dark"] .workspace-content textarea,
+html[data-theme="dark"] .ai-drawer textarea,
+html[data-theme="dark"] .ai-drawer input {
+  background: #111821;
+  border-color: #344151;
+  color: #e6ebf2;
+}
+html[data-theme="dark"] .workspace-content select:not(.scope-switch) {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+html[data-theme="dark"] .workspace-content input::placeholder {
+  color: #64748b;
+}
+html[data-theme="dark"] .incident-search,
+html[data-theme="dark"] .input-with-icon,
+html[data-theme="dark"] .filter-select,
+html[data-theme="dark"] .date-filter {
+  border-color: #344151;
+}

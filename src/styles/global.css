@@ -1,0 +1,52 @@
+html {
+  background: #f4f6f8;
+  height: 100%;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  height: 100%;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+#root {
+  height: 100%;
+}
+html {
+  scroll-behavior: smooth;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #b5bfcc transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #b5bfcc;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #8e9bab;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+html[data-theme="dark"] {
+  background: #10151d;
+  color-scheme: dark;
+}
+html[data-theme="dark"] * {
+  scrollbar-color: #465365 transparent;
+}
+html[data-theme="dark"] *::-webkit-scrollbar-thumb {
+  background: #465365;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}

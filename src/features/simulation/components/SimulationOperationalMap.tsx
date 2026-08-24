@@ -250,7 +250,7 @@ export function SimulationOperationalMap({
         </div>
       )}
       <div className="simulation-map-notice">
-        DỮ LIỆU MÔ PHỎNG · Seed 20240901
+        DỮ LIỆU MÔ PHỎNG · MÃ KỊCH BẢN 20240901
       </div>
       <div className="simulation-map-legend">
         <span>

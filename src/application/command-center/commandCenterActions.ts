@@ -14,7 +14,7 @@ import type { Permission } from "../../lib/permissions/permissions";
  * Incident/Task/Team/SOS/Alert thành workflow cho 5 quick actions. Module này
  * không sở hữu operational dataset — mọi candidate đọc từ authorized view của
  * store, mọi hành động thực thi qua store command (canonical mutation
- * boundary). Plan chỉ được phép thực thi sau khi ngườii dùng xác nhận.
+ * boundary). Plan chỉ được phép thực thi sau khi người dùng xác nhận.
  */
 
 export type QuickActionLabel =
@@ -142,7 +142,7 @@ export function openIncidents(context: Pick<CommandCenterActionContext, "inciden
   return context.incidents.filter((incident) => incident.status !== "Đã đóng");
 }
 
-/** SOS còn phải xử lý trong ca trực — mức ưu tiên và thờii điểm tiếp nhận trước. */
+/** SOS còn phải xử lý trong ca trực — mức ưu tiên và thời điểm tiếp nhận trước. */
 export function triageableSos(
   context: Pick<CommandCenterActionContext, "sosRequests">,
 ) {
@@ -253,7 +253,7 @@ export function buildCreateIncidentPlan(
     [
       `Sự cố “${incidentInput.title}” sẽ được tiếp nhận với mức ${incidentInput.severity}.`,
       `Khu vực: ${incidentInput.location.name}.`,
-      "Sự cố mới xuất hiện trong hàng đợi Command Center và danh sách Sự cố.",
+      "Sự cố mới xuất hiện trong hàng đợi Trung tâm điều hành và danh sách Sự cố.",
     ],
   );
 }
@@ -278,7 +278,7 @@ export function buildCreateTaskPlan(
   if (incident.status === "Đã đóng")
     return invalid("Sự cố đã đóng, không thể giao nhiệm vụ mới.");
   if (!input.title.trim()) return invalid("Tên nhiệm vụ không được để trống.");
-  if (!input.dueAt.trim()) return invalid("Phải có thờii hạn hoàn thành.");
+  if (!input.dueAt.trim()) return invalid("Phải có thời hạn hoàn thành.");
   if (input.teamId && !context.teams.some((team) => team.id === input.teamId))
     return invalid("Đội được chọn không nằm trong phạm vi truy cập hiện tại.");
   const taskInput: NewTaskInput = {
@@ -343,7 +343,7 @@ export function buildAcknowledgeAlertPlan(
     },
     [
       `Xác nhận đã tiếp nhận “${alert.title}” (mức ${alert.severity === "critical" ? "Khẩn cấp" : alert.severity}).`,
-      "Thao tác ghi nhận actor và thờii điểm xác nhận; cảnh báo vẫn được suy ra từ canonical state.",
+      "Thao tác ghi nhận người thực hiện và thời điểm xác nhận; cảnh báo vẫn được suy ra từ dữ liệu nghiệp vụ chính thức.",
     ],
   );
 }
@@ -382,7 +382,7 @@ export function buildDispatchTeamPlan(
     [
       `Đội ${team.id} sẽ chuyển sang điều động tới ${incident.id}.`,
       `Phạm vi địa bàn sự cố: ${incident.affectedArea || incident.location.name}.`,
-      "Ràng buộc sẵn sàng/điều động được kiểm tra lại tại mutation boundary.",
+      "Điều kiện sẵn sàng và điều động được kiểm tra lại tại quy trình cập nhật an toàn.",
     ],
   );
 }
@@ -417,8 +417,8 @@ export function buildRecallTeamPlan(
       `Thu hồi đội ${team.id} khỏi nhiệm vụ ${team.currentTask}.`,
       task
         ? `Nhiệm vụ “${task.title}” sẽ trở về trạng thái chờ phân công lại.`
-        : "Nhiệm vụ liên quan được cập nhật theo contract hiện hữu.",
-      "Đồng bộ hai phía team/nhiệm vụ qua canonical command; đội sau đó có thể điều phối lại.",
+        : "Nhiệm vụ liên quan được cập nhật theo quy trình hiện hữu.",
+      "Đồng bộ hai phía đội cứu hộ và nhiệm vụ qua lệnh nghiệp vụ chính thức; đội sau đó có thể được điều phối lại.",
     ],
   );
 }
@@ -454,7 +454,7 @@ export function buildSosTriagePlan(
         mode: "verify",
         resources: [
           `SOS: ${sos.id} · ${sos.location.name}`,
-          `Ưu tiên: ${sos.priority} · ${sos.peopleAtRisk} ngườii gặp nguy hiểm`,
+          `Ưu tiên: ${sos.priority} · ${sos.peopleAtRisk} người gặp nguy hiểm`,
         ],
       },
       [
@@ -478,7 +478,7 @@ export function buildSosTriagePlan(
       },
       [
         `Từ chối SOS ${sos.id} — đánh giá không hợp lệ.`,
-        "Trạng thái và timeline được ghi nhận theo contract SOS hiện hữu.",
+        "Trạng thái và nhật ký được ghi nhận theo quy trình SOS hiện hữu.",
       ],
     );
   }
@@ -501,7 +501,7 @@ export function buildSosTriagePlan(
       },
       [
         `Điều chỉnh ưu tiên SOS ${sos.id}: ${sos.priority} → ${input.priority}.`,
-        "Thứ tự hàng đợi Command Center cập nhật theo canonical state.",
+        "Thứ tự hàng đợi Trung tâm điều hành cập nhật theo trạng thái chính thức.",
       ],
     );
   }
@@ -530,12 +530,12 @@ export function buildSosTriagePlan(
     [
       `Tạo nhiệm vụ cứu hộ từ SOS ${sos.id} và gán đội ${team.id}.`,
       `Phạm vi địa bàn: ${sos.location.administrativeArea}.`,
-      "Nhiệm vụ mới xuất hiện trong module Nhiệm vụ và hàng đợi Command Center.",
+      "Nhiệm vụ mới xuất hiện trong phân hệ Nhiệm vụ và hàng đợi Trung tâm điều hành.",
     ],
   );
 }
 
-/** Ngườii dùng đã bấm “Xác nhận và thực hiện” — route plan tới store command. */
+/** Người dùng đã bấm “Xác nhận và thực hiện” — route plan tới store command. */
 export interface CommandCenterActionExecutor {
   createIncident: (input: CreateIncidentInput) => string;
   createTask: (input: NewTaskInput) => string;
@@ -563,7 +563,7 @@ export function executeCommandCenterAction(
     return {
       entityId,
       entityPath: `/incidents/${entityId}`,
-      message: `Đã tạo sự cố ${entityId} và ghi nhận vào canonical state.`,
+      message: `Đã tạo sự cố ${entityId} và ghi nhận vào dữ liệu nghiệp vụ chuẩn.`,
     };
   }
   if (plan.kind === "create_task") {

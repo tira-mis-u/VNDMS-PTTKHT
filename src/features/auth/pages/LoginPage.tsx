@@ -1,3 +1,5 @@
+import { Input } from "@/components/ui";
+import { PERSONNEL, personName } from "../../../data/identity/personnel";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   AlertCircle,
@@ -13,12 +15,12 @@ import {
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import type { AuthUser } from "@/domain/auth/types";
 const hints = [
-  ["Trần Quốc Thuận", "Chỉ huy"],
-  ["Nguyễn Quốc Trung", "Điều hành viên"],
-  ["Phạm Văn Đam", "Cán bộ địa phương"],
-  ["Phạm Trung Hiếu", "Đội trưởng đội cứu hộ"],
-  ["Lê Nguyễn Minh Trí", "Thành viên cứu hộ"],
-  ["Nguyễn Nam Anh", "Nhân viên kho"],
+  [personName(PERSONNEL.COMMANDER.id), "Chỉ huy"],
+  [personName(PERSONNEL.OPERATOR.id), "Điều hành viên"],
+  [personName(PERSONNEL.LOCAL_OFFICER.id), "Cán bộ địa phương"],
+  [personName(PERSONNEL.RESCUE_LEADER.id), "Đội trưởng đội cứu hộ"],
+  [personName(PERSONNEL.RESCUE_MEMBER.id), "Thành viên cứu hộ"],
+  [personName(PERSONNEL.WAREHOUSE_STAFF.id), "Nhân viên kho"],
 ];
 export function LoginPage({
   onSuccess,
@@ -26,7 +28,7 @@ export function LoginPage({
   onSuccess: (user: AuthUser) => void;
 }) {
   const { login } = useOperationalState();
-  const [username, setUsername] = useState("Nguyễn Nam Anh");
+  const [username, setUsername] = useState<string>(personName(PERSONNEL.WAREHOUSE_STAFF.id));
   const [password, setPassword] = useState("VNDMS@2026");
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
@@ -94,7 +96,7 @@ export function LoginPage({
             </li>
             <li>
               <UserRound size={15} />
-              Mọi thao tác nhạy cảm được ghi audit
+              Mọi thao tác nhạy cảm được ghi vào nhật ký bảo mật
             </li>
           </ul>
         </div>
@@ -121,22 +123,22 @@ export function LoginPage({
           )}
           <label>
             Tên đăng nhập
-            <div>
+            <span className="input-with-icon">
               <UserRound size={16} />
-              <input
+              <Input
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
                 required
                 autoFocus
               />
-            </div>
+            </span>
           </label>
           <label>
             Mật khẩu
-            <div>
+            <span className="input-with-icon">
               <LockKeyhole size={16} />
-              <input
+              <Input
                 type={show ? "text" : "password"}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -150,7 +152,7 @@ export function LoginPage({
               >
                 {show ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
-            </div>
+            </span>
           </label>
           <button className="login-submit" disabled={busy}>
             <LogIn size={16} />
@@ -178,7 +180,7 @@ export function LoginPage({
             </div>
           </div>
           <small className="local-security-note">
-            Adapter xác thực cục bộ; không phải xác thực máy chủ production.
+            Bộ điều hợp xác thực cục bộ; không phải dịch vụ xác thực máy chủ vận hành.
           </small>
         </form>
       </section>

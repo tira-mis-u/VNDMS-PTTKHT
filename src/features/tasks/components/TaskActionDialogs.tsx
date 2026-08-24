@@ -1,10 +1,11 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import type { IncidentTask, TaskStatus } from "@/domain/tasks/types";
 import type { RescueTeam } from "@/domain/teams/types";
 import { getValidTransitions } from "@/domain/tasks/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, Input, Textarea } from "@/components/ui";
 export type TaskDialog =
   "transition" | "assign" | "update" | "progress" | "cancel" | null;
 export function TaskActionDialogs({
@@ -19,7 +20,7 @@ export function TaskActionDialogs({
   if (!mode) return null;
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       {mode === "transition" && (
         <Transition task={task} onClose={onClose} />
       )}{" "}
@@ -100,14 +101,14 @@ function Transition({
       {options.length ? (
         <label className="field field-full">
           <span>Chuyển sang</span>
-          <select
+          <UiSelect
             value={next}
             onChange={(e) => setNext(e.target.value as TaskStatus)}
           >
             {options.map((v) => (
               <option key={v}>{v}</option>
             ))}
-          </select>
+          </UiSelect>
         </label>
       ) : (
         <p className="form-hint">
@@ -270,7 +271,7 @@ function FieldUpdate({
     >
       <label className="field field-full">
         <span>Nội dung cập nhật *</span>
-        <textarea
+        <Textarea
           autoFocus
           rows={4}
           value={message}
@@ -280,10 +281,10 @@ function FieldUpdate({
       </label>
       <label className="field field-full">
         <span>Vị trí</span>
-        <input value={location} onChange={(e) => setLocation(e.target.value)} />
+        <Input value={location} onChange={(e) => setLocation(e.target.value)} />
       </label>
       <label className="offline-check">
-        <input
+        <Input
           type="checkbox"
           checked={offline}
           onChange={(e) => setOffline(e.target.checked)}
@@ -325,7 +326,7 @@ function ProgressUpdate({
     >
       <div className="progress-picker">
         <strong>{value}%</strong>
-        <input
+        <Input
           type="range"
           min="0"
           max="100"

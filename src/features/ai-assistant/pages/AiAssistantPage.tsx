@@ -15,7 +15,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, PageSectionHeader, Textarea } from "@/components/ui";
 import type {
   AiActionProposal,
   AiActionResult,
@@ -128,36 +128,32 @@ export function AiAssistantPage({
   };
   return (
     <div className="workspace-content ai-workspace">
-      <header className="ai-page-header">
-        <div>
-          <span className="ai-eyebrow">
-            <Bot size={15} />
-            Hỗ trợ quyết định tác nghiệp
-          </span>
-          <h1>Trợ lý AI có căn cứ</h1>
-          <p>
-            Phân tích trạng thái chuẩn, nêu rõ bằng chứng và chỉ thực thi qua
-            hợp đồng nghiệp vụ sau xác nhận.
-          </p>
-        </div>
-        <div className="ai-header-state">
-          <ShieldCheck size={16} />
-          <span>
-            <small>Người dùng và phạm vi</small>
-            <b>
-              {store.currentUser?.displayName} ·{" "}
-              {store.currentUser?.geographicScope.name}
-            </b>
-          </span>
-        </div>
-      </header>
+      <PageSectionHeader
+        section="Hỗ trợ quyết định tác nghiệp"
+        title="Trợ lý điều hành VNDMS"
+        description="Trao đổi về tình hình tác nghiệp, kiểm tra bằng chứng và xác nhận hành động ngay trong một không gian hội thoại thống nhất."
+        icon={Bot}
+        className="ai-page-header"
+        actions={
+          <div className="ai-header-state">
+            <ShieldCheck size={16} />
+            <span>
+              <small>Người dùng và phạm vi</small>
+              <b>
+                {store.currentUser?.displayName} ·{" "}
+                {store.currentUser?.geographicScope.name}
+              </b>
+            </span>
+          </div>
+        }
+      />
       {store.simulation.status !== "Sẵn sàng" || store.simulation.tick > 0 ? (
         <div className="ai-simulation-notice">
           <Info size={16} />
           <div>
             <b>Dữ liệu hiện tại có trạng thái mô phỏng.</b>
             <span>
-              Đây là dữ liệu mô phỏng deterministic, không phải dữ liệu cảm biến
+              Đây là dữ liệu mô phỏng theo kịch bản xác định trước, không phải dữ liệu cảm biến
               thực tế.
             </span>
           </div>
@@ -172,7 +168,9 @@ export function AiAssistantPage({
             </span>
             {context?.entityId ? (
               <button onClick={() => ask(`Phân tích ${context.entityId}`)}>
-                {context.entityType} · {context.entityId}
+                {context.entityType
+                  ? evidenceEntityLabels[context.entityType]
+                  : "Dữ liệu tác nghiệp"} · {context.entityId}
                 <ChevronRight size={14} />
               </button>
             ) : (
@@ -187,8 +185,7 @@ export function AiAssistantPage({
               <div>
                 <h2>Bắt đầu đánh giá tác nghiệp</h2>
                 <p>
-                  Trợ lý chỉ sử dụng dữ liệu hiện có trong OperationalProvider.
-                  Thông tin thiếu sẽ được đánh dấu “Chưa xác định”.
+                  Trợ lý chỉ sử dụng dữ liệu nghiệp vụ hiện có trong phạm vi được phân quyền. Thông tin thiếu sẽ được đánh dấu “Chưa xác định”.
                 </p>
               </div>
               <div className="ai-starters">
@@ -309,8 +306,8 @@ export function AiAssistantPage({
                 <p>{result.message}</p>
                 <small>
                   {result.status === "executed"
-                    ? "Trạng thái chuẩn và timeline/audit đã được cập nhật qua mutation boundary hiện hữu."
-                    : "Không có mutation nào được xác nhận hoàn tất; cần đọc lại trạng thái trước khi thử lại."}
+                    ? "Dữ liệu nghiệp vụ và nhật ký xử lý đã được cập nhật qua quy trình an toàn."
+                    : "Không có thay đổi nào được hoàn tất; cần đọc lại trạng thái trước khi thử lại."}
                 </small>
               </div>
             </div>
@@ -324,7 +321,7 @@ export function AiAssistantPage({
           >
             <label htmlFor="ai-question">Câu hỏi tác nghiệp</label>
             <div>
-              <textarea
+              <Textarea
                 id="ai-question"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
@@ -373,7 +370,7 @@ export function AiAssistantPage({
           <div className="ai-limitations">
             <b>Giới hạn</b>
             <p>
-              Không suy đoán dữ liệu GPS, cảm biến, giao thông hoặc thông tin
+              Không suy đoán dữ liệu định vị, cảm biến, giao thông hoặc thông tin
               bên ngoài chưa có trong trạng thái chuẩn.
             </p>
           </div>
@@ -412,15 +409,15 @@ export function AiAssistantPage({
               <h3>Dữ liệu nền và nguồn lực ảnh hưởng</h3>
               <p>{pending.action.affectedResources.join(" · ")}</p>
               <small>
-                Actor: {store.currentUser?.displayName} ·{" "}
+                Người thực hiện: {store.currentUser?.displayName} ·{" "}
                 {store.currentUser?.geographicScope.name}
               </small>
             </section>
             <div className="ai-confirm-warning">
               <AlertTriangle size={16} />
               <span>
-                Trợ lý sẽ gọi mutation boundary hiện hữu. Hành động không thể
-                được thực hiện nếu quyền hoặc trạng thái đã thay đổi.
+                Trợ lý sẽ gửi yêu cầu qua quy trình cập nhật an toàn. Hành động
+                không thể thực hiện nếu quyền hoặc trạng thái đã thay đổi.
               </span>
             </div>
             <footer>
@@ -438,6 +435,61 @@ export function AiAssistantPage({
     </div>
   );
 }
+const evidenceFieldLabels: Record<string, string> = {
+  actionBasis: "Căn cứ đề xuất",
+  "status / tick": "Trạng thái và bước mô phỏng",
+  "severity / status": "Mức độ và trạng thái",
+  reference: "Tham chiếu nghiệp vụ",
+  severity: "Mức độ",
+  status: "Trạng thái",
+  "location.name": "Khu vực",
+  progress: "Tiến độ",
+  dueAt: "Hạn xử lý",
+  teamId: "Đội phụ trách",
+  availability: "Khả năng điều phối",
+  region: "Địa bàn",
+  capacity: "Sức chứa",
+  currentOccupancy: "Số người đang lưu trú",
+  reservedCapacity: "Số chỗ đã giữ",
+  availableCapacity: "Số chỗ còn lại",
+  priority: "Mức ưu tiên",
+  verificationStatus: "Tình trạng xác minh",
+  assignedTeamId: "Đội được phân công",
+  peopleAtRisk: "Số người gặp nguy hiểm",
+  affectedPeople: "Người bị ảnh hưởng",
+  evacuatedPopulation: "Số người đã sơ tán",
+  estimatedPopulation: "Số người dự kiến sơ tán",
+  "route.status": "Tình trạng tuyến",
+  quantityOnHand: "Số lượng hiện có",
+  quantityReserved: "Số lượng đã phân bổ",
+  reorderLevel: "Ngưỡng bổ sung",
+  currentStep: "Bước hiện tại",
+  spentBudget: "Kinh phí đã chi",
+  approvedBudget: "Kinh phí được duyệt",
+  count: "Số lượng",
+  "priority / assignment": "Ưu tiên và phân công",
+};
+
+const evidenceEntityLabels: Record<AiEvidence["entityType"], string> = {
+  Incident: "Sự cố",
+  Task: "Nhiệm vụ",
+  Team: "Đội cứu hộ",
+  Shelter: "Điểm sơ tán",
+  Evacuation: "Hoạt động sơ tán",
+  SOS: "Yêu cầu SOS",
+  ReliefRequest: "Yêu cầu cứu trợ",
+  Warehouse: "Kho vật tư",
+  Inventory: "Tồn kho",
+  Shipment: "Chuyến hàng",
+  Playbook: "Kế hoạch ứng phó",
+  PlaybookExecution: "Đợt thực hiện kế hoạch ứng phó",
+  DamageAssessment: "Đánh giá thiệt hại",
+  Recovery: "Dự án phục hồi",
+  Simulation: "Mô phỏng",
+  Analytics: "Số liệu phân tích",
+  OperationalAlert: "Cảnh báo tác nghiệp",
+};
+
 function EvidenceCard({
   evidence,
   navigate,
@@ -464,11 +516,11 @@ function EvidenceCard({
         <small>{evidence.id}</small>
       </div>
       <h3>
-        {evidence.entityType} · {evidence.entityId}
+        {evidenceEntityLabels[evidence.entityType]} · {evidence.entityId}
       </h3>
       <dl>
-        <dt>Trường</dt>
-        <dd>{evidence.field}</dd>
+        <dt>Thông tin</dt>
+        <dd>{evidenceFieldLabels[evidence.field] ?? "Dữ liệu liên quan"}</dd>
         <dt>Giá trị</dt>
         <dd>{evidence.value}</dd>
         <dt>Nguồn</dt>

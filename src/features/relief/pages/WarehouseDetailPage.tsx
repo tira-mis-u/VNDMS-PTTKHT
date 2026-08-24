@@ -1,3 +1,4 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useState } from "react";
 import {
   AlertTriangle,
@@ -26,7 +27,7 @@ const inventoryAlert = (item: InventoryItem) =>
       ? "Sắp hết"
       : "Bình thường";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, EmptyState, Progress } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, EmptyState, Progress, Input } from "@/components/ui";
 import { LogisticsMap } from "../components/LogisticsMap";
 const dt = (value: string) => {
   const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})(?: (\d{2}):(\d{2}))?/);
@@ -453,7 +454,7 @@ function StockDialog({
   };
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div className="incident-form-dialog relief-form-dialog small">
         <header>
           <h2>Điều chỉnh tồn kho</h2>
@@ -471,7 +472,7 @@ function StockDialog({
           </div>
           <label className="field field-full">
             <span>Tồn thực tế mới ({item.unit})</span>
-            <input
+            <Input
               type="number"
               min={item.quantityReserved}
               value={value}
@@ -521,7 +522,7 @@ function StatusDialog({
   };
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div className="incident-form-dialog relief-form-dialog small">
         <header>
           <h2>Trạng thái hoạt động kho</h2>
@@ -532,7 +533,7 @@ function StatusDialog({
         <div className="incident-form-body">
           <label className="field field-full">
             <span>Trạng thái</span>
-            <select
+            <UiSelect
               value={value}
               onChange={(event) =>
                 setValue(event.target.value as WarehouseStatus)
@@ -541,7 +542,7 @@ function StatusDialog({
               <option>Hoạt động</option>
               <option>Hạn chế</option>
               <option>Tạm đóng</option>
-            </select>
+            </UiSelect>
           </label>
           {value === "Tạm đóng" && active > 0 && (
             <div className="shortage-callout">

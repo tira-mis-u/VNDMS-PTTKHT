@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import type { OperationalSnapshot } from "@/application/operations/operationalSnapshot";
 import type {
   Incident,
   IncidentEvent,
@@ -87,6 +88,7 @@ import type {
 } from "@/domain/alerts/types";
 
 export interface OperationalStore {
+  metadata: OperationalSnapshot["metadata"];
   incidents: Incident[];
   events: IncidentEvent[];
   tasks: IncidentTask[];
@@ -115,7 +117,7 @@ export interface OperationalStore {
   alertInteractions: AlertInteraction[];
   /** Authorized Alert View — suy ra từ canonical state đã qua lọc quyền. */
   alerts: OperationalAlert[];
-  /** Timeline của các alert đang hiển thị với ngườii dùng hiện tại. */
+  /** Timeline của các alert đang hiển thị với người dùng hiện tại. */
   alertEvents: AlertEvent[];
   simulation: SimulationState;
   session: Session | null;

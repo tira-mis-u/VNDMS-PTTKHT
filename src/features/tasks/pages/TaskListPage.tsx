@@ -1,9 +1,10 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState, type FormEvent } from "react";
 import {
   CalendarDays,
-  ChevronDown,
   ChevronRight,
   Clock3,
+  ListTodo,
   MapPin,
   Plus,
   Search,
@@ -12,7 +13,7 @@ import {
 import type { TaskPriority } from "@/domain/tasks/types";
 import { isTaskOverdue, taskPriorityRank } from "@/domain/tasks/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, PageSectionHeader, Progress, Input, Textarea } from "@/components/ui";
 
 const tabs = [
   "Tất cả",
@@ -77,25 +78,20 @@ export function TaskListPage({
   );
   return (
     <div className="workspace-content tasks-page">
-      <div className="page-header tasks-list-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Ứng phó</span>
-            <ChevronRight size={13} />
-            <b>Nhiệm vụ</b>
-          </div>
-          <h1>Nhiệm vụ</h1>
-          <p>
-            Quản lý, giao việc và theo dõi tiến độ tác chiến tại hiện trường
-          </p>
-        </div>
-        {can("task_create") && (
-          <Button onClick={() => setOpen(true)}>
-            <Plus size={16} />
-            Tạo nhiệm vụ
-          </Button>
-        )}
-      </div>
+      <PageSectionHeader
+        section="Ứng phó"
+        title="Nhiệm vụ"
+        description="Quản lý, giao việc và theo dõi tiến độ tác chiến tại hiện trường."
+        icon={ListTodo}
+        actions={
+          can("task_create") ? (
+            <Button onClick={() => setOpen(true)}>
+              <Plus size={16} />
+              Tạo nhiệm vụ
+            </Button>
+          ) : undefined
+        }
+      />
       <div className="task-tabs">
         {tabs.map((item) => (
           <button
@@ -110,9 +106,9 @@ export function TaskListPage({
       </div>
       <section className="task-worklist">
         <div className="task-filters">
-          <label className="incident-search">
+          <label className="ui-search incident-search">
             <Search size={15} />
-            <input
+            <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm mã, tên nhiệm vụ hoặc khu vực…"
@@ -155,11 +151,10 @@ export function TaskListPage({
               "Ba Đình",
             ]}
           />
-          <button className="date-filter">
+          <span className="filter-chip" aria-label="Phạm vi thời gian 24 giờ gần nhất">
             <CalendarDays size={14} />
             24 giờ gần nhất
-            <ChevronDown size={13} />
-          </button>
+          </span>
         </div>
         <div className="incident-result-bar">
           <span>
@@ -250,7 +245,7 @@ function TaskSelect({
 }) {
   return (
     <label className="filter-select">
-      <select
+      <UiSelect
         aria-label={options[0]}
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -258,8 +253,7 @@ function TaskSelect({
         {options.map((option) => (
           <option key={option}>{option}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }
@@ -306,7 +300,7 @@ function CreateTaskDialog({
   };
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <form className="incident-form-dialog" onSubmit={submit}>
         <header>
           <div>
@@ -320,7 +314,7 @@ function CreateTaskDialog({
         <div className="incident-form-body">
           <label className="field field-full">
             <span>Tên nhiệm vụ *</span>
-            <input
+            <Input
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -329,7 +323,7 @@ function CreateTaskDialog({
           </label>
           <label className="field">
             <span>Loại nhiệm vụ</span>
-            <select value={type} onChange={(e) => setType(e.target.value)}>
+            <UiSelect value={type} onChange={(e) => setType(e.target.value)}>
               {[
                 "Cứu hộ",
                 "Sơ tán",
@@ -341,11 +335,11 @@ function CreateTaskDialog({
               ].map((v) => (
                 <option key={v}>{v}</option>
               ))}
-            </select>
+            </UiSelect>
           </label>
           <label className="field">
             <span>Sự cố liên quan *</span>
-            <select
+            <UiSelect
               value={incidentId}
               onChange={(e) => {
                 setIncident(e.target.value);
@@ -360,11 +354,11 @@ function CreateTaskDialog({
                     {i.id} — {i.title}
                   </option>
                 ))}
-            </select>
+            </UiSelect>
           </label>
           <label className="field">
             <span>Mức ưu tiên</span>
-            <select
+            <UiSelect
               value={priority}
               onChange={(e) => setPriority(e.target.value as TaskPriority)}
             >
@@ -372,24 +366,24 @@ function CreateTaskDialog({
               <option>Cao</option>
               <option>Trung bình</option>
               <option>Thấp</option>
-            </select>
+            </UiSelect>
           </label>
           <label className="field">
             <span>Đội thực hiện</span>
-            <select value={teamId} onChange={(e) => setTeam(e.target.value)}>
+            <UiSelect value={teamId} onChange={(e) => setTeam(e.target.value)}>
               <option value="">Chưa giao</option>
               {teams.map((t) => (
                 <option value={t.id} key={t.id}>
                   {t.id} — {t.status}
                 </option>
               ))}
-            </select>
+            </UiSelect>
           </label>
           <label className="field field-full">
             <span>Địa điểm</span>
             <div className="input-with-icon">
               <MapPin size={14} />
-              <input
+              <Input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               />
@@ -397,11 +391,11 @@ function CreateTaskDialog({
           </label>
           <label className="field">
             <span>Hạn xử lý</span>
-            <input value={dueAt} onChange={(e) => setDue(e.target.value)} />
+            <Input value={dueAt} onChange={(e) => setDue(e.target.value)} />
           </label>
           <label className="field field-full">
             <span>Mô tả</span>
-            <textarea
+            <Textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}

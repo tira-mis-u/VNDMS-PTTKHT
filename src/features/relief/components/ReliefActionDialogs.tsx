@@ -1,3 +1,4 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import type {
@@ -13,7 +14,7 @@ import {
   getShipmentTransitions,
 } from "@/domain/relief/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Button } from "@/components/ui";
+import { DialogBackdrop, Button, Input, Textarea } from "@/components/ui";
 export type ReliefDialog =
   | "submit"
   | "review"
@@ -39,7 +40,7 @@ function Frame({
 }) {
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div className="incident-form-dialog relief-form-dialog">
         <header>
           <h2>{title}</h2>
@@ -231,7 +232,7 @@ function Approve({
                 Yêu cầu {item.quantityRequested} {item.unit}
               </small>
             </span>
-            <input
+            <Input
               type="number"
               min="0"
               max={item.quantityRequested}
@@ -293,7 +294,7 @@ function Reserve({
     >
       <label className="field field-full">
         <span>Kho cung ứng</span>
-        <select
+        <UiSelect
           value={id}
           onChange={(event) => {
             setId(event.target.value);
@@ -307,7 +308,7 @@ function Reserve({
                 {item.id} — {item.name}
               </option>
             ))}
-        </select>
+        </UiSelect>
       </label>
       <div className="allocation-editor">
         {request.items.map((requestItem) => {
@@ -329,7 +330,7 @@ function Reserve({
                   Còn cần {remaining} {requestItem.unit} · Kho có {available}
                 </small>
               </span>
-              <input
+              <Input
                 type="number"
                 min="0"
                 max={Math.min(remaining, available)}
@@ -406,7 +407,7 @@ function Dispatch({
       </div>
       <label className="field field-full">
         <span>Đội vận chuyển (không bắt buộc)</span>
-        <select
+        <UiSelect
           value={teamId}
           onChange={(event) => setTeam(event.target.value)}
         >
@@ -416,7 +417,7 @@ function Dispatch({
               {team.id} — {team.name} · {team.distance}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <ErrorText value={error} />
     </Frame>
@@ -461,22 +462,22 @@ function ShipmentUpdate({
     >
       <label className="field">
         <span>Trạng thái hiện tại</span>
-        <input value={shipment.status} disabled />
+        <Input value={shipment.status} disabled />
       </label>
       <label className="field">
         <span>Chuyển sang</span>
-        <select
+        <UiSelect
           value={status}
           onChange={(event) => setStatus(event.target.value as ShipmentStatus)}
         >
           {options.map((item) => (
             <option key={item}>{item}</option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field field-full">
         <span>Ghi chú vận chuyển</span>
-        <textarea
+        <Textarea
           rows={3}
           value={note}
           onChange={(event) => setNote(event.target.value)}
@@ -525,18 +526,18 @@ function Receipt({
     >
       <label className="field">
         <span>Người nhận</span>
-        <input
+        <Input
           value={receiver}
           onChange={(event) => setReceiver(event.target.value)}
         />
       </label>
       <label className="field">
         <span>Vai trò</span>
-        <input value={role} onChange={(event) => setRole(event.target.value)} />
+        <Input value={role} onChange={(event) => setRole(event.target.value)} />
       </label>
       <label className="field field-full">
         <span>Tình trạng hàng</span>
-        <textarea
+        <Textarea
           rows={3}
           value={note}
           onChange={(event) => setNote(event.target.value)}

@@ -1,3 +1,4 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useEffect, useState, type ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, ChevronRight, LifeBuoy, X } from "lucide-react";
 import { roleLabels } from "@/domain/auth/labels";
@@ -29,7 +30,7 @@ import {
 } from "@/application/command-center/commandCenterActions";
 import { alertSeverityLabels, alertSeverityTones } from "@/domain/alerts/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, EmptyState } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, EmptyState, Input, Textarea } from "@/components/ui";
 
 export function ActionDialog({
   action,
@@ -84,11 +85,7 @@ function Frame({
   }, [onClose]);
   return (
     <>
-      <button
-        className="dialog-backdrop"
-        onClick={onClose}
-        aria-label="Đóng hộp thoại"
-      />
+      <DialogBackdrop onClick={onClose} />
       <div
         className="incident-form-dialog shelter-form-dialog"
         role="dialog"
@@ -143,7 +140,7 @@ function ActionMeta({
   return (
     <dl className="action-dialog-meta">
       <div>
-        <dt>Actor</dt>
+        <dt>Người thực hiện</dt>
         <dd>
           {user ? `${user.displayName} (${roleLabels[user.role]})` : "—"}
         </dd>
@@ -159,7 +156,7 @@ function ActionMeta({
         </div>
       )}
       <div>
-        <dt>Lệnh canonical</dt>
+        <dt>Lệnh nghiệp vụ chính thức</dt>
         <dd>
           <code>{command}</code> · qua OperationalMutationBoundary
         </dd>
@@ -207,9 +204,9 @@ function OutcomeView({
         <CheckCircle2 size={26} />
         <p>{outcome.message}</p>
         <small>
-          Thay đổi đã commit vào canonical state qua <code>{command}</code>;
-          audit/timeline ghi nhận theo contract hiện hữu và mọi projection
-          (queue, timeline, bản đồ, cảnh báo) tự cập nhật.
+          Thay đổi đã được ghi vào dữ liệu nghiệp vụ chính thức qua <code>{command}</code>;
+          nhật ký được lưu theo quy trình hiện hữu và mọi màn hình liên quan
+          tự động cập nhật.
         </small>
       </div>
     </Frame>
@@ -263,7 +260,7 @@ function CreateIncidentAction({
       setError(
         reason instanceof Error
           ? reason.message
-          : "Không thể tạo sự cố — thao tác đã được rollback, không state nào bị thay đổi.",
+          : "Không thể tạo sự cố. Hệ thống đã hủy thao tác và giữ nguyên dữ liệu nghiệp vụ.",
       );
     }
   };
@@ -295,7 +292,7 @@ function CreateIncidentAction({
         <span>
           Đối tượng — tên sự cố <b>*</b>
         </span>
-        <input
+        <Input
           autoFocus
           value={title}
           onChange={(event) => setTitle(event.target.value)}
@@ -304,15 +301,15 @@ function CreateIncidentAction({
       </label>
       <label className="field">
         <span>Loại thiên tai</span>
-        <select value={type} onChange={(event) => setType(event.target.value)}>
+        <UiSelect value={type} onChange={(event) => setType(event.target.value)}>
           {incidentTypeOptions.map((option) => (
             <option key={option}>{option}</option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Mức độ ban đầu</span>
-        <select
+        <UiSelect
           value={severity}
           onChange={(event) =>
             setSeverity(event.target.value as IncidentSeverity)
@@ -321,13 +318,13 @@ function CreateIncidentAction({
           {incidentSeverityOptions.map((option) => (
             <option key={option}>{option}</option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field field-full">
         <span>
           Khu vực / phạm vi địa bàn <b>*</b>
         </span>
-        <input
+        <Input
           value={area}
           onChange={(event) => setArea(event.target.value)}
           placeholder="Ví dụ: Tứ Liên, Tây Hồ, Hà Nội"
@@ -335,7 +332,7 @@ function CreateIncidentAction({
       </label>
       <label className="field field-full">
         <span>Thông tin tiếp nhận ban đầu</span>
-        <textarea
+        <Textarea
           rows={3}
           value={description}
           onChange={(event) => setDescription(event.target.value)}
@@ -426,7 +423,7 @@ function CreateTaskAction({
       setError(
         reason instanceof Error
           ? reason.message
-          : "Không thể giao nhiệm vụ — thao tác đã được rollback, không state nào bị thay đổi.",
+          : "Không thể giao nhiệm vụ. Hệ thống đã hủy thao tác và giữ nguyên dữ liệu nghiệp vụ.",
       );
     }
   };
@@ -460,7 +457,7 @@ function CreateTaskAction({
         <span>
           Đối tượng — sự cố liên quan <b>*</b>
         </span>
-        <select
+        <UiSelect
           value={incidentId}
           onChange={(event) => setIncidentId(event.target.value)}
         >
@@ -469,7 +466,7 @@ function CreateTaskAction({
               {item.id} — {item.title} ({item.status})
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       {incident && (
         <div className="action-dialog-context" role="note">
@@ -482,7 +479,7 @@ function CreateTaskAction({
         <span>
           Tên nhiệm vụ <b>*</b>
         </span>
-        <input
+        <Input
           autoFocus
           value={title}
           onChange={(event) => setTitle(event.target.value)}
@@ -491,43 +488,43 @@ function CreateTaskAction({
       </label>
       <label className="field">
         <span>Loại nhiệm vụ</span>
-        <select value={type} onChange={(event) => setType(event.target.value)}>
+        <UiSelect value={type} onChange={(event) => setType(event.target.value)}>
           {taskTypeOptions.map((option) => (
             <option key={option}>{option}</option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Mức ưu tiên</span>
-        <select
+        <UiSelect
           value={priority}
           onChange={(event) => setPriority(event.target.value)}
         >
           {taskPriorityOptions.map((option) => (
             <option key={option}>{option}</option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Đội phụ trách (tùy chọn)</span>
-        <select value={teamId} onChange={(event) => setTeamId(event.target.value)}>
+        <UiSelect value={teamId} onChange={(event) => setTeamId(event.target.value)}>
           <option value="">Chờ giao sau</option>
           {teams.map((team) => (
             <option key={team.id} value={team.id}>
               {team.id} — {team.name}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>
-          Thờii hạn hoàn thành <b>*</b>
+          Thời hạn hoàn thành <b>*</b>
         </span>
-        <input value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
+        <Input value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
       </label>
       <label className="field field-full">
         <span>Mô tả nhiệm vụ</span>
-        <textarea
+        <Textarea
           rows={3}
           value={description}
           onChange={(event) => setDescription(event.target.value)}
@@ -575,7 +572,7 @@ function AcknowledgeAlertAction({ onClose }: { onClose: () => void }) {
       >
         <EmptyState
           title="Không có cảnh báo chờ xác nhận"
-          description="Cảnh báo tác nghiệp được suy ra từ canonical state; hiện không có cảnh báo nào yêu cầu xác nhận tiếp nhận trong phạm vi phân quyền. Hệ thống không có kênh phát/broadcast cảnh báo thủ công."
+          description="Cảnh báo tác nghiệp được suy ra từ dữ liệu nghiệp vụ; hiện không có cảnh báo nào yêu cầu xác nhận tiếp nhận trong phạm vi phân quyền. Hệ thống không phát cảnh báo thủ công."
         />
       </Frame>
     );
@@ -599,7 +596,7 @@ function AcknowledgeAlertAction({ onClose }: { onClose: () => void }) {
       setError(
         reason instanceof Error
           ? reason.message
-          : "Không thể xác nhận cảnh báo — thao tác đã được rollback.",
+          : "Không thể xác nhận cảnh báo. Hệ thống đã hủy thao tác và giữ nguyên dữ liệu nghiệp vụ.",
       );
     }
   };
@@ -631,13 +628,13 @@ function AcknowledgeAlertAction({ onClose }: { onClose: () => void }) {
         <span>
           Đối tượng — cảnh báo chờ xác nhận <b>*</b>
         </span>
-        <select value={alertKey} onChange={(event) => setAlertKey(event.target.value)}>
+        <UiSelect value={alertKey} onChange={(event) => setAlertKey(event.target.value)}>
           {candidates.map((item) => (
             <option key={item.key} value={item.key}>
               [{alertSeverityLabels[item.severity]}] {item.title}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       {alert && (
         <div className="action-dialog-context action-dialog-context-alert" role="note">
@@ -747,7 +744,7 @@ function DispatchTeamAction({
       setError(
         reason instanceof Error
           ? reason.message
-          : "Không thể thực hiện — thao tác đã được rollback, không state nào bị thay đổi.",
+          : "Không thể thực hiện. Hệ thống đã hủy thao tác và giữ nguyên dữ liệu nghiệp vụ.",
       );
     }
   };
@@ -781,7 +778,7 @@ function DispatchTeamAction({
     >
       <label className="field field-full">
         <span>Hành động</span>
-        <select
+        <UiSelect
           value={mode}
           onChange={(event) => setMode(event.target.value as DispatchMode)}
         >
@@ -790,7 +787,7 @@ function DispatchTeamAction({
               {dispatchModeLabels[item]}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       {mode === "dispatch" &&
         (!incidents.length || !teams.length ? (
@@ -812,7 +809,7 @@ function DispatchTeamAction({
               <span>
                 Đối tượng — sự cố cần điều phối <b>*</b>
               </span>
-              <select
+              <UiSelect
                 value={incidentId}
                 onChange={(event) => setIncidentId(event.target.value)}
               >
@@ -822,7 +819,7 @@ function DispatchTeamAction({
                     {item.assignedTeamId ?? "chưa có"})
                   </option>
                 ))}
-              </select>
+              </UiSelect>
             </label>
             {incident && (
               <div className="action-dialog-context" role="note">
@@ -834,17 +831,17 @@ function DispatchTeamAction({
               <span>
                 Đội được điều phối <b>*</b>
               </span>
-              <select
+              <UiSelect
                 value={teamId}
                 onChange={(event) => setTeamId(event.target.value)}
               >
                 {teams.map((team) => (
                   <option key={team.id} value={team.id}>
-                    {team.id} — {team.name} ({team.members} ngườii ·{" "}
+                    {team.id} — {team.name} ({team.members} người ·{" "}
                     {team.region})
                   </option>
                 ))}
-              </select>
+              </UiSelect>
             </label>
             <ActionMeta
               command="dispatchTeam"
@@ -864,7 +861,7 @@ function DispatchTeamAction({
               <span>
                 Đối tượng — đội đang giữ nhiệm vụ <b>*</b>
               </span>
-              <select
+              <UiSelect
                 value={recallTeamId}
                 onChange={(event) => setRecallTeamId(event.target.value)}
               >
@@ -874,7 +871,7 @@ function DispatchTeamAction({
                     {item.team.currentTask})
                   </option>
                 ))}
-              </select>
+              </UiSelect>
             </label>
             {recall && (
               <div className="action-dialog-context" role="note">
@@ -995,7 +992,7 @@ function SosTriageAction({
       setError(
         reason instanceof Error
           ? reason.message
-          : "Không thể xử lý SOS — thao tác đã được rollback, không state nào bị thay đổi.",
+          : "Không thể xử lý SOS. Hệ thống đã hủy thao tác và giữ nguyên dữ liệu nghiệp vụ.",
       );
     }
   };
@@ -1027,24 +1024,24 @@ function SosTriageAction({
         <span>
           Đối tượng — yêu cầu SOS <b>*</b>
         </span>
-        <select value={sosId} onChange={(event) => setSosId(event.target.value)}>
+        <UiSelect value={sosId} onChange={(event) => setSosId(event.target.value)}>
           {candidates.map((item) => (
             <option key={item.id} value={item.id}>
               {item.id} — {item.priority} · {item.location.name}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       {sos && (
         <div className="action-dialog-context" role="note">
           Trạng thái hiện tại: <b>{sos.status}</b> · xác minh{" "}
-          <b>{sos.verificationStatus}</b> · {sos.peopleAtRisk} ngườii gặp nguy
+          <b>{sos.verificationStatus}</b> · {sos.peopleAtRisk} người gặp nguy
           hiểm · đội <b>{sos.assignedTeamId ?? "chưa giao"}</b>
         </div>
       )}
       <label className="field field-full">
         <span>Hành động xử lý</span>
-        <select
+        <UiSelect
           value={mode}
           onChange={(event) => setMode(event.target.value as SosTriageMode)}
         >
@@ -1053,37 +1050,37 @@ function SosTriageAction({
               {sosTriageModeLabels[item]}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       {mode === "priority" && (
         <label className="field field-full">
           <span>Mức ưu tiên mới</span>
-          <select
+          <UiSelect
             value={priority}
             onChange={(event) => setPriority(event.target.value as SosPriority)}
           >
             {sosPriorityOptions.map((option) => (
               <option key={option}>{option}</option>
             ))}
-          </select>
+          </UiSelect>
         </label>
       )}
       {mode === "rescue" &&
         (teams.length ? (
           <label className="field field-full">
             <span>Đội cứu hộ được điều</span>
-            <select value={teamId} onChange={(event) => setTeamId(event.target.value)}>
+            <UiSelect value={teamId} onChange={(event) => setTeamId(event.target.value)}>
               {teams.map((team) => (
                 <option key={team.id} value={team.id}>
                   {team.id} — {team.name}
                 </option>
               ))}
-            </select>
+            </UiSelect>
           </label>
         ) : (
           <div className="action-dialog-context" role="note">
             <LifeBuoy size={14} /> Không có đội nào sẵn sàng trong phạm vi hiện
-            tại — hãy chọn hành động khác hoặc kiểm tra module Đội cứu hộ.
+            tại — hãy chọn hành động khác hoặc kiểm tra phân hệ Đội cứu hộ.
           </div>
         ))}
       <ActionMeta

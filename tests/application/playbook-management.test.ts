@@ -163,7 +163,7 @@ test("skip optional không cần override; required cần permission override", 
   );
   assert.throws(
     () => skipPlaybookStep(playbook, execution, "PBS-08", "A", false, "x"),
-    /override/,
+    /phê duyệt ngoại lệ/,
   );
 });
 test("verification evidence và required completion được enforcement", () => {

@@ -116,7 +116,7 @@ export function authorizeResources(
         resourceType: resource.type,
         resourceId: resource.id,
         allowed: false,
-        reason: `Tài nguyên ${resource.type} ${resource.id} nằm ngoài phạm vi địa lý được phân công.`,
+        reason: `Tài nguyên ${resource.id} nằm ngoài phạm vi địa lý được phân công.`,
       };
     const reason = ownershipReason(user, resource);
     if (reason)
@@ -133,8 +133,8 @@ export function authorizeResources(
     ...base,
     allowed: true,
     reason: request.sensitiveOperation
-      ? `Được phép thực hiện ${request.sensitiveOperation} theo vai trò, phạm vi và ownership hiện tại.`
-      : "Được phép theo vai trò, phạm vi và ownership hiện tại.",
+      ? `Được phép thực hiện ${request.sensitiveOperation} theo vai trò và phạm vi quản lý hiện tại.`
+      : "Được phép theo vai trò và phạm vi quản lý hiện tại.",
   };
 }
 

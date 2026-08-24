@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Clock3,
   MapPin,
+  MapPinned,
   MoreHorizontal,
   Navigation,
   Plus,
@@ -14,6 +15,7 @@ import {
 import { getValidTransitions, isTaskOverdue } from "@/domain/tasks/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
+import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   TaskActionDialogs,
   type TaskDialog,
@@ -103,6 +105,13 @@ export function TaskDetailPage({
             </p>
           </div>
           <div className="incident-header-actions">
+            <Button
+              variant="secondary"
+              onClick={() => navigate(operationalMapFocusPath(task.id))}
+            >
+              <MapPinned size={15} />
+              Xem trên bản đồ
+            </Button>
             <Button
               variant="secondary"
               onClick={() =>
@@ -287,7 +296,7 @@ export function TaskDetailPage({
             </button>
           </section>
           <section className="incident-detail-section">
-            <SectionHeader title="Timeline nhiệm vụ" />
+            <SectionHeader title="Nhật ký nhiệm vụ" />
             <div className="incident-timeline task-timeline">
               {incidentEvents.map((event) => (
                 <article key={event.id}>

@@ -19,6 +19,7 @@ function marker(
 ) {
   const el = document.createElement("div");
   el.className = `shelter-map-marker ${className}`;
+  el.setAttribute("role", "img");
   el.setAttribute("aria-label", label);
   el.innerHTML = "<span></span>";
   new Marker({ element: el }).setLngLat(coordinates).addTo(map);
@@ -158,15 +159,16 @@ export default function ShelterOperationalMap({
         </div>
       )}
       <div className="map-toolbar">
-        <button onClick={() => zoom(1)}>
+        <button onClick={() => zoom(1)} aria-label="Phóng to bản đồ">
           <Plus size={16} />
         </button>
         <span />
-        <button onClick={() => zoom(-1)}>
+        <button onClick={() => zoom(-1)} aria-label="Thu nhỏ bản đồ">
           <Minus size={16} />
         </button>
         <span />
         <button
+          aria-label="Đưa bản đồ về vị trí điểm sơ tán"
           onClick={() =>
             mapRef.current?.flyTo({ center: shelter.coordinates, zoom: 13 })
           }

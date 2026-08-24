@@ -1,3 +1,4 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, MapPin, Radio, X } from "lucide-react";
 import type { TaskPriority } from "@/domain/tasks/types";
@@ -11,7 +12,7 @@ import {
   getAllowedTeamTransitions,
 } from "@/domain/teams/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Button } from "@/components/ui";
+import { DialogBackdrop, Button, Input, Textarea } from "@/components/ui";
 
 export type TeamDialog =
   | "dispatch"
@@ -33,11 +34,7 @@ export function TeamActionDialogs({
   if (!mode) return null;
   return (
     <>
-      <button
-        className="dialog-backdrop"
-        onClick={onClose}
-        aria-label="Đóng hộp thoại"
-      />
+      <DialogBackdrop onClick={onClose} />
       {mode === "dispatch" && <Dispatch team={team} onClose={onClose} />}{" "}
       {mode === "status" && <Status team={team} onClose={onClose} />}{" "}
       {mode === "location" && <Location team={team} onClose={onClose} />}{" "}
@@ -188,7 +185,7 @@ function Dispatch({
       </div>
       <label className="field">
         <span>Sự cố</span>
-        <select
+        <UiSelect
           value={incidentId}
           onChange={(event) => changeIncident(event.target.value)}
         >
@@ -197,11 +194,11 @@ function Dispatch({
               {incident.id} — {incident.title}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Nhiệm vụ</span>
-        <select
+        <UiSelect
           value={taskId}
           onChange={(event) => {
             setTask(event.target.value);
@@ -220,11 +217,11 @@ function Dispatch({
               {item.id} — {item.title}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Mức ưu tiên</span>
-        <select
+        <UiSelect
           value={priority}
           onChange={(event) => setPriority(event.target.value as TaskPriority)}
         >
@@ -232,13 +229,13 @@ function Dispatch({
           <option>Cao</option>
           <option>Trung bình</option>
           <option>Thấp</option>
-        </select>
+        </UiSelect>
       </label>
       <label className="field field-full">
         <span>Điểm đến</span>
         <div className="input-with-icon">
           <MapPin size={14} />
-          <input
+          <Input
             value={destination}
             onChange={(event) => setDestination(event.target.value)}
           />
@@ -246,7 +243,7 @@ function Dispatch({
       </label>
       <label className="field field-full">
         <span>Ghi chú điều phối</span>
-        <textarea
+        <Textarea
           rows={3}
           value={note}
           onChange={(event) => setNote(event.target.value)}
@@ -292,18 +289,18 @@ function Status({ team, onClose }: { team: RescueTeam; onClose: () => void }) {
     >
       <label className="field field-full">
         <span>Trạng thái hiện tại</span>
-        <input value={team.status} disabled />
+        <Input value={team.status} disabled />
       </label>
       <label className="field field-full">
         <span>Chuyển sang</span>
-        <select
+        <UiSelect
           value={status}
           onChange={(event) => setStatus(event.target.value as TeamStatus)}
         >
           {options.map((option) => (
             <option key={option}>{option}</option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <p className="form-hint">
         Quy tắc chuyển trạng thái được kiểm tra tại application/domain layer.
@@ -376,41 +373,41 @@ function Location({
     >
       <label className="field">
         <span>Vĩ độ</span>
-        <input
+        <Input
           value={latitude}
           onChange={(event) => setLat(event.target.value)}
         />
       </label>
       <label className="field">
         <span>Kinh độ</span>
-        <input
+        <Input
           value={longitude}
           onChange={(event) => setLng(event.target.value)}
         />
       </label>
       <label className="field">
         <span>Độ chính xác (m)</span>
-        <input
+        <Input
           value={accuracy}
           onChange={(event) => setAccuracy(event.target.value)}
         />
       </label>
       <label className="field">
         <span>Nguồn</span>
-        <select
+        <UiSelect
           value={source}
           onChange={(event) =>
             setSource(event.target.value as TeamLocation["source"])
           }
         >
-          <option>GPS</option>
+          <option>Thiết bị định vị</option>
           <option>Thiết bị di động</option>
           <option>Điều hành viên</option>
-        </select>
+        </UiSelect>
       </label>
       <p className="form-hint">
-        Đây là bản cập nhật thủ công cho dữ liệu demo, không mô phỏng luồng GPS
-        thời gian thực.
+        Đây là bản cập nhật thủ công cho dữ liệu thử nghiệm, không mô phỏng
+        luồng định vị trực tiếp.
       </p>
       <ErrorMessage message={error} />
     </Frame>
@@ -464,49 +461,49 @@ function EditProfile({
     >
       <label className="field">
         <span>Tên đội</span>
-        <input
+        <Input
           value={form.name}
           onChange={(event) => field("name", event.target.value)}
         />
       </label>
       <label className="field">
         <span>Loại đội</span>
-        <input
+        <Input
           value={form.type}
           onChange={(event) => field("type", event.target.value)}
         />
       </label>
       <label className="field">
         <span>Đội trưởng</span>
-        <input
+        <Input
           value={form.leader}
           onChange={(event) => field("leader", event.target.value)}
         />
       </label>
       <label className="field">
         <span>Liên hệ</span>
-        <input
+        <Input
           value={form.contact}
           onChange={(event) => field("contact", event.target.value)}
         />
       </label>
       <label className="field field-full">
         <span>Đơn vị / khu vực đóng quân</span>
-        <input
+        <Input
           value={form.region}
           onChange={(event) => field("region", event.target.value)}
         />
       </label>
       <label className="field field-full">
         <span>Phạm vi hoạt động</span>
-        <input
+        <Input
           value={form.operatingScope}
           onChange={(event) => field("operatingScope", event.target.value)}
         />
       </label>
       <label className="field field-full">
         <span>Ghi chú vận hành</span>
-        <textarea
+        <Textarea
           rows={3}
           value={form.notes}
           onChange={(event) => field("notes", event.target.value)}
@@ -561,7 +558,7 @@ function Capabilities({
       <div className="team-capability-editor">
         {capabilityOptions.map((item) => (
           <label key={item}>
-            <input
+            <Input
               type="checkbox"
               checked={selected.includes(item)}
               onChange={() => toggle(item)}

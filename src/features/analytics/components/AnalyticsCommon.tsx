@@ -1,3 +1,5 @@
+import { PageSectionHeader, Input } from "@/components/ui";
+import { Select as UiSelect } from "@/components/ui/Select";
 import type { ReactNode } from "react";
 import {
   BarChart3,
@@ -42,16 +44,14 @@ export function AnalyticsHeader({
 }) {
   return (
     <>
-      <div className="analytics-page-head">
-        <div>
-          <span className="analytics-eyebrow">
-            <BarChart3 size={14} /> Phân tích & báo cáo tác nghiệp
-          </span>
-          <h1>{title}</h1>
-          <p>{description}</p>
-        </div>
-        {actions}
-      </div>
+      <PageSectionHeader
+        section="Phân tích & báo cáo tác nghiệp"
+        title={title}
+        description={description}
+        icon={BarChart3}
+        actions={actions}
+        className="analytics-page-head"
+      />
       <nav className="analytics-tabs" aria-label="Phân hệ phân tích">
         {analyticsTabs.map((item) => (
           <button
@@ -71,41 +71,54 @@ export function AnalyticsFilters({
   value,
   onChange,
   incidents,
+  asOf,
+  source,
   showIncident = true,
 }: {
   value: AnalyticsPeriod;
   onChange: (value: AnalyticsPeriod) => void;
   incidents: Array<{ id: string; code: string; title: string }>;
+  asOf: string;
+  source: string;
   showIncident?: boolean;
 }) {
   return (
+    <>
     <div className="analytics-filters">
       <label>
         <CalendarDays size={14} />
         <span>Từ ngày</span>
-        <input
-          type="date"
-          value={toInput(value.from)}
+        <Input
+          type="text"
+          inputMode="numeric"
+          placeholder="dd/mm/yyyy"
+          aria-label="Từ ngày, định dạng ngày tháng năm"
+          pattern="\d{2}/\d{2}/\d{4}"
+          value={value.from ?? ""}
           onChange={(event) =>
-            onChange({ ...value, from: fromInput(event.target.value) })
+            onChange({ ...value, from: event.target.value || undefined })
           }
         />
       </label>
       <label>
         <CalendarDays size={14} />
         <span>Đến ngày</span>
-        <input
-          type="date"
-          value={toInput(value.to)}
+        <Input
+          type="text"
+          inputMode="numeric"
+          placeholder="dd/mm/yyyy"
+          aria-label="Đến ngày, định dạng ngày tháng năm"
+          pattern="\d{2}/\d{2}/\d{4}"
+          value={value.to ?? ""}
           onChange={(event) =>
-            onChange({ ...value, to: fromInput(event.target.value) })
+            onChange({ ...value, to: event.target.value || undefined })
           }
         />
       </label>
       <label>
         <MapPinned size={14} />
         <span>Phạm vi</span>
-        <select
+        <UiSelect
           value={value.geographicScope ?? "Toàn bộ Hà Nội"}
           onChange={(event) =>
             onChange({ ...value, geographicScope: event.target.value })
@@ -116,12 +129,12 @@ export function AnalyticsFilters({
           <option>Hoàn Kiếm, Hà Nội</option>
           <option>Long Biên, Hà Nội</option>
           <option>Ba Đình, Hà Nội</option>
-        </select>
+        </UiSelect>
       </label>
       {showIncident && (
         <label>
           <span>Sự cố</span>
-          <select
+          <UiSelect
             value={value.incidentId ?? ""}
             onChange={(event) =>
               onChange({
@@ -136,21 +149,20 @@ export function AnalyticsFilters({
                 {item.code} — {item.title}
               </option>
             ))}
-          </select>
+          </UiSelect>
         </label>
       )}
     </div>
+    <p className="analytics-provenance" role="note">
+      <CalendarDays size={14} aria-hidden="true" />
+      Mốc dữ liệu: <b>{asOf}</b>
+      <span aria-hidden="true">·</span>
+      Nguồn: <b>{source}</b>
+      <span aria-hidden="true">·</span>
+      Không phải dữ liệu thời gian thực.
+    </p>
+    </>
   );
-}
-function toInput(value?: string) {
-  if (!value) return "";
-  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
-}
-function fromInput(value: string) {
-  if (!value) return undefined;
-  const [y, m, d] = value.split("-");
-  return `${d}/${m}/${y}`;
 }
 export function Basis({ value }: { value: MetricBasis }) {
   return (

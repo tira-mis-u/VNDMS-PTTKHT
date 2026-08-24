@@ -1,9 +1,10 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import type { SosPriority, SosRequest } from "@/domain/sos/types";
 import { calculateShelterCapacity } from "@/domain/shelters/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Button } from "@/components/ui";
+import { DialogBackdrop, Button, Input, Textarea } from "@/components/ui";
 export type SosDialog =
   | "verify"
   | "reject"
@@ -31,7 +32,7 @@ function Frame({
 }) {
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div className="incident-form-dialog sos-form-dialog">
         <header>
           <h2>{title}</h2>
@@ -231,7 +232,7 @@ function IncidentLink({
             variant="secondary"
             onClick={() => run(() => createIncidentFromSos(sos.id))}
           >
-            Tạo Incident từ SOS
+            Tạo sự cố từ SOS
           </Button>
           <Button
             disabled={!id}
@@ -244,13 +245,13 @@ function IncidentLink({
     >
       <label className="field field-full">
         <span>Sự cố hiện có</span>
-        <select value={id} onChange={(event) => setId(event.target.value)}>
+        <UiSelect value={id} onChange={(event) => setId(event.target.value)}>
           {open.map((incident) => (
             <option key={incident.id} value={incident.id}>
               {incident.id} — {incident.title}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <p className="form-hint">
         Tạo mới sẽ sao chép vị trí, dân số ảnh hưởng và mức độ nhưng vẫn giữ SOS
@@ -300,7 +301,7 @@ function TaskCreate({
       <div className="eligible-team-list">
         {eligible.map((team) => (
           <label key={team.id} className={id === team.id ? "selected" : ""}>
-            <input
+            <Input
               type="radio"
               name="team"
               value={team.id}
@@ -358,7 +359,7 @@ function Priority({
     >
       <label className="field field-full">
         <span>Mức ưu tiên</span>
-        <select
+        <UiSelect
           value={value}
           onChange={(event) => setValue(event.target.value as SosPriority)}
         >
@@ -366,10 +367,10 @@ function Priority({
           <option>P2 — Cao</option>
           <option>P3 — Trung bình</option>
           <option>P4 — Thấp</option>
-        </select>
+        </UiSelect>
       </label>
       <div className="triage-reasons">
-        <b>Lý do triage hiện tại</b>
+        <b>Lý do phân loại ưu tiên hiện tại</b>
         {sos.triageReasons.map((reason) => (
           <span key={reason}>{reason}</span>
         ))}
@@ -421,39 +422,39 @@ function Location({
     >
       <label className="field field-full">
         <span>Địa chỉ</span>
-        <input
+        <Input
           value={form.address}
           onChange={(event) => patch("address", event.target.value)}
         />
       </label>
       <label className="field">
         <span>Kinh độ</span>
-        <input
+        <Input
           value={form.longitude}
           onChange={(event) => patch("longitude", event.target.value)}
         />
       </label>
       <label className="field">
         <span>Vĩ độ</span>
-        <input
+        <Input
           value={form.latitude}
           onChange={(event) => patch("latitude", event.target.value)}
         />
       </label>
       <label className="field">
         <span>Tiếp cận</span>
-        <select
+        <UiSelect
           value={form.accessCondition}
           onChange={(event) => patch("accessCondition", event.target.value)}
         >
           <option>Tiếp cận bình thường</option>
           <option>Hạn chế đường bộ</option>
           <option>Bị cô lập</option>
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Độ sâu ngập</span>
-        <input
+        <Input
           value={form.floodDepth}
           onChange={(event) => patch("floodDepth", event.target.value)}
         />
@@ -495,7 +496,7 @@ function TextAction({
     >
       <label className="field field-full">
         <span>{label}</span>
-        <textarea
+        <Textarea
           rows={4}
           value={value}
           onChange={(event) => setValue(event.target.value)}
@@ -550,7 +551,7 @@ function ShelterRoute({
               key={shelter.id}
               className={id === shelter.id ? "selected" : ""}
             >
-              <input
+              <Input
                 type="radio"
                 checked={id === shelter.id}
                 onChange={() => setId(shelter.id)}

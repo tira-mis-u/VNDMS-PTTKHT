@@ -87,11 +87,11 @@ export interface DerivedAlert {
   ownerTeamId?: string | null;
   ownerWarehouseId?: string | null;
   requiresAcknowledgement: boolean;
-  /** Mốc thởi gian nghiệp vụ tạo ra điều kiện cảnh báo (deterministic). */
+  /** Mốc thời gian nghiệp vụ tạo ra điều kiện cảnh báo (deterministic). */
   detectedAt: string;
 }
 
-/** Cảnh báo đã resolve theo ngườii dùng hiện tại. */
+/** Cảnh báo đã resolve theo người dùng hiện tại. */
 export interface OperationalAlert extends DerivedAlert {
   status: AlertStatus;
   readAt: string | null;

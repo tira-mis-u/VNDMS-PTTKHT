@@ -1,17 +1,18 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   CalendarDays,
-  ChevronDown,
   ChevronRight,
   Filter,
   MapPin,
   Plus,
   Search,
+  Siren,
   X,
 } from "lucide-react";
 import type { IncidentSeverity } from "@/domain/incidents/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, PageSectionHeader, Progress, Input, Textarea } from "@/components/ui";
 
 const tabs = ["Tất cả", "Mới", "Đang xử lý", "Khẩn cấp", "Đã kiểm soát"];
 const severityTone = (severity: string) =>
@@ -72,23 +73,20 @@ export function IncidentListPage({
 
   return (
     <div className="workspace-content incidents-page">
-      <div className="page-header incidents-list-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Quản lý & điều hành</span>
-            <ChevronRight size={13} />
-            <b>Sự cố</b>
-          </div>
-          <h1>Sự cố</h1>
-          <p>Tiếp nhận, đánh giá và điều phối toàn bộ vòng đời xử lý sự cố</p>
-        </div>
-        {can("create") && (
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus size={16} />
-            Tạo sự cố
-          </Button>
-        )}
-      </div>
+      <PageSectionHeader
+        section="Quản lý và điều hành"
+        title="Sự cố"
+        description="Tiếp nhận, đánh giá và điều phối toàn bộ vòng đời xử lý sự cố."
+        icon={Siren}
+        actions={
+          can("create") ? (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus size={16} />
+              Tạo sự cố
+            </Button>
+          ) : undefined
+        }
+      />
       <div className="incident-tabs" aria-label="Lọc nhanh sự cố">
         {tabs.map((tab) => (
           <button
@@ -103,9 +101,9 @@ export function IncidentListPage({
       </div>
       <section className="incident-worklist">
         <div className="incident-filters">
-          <label className="incident-search">
+          <label className="ui-search incident-search">
             <Search size={15} />
-            <input
+            <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Tìm mã, tên sự cố hoặc khu vực…"
@@ -151,11 +149,10 @@ export function IncidentListPage({
             setValue={setTeam}
             options={["Tất cả đội", ...teams.map((item) => item.id)]}
           />
-          <button className="date-filter">
+          <span className="filter-chip" aria-label="Phạm vi thời gian 24 giờ gần nhất">
             <CalendarDays size={14} />
             24 giờ gần nhất
-            <ChevronDown size={13} />
-          </button>
+          </span>
         </div>
         <div className="incident-result-bar">
           <span>
@@ -251,7 +248,7 @@ function FilterSelect({
   return (
     <label className="filter-select">
       {icon}
-      <select
+      <UiSelect
         aria-label={options[0]}
         value={value}
         onChange={(event) => setValue(event.target.value)}
@@ -259,8 +256,7 @@ function FilterSelect({
         {options.map((option) => (
           <option key={option}>{option}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }
@@ -296,14 +292,20 @@ function CreateIncidentDialog({
   };
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} aria-label="Đóng" />
-      <form className="incident-form-dialog" onSubmit={submit}>
+      <DialogBackdrop onClick={onClose} />
+      <form
+        className="incident-form-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-incident-title"
+        onSubmit={submit}
+      >
         <header>
           <div>
             <small>Tiếp nhận sự cố</small>
-            <h2>Tạo sự cố mới</h2>
+            <h2 id="create-incident-title">Tạo sự cố mới</h2>
           </div>
-          <button type="button" onClick={onClose}>
+          <button type="button" onClick={onClose} aria-label="Đóng biểu mẫu tạo sự cố">
             <X size={18} />
           </button>
         </header>
@@ -312,7 +314,7 @@ function CreateIncidentDialog({
             <span>
               Tên sự cố <b>*</b>
             </span>
-            <input
+            <Input
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -321,16 +323,16 @@ function CreateIncidentDialog({
           </label>
           <label className="field">
             <span>Loại thiên tai</span>
-            <select value={type} onChange={(e) => setType(e.target.value)}>
+            <UiSelect value={type} onChange={(e) => setType(e.target.value)}>
               <option>Lũ, ngập lụt</option>
               <option>Ngập đô thị</option>
               <option>Sạt lở</option>
               <option>Giông lốc</option>
-            </select>
+            </UiSelect>
           </label>
           <label className="field">
             <span>Mức độ ban đầu</span>
-            <select
+            <UiSelect
               value={severity}
               onChange={(e) => setSeverity(e.target.value as IncidentSeverity)}
             >
@@ -338,18 +340,18 @@ function CreateIncidentDialog({
               <option>Cao</option>
               <option>Trung bình</option>
               <option>Thấp</option>
-            </select>
+            </UiSelect>
           </label>
           <label className="field field-full">
             <span>Khu vực</span>
-            <input
+            <Input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />
           </label>
           <label className="field field-full">
             <span>Mô tả ngắn</span>
-            <textarea
+            <Textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}

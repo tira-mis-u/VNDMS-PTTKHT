@@ -25,7 +25,7 @@ export function IncidentAnalyticsPage({
   const store = useOperationalState();
   const [filter, setFilter] = useState<AnalyticsPeriod>({
     geographicScope: "Toàn bộ Hà Nội",
-    referenceTime: "21/08/2026 10:45",
+    referenceTime: store.metadata.asOf,
   });
   const incident = useMemo(
     () => getIncidentAnalytics(store as AnalyticsData, filter),
@@ -41,19 +41,21 @@ export function IncidentAnalyticsPage({
         active="/analytics/incidents"
         navigate={navigate}
         title="Phân tích sự cố & đáp ứng"
-        description="Thời gian phản ứng được dẫn xuất từ dấu thời gian Incident, timeline và Task đã ghi nhận."
+        description="Thời gian phản ứng được tính từ mốc thời gian sự cố, nhật ký và nhiệm vụ đã ghi nhận."
       />
       <AnalyticsFilters
         value={filter}
         onChange={setFilter}
         incidents={store.incidents}
+        asOf={store.metadata.asOf}
+        source={store.metadata.source}
       />
       <div className="analytics-metric-grid compact">
         <MetricCard
           label="Dân số bị ảnh hưởng"
           value={incident.affectedPopulation}
           basis="Ghi nhận"
-          description="Tổng trên Incident trong phạm vi"
+          description="Tổng trên các sự cố trong phạm vi"
         />
         <MetricCard
           label="Đã sơ tán"
@@ -70,7 +72,7 @@ export function IncidentAnalyticsPage({
               : undefined
           }
           basis="Dẫn xuất"
-          description="Tạo Incident → event đánh giá/xác nhận"
+          description="Tạo sự cố → ghi nhận đánh giá hoặc xác nhận"
         />
         <MetricCard
           label="Điều phối trung bình"
@@ -86,7 +88,7 @@ export function IncidentAnalyticsPage({
           description="Đang mở quá ngưỡng 120 phút"
         />
         <MetricCard
-          label="Tỷ lệ Task hoàn thành"
+          label="Tỷ lệ nhiệm vụ hoàn thành"
           value={task.completionRate}
           unit="%"
           basis="Dẫn xuất"
@@ -106,7 +108,7 @@ export function IncidentAnalyticsPage({
       </div>
       <Section
         title="Thời gian xử lý sự cố"
-        description="Dấu 'Dẫn xuất' cho biết số liệu được tính từ timeline; dấu thời gian thiếu được hiển thị ‘—’."
+        description="Dấu 'Dẫn xuất' cho biết số liệu được tính từ nhật ký; dấu thời gian thiếu được hiển thị ‘—’."
         action={<Basis value="Dẫn xuất" />}
       >
         <div className="analytics-table-wrap">
@@ -157,7 +159,7 @@ export function IncidentAnalyticsPage({
       <div className="analytics-layout-2">
         <Section
           title="Khối lượng nhiệm vụ theo sự cố"
-          description="Drill-down về Incident canonical."
+          description="Mở chi tiết sự cố trong dữ liệu nghiệp vụ."
         >
           <div className="analytics-list-rows">
             {task.byIncident.map((item) => (
@@ -182,8 +184,8 @@ export function IncidentAnalyticsPage({
           </div>
         </Section>
         <Section
-          title="Phân bố tiến độ Task"
-          description="Giá trị progress ghi nhận trên Task canonical."
+          title="Phân bố tiến độ nhiệm vụ"
+          description="Giá trị tiến độ ghi nhận trên nhiệm vụ."
         >
           <Distribution rows={task.progressBands} />
           <div className="analytics-inline-facts">
@@ -209,8 +211,8 @@ export function IncidentAnalyticsPage({
           <div>
             <b>Lưu ý phương pháp</b>
             <p>
-              Ngưỡng quá hạn sự cố trong Analytics là quy ước báo cáo 120 phút,
-              không thay đổi lifecycle hay trạng thái Incident canonical.
+              Ngưỡng quá hạn sự cố trong phân tích là quy ước báo cáo 120 phút,
+              không thay đổi vòng đời hay trạng thái sự cố.
             </p>
           </div>
         </div>

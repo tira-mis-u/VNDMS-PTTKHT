@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Clock3,
   MapPin,
+  MapPinned,
   Navigation,
   Phone,
   Radio,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
+import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   TeamActionDialogs,
   type TeamDialog,
@@ -114,6 +116,13 @@ export function TeamDetailPage({
           <div className="incident-header-actions">
             <Button
               variant="secondary"
+              onClick={() => navigate(operationalMapFocusPath(team.id))}
+            >
+              <MapPinned size={15} />
+              Xem trên bản đồ
+            </Button>
+            <Button
+              variant="secondary"
               onClick={() =>
                 navigate(`/ai-assistant?context=Team&id=${team.id}`)
               }
@@ -160,7 +169,7 @@ export function TeamDetailPage({
           <button>Năng lực & phương tiện</button>
           <button>Vị trí</button>
           <button>
-            Timeline <span>{events.length}</span>
+            Nhật ký <span>{events.length}</span>
           </button>
         </nav>
       </header>
@@ -451,10 +460,10 @@ export function TeamDetailPage({
           <section className="incident-detail-section">
             <SectionHeader
               title="Vị trí tác nghiệp"
-              description="Bản ghi GPS gần nhất và các đối tượng liên quan"
+              description="Bản ghi định vị gần nhất và các đối tượng liên quan"
               action="Cập nhật vị trí"
             />
-            <div className="gps-status-bar">
+            <div className="gps-status-bar" tabIndex={0} aria-label="Trạng thái định vị của đội">
               <div>
                 <Radio size={15} />
                 <span>
@@ -498,7 +507,7 @@ export function TeamDetailPage({
           </section>
           <section className="incident-detail-section">
             <SectionHeader
-              title="Timeline hoạt động"
+              title="Nhật ký hoạt động"
               description="Điều phối, trạng thái, vị trí và cập nhật hiện trường"
             />
             <div className="incident-timeline team-timeline">

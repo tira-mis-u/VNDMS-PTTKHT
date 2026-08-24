@@ -240,8 +240,10 @@ export interface OperationalReport {
   recoveryStatus: string[];
   audit: {
     generatedAt: string;
+    generatedById: string;
     generatedBy: string;
     source: string;
     dataPolicy: string;
+    invalidTimestamps: Array<{ entityId: string; field: string; value: string }>;
   };
 }

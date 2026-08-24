@@ -60,7 +60,7 @@ export function assertIncidentCanClose(
   if (openRelief.length)
     blockers.push(`${openRelief.length} yêu cầu cứu trợ chưa kết thúc`);
   if (openPlaybooks.length)
-    blockers.push(`${openPlaybooks.length} playbook execution đang mở`);
+    blockers.push(`${openPlaybooks.length} đợt thực hiện kế hoạch ứng phó đang mở`);
 
   if (blockers.length)
     throw new Error(`Không thể đóng sự cố: ${blockers.join(", ")}.`);

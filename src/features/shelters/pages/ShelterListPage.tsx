@@ -1,9 +1,9 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowUpDown,
   Building2,
-  ChevronDown,
   ChevronRight,
   MapPin,
   Search,
@@ -16,7 +16,7 @@ import {
   type ShelterFilters,
 } from "@/application/shelters/shelterQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Progress } from "@/components/ui";
+import { Badge, PageSectionHeader, Progress, Input } from "@/components/ui";
 const tone = (status: string) =>
   status === "Quá tải" || status === "Không thể tiếp cận"
     ? "red"
@@ -38,7 +38,7 @@ function Select({
 }) {
   return (
     <label className="filter-select">
-      <select
+      <UiSelect
         aria-label={options[0]}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -46,8 +46,7 @@ function Select({
         {options.map((option) => (
           <option key={option}>{option}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }
@@ -95,19 +94,12 @@ export function ShelterListPage({
   ];
   return (
     <div className="workspace-content shelters-page">
-      <div className="page-header shelters-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Nguồn lực</span>
-            <ChevronRight size={13} />
-            <b>Điểm sơ tán</b>
-          </div>
-          <h1>Quản lý Điểm sơ tán</h1>
-          <p>
-            Điều phối sức chứa, điều kiện tiếp nhận và hoạt động sơ tán dân cư
-          </p>
-        </div>
-      </div>
+      <PageSectionHeader
+        section="Nguồn lực"
+        title="Quản lý điểm sơ tán"
+        description="Điều phối sức chứa, điều kiện tiếp nhận và hoạt động sơ tán dân cư."
+        icon={Building2}
+      />
       <section className="shelter-summary">
         <div>
           <Building2 size={16} />
@@ -136,9 +128,9 @@ export function ShelterListPage({
       </section>
       <section className="shelter-worklist">
         <div className="shelter-filters">
-          <label className="incident-search">
+          <label className="ui-search incident-search">
             <Search size={15} />
-            <input
+            <Input
               value={filters.search}
               onChange={(event) => patch("search", event.target.value)}
               placeholder="Tìm mã, tên, địa chỉ hoặc cán bộ phụ trách…"
@@ -219,7 +211,7 @@ export function ShelterListPage({
           />
           <label className="filter-select shelter-sort">
             <ArrowUpDown size={12} />
-            <select
+            <UiSelect
               aria-label="Sắp xếp danh sách điểm sơ tán"
               value={filters.sort}
               onChange={(event) =>
@@ -229,8 +221,7 @@ export function ShelterListPage({
               <option>Ưu tiên vận hành</option>
               <option>Sức chứa khả dụng</option>
               <option>Tên A–Z</option>
-            </select>
-            <ChevronDown size={12} />
+            </UiSelect>
           </label>
         </div>
         <div className="incident-result-bar">

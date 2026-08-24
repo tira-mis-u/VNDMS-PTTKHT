@@ -35,6 +35,7 @@ import type {
 } from "@/domain/analytics/types";
 
 export interface AnalyticsData {
+  metadata: { asOf: string; source: string };
   incidents: Incident[];
   events: IncidentEvent[];
   tasks: IncidentTask[];
@@ -52,7 +53,10 @@ export interface AnalyticsData {
   damageAssessments: DamageAssessment[];
   recoveryProjects: RecoveryProject[];
 }
-const DEFAULT_REFERENCE = "21/08/2026 10:45";
+export interface ReportActor {
+  id: string;
+  displayName: string;
+}
 const normalize = (value: string) =>
   value
     .normalize("NFD")
@@ -85,8 +89,8 @@ export function parseOperationalDate(
   }
   return Number.NaN;
 }
-const reference = (filter: AnalyticsPeriod = {}) =>
-  parseOperationalDate(filter.referenceTime ?? DEFAULT_REFERENCE);
+const reference = (data: AnalyticsData, filter: AnalyticsPeriod = {}) =>
+  parseOperationalDate(filter.referenceTime ?? data.metadata.asOf);
 const minutes = (from: number, to: number) =>
   Number.isFinite(from) && Number.isFinite(to) && to >= from
     ? Math.round((to - from) / 60000)
@@ -112,7 +116,8 @@ const distribution = (values: string[]): DistributionRow[] => {
 };
 const inPeriod = (date: string, filter: AnalyticsPeriod = {}) => {
   const value = parseOperationalDate(date);
-  if (!Number.isFinite(value)) return true;
+  // Dấu thời gian không hợp lệ không được âm thầm đưa vào kỳ báo cáo.
+  if (!Number.isFinite(value)) return false;
   const from = filter.from
     ? parseOperationalDate(filter.from)
     : Number.NEGATIVE_INFINITY;
@@ -167,7 +172,7 @@ function getIncidentTimings(
   data: AnalyticsData,
   filter: AnalyticsPeriod = {},
 ): IncidentTiming[] {
-  const now = reference(filter);
+  const now = reference(data, filter);
   return filteredIncidents(data, filter)
     .map((incident) => {
       const created = parseOperationalDate(incident.createdAt);
@@ -264,7 +269,7 @@ export function getTaskAnalytics(
   filter: AnalyticsPeriod = {},
 ): TaskAnalytics {
   const ids = incidentIds(data, filter);
-  const now = reference(filter);
+  const now = reference(data, filter);
   const tasks = data.tasks.filter(
     (item) => ids.has(item.incidentId) && inPeriod(item.createdAt, filter),
   );
@@ -538,7 +543,7 @@ export function getSosAnalytics(
   data: AnalyticsData,
   filter: AnalyticsPeriod = {},
 ): SosAnalytics {
-  const now = reference(filter);
+  const now = reference(data, filter);
   const ids = incidentIds(data, filter);
   const rows = data.sosRequests.filter(
     (item) =>
@@ -647,7 +652,7 @@ export function getReliefAnalytics(
   filter: AnalyticsPeriod = {},
 ): ReliefAnalytics {
   const ids = incidentIds(data, filter);
-  const now = reference(filter);
+  const now = reference(data, filter);
   const requests = data.reliefRequests.filter(
     (item) =>
       (!filter.incidentId || item.incidentId === filter.incidentId) &&
@@ -740,7 +745,7 @@ export function getRecoveryAnalytics(
   filter: AnalyticsPeriod = {},
 ): RecoveryAnalytics {
   const ids = incidentIds(data, filter);
-  const now = reference(filter);
+  const now = reference(data, filter);
   const assessments = data.damageAssessments.filter(
     (item) =>
       ids.has(item.incidentId) &&
@@ -859,7 +864,7 @@ export function getOperationalExceptions(
       (task) =>
         tasks.byIncident.some((row) => row.incidentId === task.incidentId) &&
         isOpenTask(task) &&
-        parseOperationalDate(task.dueAt) < reference(filter),
+        parseOperationalDate(task.dueAt) < reference(data, filter),
     )
     .forEach((item) =>
       result.push({
@@ -945,7 +950,7 @@ export function getOperationalSummary(
   filter: AnalyticsPeriod = {},
 ): OperationalSummary {
   const ids = incidentIds(data, filter);
-  const now = reference(filter);
+  const now = reference(data, filter);
   const tasks = data.tasks.filter((item) => ids.has(item.incidentId));
   const sos = data.sosRequests.filter(
     (item) =>
@@ -1001,13 +1006,13 @@ export function getOperationalSummary(
         description: `${relief.shortStockRequests} thiếu hàng · ${relief.overdueDeliveries} quá hạn`,
       },
       {
-        label: "Playbook đang chạy",
+        label: "Kế hoạch ứng phó đang thực hiện",
         value: data.playbookExecutions.filter(
           (item) =>
             ids.has(item.incidentId) && item.status === "Đang hoạt động",
         ).length,
         basis: "Ghi nhận",
-        description: "Execution đang hoạt động",
+        description: "Đợt thực hiện đang hoạt động",
       },
       {
         label: "Dự án phục hồi",
@@ -1022,11 +1027,28 @@ export function getOperationalSummary(
   };
 }
 
+export function collectInvalidReportTimestamps(data: AnalyticsData) {
+  const candidates: Array<{ entityId: string; field: string; value: string }> = [
+    ...data.incidents.map((item) => ({ entityId: item.id, field: "Thời điểm tạo sự cố", value: item.createdAt })),
+    ...data.tasks.map((item) => ({ entityId: item.id, field: "Thời điểm tạo nhiệm vụ", value: item.createdAt })),
+    ...data.sosRequests.map((item) => ({ entityId: item.id, field: "Thời điểm tiếp nhận SOS", value: item.receivedAt })),
+    ...data.evacuationOperations.map((item) => ({ entityId: item.id, field: "Thời điểm cập nhật sơ tán", value: item.updatedAt })),
+    ...data.reliefRequests.map((item) => ({ entityId: item.id, field: "Thời điểm tạo yêu cầu cứu trợ", value: item.createdAt })),
+    ...data.events.map((item) => ({ entityId: item.incidentId, field: "Dấu thời gian diễn biến sự cố", value: item.timestamp })),
+  ];
+  return candidates.filter((item) => {
+    const anchor = item.field === "Dấu thời gian diễn biến sự cố"
+      ? data.incidents.find((incident) => incident.id === item.entityId)?.createdAt
+      : undefined;
+    return !Number.isFinite(parseOperationalDate(item.value, anchor));
+  });
+}
+
 export function buildOperationalReport(
   data: AnalyticsData,
   type: OperationalReportType,
-  filter: AnalyticsPeriod = {},
-  actor = "Lê Nguyễn Minh Trí",
+  filter: AnalyticsPeriod,
+  actor: ReportActor,
 ): OperationalReport {
   const incidents = filteredIncidents(data, filter);
   const incident = getIncidentAnalytics(data, filter);
@@ -1047,10 +1069,12 @@ export function buildOperationalReport(
     (item) =>
       isOpenTask(item) && incidentIds(data, filter).has(item.incidentId),
   );
+  const asOf = filter.referenceTime ?? data.metadata.asOf;
   const period =
     filter.from || filter.to
-      ? `${filter.from ?? "đầu kỳ"} – ${filter.to ?? filter.referenceTime ?? DEFAULT_REFERENCE}`
-      : `Đến ${filter.referenceTime ?? DEFAULT_REFERENCE}`;
+      ? `${filter.from ?? "đầu kỳ"} – ${filter.to ?? asOf}`
+      : `Đến ${asOf}`;
+  const invalidTimestamps = collectInvalidReportTimestamps(data);
   return {
     type,
     title: `${type} — VNDMS`,
@@ -1113,11 +1137,13 @@ export function buildOperationalReport(
       `Mức sử dụng ngân sách đã duyệt ${recovery.budgetUtilization}%.`,
     ],
     audit: {
-      generatedAt: filter.referenceTime ?? DEFAULT_REFERENCE,
-      generatedBy: actor,
-      source: "OperationalProvider — dữ liệu canonical",
+      generatedAt: asOf,
+      generatedById: actor.id,
+      generatedBy: actor.displayName,
+      source: `${data.metadata.source}; lát cắt dữ liệu vận hành đã phân quyền`,
       dataPolicy:
-        "Giá trị ghi nhận được tách biệt với chỉ số dẫn xuất; không sử dụng dữ liệu realtime giả lập.",
+        "Giá trị ghi nhận được tách biệt với chỉ số tính toán; bản ghi có dấu thời gian không hợp lệ bị loại và được công khai trong báo cáo.",
+      invalidTimestamps,
     },
   };
 }

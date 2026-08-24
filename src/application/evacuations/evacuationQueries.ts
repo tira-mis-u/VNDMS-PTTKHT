@@ -215,7 +215,7 @@ export function evacuationRecommendations(
   if (!isActiveEvacuation(operation)) return recommendations;
   if (isOverdue(operation, now))
     recommendations.push(
-      `Đã quá thởi điểm hoàn thành dự kiến (${operation.expectedCompletion}) — cần đánh giá lại kế hoạch và cam kết mốc mới với điều hành khu vực.`,
+      `Đã quá thời điểm hoàn thành dự kiến (${operation.expectedCompletion}) — cần đánh giá lại kế hoạch và cam kết mốc mới với điều hành khu vực.`,
     );
   if (operation.route.status === "Bị chặn")
     recommendations.push(

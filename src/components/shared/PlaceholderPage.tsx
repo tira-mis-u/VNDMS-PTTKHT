@@ -21,12 +21,12 @@ export function PlaceholderPage({ title }: { title: string }) {
         <span>
           <Icon size={24} />
         </span>
-        <h2>Module {title} đang được chuẩn bị</h2>
+        <h2>Phân hệ {title} đang được chuẩn bị</h2>
         <p>
-          Application shell đã sẵn sàng để phát triển quy trình, dữ liệu và phân
-          quyền cho module này ở giai đoạn tiếp theo.
+          Khung ứng dụng đã sẵn sàng để phát triển quy trình, dữ liệu và phân
+          quyền cho phân hệ này ở giai đoạn tiếp theo.
         </p>
-        <Button variant="secondary">Xem định hướng module</Button>
+        <Button variant="secondary">Xem định hướng phân hệ</Button>
       </div>
     </div>
   );

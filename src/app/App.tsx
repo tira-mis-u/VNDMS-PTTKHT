@@ -176,6 +176,18 @@ const AiAssistantPage = lazy(() =>
     default: module.AiAssistantPage,
   })),
 );
+const OperationalSituationPage = lazy(() =>
+  import("@/features/operational-insights").then((module) => ({ default: module.OperationalSituationPage })),
+);
+const OperationalHistoryPage = lazy(() =>
+  import("@/features/operational-insights").then((module) => ({ default: module.OperationalHistoryPage })),
+);
+const OperationalTrendsPage = lazy(() =>
+  import("@/features/operational-insights").then((module) => ({ default: module.OperationalTrendsPage })),
+);
+const SystemConfigurationBlockedPage = lazy(() =>
+  import("@/features/operational-insights").then((module) => ({ default: module.SystemConfigurationBlockedPage })),
+);
 const ProfilePage = lazy(() =>
   import("@/features/auth/pages/ProfilePage").then((module) => ({
     default: module.ProfilePage,
@@ -193,6 +205,7 @@ const AuditTrailPage = lazy(() =>
 );
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import type { Permission } from "@/lib/permissions/permissions";
+import { permissionLabel } from "@/lib/permissions/labels";
 import { authorize } from "@/lib/security/authorization";
 import { firstAccessibleNavPath } from "@/components/navigation/navigationConfig";
 import {
@@ -207,6 +220,7 @@ function requiredPermission(route: AppRoute): Permission {
     route.name === "operational-map" ||
     route.name.startsWith("incident") ||
     route.name.startsWith("analytics") ||
+    route.name.startsWith("operational-") ||
     route.name === "placeholder"
   )
     return "view";
@@ -223,7 +237,7 @@ function requiredPermission(route: AppRoute): Permission {
   if (route.name.startsWith("alert")) return "alert_view";
   if (route.name === "simulation") return "simulation_view";
   if (route.name === "ai-assistant") return "ai_assistant_use";
-  if (route.name === "admin-users") return "user_manage";
+  if (route.name === "admin-users" || route.name === "admin-permissions" || route.name === "system-configuration-blocked") return "user_manage";
   if (route.name === "admin-audit") return "audit_view";
   return "view";
 }
@@ -274,7 +288,7 @@ export default function App() {
     content = (
       <AccessDeniedPage
         navigate={navigate}
-        reason={`Tài khoản ${store.currentUser.displayName} không có quyền ${requiredPermission(route)} cho chức năng này.`}
+        reason={`Tài khoản ${store.currentUser.displayName} chưa được cấp quyền “${permissionLabel(requiredPermission(route))}” cho chức năng này.`}
       />
     );
   else if (route.name === "command-center")
@@ -353,10 +367,20 @@ export default function App() {
     content = <AiAssistantPage navigate={navigate} />;
   else if (route.name === "admin-users")
     content = <UserManagementPage navigate={navigate} />;
+  else if (route.name === "admin-permissions")
+    content = <UserManagementPage navigate={navigate} mode="permissions" />;
   else if (route.name === "admin-audit")
     content = <AuditTrailPage navigate={navigate} />;
   else if (route.name === "operational-map")
     content = <OperationalMapWorkspacePage navigate={navigate} focus={route.focus} />;
+  else if (route.name === "operational-situation")
+    content = <OperationalSituationPage navigate={navigate} />;
+  else if (route.name === "operational-history")
+    content = <OperationalHistoryPage navigate={navigate} />;
+  else if (route.name === "operational-trends")
+    content = <OperationalTrendsPage navigate={navigate} />;
+  else if (route.name === "system-configuration-blocked")
+    content = <SystemConfigurationBlockedPage />;
   else if (route.name === "placeholder")
     content = <PlaceholderPage title={route.label} />;
   else content = <NotFoundPage navigate={navigate} />;

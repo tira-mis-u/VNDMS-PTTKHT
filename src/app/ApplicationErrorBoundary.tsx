@@ -31,10 +31,10 @@ export class ApplicationErrorBoundary extends Component<Props, State> {
           Ứng dụng gặp lỗi giao diện ngoài dự kiến. Dữ liệu trình diễn cục bộ
           chưa được gửi tới máy chủ.
         </p>
-        <details>
-          <summary>Chi tiết kỹ thuật</summary>
-          <code>{this.state.error.message}</code>
-        </details>
+        <p>
+          Chi tiết chẩn đoán đã được ghi vào bảng điều khiển của trình duyệt để
+          phục vụ xử lý sự cố.
+        </p>
         <Button onClick={() => window.location.reload()}>
           <RefreshCw size={15} />
           Tải lại ứng dụng

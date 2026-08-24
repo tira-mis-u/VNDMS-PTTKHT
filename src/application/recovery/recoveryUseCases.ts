@@ -103,10 +103,10 @@ export function updateDamageAssessment(
 ) {
   if (value.status === "Đã xác minh")
     throw new Error(
-      "Assessment đã xác minh không được sửa trực tiếp; hãy tạo revision.",
+      "Đánh giá đã xác minh không được sửa trực tiếp; hãy tạo bản điều chỉnh.",
     );
   if (!["Nháp", "Từ chối"].includes(value.status))
-    throw new Error("Assessment đang trong workflow thẩm định, không thể sửa.");
+    throw new Error("Đánh giá đang trong quy trình thẩm định nên không thể sửa.");
   return { ...value, ...changes, updatedAt: timestamp };
 }
 function transitionAssessment(
@@ -116,7 +116,7 @@ function transitionAssessment(
 ) {
   if (!getAssessmentTransitions(value.status).includes(status))
     throw new Error(
-      `Không thể chuyển assessment từ ${value.status} sang ${status}.`,
+      `Không thể chuyển đánh giá từ ${value.status} sang ${status}.`,
     );
   return { ...value, status, updatedAt: timestamp };
 }
@@ -126,7 +126,7 @@ export function submitDamageAssessment(
 ) {
   if (!assessmentHasContent(value))
     throw new Error(
-      "Không thể gửi assessment rỗng hoặc thiếu assessor/hạng mục thiệt hại.",
+      "Không thể gửi đánh giá rỗng hoặc thiếu người đánh giá hay hạng mục thiệt hại.",
     );
   return transitionAssessment(value, "Đã gửi", timestamp);
 }
@@ -144,9 +144,9 @@ export function verifyDamageAssessment(
   timestamp: string,
 ) {
   if (value.status !== "Đang thẩm định")
-    throw new Error("Chỉ assessment đang thẩm định mới được xác minh.");
+    throw new Error("Chỉ đánh giá đang thẩm định mới được xác minh.");
   if (!actor.trim() || !evidence.length || !note.trim())
-    throw new Error("Verification phải có actor, evidence và ghi chú.");
+    throw new Error("Việc xác minh phải có người thực hiện, căn cứ và ghi chú.");
   const verification: AssessmentVerification = {
     actor,
     timestamp,
@@ -176,8 +176,8 @@ export function rejectDamageAssessment(
   timestamp: string,
 ) {
   if (value.status !== "Đang thẩm định")
-    throw new Error("Chỉ assessment đang thẩm định mới được từ chối.");
-  if (!reason.trim()) throw new Error("Assessment bị từ chối phải có lý do.");
+    throw new Error("Chỉ đánh giá đang thẩm định mới được từ chối.");
+  if (!reason.trim()) throw new Error("Đánh giá bị từ chối phải có lý do.");
   return {
     ...value,
     status: "Từ chối" as const,
@@ -198,7 +198,7 @@ export function addDamageItem(
   timestamp: string,
 ) {
   if (value.status === "Đã xác minh")
-    throw new Error("Không thể thêm hạng mục vào assessment đã xác minh.");
+    throw new Error("Không thể thêm hạng mục vào đánh giá đã xác minh.");
   if (item.quantity <= 0 || item.estimatedCost < 0 || !item.description.trim())
     throw new Error("Hạng mục thiệt hại không hợp lệ.");
   return {
@@ -237,7 +237,7 @@ export function attachEvidence(
 ) {
   if (value.status === "Đã xác minh")
     throw new Error(
-      "Không thể gắn evidence trực tiếp vào assessment đã xác minh.",
+      "Không thể gắn căn cứ trực tiếp vào đánh giá đã xác minh.",
     );
   return {
     ...value,
@@ -253,7 +253,7 @@ export function createRevision(
 ): DamageAssessment {
   if (value.status !== "Đã xác minh" && !value.rejectionReason)
     throw new Error(
-      "Chỉ tạo revision từ assessment đã xác minh hoặc bị từ chối.",
+      "Chỉ tạo bản điều chỉnh từ đánh giá đã xác minh hoặc bị từ chối.",
     );
   return {
     ...value,
@@ -335,7 +335,7 @@ export function submitRecoveryProject(
     !value.assessmentIds.length ||
     value.estimatedBudget <= 0
   )
-    throw new Error("Đề xuất thiếu owner, assessment hoặc ngân sách.");
+    throw new Error("Đề xuất thiếu đơn vị phụ trách, đánh giá thiệt hại hoặc ngân sách.");
   return { ...value, updatedAt: timestamp };
 }
 export function approveRecoveryProject(
@@ -346,7 +346,7 @@ export function approveRecoveryProject(
 ) {
   if (value.status !== "Đề xuất")
     throw new Error("Chỉ dự án đề xuất mới được phê duyệt.");
-  if (!value.owner.trim()) throw new Error("Dự án phải có owner.");
+  if (!value.owner.trim()) throw new Error("Dự án phải có đơn vị phụ trách.");
   if (approvedBudget <= 0) throw new Error("Ngân sách phê duyệt không hợp lệ.");
   if (
     !value.assessmentIds.length ||
@@ -355,7 +355,7 @@ export function approveRecoveryProject(
         assessments.find((item) => item.id === id)?.status !== "Đã xác minh",
     )
   )
-    throw new Error("Dự án phải dựa trên Damage Assessment đã xác minh.");
+    throw new Error("Dự án phải dựa trên đánh giá thiệt hại đã xác minh.");
   return {
     ...value,
     status: "Đã phê duyệt" as const,
@@ -439,7 +439,7 @@ export function updateRecoveryBudget(
 ) {
   if (spentBudget < 0) throw new Error("Chi phí không hợp lệ.");
   if (spentBudget > value.approvedBudget && !overrideNote?.trim())
-    throw new Error("Chi phí vượt ngân sách cần phê duyệt override rõ ràng.");
+    throw new Error("Chi phí vượt ngân sách cần được phê duyệt ngoại lệ rõ ràng.");
   return {
     ...value,
     spentBudget,
@@ -458,7 +458,7 @@ export function recordCompletionVerification(
   timestamp: string,
 ) {
   if (!actor.trim() || !note.trim() || !evidence.length)
-    throw new Error("Xác minh hoàn thành phải có actor, note và evidence.");
+    throw new Error("Xác minh hoàn thành phải có người thực hiện, ghi chú và căn cứ.");
   return {
     ...value,
     completionVerification: { actor, timestamp, note, evidence },
@@ -474,7 +474,7 @@ export function addMilestone(
   timestamp: string,
 ) {
   if (["Hoàn thành", "Từ chối", "Đã hủy"].includes(value.status))
-    throw new Error("Không thể thêm milestone vào dự án đã kết thúc.");
+    throw new Error("Không thể thêm mốc công việc vào dự án đã kết thúc.");
   return {
     ...value,
     milestones: [
@@ -500,7 +500,7 @@ export function reorderMilestones(
     ids.length !== value.milestones.length ||
     new Set(ids).size !== ids.length
   )
-    throw new Error("Thứ tự milestone không hợp lệ.");
+    throw new Error("Thứ tự mốc công việc không hợp lệ.");
   return {
     ...value,
     milestones: ids.map((id, index) => ({
@@ -517,10 +517,10 @@ function transitionMilestone(
   timestamp: string,
 ) {
   const milestone = value.milestones.find((item) => item.id === id);
-  if (!milestone) throw new Error("Không tìm thấy milestone.");
+  if (!milestone) throw new Error("Không tìm thấy mốc công việc.");
   if (!getMilestoneTransitions(milestone.status).includes(status))
     throw new Error(
-      `Không thể chuyển milestone từ ${milestone.status} sang ${status}.`,
+      `Không thể chuyển mốc công việc từ ${milestone.status} sang ${status}.`,
     );
   const milestones = value.milestones.map((item) =>
     item.id === id
@@ -561,7 +561,7 @@ export function skipMilestone(
 ) {
   const milestone = value.milestones.find((item) => item.id === id);
   if (milestone?.required)
-    throw new Error("Không thể bỏ qua milestone bắt buộc.");
+    throw new Error("Không thể bỏ qua mốc công việc bắt buộc.");
   return transitionMilestone(value, id, "Bỏ qua", timestamp);
 }
 export function syncRecoveryProgress(

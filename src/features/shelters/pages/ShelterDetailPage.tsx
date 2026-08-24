@@ -7,6 +7,7 @@ import {
   Droplets,
   HeartPulse,
   MapPin,
+  MapPinned,
   Navigation,
   Phone,
   PlugZap,
@@ -19,6 +20,7 @@ import { calculateShelterCapacity } from "@/domain/shelters/rules";
 import type { EvacuationOperation } from "@/domain/evacuations/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
+import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   ShelterActionDialogs,
   type ShelterDialog,
@@ -138,6 +140,13 @@ export function ShelterDetailPage({
             </p>
           </div>
           <div className="incident-header-actions">
+            <Button
+              variant="secondary"
+              onClick={() => navigate(operationalMapFocusPath(shelter.id))}
+            >
+              <MapPinned size={15} />
+              Xem trên bản đồ
+            </Button>
             <Button
               variant="secondary"
               onClick={() =>
@@ -533,7 +542,7 @@ export function ShelterDetailPage({
             </Suspense>
           </section>
           <section className="incident-detail-section">
-            <SectionHeader title="Timeline vận hành" />
+            <SectionHeader title="Nhật ký vận hành" />
             <div className="incident-timeline shelter-timeline">
               {events.map((event) => (
                 <article key={event.id}>

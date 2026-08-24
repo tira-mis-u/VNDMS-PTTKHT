@@ -1,7 +1,7 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
-  ChevronDown,
   ChevronRight,
   MapPin,
   PackageOpen,
@@ -20,7 +20,7 @@ import {
   type WarehouseFilters,
 } from "@/application/relief/reliefQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Progress } from "@/components/ui";
+import { Badge, PageSectionHeader, Progress, Input } from "@/components/ui";
 function Select({
   value,
   onChange,
@@ -32,12 +32,11 @@ function Select({
 }) {
   return (
     <label className="filter-select">
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <UiSelect value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option}>{option}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }
@@ -66,24 +65,21 @@ export function WarehouseListPage({
   const active = shipments.filter((item) => item.status !== "Hoàn tất").length;
   return (
     <div className="workspace-content warehouse-page">
-      <div className="page-header relief-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Nguồn lực</span>
-            <ChevronRight size={13} />
-            <b>Kho vật tư</b>
-          </div>
-          <h1>Kho vật tư cứu trợ</h1>
-          <p>Quản lý khả dụng, tồn kho, hàng giữ và hoạt động xuất kho</p>
-        </div>
-        <button
-          className="text-action"
-          onClick={() => navigate("/relief/requests")}
-        >
-          <PackageOpen size={15} />
-          Yêu cầu cứu trợ
-        </button>
-      </div>
+      <PageSectionHeader
+        section="Nguồn lực"
+        title="Kho vật tư cứu trợ"
+        description="Quản lý khả dụng, tồn kho, hàng giữ và hoạt động xuất kho."
+        icon={Warehouse}
+        actions={
+          <button
+            className="text-action"
+            onClick={() => navigate("/relief/requests")}
+          >
+            <PackageOpen size={15} />
+            Yêu cầu cứu trợ
+          </button>
+        }
+      />
       <section className="relief-summary">
         <div>
           <Warehouse size={16} />
@@ -115,9 +111,9 @@ export function WarehouseListPage({
       </section>
       <section className="relief-worklist">
         <div className="relief-filters">
-          <label className="incident-search">
+          <label className="ui-search incident-search">
             <Search size={15} />
-            <input
+            <Input
               value={filters.search}
               onChange={(event) => patch("search", event.target.value)}
               placeholder="Tìm mã kho, tên, địa chỉ hoặc cán bộ phụ trách…"

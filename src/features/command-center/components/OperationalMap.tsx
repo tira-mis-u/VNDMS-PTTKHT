@@ -252,6 +252,7 @@ export function OperationalMap({
         <div
           ref={container}
           className="map-canvas"
+          role="img"
           aria-label="Bản đồ tác nghiệp thực tế tại Hà Nội"
         />
         {!ready && (

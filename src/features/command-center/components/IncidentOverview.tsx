@@ -26,7 +26,7 @@ export function IncidentOverview({
       <SectionHeader
         title="Sự cố đang xử lý"
         description="Tiến độ, lực lượng và trạng thái điều phối hiện tại"
-        action="Mở module Sự cố"
+        action="Mở phân hệ Sự cố"
       />
       <div className="cc-incident-table">
         <div className="cc-incident-head">

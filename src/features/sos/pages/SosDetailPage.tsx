@@ -5,6 +5,7 @@ import {
   Building2,
   ChevronRight,
   MapPin,
+  MapPinned,
   Navigation,
   Phone,
   Radio,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
+import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   SosActionDialogs,
   type SosDialog,
@@ -103,6 +105,13 @@ export function SosDetailPage({
           <div className="incident-header-actions">
             <Button
               variant="secondary"
+              onClick={() => navigate(operationalMapFocusPath(sos.id))}
+            >
+              <MapPinned size={15} />
+              Xem trên bản đồ
+            </Button>
+            <Button
+              variant="secondary"
               onClick={() => navigate(`/ai-assistant?context=SOS&id=${sos.id}`)}
             >
               <ShieldCheck size={15} />
@@ -166,7 +175,7 @@ export function SosDetailPage({
           </section>
           <section className="incident-detail-section">
             <SectionHeader
-              title="Đánh giá mức độ và triage"
+              title="Đánh giá mức độ và phân loại ưu tiên"
               description="Ưu tiên có giải thích từ các yếu tố nguy cơ minh bạch"
             />
             <div className="triage-panel">
@@ -305,7 +314,7 @@ export function SosDetailPage({
           <section className="incident-detail-section">
             <SectionHeader
               title="Liên kết tác nghiệp"
-              description="Incident → Task → Team → Shelter/Evacuation"
+              description="Sự cố → Nhiệm vụ → Đội cứu hộ → Điểm sơ tán/Hoạt động sơ tán"
             />
             <div className="sos-link-grid">
               <Entity
@@ -369,7 +378,7 @@ export function SosDetailPage({
           <section className="incident-detail-section">
             <SectionHeader
               title="Bản đồ tác nghiệp"
-              description="SOS, Incident, Task, Team, điểm sơ tán và tuyến liên quan"
+              description="SOS, sự cố, nhiệm vụ, đội cứu hộ, điểm sơ tán và tuyến liên quan"
             />
             <Suspense
               fallback={
@@ -439,10 +448,10 @@ export function SosDetailPage({
             </Context>
             <Context label="Khu vực" value={sos.location.administrativeArea} />
             <Context
-              label="Incident"
+              label="Sự cố"
               value={sos.linkedIncidentId ?? "Chưa liên kết"}
             />
-            <Context label="Task" value={sos.linkedTaskId ?? "Chưa tạo"} />
+            <Context label="Nhiệm vụ" value={sos.linkedTaskId ?? "Chưa tạo"} />
             <Context
               label="Đội cứu hộ"
               value={sos.assignedTeamId ?? "Chưa giao"}

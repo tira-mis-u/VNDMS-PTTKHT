@@ -179,7 +179,7 @@ export function createOperationalTimeline(writer: OperationalTimelineWriter) {
         message,
         actor: writer.actorName,
         timestamp: writer.now(),
-        source: "Quản trị playbook",
+        source: "Quản trị kế hoạch ứng phó",
       },
       ...current,
     ]);
@@ -204,7 +204,7 @@ export function createOperationalTimeline(writer: OperationalTimelineWriter) {
       message,
       actor,
       timestamp: writer.now(),
-      source: "Điều hành playbook",
+      source: "Điều hành kế hoạch ứng phó",
     };
     writer.setPlaybookEvents((current) => [event, ...current]);
     writer.setPlaybookExecutions((current) =>

@@ -30,7 +30,7 @@ export function OperationalAlerts({
     >
       <SectionHeader
         title="Cảnh báo tác nghiệp"
-        description={`${summary.unread} chưa đọc · ${summary.pendingAcknowledgement} cần xác nhận · Suy ra từ canonical state`}
+        description={`${summary.unread} chưa đọc · ${summary.pendingAcknowledgement} cần xác nhận · Tổng hợp từ dữ liệu vận hành`}
         action="Mở trung tâm thông báo"
         onAction={() => navigate("/alerts")}
       />

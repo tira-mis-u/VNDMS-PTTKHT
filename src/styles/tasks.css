@@ -29,7 +29,7 @@
   padding: 1px 5px;
   border-radius: 8px;
   background: #f2f4f7;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .task-worklist {
   background: #fff;
@@ -39,12 +39,7 @@
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.02);
 }
 .task-filters {
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
   border-bottom: 1px solid var(--border);
-  overflow-x: auto;
 }
 .task-list-head,
 .task-list-row {
@@ -59,7 +54,7 @@
   height: 35px;
   padding: 0 13px;
   color: #667085;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   border-bottom: 1px solid var(--border);
 }
 .task-list-row {
@@ -102,7 +97,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #7c8799;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .task-team {
   font-size: 13px;
@@ -112,7 +107,7 @@
   display: block;
   text-align: right;
   color: #667085;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .task-row-progress .progress-track {
   margin-top: 5px;
@@ -131,7 +126,7 @@
   font-size: 13px;
 }
 .task-deadline small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .task-deadline.overdue,
@@ -139,26 +134,16 @@
   color: #d92d20;
 }
 .input-with-icon {
-  height: 34px;
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid #d0d5dd;
-  border-radius: 6px;
-  padding: 0 9px;
   color: #98a2b3;
-}
-.input-with-icon input {
-  height: 30px;
-  border: 0;
-  padding: 0;
-  box-shadow: none !important;
 }
 .task-detail-page {
   max-width: 1520px;
 }
 .task-detail-header {
-  margin: -26px -30px 20px;
+  margin: 0 0 20px;
   padding: 20px 30px 0;
   background: #fff;
   border-bottom: 1px solid var(--border);
@@ -203,7 +188,7 @@
   border: 0;
 }
 .task-operational-facts span {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #7c8799;
 }
 .task-operational-facts b,
@@ -223,7 +208,7 @@
   cursor: pointer;
 }
 .task-operational-facts small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #7c8799;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -242,7 +227,7 @@
   color: #344054;
 }
 .task-progress-body > div:first-child span {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .task-progress-body > .progress-track {
@@ -260,7 +245,7 @@
   align-items: center;
   gap: 4px;
   color: #98a2b3;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .progress-milestones i {
   width: 5px;
@@ -316,7 +301,7 @@
   line-height: 1.45;
 }
 .field-update-list article div > span {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #7c8799;
 }
 .field-update-list article div > span b {
@@ -327,7 +312,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .task-timeline {
@@ -357,7 +342,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .map-dot.task {
   background: #d92d20;
@@ -384,7 +369,7 @@
 }
 .task-result p {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #7c8799;
 }
 .task-state-machine {
@@ -395,7 +380,7 @@
   display: block;
   margin-bottom: 10px;
   color: #667085;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   font-weight: 600;
 }
 .task-state-machine > div {
@@ -429,7 +414,7 @@
   border: 2px solid #175cd3;
 }
 .task-state-machine b {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   font-weight: 500;
   color: #667085;
 }
@@ -441,7 +426,7 @@
   padding: 10px 11px;
   border: 1px solid var(--border);
   border-radius: 7px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .task-transition-path {
@@ -454,7 +439,7 @@
 .task-transition-path span {
   position: relative;
   color: #98a2b3;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   text-align: center;
 }
 .task-transition-path span:not(:last-child)::after {
@@ -478,7 +463,7 @@
   align-items: center;
   gap: 7px;
   color: #667085;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .progress-picker {
   grid-column: 1/-1;
@@ -499,7 +484,7 @@
   display: flex;
   justify-content: space-between;
   color: #98a2b3;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 @media (max-width: 1200px) {
   .task-list-head,
@@ -556,23 +541,15 @@
     position: static;
   }
   .task-detail-header {
-    margin-left: -18px;
-    margin-right: -18px;
+    margin-left: 0;
+    margin-right: 0;
     padding-left: 18px;
     padding-right: 18px;
   }
 }
 @media (max-width: 640px) {
-  .task-filters {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-  .task-filters .incident-search {
-    grid-column: 1/-1;
-    width: 100%;
-  }
   .task-detail-header {
-    margin: -15px -12px 14px;
+    margin: 0 0 14px;
     padding: 14px 12px 0;
   }
   .task-operational-facts {

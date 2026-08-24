@@ -189,13 +189,6 @@ import { OperationalStateContext } from "./OperationalStateContext";
 import { useAtomicOperationalState } from "./useAtomicOperationalState";
 import { useOperationalSecurity } from "./useOperationalSecurity";
 
-function now() {
-  return "21/08/2026 10:45";
-}
-function timeOnly() {
-  return "10:45";
-}
-
 export function OperationalProvider({ children }: { children: ReactNode }) {
   const {
     session,
@@ -265,6 +258,8 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     inMemoryOperationalRepository.load(),
     resetSimulationState(),
   );
+  const now = () => currentOperationalSnapshot().metadata.asOf;
+  const timeOnly = () => now().split(" ")[1] ?? now();
   const {
     system: systemResource,
     incident: incidentResource,
@@ -1980,7 +1975,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     ]);
     assertRecoveryScope(role, input.geographicScope, currentScopeName);
     if (!incidents.some((item) => item.id === input.incidentId))
-      throw new Error("Incident không hợp lệ.");
+      throw new Error("Sự cố không hợp lệ.");
     const id = `DA-${String(Math.max(240, ...damageAssessments.map((item) => Number(item.id.replace(/\D/g, "")) || 0)) + 1).padStart(4, "0")}`;
     const value = createDamageAssessmentEntity(id, input, now());
     setDamageAssessments((current) => [value, ...current]);
@@ -2146,7 +2141,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       assessmentResource(assessmentId),
     ]);
     const value = damageAssessments.find((item) => item.id === assessmentId);
-    if (!value) throw new Error("Không tìm thấy assessment.");
+    if (!value) throw new Error("Không tìm thấy đánh giá thiệt hại.");
     assertRecoveryScope(role, value.geographicScope, currentScopeName);
     const id = `${value.id}-R${value.revision + 1}`;
     const revision = applyDamageRevision(id, value, actorName, now());
@@ -2155,7 +2150,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "assessment",
       id,
       value.incidentId,
-      `Tạo revision ${id} từ ${value.id}`,
+      `Tạo bản điều chỉnh ${id} từ ${value.id}`,
       "assessment_revision",
     );
     return id;
@@ -2172,7 +2167,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     ]);
     assertRecoveryScope(role, input.geographicScope, currentScopeName);
     if (!incidents.some((item) => item.id === input.incidentId))
-      throw new Error("Incident không hợp lệ.");
+      throw new Error("Sự cố không hợp lệ.");
     const id = `RP-${String(Math.max(240, ...recoveryProjects.map((item) => Number(item.id.replace(/\D/g, "")) || 0)) + 1).padStart(4, "0")}`;
     const value = createRecoveryProjectEntity(id, input, now());
     setRecoveryProjects((current) => [value, ...current]);
@@ -2459,7 +2454,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "project",
       projectId,
       value.incidentId,
-      `Bắt đầu milestone ${milestoneId}`,
+      `Bắt đầu mốc công việc ${milestoneId}`,
       "milestone_started",
     );
   };
@@ -2487,7 +2482,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "project",
       projectId,
       value.incidentId,
-      `Hoàn thành milestone ${milestoneId}`,
+      `Hoàn thành mốc công việc ${milestoneId}`,
       "milestone_completed",
     );
   };
@@ -2512,7 +2507,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "project",
       projectId,
       value.incidentId,
-      `Bỏ qua milestone tùy chọn ${milestoneId}`,
+      `Bỏ qua mốc công việc tùy chọn ${milestoneId}`,
       "milestone_skipped",
     );
   };
@@ -2523,7 +2518,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const project = recoveryProjects.find((item) => item.id === projectId);
     const incident = incidents.find((item) => item.id === project?.incidentId);
     if (!project || !incident)
-      throw new Error("Dự án hoặc Incident không hợp lệ.");
+      throw new Error("Dự án hoặc sự cố không hợp lệ.");
     enforcePermission("task_create", [
       incidentResource(incident.id),
       recoveryProjectResource(projectId),
@@ -2540,7 +2535,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         assignee: "",
         location: project.location.name,
         dueAt: project.targetDate,
-        description: `Nhiệm vụ canonical phục vụ dự án khôi phục ${project.code}.`,
+        description: `Nhiệm vụ được tạo để phục vụ dự án khôi phục ${project.code}.`,
       },
       now(),
       { teamLeader: "", coordinates: project.location.coordinates },
@@ -2588,7 +2583,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const id = `PB-${String(number).padStart(3, "0")}`;
     const value = createPlaybookEntity(id, input, now());
     setPlaybooks((current) => [value, ...current]);
-    pushTemplatePlaybookEvent(id, `Tạo playbook ${value.code}`, "created");
+    pushTemplatePlaybookEvent(id, `Tạo phương án ứng phó ${value.code}`, "created");
     return id;
   };
   const updatePlaybook = (
@@ -2638,7 +2633,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     );
     pushTemplatePlaybookEvent(
       playbookId,
-      `Xuất bản playbook ${value.code}`,
+      `Xuất bản phương án ứng phó ${value.code}`,
       "published",
     );
   };
@@ -2653,7 +2648,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
           ["Đang hoạt động", "Tạm dừng"].includes(item.status),
       )
     )
-      throw new Error("Không thể lưu trữ playbook còn execution đang mở.");
+      throw new Error("Không thể lưu trữ phương án khi vẫn còn đợt thực hiện đang mở.");
     setPlaybooks((current) =>
       current.map((item) =>
         item.id === playbookId ? applyPlaybookArchive(item, now()) : item,
@@ -2661,7 +2656,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     );
     pushTemplatePlaybookEvent(
       playbookId,
-      `Lưu trữ playbook ${value.code}`,
+      `Lưu trữ phương án ứng phó ${value.code}`,
       "archived",
     );
   };
@@ -2698,12 +2693,12 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     enforcePermission(
       "playbook_activate",
       [playbookResource(playbookId), incidentResource(incidentId)],
-      "kích hoạt playbook",
+      "kích hoạt phương án ứng phó",
     );
     const playbook = playbooks.find((item) => item.id === playbookId);
     const incident = incidents.find((item) => item.id === incidentId);
     if (!playbook || !incident)
-      throw new Error("Playbook hoặc Incident không hợp lệ.");
+      throw new Error("Phương án ứng phó hoặc sự cố không hợp lệ.");
     if (
       playbookExecutions.some(
         (item) =>
@@ -2712,7 +2707,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
           ["Đang hoạt động", "Tạm dừng"].includes(item.status),
       )
     )
-      throw new Error("Playbook đã được kích hoạt cho Incident này.");
+      throw new Error("Phương án ứng phó đã được kích hoạt cho sự cố này.");
     const id = `PBX-${String(Math.max(0, ...playbookExecutions.map((item) => Number(item.id.replace(/\D/g, "")) || 0)) + 1).padStart(4, "0")}`;
     const execution = applyPlaybookActivation(
       id,
@@ -2736,7 +2731,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       message: `Kích hoạt ${playbook.code} cho ${incidentId}`,
       actor: actorName,
       timestamp: now(),
-      source: "Điều hành playbook",
+      source: "Điều hành kế hoạch ứng phó",
     };
     setPlaybookEvents((current) => [event, ...current]);
     setPlaybookExecutions((current) =>
@@ -2761,7 +2756,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         item.id === executionId ? applyPlaybookPause(item, now()) : item,
       ),
     );
-    pushPlaybookEvent(executionId, null, "Tạm dừng playbook", "paused");
+    pushPlaybookEvent(executionId, null, "Tạm dừng phương án ứng phó", "paused");
   };
   const resumePlaybookExecution = (executionId: string) => {
     enforcePermission(
@@ -2785,7 +2780,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     pushPlaybookEvent(
       executionId,
       null,
-      "Tiếp tục thực thi playbook",
+      "Tiếp tục thực hiện phương án ứng phó",
       "resumed",
     );
   };
@@ -2803,7 +2798,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         item.id === executionId ? applyPlaybookCancel(item, now()) : item,
       ),
     );
-    pushPlaybookEvent(executionId, null, "Hủy execution playbook", "cancelled");
+    pushPlaybookEvent(executionId, null, "Hủy đợt thực hiện phương án ứng phó", "cancelled");
   };
   const completePlaybookExecution = (executionId: string) => {
     enforcePermission(
@@ -2824,7 +2819,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
           : item,
       ),
     );
-    pushPlaybookEvent(executionId, null, "Hoàn thành playbook", "completed");
+    pushPlaybookEvent(executionId, null, "Hoàn thành phương án điều phối", "completed");
   };
   const startPlaybookStep = (executionId: string, stepId: string) => {
     enforcePermission(
@@ -2984,10 +2979,10 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         item.status === "Đã xác minh",
     );
     if (!execution || !playbook || !incident)
-      throw new Error("Playbook execution hoặc Incident không hợp lệ.");
+      throw new Error("Đợt thực hiện phương án hoặc sự cố không hợp lệ.");
     if (!basis.length)
       throw new Error(
-        "Chưa có Damage Assessment đã xác minh để tạo dự án khôi phục.",
+        "Chưa có đánh giá thiệt hại đã xác minh để tạo dự án khôi phục.",
       );
     const id = `RP-${String(Math.max(240, ...recoveryProjects.map((item) => Number(item.id.replace(/\D/g, "")) || 0)) + 1).padStart(4, "0")}`;
     const project = createRecoveryProjectEntity(
@@ -3010,7 +3005,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
           coordinates: incident.location.coordinates,
         },
         affectedAreaCoordinates: basis[0].affectedAreaCoordinates,
-        notes: `Khởi tạo từ execution ${execution.id} của ${playbook.code}.`,
+        notes: `Khởi tạo từ đợt thực hiện ${execution.id} của phương án ${playbook.code}.`,
       },
       now(),
     );
@@ -3019,7 +3014,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "project",
       id,
       incident.id,
-      `Tạo dự án ${id} từ playbook execution ${execution.id}`,
+      `Tạo dự án ${id} từ đợt thực hiện phương án ${execution.id}`,
       "project_created_from_playbook",
     );
     pushPlaybookEvent(
@@ -3046,7 +3041,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       (item) => item.id === execution?.incidentId,
     );
     if (!execution || !playbook || !template || !incident)
-      throw new Error("Execution, bước hoặc Incident không hợp lệ.");
+      throw new Error("Đợt thực hiện, bước hoặc sự cố không hợp lệ.");
     enforcePermission("task_create", [
       incidentResource(incident.id),
       ...playbookExecutionResources(executionId),
@@ -3064,7 +3059,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       {
         incidentId: incident.id,
         title: template.name,
-        type: "Playbook / SOP",
+        type: "Phương án ứng phó / quy trình",
         priority: incident.severity === "Khẩn cấp" ? "Khẩn cấp" : "Cao",
         teamId: "",
         assignee: "",
@@ -3138,7 +3133,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         ...(changes.linkedSosIds ?? []).map(sosResource),
         ...(changes.linkedReliefRequestIds ?? []).map(reliefRequestResource),
       ],
-      "cập nhật liên kết bằng chứng playbook",
+      "cập nhật liên kết bằng chứng phương án ứng phó",
     );
     setPlaybookExecutions((current) =>
       current.map((item) =>

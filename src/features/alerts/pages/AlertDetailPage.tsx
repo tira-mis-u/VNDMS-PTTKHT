@@ -6,6 +6,7 @@ import {
   Clock3,
   ExternalLink,
   MapPin,
+  MapPinned,
 } from "lucide-react";
 import {
   alertCategoryLabels,
@@ -15,6 +16,7 @@ import {
 } from "@/domain/alerts/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button } from "@/components/ui";
+import { operationalMapFocusPath } from "@/app/routes/router";
 
 export function AlertDetailPage({
   alertKey,
@@ -131,6 +133,17 @@ export function AlertDetailPage({
               Đánh dấu chưa đọc
             </Button>
           )}
+          {alert.geographicScope && (
+            <Button
+              variant="secondary"
+              onClick={() =>
+                navigate(operationalMapFocusPath(alert.source.code))
+              }
+            >
+              <MapPinned size={15} />
+              <span>Xem nguồn trên bản đồ</span>
+            </Button>
+          )}
           <Button
             variant="secondary"
             onClick={() => navigate(alert.source.path)}
@@ -148,8 +161,10 @@ export function AlertDetailPage({
           <h2>Thông tin cảnh báo</h2>
           <dl>
             <div>
-              <dt>Mã cảnh báo</dt>
-              <dd className="alert-key-cell">{alert.key}</dd>
+              <dt>Tham chiếu cảnh báo</dt>
+              <dd className="alert-key-cell">
+                {alert.source.code} · {alert.detectedAt}
+              </dd>
             </div>
             <div>
               <dt>Nguồn tác nghiệp</dt>
@@ -185,7 +200,7 @@ export function AlertDetailPage({
             )}
           </dl>
           <p className="alert-detail-note">
-            Cảnh báo này được suy ra từ trạng thái canonical của{" "}
+            Cảnh báo này được suy ra từ dữ liệu nghiệp vụ của{" "}
             {alert.source.label.toLowerCase()} và sẽ tự hết hiệu lực khi điều
             kiện nghiệp vụ không còn đúng — không phải bản ghi tĩnh.
           </p>

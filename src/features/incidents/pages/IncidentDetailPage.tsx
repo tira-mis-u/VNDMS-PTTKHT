@@ -7,6 +7,7 @@ import {
   ClipboardPlus,
   FileText,
   MapPin,
+  MapPinned,
   MoreHorizontal,
   Plus,
   Route,
@@ -16,6 +17,7 @@ import {
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
 import { getIncidentRecoverySummary } from "@/application/recovery/recoveryQueries";
+import { operationalMapFocusPath } from "@/app/routes/router";
 import { executionSummary } from "@/application/playbooks/playbookQueries";
 import {
   IncidentActionDialogs,
@@ -148,6 +150,13 @@ export function IncidentDetailPage({
             </p>
           </div>
           <div className="incident-header-actions">
+            <Button
+              variant="secondary"
+              onClick={() => navigate(operationalMapFocusPath(incident.id))}
+            >
+              <MapPinned size={15} />
+              Xem trên bản đồ
+            </Button>
             <Button
               variant="secondary"
               onClick={() =>
@@ -286,12 +295,12 @@ export function IncidentDetailPage({
           </section>
           <section id="phuc-hoi" className="incident-detail-section">
             <SectionHeader
-              title="Đánh giá thiệt hại & Khôi phục"
-              description="Assessment xác minh và dự án khôi phục liên kết Incident"
+              title="Đánh giá thiệt hại và phục hồi"
+              description="Đánh giá đã xác minh và dự án phục hồi liên kết với sự cố"
             />
             <div className="incident-recovery-summary">
               <div>
-                <span>Assessment</span>
+                <span>Đánh giá</span>
                 <b>{recoverySummary.assessmentCount}</b>
                 <small>
                   {recoverySummary.pendingVerification} chờ xác minh
@@ -305,7 +314,7 @@ export function IncidentDetailPage({
                   }).format(recoverySummary.estimatedLoss / 1e9)}{" "}
                   tỷ ₫
                 </b>
-                <small>Cộng từ assessment</small>
+                <small>Tổng hợp từ các đánh giá</small>
               </div>
               <div>
                 <span>Dự án khôi phục</span>
@@ -368,7 +377,7 @@ export function IncidentDetailPage({
           <section id="quy-trinh" className="incident-detail-section">
             <SectionHeader
               title="Quy trình tác chiến"
-              description="Playbook execution trong context của Incident"
+              description="Đợt thực hiện phương án điều phối trong bối cảnh của sự cố"
             />
             {incidentPlaybook && playbookExecution && playbookSummary ? (
               <div className="incident-playbook-card">
@@ -408,25 +417,25 @@ export function IncidentDetailPage({
                     navigate(`/playbooks/${incidentPlaybook.id}/execute`)
                   }
                 >
-                  Mở execution
+                  Mở đợt thực hiện
                   <ChevronRight size={13} />
                 </Button>
               </div>
             ) : (
               <div className="section-empty">
-                Chưa có playbook đang chạy cho Incident này.{" "}
+                Chưa có phương án điều phối đang thực hiện cho sự cố này.{" "}
                 <button
                   className="entity-link"
                   onClick={() => navigate("/playbooks")}
                 >
-                  Chọn playbook
+                  Chọn phương án điều phối
                 </button>
               </div>
             )}
           </section>
           <section id="dien-bien" className="incident-detail-section">
             <SectionHeader
-              title="Timeline diễn biến"
+              title="Nhật ký diễn biến"
               description="Quyết định, báo cáo và cập nhật trong suốt vòng đời sự cố"
             />
             <div className="incident-timeline">

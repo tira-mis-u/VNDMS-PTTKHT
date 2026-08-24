@@ -1,7 +1,35 @@
-@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap");
+@font-face {
+  font-family: "Be Vietnam Pro";
+  src: url("../assets/fonts/be-vietnam-pro-400.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  src: url("../assets/fonts/be-vietnam-pro-500.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  src: url("../assets/fonts/be-vietnam-pro-600.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  src: url("../assets/fonts/be-vietnam-pro-700.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
 
 :root {
-  font-family: "Be Vietnam Pro", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-family-ui: "Be Vietnam Pro", "Segoe UI", Arial, sans-serif;
+  font-family: var(--font-family-ui);
   color: #172033;
   background: #f7f8fa;
   font-synthesis: none;
@@ -18,8 +46,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
-button,
-input {
+button {
   font: inherit;
 }
 button {
@@ -706,7 +733,7 @@ button:focus-visible {
   align-items: center;
   padding: 2px 6px;
   border-radius: 5px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   line-height: 1.4;
   font-weight: 600;
   border: 1px solid;
@@ -902,7 +929,7 @@ button:focus-visible {
   box-shadow: 0 2px 5px rgba(16, 24, 40, 0.07);
 }
 .map-legend span {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -926,7 +953,7 @@ button:focus-visible {
   bottom: 3px;
   right: 4px;
   z-index: 2;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
   background: rgba(255, 255, 255, 0.75);
   padding: 1px 3px;
@@ -990,7 +1017,7 @@ button:focus-visible {
 }
 .timeline-item span {
   display: block;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
   margin-top: 4px;
 }
@@ -1009,7 +1036,7 @@ button:focus-visible {
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .resource-top > span:first-child {
@@ -1022,7 +1049,7 @@ button:focus-visible {
   font-size: 13px;
 }
 .resource-list p {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #7c8799;
   margin: 7px 0 0;
 }
@@ -1065,7 +1092,7 @@ button:focus-visible {
 }
 .support-strip p {
   margin: 3px 0 0;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   line-height: 1.45;
 }
 .placeholder-page {
@@ -1297,7 +1324,7 @@ button:focus-visible {
     font-size: 21.5px;
   }
   .situation-stats span {
-    font-size: 12.5px;
+    font-size: var(--type-metadata, 13px);
   }
   .overview-grid,
   .main-column {
@@ -1372,7 +1399,7 @@ button:focus-visible {
   }
   .mobile-incident-list small {
     color: #7c8799;
-    font-size: 12.5px;
+    font-size: var(--type-metadata, 13px);
   }
   .map-shell {
     height: 310px;

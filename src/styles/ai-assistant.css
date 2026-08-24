@@ -337,14 +337,6 @@
 .ai-composer textarea {
   flex: 1;
   resize: vertical;
-  min-height: 52px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--background);
-  color: var(--foreground);
-  padding: 9px 10px;
-  font: inherit;
-  font-size: 17px;
 }
 .ai-composer > small {
   display: block;

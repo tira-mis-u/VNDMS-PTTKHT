@@ -1,3 +1,4 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import type {
@@ -8,7 +9,7 @@ import type {
 import type { RescueTeam } from "@/domain/teams/types";
 import type { TaskPriority } from "@/domain/tasks/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, Input, Textarea } from "@/components/ui";
 
 export type IncidentDialog =
   "task" | "dispatch" | "event" | "status" | "severity" | "close" | null;
@@ -24,7 +25,7 @@ export function IncidentActionDialogs({
   if (!mode) return null;
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} aria-label="Đóng" />
+      <DialogBackdrop onClick={onClose} />
       {mode === "task" && <TaskForm incident={incident} onClose={onClose} />}
       {mode === "dispatch" && (
         <DispatchForm incident={incident} onClose={onClose} />
@@ -125,7 +126,7 @@ function TaskForm({
     >
       <label className="field field-full">
         <span>Tên nhiệm vụ *</span>
-        <input
+        <Input
           autoFocus
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -134,38 +135,38 @@ function TaskForm({
       </label>
       <label className="field">
         <span>Loại nhiệm vụ</span>
-        <select value={type} onChange={(e) => setType(e.target.value)}>
+        <UiSelect value={type} onChange={(e) => setType(e.target.value)}>
           <option>Cứu hộ, sơ tán</option>
           <option>Khảo sát hiện trường</option>
           <option>Bảo đảm giao thông</option>
           <option>Hậu cần</option>
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Mức ưu tiên</span>
-        <select
+        <UiSelect
           value={priority}
           onChange={(e) => setPriority(e.target.value as TaskPriority)}
         >
           <option>Khẩn cấp</option>
           <option>Cao</option>
           <option>Trung bình</option>
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Đội thực hiện</span>
-        <select value={teamId} onChange={(e) => setTeam(e.target.value)}>
+        <UiSelect value={teamId} onChange={(e) => setTeam(e.target.value)}>
           <option value="">Chưa giao</option>
           {teams.map((t) => (
             <option value={t.id} key={t.id}>
               {t.id} — {t.name}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Người phụ trách</span>
-        <input
+        <Input
           value={assignee}
           onChange={(e) => setAssignee(e.target.value)}
           placeholder="Họ và tên"
@@ -173,15 +174,15 @@ function TaskForm({
       </label>
       <label className="field field-full">
         <span>Địa điểm</span>
-        <input value={location} onChange={(e) => setLocation(e.target.value)} />
+        <Input value={location} onChange={(e) => setLocation(e.target.value)} />
       </label>
       <label className="field">
         <span>Hạn xử lý</span>
-        <input value={dueAt} onChange={(e) => setDue(e.target.value)} />
+        <Input value={dueAt} onChange={(e) => setDue(e.target.value)} />
       </label>
       <label className="field field-full">
         <span>Mô tả ngắn</span>
-        <textarea
+        <Textarea
           rows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -305,7 +306,7 @@ function EventForm({
     >
       <label className="field field-full">
         <span>Nội dung diễn biến *</span>
-        <textarea
+        <Textarea
           autoFocus
           rows={4}
           value={message}
@@ -314,7 +315,7 @@ function EventForm({
         />
       </label>
       <p className="form-hint">
-        Sự kiện sẽ được ghi vào timeline với người dùng và thời gian hiện tại.
+        Sự kiện sẽ được ghi vào nhật ký diễn biến với người dùng và thời gian hiện tại.
       </p>
     </DialogFrame>
   );
@@ -351,7 +352,7 @@ function StatusForm({
     >
       <label className="field field-full">
         <span>Trạng thái mới</span>
-        <select
+        <UiSelect
           value={status}
           onChange={(e) => setStatus(e.target.value as IncidentStatus)}
         >
@@ -360,10 +361,10 @@ function StatusForm({
           <option>Đang xử lý</option>
           <option>Đang điều phối</option>
           <option>Đã kiểm soát</option>
-        </select>
+        </UiSelect>
       </label>
       <p className="form-hint">
-        Thay đổi sẽ được ghi tự động vào timeline sự cố.
+        Thay đổi sẽ được ghi tự động vào nhật ký diễn biến sự cố.
       </p>
     </DialogFrame>
   );
@@ -400,7 +401,7 @@ function SeverityForm({
     >
       <label className="field field-full">
         <span>Mức độ mới</span>
-        <select
+        <UiSelect
           value={severity}
           onChange={(e) => setSeverity(e.target.value as IncidentSeverity)}
         >
@@ -408,7 +409,7 @@ function SeverityForm({
           <option>Cao</option>
           <option>Trung bình</option>
           <option>Thấp</option>
-        </select>
+        </UiSelect>
       </label>
       <p className="form-hint">
         Điều chỉnh mức độ có thể thay đổi thứ tự ưu tiên trên Trung tâm điều
@@ -449,7 +450,7 @@ function CloseConfirm({
       </span>
       <h2 id="close-incident-title">Đóng sự cố {incident.id}?</h2>
       <p>
-        Chỉ có thể đóng khi nhiệm vụ, SOS, sơ tán, cứu trợ và playbook liên quan
+        Chỉ có thể đóng khi nhiệm vụ, SOS, sơ tán, cứu trợ và phương án điều phối liên quan
         đã kết thúc. Đội điều phối trực tiếp sẽ được giải phóng đồng bộ.
       </p>
       {error && (

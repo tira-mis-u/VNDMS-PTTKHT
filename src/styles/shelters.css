@@ -26,7 +26,7 @@
   border: 0;
 }
 .shelter-summary span {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .shelter-summary b {
   font-size: 14.5px;
@@ -43,10 +43,6 @@
   overflow: hidden;
 }
 .shelter-filters {
-  padding: 12px;
-  display: flex;
-  gap: 7px;
-  overflow-x: auto;
   border-bottom: 1px solid var(--border);
 }
 .shelter-sort {
@@ -67,7 +63,7 @@
   height: 35px;
   padding: 0 13px;
   border-bottom: 1px solid var(--border);
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .shelter-row {
@@ -100,7 +96,7 @@
 }
 .shelter-primary small,
 .shelter-row small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .shelter-primary small:last-child {
@@ -122,14 +118,14 @@
 .shelter-condition b,
 .shelter-officer b,
 .shelter-operation b {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #344054;
 }
 .shelter-operation b {
   color: #175cd3;
 }
 .shelter-detail-header {
-  margin: -26px -30px 20px;
+  margin: 0 0 20px;
   padding: 20px 30px;
   background: #fff;
   border-bottom: 1px solid var(--border);
@@ -166,7 +162,7 @@
 }
 .capacity-overview span,
 .capacity-overview small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .capacity-overview b {
@@ -193,7 +189,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .shelter-alert b {
@@ -238,11 +234,11 @@
   gap: 4px;
 }
 .shelter-readiness-grid small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .shelter-readiness-grid b {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #344054;
 }
 .evacuation-list {
@@ -285,12 +281,12 @@
 }
 .evacuation-body span,
 .evacuation-body small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .evacuation-body b,
 .evacuation-body button {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #344054;
 }
 .evacuation-body button {
@@ -315,7 +311,7 @@
   margin: 0;
 }
 .evacuation-progress span {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .blocked-route-note {
@@ -324,7 +320,7 @@
   gap: 5px;
   margin: 8px 0 0;
   color: #b42318;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .shelter-facility-table > div {
   display: grid;
@@ -334,7 +330,7 @@
   min-height: 44px;
   padding: 7px 15px;
   border-bottom: 1px solid #edf0f2;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #475467;
 }
 .shelter-facility-table > div:first-child {
@@ -348,7 +344,7 @@
   gap: 3px;
 }
 .shelter-facility-table small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .shelter-operational-map {
@@ -406,7 +402,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .shelter-key {
   width: 17px;
@@ -446,11 +442,11 @@
   gap: 3px;
 }
 .shelter-contact b {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .shelter-contact span {
-  font-size: 12.5px;
-  color: #98a2b3;
+  font-size: var(--type-metadata, 13px);
+  color: #667085;
 }
 .shelter-linked {
   padding: 12px 14px;
@@ -458,7 +454,7 @@
 }
 .shelter-linked h3 {
   margin: 0 0 8px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .shelter-linked button {
   width: 100%;
@@ -477,11 +473,11 @@
   gap: 3px;
 }
 .shelter-linked b {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #175cd3;
 }
 .shelter-linked small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .shelter-form-dialog {
@@ -574,16 +570,8 @@
     flex: none;
     padding: 0 11px;
   }
-  .shelter-filters {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-  .shelter-filters .incident-search {
-    grid-column: 1/-1;
-    width: 100%;
-  }
   .shelter-detail-header {
-    margin: -15px -12px 14px;
+    margin: 0 0 14px;
     padding: 14px 12px;
   }
   .shelter-detail-page .incident-header-actions {

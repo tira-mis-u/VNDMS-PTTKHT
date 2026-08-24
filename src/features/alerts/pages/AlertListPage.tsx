@@ -1,9 +1,9 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   BellRing,
   Check,
   CheckCheck,
-  ChevronDown,
   ChevronRight,
   Clock3,
   ExternalLink,
@@ -27,7 +27,7 @@ import {
   alertDetailPath,
 } from "@/application/alerts/alertQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, EmptyState } from "@/components/ui";
+import { Badge, Button, EmptyState, PageSectionHeader, Input } from "@/components/ui";
 
 
 function AlertSelect({
@@ -41,7 +41,7 @@ function AlertSelect({
 }) {
   return (
     <label className="filter-select">
-      <select
+      <UiSelect
         aria-label={options[0]}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -49,8 +49,7 @@ function AlertSelect({
         {options.map((option) => (
           <option key={option}>{option}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }
@@ -80,7 +79,7 @@ export function AlertListPage({
     severity: "Tất cả mức độ",
     category: "Tất cả nhóm",
     status: "Tất cả trạng thái",
-    time: "Tất cả thởi gian",
+    time: "Tất cả thời gian",
   });
   const patch = (key: keyof AlertFilters, value: string) =>
     setFilters((current) => ({ ...current, [key]: value }));
@@ -95,20 +94,12 @@ export function AlertListPage({
     store.can("alert_acknowledge", alert.geographicScope);
   return (
     <div className="workspace-content alerts-page">
-      <div className="page-header alerts-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Quản lý &amp; điều hành</span>
-            <ChevronRight size={13} />
-            <b>Cảnh báo</b>
-          </div>
-          <h1>Trung tâm thông báo tác nghiệp</h1>
-          <p>
-            Cảnh báo được suy ra trực tiếp từ trạng thái tác nghiệp canonical,
-            trong phạm vi phân quyền hiện tại
-          </p>
-        </div>
-        <div className="alerts-header-actions">
+      <PageSectionHeader
+        section="Quản lý và điều hành"
+        title="Trung tâm cảnh báo tác nghiệp"
+        description="Cảnh báo được suy ra trực tiếp từ dữ liệu nghiệp vụ thống nhất trong phạm vi phân quyền hiện tại."
+        icon={BellRing}
+        actions={
           <Button
             variant="secondary"
             onClick={() => run(() => store.markAllAlertsRead())}
@@ -117,8 +108,8 @@ export function AlertListPage({
             <CheckCheck size={15} />
             <span>Đánh dấu tất cả đã đọc</span>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {error && (
         <div className="alert-error" role="alert">
@@ -133,7 +124,7 @@ export function AlertListPage({
           <div>
             <small>Đang hiệu lực</small>
             <b>{summary.total}</b>
-            <p>Cảnh báo suy ra từ canonical state</p>
+            <p>Cảnh báo suy ra từ dữ liệu nghiệp vụ</p>
           </div>
         </div>
         <div className="alert-summary-card">
@@ -176,9 +167,9 @@ export function AlertListPage({
 
       <section className="content-section alert-queue">
         <div className="alerts-toolbar">
-          <label className="incident-search alerts-search">
+          <label className="ui-search incident-search alerts-search">
             <Search size={14} />
-            <input
+            <Input
               aria-label="Tìm kiếm cảnh báo"
               placeholder="Tìm theo tiêu đề, nội dung, mã nguồn…"
               value={filters.search}
@@ -224,7 +215,7 @@ export function AlertListPage({
           <span>
             <b>{rows.length}</b> cảnh báo phù hợp
           </span>
-          <span>Sắp xếp theo mức độ nghiêm trọng và thởi điểm ghi nhận</span>
+          <span>Sắp xếp theo mức độ nghiêm trọng và thời điểm ghi nhận</span>
         </div>
         {rows.length === 0 ? (
           <EmptyState

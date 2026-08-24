@@ -1,5 +1,25 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  TextareaHTMLAttributes,
+} from "react";
+import { forwardRef } from "react";
+export { PageSectionHeader } from "./PageSectionHeader";
 import { ChevronRight } from "lucide-react";
+
+export function DialogBackdrop({
+  onClick,
+}: Pick<ButtonHTMLAttributes<HTMLButtonElement>, "onClick">) {
+  return (
+    <button
+      type="button"
+      className="dialog-backdrop"
+      aria-label="Đóng hộp thoại"
+      onClick={onClick}
+    />
+  );
+}
 
 export function Button({
   variant = "primary",
@@ -17,6 +37,28 @@ export function Button({
     />
   );
 }
+
+export const Input = forwardRef<
+  HTMLInputElement,
+  InputHTMLAttributes<HTMLInputElement>
+>(function Input({ className = "", ...props }, ref) {
+  return (
+    <input ref={ref} className={`ui-input ${className}`.trim()} {...props} />
+  );
+});
+
+export const Textarea = forwardRef<
+  HTMLTextAreaElement,
+  TextareaHTMLAttributes<HTMLTextAreaElement>
+>(function Textarea({ className = "", ...props }, ref) {
+  return (
+    <textarea
+      ref={ref}
+      className={`ui-textarea ${className}`.trim()}
+      {...props}
+    />
+  );
+});
 
 export function Badge({
   tone = "neutral",

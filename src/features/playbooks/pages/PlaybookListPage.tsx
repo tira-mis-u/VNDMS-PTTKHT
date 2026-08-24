@@ -1,7 +1,7 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   BookOpenCheck,
-  ChevronDown,
   ChevronRight,
   Clock3,
   Search,
@@ -13,7 +13,7 @@ import {
   type PlaybookFilters,
 } from "@/application/playbooks/playbookQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge } from "@/components/ui";
+import { Badge, PageSectionHeader, Input } from "@/components/ui";
 function Select({
   value,
   onChange,
@@ -25,7 +25,7 @@ function Select({
 }) {
   return (
     <label className="filter-select">
-      <select
+      <UiSelect
         aria-label={options[0]}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -33,8 +33,7 @@ function Select({
         {options.map((item) => (
           <option key={item}>{item}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }
@@ -62,39 +61,32 @@ export function PlaybookListPage({
   ).length;
   return (
     <div className="workspace-content playbook-page">
-      <div className="page-header playbook-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Ứng phó</span>
-            <ChevronRight size={13} />
-            <b>Playbooks / SOP tác chiến</b>
-          </div>
-          <h1>Playbooks / SOP tác chiến</h1>
-          <p>
-            Quy trình chuẩn hóa gắn với Incident và hồ sơ nghiệp vụ canonical
-          </p>
-        </div>
-      </div>
+      <PageSectionHeader
+        section="Ứng phó"
+        title="Phương án ứng phó"
+        description="Quy trình chuẩn hóa gắn với sự cố và hồ sơ nghiệp vụ chính thức."
+        icon={BookOpenCheck}
+      />
       <section className="playbook-status-strip">
         <span>
           <BookOpenCheck size={16} />
           <b>
             {playbooks.filter((item) => item.status === "Đã xuất bản").length}
           </b>{" "}
-          playbook đã xuất bản
+          phương án đã xuất bản
         </span>
         <span>
           <ShieldCheck size={16} />
-          <b>{active}</b> execution đang hoạt động
+          <b>{active}</b> đợt thực hiện đang hoạt động
         </span>
         <p>Sắp xếp theo mức độ và khả năng áp dụng tác nghiệp.</p>
       </section>
       <section className="relief-worklist">
         <div className="relief-filters">
-          <label className="incident-search">
+          <label className="ui-search incident-search">
             <Search size={15} />
-            <input
-              placeholder="Tìm mã, tên hoặc mô tả playbook…"
+            <Input
+              placeholder="Tìm mã, tên hoặc mô tả phương án…"
               value={filters.search}
               onChange={(event) => patch("search", event.target.value)}
             />
@@ -133,13 +125,13 @@ export function PlaybookListPage({
         </div>
         <div className="incident-result-bar">
           <span>
-            <b>{rows.length}</b> playbook phù hợp
+            <b>{rows.length}</b> phương án phù hợp
           </span>
-          <span>Template và execution được quản lý riêng biệt</span>
+          <span>Mẫu phương án và đợt thực hiện được quản lý riêng biệt</span>
         </div>
         <div className="playbook-table">
           <div className="playbook-table-head">
-            <span>Playbook</span>
+            <span>Phương án ứng phó</span>
             <span>Loại thiên tai</span>
             <span>Phạm vi</span>
             <span>Phiên bản</span>

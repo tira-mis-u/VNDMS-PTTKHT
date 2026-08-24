@@ -24,7 +24,7 @@
   padding-left: 2px;
 }
 .sos-queue-summary span {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .sos-queue-summary b {
   font-size: 14.5px;
@@ -36,7 +36,7 @@
 }
 .sos-queue-summary p {
   margin-left: auto;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .sos-worklist {
@@ -46,10 +46,6 @@
   background: #fff;
 }
 .sos-filters {
-  display: flex;
-  gap: 7px;
-  padding: 12px;
-  overflow-x: auto;
   border-bottom: 1px solid var(--border);
 }
 .sos-table-head,
@@ -65,7 +61,7 @@
   height: 35px;
   padding: 0 13px;
   border-bottom: 1px solid var(--border);
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .sos-row {
@@ -103,7 +99,7 @@
 }
 .sos-primary small,
 .sos-row small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .sos-primary small:nth-child(2) {
@@ -143,14 +139,14 @@
 .sos-verification b,
 .sos-links b,
 .sos-time b {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #344054;
 }
 .sos-links b {
   color: #175cd3;
 }
 .sos-detail-header {
-  margin: -26px -30px 20px;
+  margin: 0 0 20px;
   padding: 20px 30px;
   background: #fff;
   border-bottom: 1px solid var(--border);
@@ -199,7 +195,7 @@
   gap: 4px;
 }
 .sos-emergency-heading small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .sos-emergency-heading h2 {
@@ -209,7 +205,7 @@
 }
 .sos-emergency-heading p {
   margin: 2px 0 0;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .sos-immediate-grid,
@@ -237,12 +233,12 @@
 }
 .sos-immediate-grid span,
 .sos-reporter-grid span {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .sos-immediate-grid b,
 .sos-reporter-grid b {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #344054;
 }
 .triage-panel {
@@ -254,7 +250,7 @@
   gap: 8px;
 }
 .triage-panel > div > span {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .triage-panel ul {
@@ -272,7 +268,7 @@
   padding: 8px;
   border: 1px solid #e4e7ec;
   border-radius: 6px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #475467;
 }
 .triage-panel li svg {
@@ -298,7 +294,7 @@
   gap: 3px;
 }
 .affected-people-grid small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .affected-people-grid b {
@@ -347,7 +343,7 @@
   gap: 4px;
 }
 .sos-link-grid small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .sos-link-grid b {
@@ -356,7 +352,7 @@
 }
 .sos-link-grid p {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
   line-height: 1.4;
 }
@@ -368,7 +364,7 @@
   padding: 10px 14px;
   border-top: 1px solid #edf0f2;
   background: #fafcff;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .sos-evacuation-strip > span {
@@ -400,7 +396,7 @@
 }
 .resolution-panel p {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .sos-contact,
@@ -419,12 +415,12 @@
 }
 .sos-contact b,
 .sos-location-note b {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #344054;
 }
 .sos-contact span,
 .sos-location-note span {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 .sos-operational-map {
@@ -475,7 +471,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .sos-map-legend i {
   width: 11px;
@@ -516,7 +512,7 @@
 }
 .sos-confirm p {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   line-height: 1.5;
   color: #475467;
 }
@@ -557,17 +553,17 @@
 }
 .eligible-team-list b,
 .eligible-shelter-list b {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .eligible-team-list small,
 .eligible-shelter-list small {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 .eligible-team-list i,
 .eligible-shelter-list i {
   font-style: normal;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #079455;
 }
 .triage-reasons {
@@ -577,13 +573,13 @@
   gap: 5px;
 }
 .triage-reasons b {
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
 }
 .triage-reasons span {
   padding: 6px 8px;
   border-left: 2px solid #f79009;
   background: #fffcf5;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #667085;
 }
 @media (max-width: 1150px) {
@@ -674,16 +670,8 @@
     flex: none;
     padding: 0 10px;
   }
-  .sos-filters {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-  .sos-filters .incident-search {
-    grid-column: 1/-1;
-    width: 100%;
-  }
   .sos-detail-header {
-    margin: -15px -12px 14px;
+    margin: 0 0 14px;
     padding: 14px 12px;
   }
   .sos-detail-page .incident-header-actions {
@@ -768,7 +756,7 @@
 
 .sos-affected-list small {
   margin-top: 3px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   color: #98a2b3;
 }
 

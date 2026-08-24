@@ -24,7 +24,7 @@ import {
   remainingBudget,
 } from "@/domain/recovery/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, EmptyState, Progress } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, EmptyState, Progress, Input, Textarea } from "@/components/ui";
 const RecoveryOperationalMap = lazy(
   () => import("../components/RecoveryOperationalMap"),
 );
@@ -235,9 +235,9 @@ export function RecoveryProjectDetailPage({
               project.milestones.filter((item) => item.status === "Hoàn thành")
                 .length
             }
-            /{project.milestones.length} milestone ·{" "}
+            /{project.milestones.length} mốc công việc ·{" "}
             {tasks.filter((item) => item.status === "Hoàn thành").length}/
-            {tasks.length} Task
+            {tasks.length} nhiệm vụ
           </small>
         </div>
       </header>
@@ -258,7 +258,7 @@ export function RecoveryProjectDetailPage({
           <small>
             {project.budgetOverrideNote
               ? "Có phê duyệt vượt"
-              : "Không có override"}
+              : "Không có phê duyệt ngoại lệ"}
           </small>
         </div>
         <div className={isProjectOverdue(project) ? "danger" : ""}>
@@ -274,7 +274,7 @@ export function RecoveryProjectDetailPage({
           <section className="detail-section">
             <div className="section-heading">
               <div>
-                <h2>Milestone khôi phục</h2>
+                <h2>Mốc tiến độ khôi phục</h2>
                 <p>Tiến độ được dẫn xuất, không cho UI đặt tùy ý thành 100%</p>
               </div>
               {store.can("recovery_project_execute") && (
@@ -284,7 +284,7 @@ export function RecoveryProjectDetailPage({
                   onClick={() => setDialog("milestone")}
                 >
                   <Plus size={13} />
-                  Thêm milestone
+                  Thêm mốc tiến độ
                 </Button>
               )}
             </div>
@@ -395,7 +395,7 @@ export function RecoveryProjectDetailPage({
             <div className="section-heading">
               <div>
                 <h2>Nguồn lực và hồ sơ vận hành</h2>
-                <p>Task, Team và Relief canonical</p>
+                <p>Nhiệm vụ, đội cứu hộ và cứu trợ trong dữ liệu nghiệp vụ chính thức</p>
               </div>
               {store.can("task_create") && (
                 <Button
@@ -406,7 +406,7 @@ export function RecoveryProjectDetailPage({
                   }
                 >
                   <Plus size={13} />
-                  Tạo Task
+                  Tạo nhiệm vụ
                 </Button>
               )}
             </div>
@@ -468,7 +468,7 @@ export function RecoveryProjectDetailPage({
             <div className="section-heading">
               <div>
                 <h2>Cơ sở thiệt hại đã xác minh</h2>
-                <p>Chỉ verified assessment được dùng để phê duyệt dự án</p>
+                <p>Chỉ đánh giá đã xác minh được dùng để phê duyệt dự án</p>
               </div>
             </div>
             <div className="project-basis">
@@ -499,7 +499,7 @@ export function RecoveryProjectDetailPage({
             <div className="section-heading">
               <div>
                 <h2>Bản đồ khôi phục</h2>
-                <p>Damage locations, project, vùng ảnh hưởng và đội được gán</p>
+                <p>Vị trí thiệt hại, dự án, vùng ảnh hưởng và đội được phân công</p>
               </div>
             </div>
             <Suspense
@@ -524,7 +524,7 @@ export function RecoveryProjectDetailPage({
             <h2>Hồ sơ dự án</h2>
             <dl className="relief-facts">
               <div>
-                <dt>Incident</dt>
+                <dt>Sự cố</dt>
                 <dd>
                   <button
                     onClick={() => navigate(`/incidents/${project.incidentId}`)}
@@ -534,7 +534,7 @@ export function RecoveryProjectDetailPage({
                 </dd>
               </div>
               <div>
-                <dt>Owner</dt>
+                <dt>Đơn vị phụ trách</dt>
                 <dd>{project.owner || "Chưa có"}</dd>
               </div>
               <div>
@@ -546,7 +546,7 @@ export function RecoveryProjectDetailPage({
                 <dd>{project.targetDate}</dd>
               </div>
               <div>
-                <dt>Assessment</dt>
+                <dt>Hồ sơ đánh giá</dt>
                 <dd>{project.assessmentIds.length}</dd>
               </div>
             </dl>
@@ -573,7 +573,7 @@ export function RecoveryProjectDetailPage({
             )}
           </section>
           <section className="detail-section">
-            <h2>Timeline dự án</h2>
+            <h2>Nhật ký dự án</h2>
             <div className="detail-timeline">
               {events.map((event) => (
                 <div key={event.id}>
@@ -634,11 +634,11 @@ function ProjectDialog({
         store.addRecoveryMilestone(projectId, {
           id: `RM-${Date.now()}`,
           name: note,
-          description: "Milestone bổ sung theo quyết định điều hành.",
+          description: "Mốc công việc bổ sung theo quyết định điều hành.",
           required: true,
           dueDate: project.targetDate,
           owner: project.owner,
-          completionCriteria: "Có biên bản hoàn thành được owner xác nhận.",
+          completionCriteria: "Có biên bản hoàn thành được đơn vị phụ trách xác nhận.",
         });
       onClose();
     } catch (reason) {
@@ -654,14 +654,19 @@ function ProjectDialog({
           ? "Cập nhật chi phí"
           : mode === "verify"
             ? "Xác minh hoàn thành"
-            : "Thêm milestone";
+            : "Thêm mốc công việc";
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
-      <div className="incident-form-dialog recovery-dialog">
+      <DialogBackdrop onClick={onClose} />
+      <div
+        className="incident-form-dialog recovery-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recovery-project-dialog-title"
+      >
         <header>
-          <h2>{title}</h2>
-          <button onClick={onClose}>
+          <h2 id="recovery-project-dialog-title">{title}</h2>
+          <button onClick={onClose} aria-label="Đóng hộp thoại">
             <X size={18} />
           </button>
         </header>
@@ -671,7 +676,7 @@ function ProjectDialog({
               <span>
                 {mode === "approve" ? "Ngân sách phê duyệt" : "Chi phí lũy kế"}
               </span>
-              <input
+              <Input
                 type="number"
                 value={value}
                 onChange={(e) => setValue(Number(e.target.value))}
@@ -681,14 +686,14 @@ function ProjectDialog({
           <label className="field field-full">
             <span>
               {mode === "milestone"
-                ? "Tên milestone"
+                ? "Tên mốc công việc"
                 : mode === "reject"
                   ? "Lý do"
                   : mode === "budget"
-                    ? "Ghi chú override nếu vượt ngân sách"
+                    ? "Ghi chú điều chỉnh nếu vượt ngân sách"
                     : "Ghi chú / biên bản"}
             </span>
-            <textarea
+            <Textarea
               rows={3}
               value={note}
               onChange={(e) => setNote(e.target.value)}

@@ -281,6 +281,7 @@ export function createAuthorizedOperationalView(
   const recoveryProjectIds = new Set(recoveryProjects.map((item) => item.id));
 
   return {
+    metadata: source.metadata,
     incidents,
     events: source.events.filter((event) => incidentIds.has(event.incidentId)),
     tasks,

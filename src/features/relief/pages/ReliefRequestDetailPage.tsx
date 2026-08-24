@@ -18,6 +18,7 @@ import type {
 } from "@/domain/relief/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button, EmptyState, StatCard } from "@/components/ui";
+import { reliefOriginLabel } from "../labels";
 const parseOperationalDate = (value: string) => {
   const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})(?: (\d{2}):(\d{2}))?/);
   return match
@@ -188,7 +189,7 @@ export function ReliefRequestDetailPage({
           </div>
           <h1>{request.destination}</h1>
           <p>
-            {request.origin} · {request.requester} ({request.requesterRole})
+            {reliefOriginLabel(request.origin)} · {request.requester} ({request.requesterRole})
           </p>
         </div>
         <div className="required-time">
@@ -367,7 +368,7 @@ export function ReliefRequestDetailPage({
               <div>
                 <h2>Vận chuyển và giao nhận</h2>
                 <p>
-                  Cập nhật theo mốc tác nghiệp, không mô phỏng GPS thời gian
+                  Cập nhật theo mốc tác nghiệp, không mô phỏng định vị thời gian
                   thực
                 </p>
               </div>
@@ -473,7 +474,7 @@ export function ReliefRequestDetailPage({
             <dl className="relief-facts">
               <div>
                 <dt>Nguồn yêu cầu</dt>
-                <dd>{request.origin}</dd>
+                <dd>{reliefOriginLabel(request.origin)}</dd>
               </div>
               <div>
                 <dt>Sự cố liên kết</dt>

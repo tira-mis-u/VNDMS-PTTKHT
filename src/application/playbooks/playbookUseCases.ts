@@ -24,7 +24,7 @@ export function assertPlaybookScope(
   allowedScope: string,
 ) {
   if (role === "local_officer" && !geographicScope.includes(allowedScope))
-    throw new Error("Playbook nằm ngoài phạm vi địa lý được phân quyền.");
+    throw new Error("Phương án điều phối nằm ngoài phạm vi địa lý được phân quyền.");
 }
 export function createPlaybook(
   id: string,
@@ -32,7 +32,7 @@ export function createPlaybook(
   timestamp: string,
 ): Playbook {
   if (!input.name.trim() || !input.triggerConditions.length)
-    throw new Error("Tên và điều kiện kích hoạt playbook là bắt buộc.");
+    throw new Error("Tên và điều kiện kích hoạt phương án điều phối là bắt buộc.");
   return {
     ...input,
     id,
@@ -62,7 +62,7 @@ export function updatePlaybook(
   timestamp: string,
 ) {
   if (playbook.status === "Lưu trữ")
-    throw new Error("Không thể sửa playbook đã lưu trữ.");
+    throw new Error("Không thể sửa phương án điều phối đã lưu trữ.");
   return { ...playbook, ...changes, updatedAt: timestamp };
 }
 export function publishPlaybook(
@@ -70,7 +70,7 @@ export function publishPlaybook(
   timestamp: string,
 ): Playbook {
   if (playbook.status !== "Nháp")
-    throw new Error("Chỉ playbook nháp mới có thể xuất bản.");
+    throw new Error("Chỉ phương án điều phối ở trạng thái nháp mới có thể xuất bản.");
   if (
     !playbook.steps.length ||
     playbook.steps.some((step) => !step.completionCriteria.length)
@@ -83,7 +83,7 @@ export function archivePlaybook(
   timestamp: string,
 ): Playbook {
   if (playbook.status === "Lưu trữ")
-    throw new Error("Playbook đã được lưu trữ.");
+    throw new Error("Kế hoạch ứng phó đã được lưu trữ.");
   return { ...playbook, status: "Lưu trữ", updatedAt: timestamp };
 }
 export function addStep(
@@ -100,7 +100,7 @@ export function addStep(
   timestamp: string,
 ): Playbook {
   if (playbook.status !== "Nháp")
-    throw new Error("Chỉ có thể sửa bước của playbook nháp.");
+    throw new Error("Chỉ có thể sửa bước của phương án điều phối ở trạng thái nháp.");
   if (playbook.steps.some((item) => item.id === step.id))
     throw new Error("Mã bước đã tồn tại.");
   const value: PlaybookStep = {
@@ -124,7 +124,7 @@ export function reorderSteps(
   timestamp: string,
 ): Playbook {
   if (playbook.status !== "Nháp")
-    throw new Error("Chỉ có thể sắp xếp playbook nháp.");
+    throw new Error("Chỉ có thể sắp xếp phương án điều phối ở trạng thái nháp.");
   if (
     orderedIds.length !== playbook.steps.length ||
     new Set(orderedIds).size !== orderedIds.length
@@ -162,15 +162,15 @@ export function activatePlaybook(
   timestamp: string,
 ): PlaybookExecution {
   if (playbook.status !== "Đã xuất bản")
-    throw new Error("Chỉ playbook đã xuất bản mới có thể kích hoạt.");
+    throw new Error("Chỉ phương án điều phối đã xuất bản mới có thể kích hoạt.");
   if (!incident?.id)
-    throw new Error("Phải có Incident hợp lệ để kích hoạt playbook.");
+    throw new Error("Phải có sự cố hợp lệ để kích hoạt kế hoạch ứng phó.");
   assertPlaybookScope(role, playbook.geographicScope, allowedScope);
   if (
     !incident.location.name.includes(allowedScope) &&
     role === "local_officer"
   )
-    throw new Error("Incident nằm ngoài phạm vi địa lý được phân quyền.");
+    throw new Error("Sự cố nằm ngoài phạm vi địa lý được phân quyền.");
   const stepExecutions: PlaybookStepExecution[] = playbook.steps.map(
     (step) => ({
       id: `${id}-${step.id}`,
@@ -218,7 +218,7 @@ function transitionExecution(
 ) {
   if (!getExecutionTransitions(execution.status).includes(status))
     throw new Error(
-      `Không thể chuyển execution từ ${execution.status} sang ${status}.`,
+      `Không thể chuyển đợt thực hiện từ ${execution.status} sang ${status}.`,
     );
   return {
     ...execution,
@@ -271,10 +271,10 @@ export function startPlaybookStep(
   timestamp: string,
 ) {
   if (execution.status !== "Đang hoạt động")
-    throw new Error("Execution phải đang hoạt động.");
+    throw new Error("Đợt thực hiện phải đang hoạt động.");
   const template = playbook.steps.find((item) => item.id === stepId);
   const step = execution.stepExecutions.find((item) => item.stepId === stepId);
-  if (!template || !step) throw new Error("Không tìm thấy bước playbook.");
+  if (!template || !step) throw new Error("Không tìm thấy bước trong phương án điều phối.");
   if (!prerequisitesMet(template, execution))
     throw new Error("Chưa hoàn thành bước tiên quyết.");
   if (!getStepTransitions(step.status).includes("Đang thực hiện"))
@@ -305,10 +305,10 @@ export function completePlaybookStep(
   timestamp: string,
 ) {
   if (execution.status !== "Đang hoạt động")
-    throw new Error("Execution phải đang hoạt động.");
+    throw new Error("Đợt thực hiện phải đang hoạt động.");
   const template = playbook.steps.find((item) => item.id === stepId);
   const step = execution.stepExecutions.find((item) => item.stepId === stepId);
-  if (!template || !step) throw new Error("Không tìm thấy bước playbook.");
+  if (!template || !step) throw new Error("Không tìm thấy bước trong phương án điều phối.");
   if (!getStepTransitions(step.status).includes("Hoàn thành"))
     throw new Error(`Không thể hoàn thành bước từ trạng thái ${step.status}.`);
   const result = evaluateStepCompletion(template, step, context);
@@ -340,9 +340,9 @@ export function skipPlaybookStep(
 ) {
   const template = playbook.steps.find((item) => item.id === stepId);
   const step = execution.stepExecutions.find((item) => item.stepId === stepId);
-  if (!template || !step) throw new Error("Không tìm thấy bước playbook.");
+  if (!template || !step) throw new Error("Không tìm thấy bước trong phương án điều phối.");
   if (template.required && !canOverride)
-    throw new Error("Bước bắt buộc chỉ có thể bỏ qua với quyền override.");
+    throw new Error("Bước bắt buộc chỉ có thể bỏ qua khi có quyền phê duyệt ngoại lệ.");
   if (!getStepTransitions(step.status).includes("Bỏ qua"))
     throw new Error(`Không thể bỏ qua bước từ trạng thái ${step.status}.`);
   const changed = {
@@ -381,7 +381,7 @@ export function updateStepEvidence(
   timestamp: string,
 ) {
   if (!execution.stepExecutions.some((item) => item.stepId === stepId))
-    throw new Error("Không tìm thấy bước execution.");
+    throw new Error("Không tìm thấy bước trong đợt thực hiện.");
   const stepExecutions = execution.stepExecutions.map((item) =>
     item.stepId === stepId ? { ...item, ...changes } : item,
   );

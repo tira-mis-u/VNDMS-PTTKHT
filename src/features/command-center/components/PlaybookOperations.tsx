@@ -24,7 +24,7 @@ export function PlaybookOperations({
           <small>Tiến độ, bước hiện tại và ngoại lệ</small>
         </div>
         <button onClick={() => navigate("/playbooks")}>
-          Tất cả playbook
+          Tất cả phương án điều phối
           <ChevronRight size={13} />
         </button>
       </div>
@@ -84,7 +84,7 @@ export function PlaybookOperations({
         {!active.length && (
           <p>
             <AlertTriangle size={14} />
-            Không có playbook đang thực thi.
+            Không có phương án điều phối đang thực hiện.
           </p>
         )}
       </div>

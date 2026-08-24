@@ -20,7 +20,7 @@ export function markAlertReadReceipt(
   at: string,
 ): AlertInteraction[] {
   if (!alertKey) throw new Error("Thiếu khóa cảnh báo cần đánh dấu đã đọc.");
-  if (!userId) throw new Error("Không xác định được ngườii dùng hiện tại.");
+  if (!userId) throw new Error("Không xác định được người dùng hiện tại.");
   return markAlertRead(interactions, alertKey, { userId, readAt: at });
 }
 

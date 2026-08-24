@@ -33,15 +33,30 @@ export type AppRoute =
   | { name: "simulation" }
   | { name: "ai-assistant" }
   | { name: "operational-map"; focus: string | null }
+  | { name: "operational-situation" }
+  | { name: "operational-history" }
+  | { name: "operational-trends" }
   | { name: "profile" }
   | { name: "admin-users" }
+  | { name: "admin-permissions" }
   | { name: "admin-audit" }
+  | { name: "system-configuration-blocked" }
   | { name: "placeholder"; label: string }
   | { name: "not-found" };
 export const OPERATIONAL_MAP_WORKSPACE_LABEL = "Bản đồ tác nghiệp";
 export const OPERATIONAL_MAP_WORKSPACE_PATH = `/workspace/${encodeURIComponent(
   OPERATIONAL_MAP_WORKSPACE_LABEL,
 )}`;
+export const RECONSTRUCTION_WORKSPACE_LABEL = "Tái thiết";
+export const RECONSTRUCTION_WORKSPACE_PATH = `/workspace/${encodeURIComponent(RECONSTRUCTION_WORKSPACE_LABEL)}`;
+export const SITUATION_WORKSPACE_PATH = `/workspace/${encodeURIComponent("Tình hình thiên tai")}`;
+export const HISTORY_WORKSPACE_PATH = `/workspace/${encodeURIComponent("Lịch sử thiên tai")}`;
+export const TRENDS_WORKSPACE_PATH = `/workspace/${encodeURIComponent("Xu hướng")}`;
+export const PERMISSIONS_WORKSPACE_PATH = `/workspace/${encodeURIComponent("Phân quyền")}`;
+export const CONFIGURATION_WORKSPACE_PATH = `/workspace/${encodeURIComponent("Cấu hình")}`;
+export function operationalMapFocusPath(entityId: string) {
+  return `${OPERATIONAL_MAP_WORKSPACE_PATH}?focus=${encodeURIComponent(entityId)}`;
+}
 
 export function parseRoute(pathname: string, search = ""): AppRoute {
   if (pathname === "/login") return { name: "login" };
@@ -126,6 +141,16 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
       );
       return { name: "operational-map", focus: params.get("focus") };
     }
+    // Tái thiết là alias điều hướng của danh sách Recovery Project chính thức.
+    // Giữ nguyên URL workspace khi tải lại; detail và mutation vẫn dùng route,
+    // state và application contract canonical dưới /recovery/projects.
+    if (label === RECONSTRUCTION_WORKSPACE_LABEL)
+      return { name: "recovery-project-list" };
+    if (label === "Tình hình thiên tai") return { name: "operational-situation" };
+    if (label === "Lịch sử thiên tai") return { name: "operational-history" };
+    if (label === "Xu hướng") return { name: "operational-trends" };
+    if (label === "Phân quyền") return { name: "admin-permissions" };
+    if (label === "Cấu hình") return { name: "system-configuration-blocked" };
     return {
       name: "placeholder",
       label,
@@ -141,21 +166,23 @@ export function activeNavigationLabel(route: AppRoute) {
   if (route.name.startsWith("evacuation")) return "Sơ tán";
   if (route.name.startsWith("sos")) return "SOS";
   if (route.name.startsWith("relief")) return "Phân phối cứu trợ";
-  if (route.name.startsWith("playbook")) return "Kế hoạch ứng phó";
-  if (
-    route.name.startsWith("assessment") ||
-    route.name.startsWith("recovery-project")
-  )
-    return "Đánh giá thiệt hại";
+  if (route.name.startsWith("playbook")) return "Phương án ứng phó";
+  if (route.name.startsWith("assessment")) return "Đánh giá thiệt hại";
+  if (route.name.startsWith("recovery-project")) return "Tái thiết";
   if (route.name.startsWith("warehouse")) return "Kho vật tư";
   if (route.name.startsWith("alert")) return "Cảnh báo";
-  if (route.name === "analytics-reports") return "Báo cáo";
+  if (route.name === "analytics-reports") return "Báo cáo tác nghiệp";
   if (route.name.startsWith("analytics")) return "Phân tích tác nghiệp";
   if (route.name === "ai-assistant") return "Trợ lý AI";
   if (route.name === "operational-map") return "Bản đồ tác nghiệp";
+  if (route.name === "operational-situation") return "Tình hình thiên tai";
+  if (route.name === "operational-history") return "Lịch sử thiên tai";
+  if (route.name === "operational-trends") return "Xu hướng";
   if (route.name === "simulation") return "Mô phỏng ứng phó";
   if (route.name === "profile") return "Hồ sơ cá nhân";
-  if (route.name === "admin-audit") return "Nhật ký hệ thống";
+  if (route.name === "admin-audit") return "Nhật ký bảo mật";
+  if (route.name === "admin-permissions") return "Phân quyền";
+  if (route.name === "system-configuration-blocked") return "Cấu hình";
   if (route.name.startsWith("admin")) return "Người dùng";
   if (route.name === "placeholder") return route.label;
   return "Trung tâm điều hành";

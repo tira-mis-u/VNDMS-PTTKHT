@@ -27,6 +27,14 @@ import {
   Waves,
 } from "lucide-react";
 import type { Permission } from "@/lib/permissions/permissions";
+import {
+  CONFIGURATION_WORKSPACE_PATH,
+  HISTORY_WORKSPACE_PATH,
+  PERMISSIONS_WORKSPACE_PATH,
+  RECONSTRUCTION_WORKSPACE_PATH,
+  SITUATION_WORKSPACE_PATH,
+  TRENDS_WORKSPACE_PATH,
+} from "../../app/routes/router";
 export type NavItem = {
   label: string;
   icon: ComponentType<{ size?: number }>;
@@ -45,7 +53,7 @@ export const navigationGroups: NavGroup[] = [
     label: "Quản lý & điều hành",
     items: [
       { label: "Trung tâm điều hành", icon: Home, path: "/", permission: "view" },
-      { label: "Tình hình thiên tai", icon: Waves, permission: "view" },
+      { label: "Tình hình thiên tai", icon: Waves, path: SITUATION_WORKSPACE_PATH, permission: "view" },
       { label: "Bản đồ tác nghiệp", icon: Map, path: `/workspace/${encodeURIComponent("Bản đồ tác nghiệp")}`, permission: "view" },
       { label: "Cảnh báo", icon: Bell, path: "/alerts", permission: "alert_view" },
       { label: "Sự cố", icon: Siren, badge: "6", path: "/incidents", permission: "view" },
@@ -54,7 +62,7 @@ export const navigationGroups: NavGroup[] = [
   {
     label: "Ứng phó",
     items: [
-      { label: "Kế hoạch ứng phó", icon: CalendarCheck, path: "/playbooks", permission: "playbook_view" },
+      { label: "Phương án ứng phó", icon: CalendarCheck, path: "/playbooks", permission: "playbook_view" },
       { label: "Nhiệm vụ", icon: ListTodo, badge: "9", path: "/tasks", permission: "task_view" },
       { label: "Đội cứu hộ", icon: LifeBuoy, path: "/teams", permission: "team_view" },
       { label: "Sơ tán", icon: Truck, path: "/evacuations", permission: "evacuation_view" },
@@ -73,17 +81,17 @@ export const navigationGroups: NavGroup[] = [
     label: "Phục hồi",
     items: [
       { label: "Đánh giá thiệt hại", icon: ClipboardCheck, path: "/recovery", permission: "damage_assessment_view" },
-      { label: "Tái thiết", icon: Boxes, permission: "recovery_project_view" },
-      { label: "Báo cáo", icon: FileBarChart, path: "/analytics/reports", permission: "view" },
+      { label: "Tái thiết", icon: Boxes, path: RECONSTRUCTION_WORKSPACE_PATH, permission: "recovery_project_view" },
     ],
   },
   {
     label: "Phân tích",
     items: [
       { label: "Phân tích tác nghiệp", icon: BarChart3, path: "/analytics", permission: "view" },
+      { label: "Báo cáo tác nghiệp", icon: FileBarChart, path: "/analytics/reports", permission: "view" },
       { label: "Mô phỏng ứng phó", icon: FlaskConical, path: "/simulation", permission: "simulation_view" },
-      { label: "Lịch sử thiên tai", icon: History, permission: "view" },
-      { label: "Xu hướng", icon: Activity, permission: "view" },
+      { label: "Lịch sử thiên tai", icon: History, path: HISTORY_WORKSPACE_PATH, permission: "view" },
+      { label: "Xu hướng", icon: Activity, path: TRENDS_WORKSPACE_PATH, permission: "view" },
     ],
   },
   {
@@ -95,9 +103,9 @@ export const navigationGroups: NavGroup[] = [
     admin: true,
     items: [
       { label: "Người dùng", icon: Users, path: "/admin/users", permission: "user_manage" },
-      { label: "Phân quyền", icon: LockKeyhole, permission: "user_manage" },
-      { label: "Nhật ký hệ thống", icon: FileClock, path: "/admin/audit", permission: "audit_view" },
-      { label: "Cấu hình", icon: Settings, permission: "user_manage" },
+      { label: "Phân quyền", icon: LockKeyhole, path: PERMISSIONS_WORKSPACE_PATH, permission: "user_manage" },
+      { label: "Nhật ký bảo mật", icon: FileClock, path: "/admin/audit", permission: "audit_view" },
+      { label: "Cấu hình", icon: Settings, path: CONFIGURATION_WORKSPACE_PATH, permission: "user_manage" },
     ],
   },
 ];

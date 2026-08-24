@@ -1,7 +1,7 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   BellRing,
-  ChevronDown,
   ChevronRight,
   Clock3,
   ExternalLink,
@@ -25,7 +25,7 @@ import {
   type EvacuationFilters,
 } from "@/application/evacuations/evacuationQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, EmptyState, Progress } from "@/components/ui";
+import { Badge, Button, EmptyState, PageSectionHeader, Progress, Input } from "@/components/ui";
 
 function statusTone(operation: EvacuationOperation) {
   if (operation.status === "Tạm dừng") return "amber";
@@ -62,12 +62,11 @@ function EvacuationSelect({
 }) {
   return (
     <label className="filter-select">
-      <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)}>
+      <UiSelect aria-label={label} value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option}>{option}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }
@@ -104,20 +103,12 @@ export function EvacuationListPage({
   );
   return (
     <div className="workspace-content evac-page">
-      <div className="page-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Ứng phó</span>
-            <ChevronRight size={13} />
-            <b>Sơ tán</b>
-          </div>
-          <h1>Hoạt động sơ tán</h1>
-          <p>
-            Toàn bộ hoạt động sơ tán dân cư trong phạm vi phân quyền hiện tại,
-            đọc từ trạng thái tác nghiệp canonical
-          </p>
-        </div>
-      </div>
+      <PageSectionHeader
+        section="Ứng phó"
+        title="Hoạt động sơ tán"
+        description="Theo dõi hoạt động sơ tán dân cư trong phạm vi phân quyền từ dữ liệu nghiệp vụ chính thức."
+        icon={Truck}
+      />
 
       <section className="evac-summary-grid" aria-label="Tổng quan sơ tán">
         <div className="evac-summary-card">
@@ -165,16 +156,16 @@ export function EvacuationListPage({
                 /{summary.estimated.toLocaleString("vi-VN")}
               </span>
             </b>
-            <p>Ngườii trong phạm vi phân quyền</p>
+            <p>Người trong phạm vi phân quyền</p>
           </div>
         </div>
       </section>
 
       <section className="content-section evac-queue">
         <div className="evac-toolbar">
-          <label className="incident-search evac-search">
+          <label className="ui-search incident-search evac-search">
             <Search size={14} />
-            <input
+            <Input
               aria-label="Tìm kiếm hoạt động sơ tán"
               placeholder="Tìm theo mã, khu vực nguồn, tuyến, đội, điểm đến…"
               value={filters.search}
@@ -290,7 +281,7 @@ export function EvacuationListPage({
                       />
                       <span>
                         {operation.evacuatedPopulation.toLocaleString("vi-VN")}/
-                        {operation.estimatedPopulation.toLocaleString("vi-VN")} ngườii ·{" "}
+                        {operation.estimatedPopulation.toLocaleString("vi-VN")} người ·{" "}
                         {operation.progress}%
                       </span>
                     </div>

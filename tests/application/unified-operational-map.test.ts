@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import test from "node:test";
 import {
   createAuthorizedOperationalView,
@@ -15,6 +17,7 @@ import {
   type UnifiedMapRouteLine,
 } from "../../src/application/map/unifiedMapQueries";
 import { applyNextSimulationTick, resetSimulationState } from "../../src/application/simulation/simulationUseCases";
+import { operationalMapFocusPath } from "../../src/app/routes/router";
 import { demoUsers } from "../../src/infrastructure/auth/demoUsers";
 import { inMemoryOperationalRepository } from "../../src/infrastructure/persistence/inMemoryOperationalRepository";
 
@@ -60,14 +63,28 @@ test("1. Unified geospatial query đọc đúng canonical entities có tọa đ�
   }
 });
 
-test("2. Commander nhìn đủ lớp operational trên toàn Hà Nội", () => {
-  const view = createAuthorizedOperationalView(user("Trần Quốc Thuận"), load());
-  const counts = countByLayer(getUnifiedMapPoints(view));
-  for (const key of Object.keys(counts))
+test("2. Commander và Operator nhìn đủ lớp operational trên toàn Hà Nội", () => {
+  const commander = createAuthorizedOperationalView(
+    user("Trần Quốc Thuận"),
+    load(),
+  );
+  const operator = createAuthorizedOperationalView(
+    user("Nguyễn Quốc Trung"),
+    load(),
+  );
+  const commanderCounts = countByLayer(getUnifiedMapPoints(commander));
+  const operatorCounts = countByLayer(getUnifiedMapPoints(operator));
+  for (const key of Object.keys(commanderCounts)) {
     assert.ok(
-      counts[key as keyof typeof counts] > 0,
+      commanderCounts[key as keyof typeof commanderCounts] > 0,
       `commander thiếu dữ liệu layer ${key}`,
     );
+    assert.equal(
+      operatorCounts[key as keyof typeof operatorCounts],
+      commanderCounts[key as keyof typeof commanderCounts],
+      `operator không có global visibility tại layer ${key}`,
+    );
+  }
 });
 
 test("3. Local Officer chỉ thấy entity trong scope Tây Hồ trên bản đồ", () => {
@@ -86,8 +103,13 @@ test("4. Rescue role: team/ownership filtering được bảo tồn trong map po
   const view = createAuthorizedOperationalView(user("Phạm Trung Hiếu"), load());
   const points = getUnifiedMapPoints(view);
   const allowedTeamIds = new Set(view.teams.map((team) => team.id));
-  for (const point of points.filter((p) => p.kind === "team"))
-    assert.ok(allowedTeamIds.has(point.id));
+  const visibleTeams = points.filter((p) => p.kind === "team");
+  assert.deepEqual(
+    visibleTeams.map((point) => point.id),
+    ["CH-05"],
+    "đội trưởng chỉ được nhận layer đội thuộc ownership",
+  );
+  for (const point of visibleTeams) assert.ok(allowedTeamIds.has(point.id));
   // Không có point nào thuộc entity đã bị authorized view loại ra.
   const allowedIncidentIds = new Set(view.incidents.map((i) => i.id));
   for (const point of points.filter((p) => p.kind === "incident"))
@@ -109,16 +131,10 @@ test("5. Warehouse role chỉ thấy kho được phân quyền", () => {
 test("6. Citizen bị từ chối toàn bộ operational layers", () => {
   const view = createAuthorizedOperationalView(citizen(), load());
   const points = getUnifiedMapPoints(view);
-  const operationalKinds = new Set([
-    "incident",
-    "sos",
-    "task",
-    "team",
-    "evacuation",
-  ]);
-  assert.equal(
-    points.some((p) => operationalKinds.has(p.kind)),
-    false,
+  assert.deepEqual(
+    points,
+    [],
+    "công dân không được nhận bất kỳ layer tác nghiệp nào",
   );
 });
 
@@ -141,6 +157,10 @@ test("7. Entity click mapping → detail route canonical cho mọi layer", () =>
     assert.ok(
       point.detailPath.startsWith(prefix),
       `${kind} -> ${point.detailPath}`,
+    );
+    assert.equal(
+      operationalMapFocusPath(point.id),
+      `/workspace/B%E1%BA%A3n%20%C4%91%E1%BB%93%20t%C3%A1c%20nghi%E1%BB%87p?focus=${encodeURIComponent(point.id)}`,
     );
   }
 });
@@ -254,5 +274,65 @@ test("12. Data stamp & drawer detail không rò dữ liệu cho query ngoài sco
     leak,
     undefined,
     "drawer resolve được entity ngoài scope của Local Officer",
+  );
+  const authorizedIds = {
+    incident: new Set(view.incidents.map((item) => item.id)),
+    sos: new Set(view.sosRequests.map((item) => item.id)),
+    task: new Set(view.tasks.map((item) => item.id)),
+    team: new Set(view.teams.map((item) => item.id)),
+    shelter: new Set(view.shelters.map((item) => item.id)),
+    evacuation: new Set(view.evacuationOperations.map((item) => item.id)),
+    relief: new Set(view.reliefRequests.map((item) => item.id)),
+    warehouse: new Set(view.warehouses.map((item) => item.id)),
+    recovery: new Set(view.recoveryProjects.map((item) => item.id)),
+  };
+  for (const point of getUnifiedMapPoints(view))
+    assert.ok(
+      authorizedIds[point.kind].has(point.id),
+      `query làm rò ${point.kind}:${point.id}`,
+    );
+});
+
+function sourceFiles(directory: string): string[] {
+  return readdirSync(directory).flatMap((entry) => {
+    const path = join(directory, entry);
+    return statSync(path).isDirectory() ? sourceFiles(path) : [path];
+  });
+}
+
+test("13. Static architecture scan: feature không bypass Provider hoặc tạo GIS store", () => {
+  const featureFiles = sourceFiles("src/features/operational-map");
+  const featureSource = featureFiles
+    .map((path) => readFileSync(path, "utf8"))
+    .join("\n");
+  const querySource = readFileSync(
+    "src/application/map/unifiedMapQueries.ts",
+    "utf8",
+  );
+  for (const forbidden of [
+    "inMemoryOperationalRepository",
+    "infrastructure/persistence",
+    "createAuthorizedOperationalView",
+  ])
+    assert.equal(
+      featureSource.includes(forbidden),
+      false,
+      `presentation bypass qua ${forbidden}`,
+    );
+  for (const forbidden of [
+    "inMemoryOperationalRepository",
+    "infrastructure/persistence",
+    'from "@/state/operations/OperationalStateContext"',
+    "createContext(",
+  ])
+    assert.equal(
+      querySource.includes(forbidden),
+      false,
+      `application query phụ thuộc ${forbidden}`,
+    );
+  assert.equal(
+    featureFiles.some((path) => /(?:Store|Context|Repository)\.(?:ts|tsx)$/.test(path)),
+    false,
+    "feature tạo GIS store/context/repository riêng",
   );
 });

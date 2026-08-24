@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Bell, Check, ChevronRight, ExternalLink } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  Check,
+  ChevronRight,
+  CircleAlert,
+  ExternalLink,
+  Info,
+  ShieldAlert,
+} from "lucide-react";
 import { Badge, Button } from "@/components/ui";
 import {
   alertCategoryLabels,
@@ -82,6 +91,12 @@ export function AlertNotificationPopover({
     alert.requiresAcknowledgement &&
     !alert.acknowledgedAt &&
     store.can("alert_acknowledge", alert.geographicScope);
+  const severityIcons = {
+    critical: ShieldAlert,
+    high: AlertTriangle,
+    medium: CircleAlert,
+    low: Info,
+  } as const;
   return (
     <div
       className="notification-popover alert-popover"
@@ -108,64 +123,77 @@ export function AlertNotificationPopover({
             </p>
           )}
           <ul className="alert-popover-list">
-            {top.map((alert) => (
-              <li key={alert.key}>
-                <button
-                  className="alert-popover-item"
-                  onClick={() => openAlert(alert)}
+            {top.map((alert) => {
+              const SeverityIcon = severityIcons[alert.severity];
+              return (
+                <li
+                  key={alert.key}
+                  className={`alert-popover-card severity-${alert.severity} ${alert.status === "Chưa đọc" ? "is-unread" : ""}`}
                 >
-                  <span className="alert-popover-head">
-                    <Badge tone={alertSeverityTones[alert.severity]}>
-                      {alertSeverityLabels[alert.severity]}
-                    </Badge>
-                    <small>{alertCategoryLabels[alert.category]}</small>
-                    <time>{alert.detectedAt}</time>
+                  <span className="alert-popover-severity-icon" aria-hidden="true">
+                    <SeverityIcon size={17} />
                   </span>
-                  <span className="alert-popover-title">
-                    {alert.status === "Chưa đọc" && (
-                      <i
-                        className="alert-unread-mark"
-                        aria-label="Chưa đọc"
-                      />
-                    )}
-                    {alert.title}
-                  </span>
-                  <span className="alert-popover-source">
-                    Nguồn: {alert.source.label} {alert.source.code} ·{" "}
-                    {alert.status}
-                  </span>
-                </button>
-                <span className="alert-popover-actions">
-                  {alert.status === "Chưa đọc" && (
+                  <div className="alert-popover-card-content">
                     <button
-                      title="Đánh dấu đã đọc"
-                      aria-label={`Đánh dấu đã đọc ${alert.source.code}`}
-                      onClick={() => run(() => store.markAlertRead(alert.key))}
+                      className="alert-popover-item"
+                      onClick={() => openAlert(alert)}
                     >
-                      <Check size={14} />
+                      <span className="alert-popover-head">
+                        <Badge tone={alertSeverityTones[alert.severity]}>
+                          {alertSeverityLabels[alert.severity]}
+                        </Badge>
+                        <small>{alertCategoryLabels[alert.category]}</small>
+                        <time title={`Thời điểm phát hiện: ${alert.detectedAt}`}>
+                          {alert.detectedAt}
+                        </time>
+                      </span>
+                      <span className="alert-popover-title">
+                        {alert.status === "Chưa đọc" && (
+                          <i className="alert-unread-mark" aria-label="Chưa đọc" />
+                        )}
+                        {alert.title}
+                      </span>
+                      <span className="alert-popover-message">{alert.message}</span>
                     </button>
-                  )}
-                  {canAcknowledge(alert) && (
-                    <button
-                      className="alert-ack-action"
-                      onClick={() => run(() => store.acknowledgeAlert(alert.key))}
-                    >
-                      Xác nhận
-                    </button>
-                  )}
-                  <button
-                    title={`Mở ${alert.source.label} ${alert.source.code}`}
-                    aria-label={`Mở nguồn ${alert.source.code}`}
-                    onClick={() => {
-                      onClose();
-                      navigate(alert.source.path);
-                    }}
-                  >
-                    <ExternalLink size={14} />
-                  </button>
-                </span>
-              </li>
-            ))}
+                    <div className="alert-popover-card-footer">
+                      <span className="alert-popover-source">
+                        {alert.source.label} · {alert.source.code}
+                      </span>
+                      <span className="alert-popover-actions">
+                        {alert.status === "Chưa đọc" && (
+                          <button
+                            title="Đánh dấu đã đọc"
+                            aria-label={`Đánh dấu đã đọc ${alert.source.code}`}
+                            onClick={() => run(() => store.markAlertRead(alert.key))}
+                          >
+                            <Check size={14} />
+                            <span>Đã đọc</span>
+                          </button>
+                        )}
+                        {canAcknowledge(alert) && (
+                          <button
+                            className="alert-ack-action"
+                            onClick={() => run(() => store.acknowledgeAlert(alert.key))}
+                          >
+                            Xác nhận
+                          </button>
+                        )}
+                        <button
+                          title={`Mở ${alert.source.label} ${alert.source.code}`}
+                          aria-label={`Mở nguồn ${alert.source.code}`}
+                          onClick={() => {
+                            onClose();
+                            navigate(alert.source.path);
+                          }}
+                        >
+                          <ExternalLink size={14} />
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
           <div className="alert-popover-footer">
             <button

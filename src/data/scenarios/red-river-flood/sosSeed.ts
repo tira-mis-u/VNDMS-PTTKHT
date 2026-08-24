@@ -1,3 +1,4 @@
+import { PERSONNEL, personName } from "../../identity/personnel";
 import type { SosEvent, SosRequest } from "../../../domain/sos/types";
 export const initialSosRequests: SosRequest[] = [
   {
@@ -5,7 +6,7 @@ export const initialSosRequests: SosRequest[] = [
     code: "SOS-0241",
     receivedAt: "21/08/2026 09:12",
     reporter: {
-      name: "Nguyễn Anh Dũng",
+      name: personName(PERSONNEL.NGUYEN_ANH_DUNG.id),
       contact: "0914 620 118",
       source: "Tổng đài 112",
     },
@@ -20,27 +21,27 @@ export const initialSosRequests: SosRequest[] = [
     description:
       "Sáu người mắc kẹt tại tầng một, nước tiếp tục dâng; cần xuồng cứu hộ.",
     affectedPeople: [
-      { id: "AP-0241-01", name: "Nguyễn Xuân Tú", condition: "Bị thương" },
-      { id: "AP-0241-02", name: "Bùi Minh", condition: "Bị thương" },
+      { id: "AP-0241-01", name: personName(PERSONNEL.NGUYEN_XUAN_TU.id), condition: "Bị thương" },
+      { id: "AP-0241-02", name: personName(PERSONNEL.BUI_MINH.id), condition: "Bị thương" },
       {
         id: "AP-0241-03",
-        name: "Nguyễn Phương Anh",
+        name: personName(PERSONNEL.NGUYEN_PHUONG_ANH.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Trẻ em",
       },
       {
         id: "AP-0241-04",
-        name: "Lưu Kỳ Anh",
+        name: personName(PERSONNEL.LUU_KY_ANH.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Trẻ em",
       },
       {
         id: "AP-0241-05",
-        name: "Đặng Cao Bồ",
+        name: personName(PERSONNEL.DANG_CAO_BO.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Người cao tuổi",
       },
-      { id: "AP-0241-06", name: "Ngô Bá Khá", condition: "Chờ cứu hộ" },
+      { id: "AP-0241-06", name: personName(PERSONNEL.NGO_BA_KHA.id), condition: "Chờ cứu hộ" },
     ],
     peopleAtRisk: 6,
     injuredCount: 2,
@@ -76,7 +77,7 @@ export const initialSosRequests: SosRequest[] = [
     code: "SOS-0242",
     receivedAt: "21/08/2026 09:48",
     reporter: {
-      name: "Nguyễn Hoàng Anh",
+      name: personName(PERSONNEL.NGUYEN_HOANG_ANH.id),
       contact: "0982 115 407",
       source: "Cán bộ địa phương",
     },
@@ -93,63 +94,63 @@ export const initialSosRequests: SosRequest[] = [
     affectedPeople: [
       {
         id: "AP-0242-01",
-        name: "Nguyễn Hữu Phương Uyên",
+        name: personName(PERSONNEL.NGUYEN_HUU_PHUONG_UYEN.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Người cao tuổi",
       },
       {
         id: "AP-0242-02",
-        name: "Khúc Thị Hương",
+        name: personName(PERSONNEL.KHUC_THI_HUONG.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Người cao tuổi",
       },
       {
         id: "AP-0242-03",
-        name: "Kiều Lương Tâm",
+        name: personName(PERSONNEL.KIEU_LUONG_TAM.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Người khuyết tật",
       },
       {
         id: "AP-0242-04",
-        name: "Nguyễn Trung Dũng",
+        name: personName(PERSONNEL.NGUYEN_TRUNG_DUNG.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Người cao tuổi",
       },
       {
         id: "AP-0242-05",
-        name: "Bùi Văn Nguyện",
+        name: personName(PERSONNEL.BUI_VAN_NGUYEN.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Người cao tuổi",
       },
       {
         id: "AP-0242-06",
-        name: "Đồng Anh Linh",
+        name: personName(PERSONNEL.DONG_ANH_LINH.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Trẻ em",
       },
       {
         id: "AP-0242-07",
-        name: "Phương Hữu Dưỡng",
+        name: personName(PERSONNEL.PHUONG_HUU_DUONG.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Người cao tuổi",
       },
       {
         id: "AP-0242-08",
-        name: "Võ Văn Cường Quốc",
+        name: personName(PERSONNEL.VO_VAN_CUONG_QUOC.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Người cao tuổi",
       },
       {
         id: "AP-0242-09",
-        name: "Cao Việt Hưng",
+        name: personName(PERSONNEL.CAO_VIET_HUNG.id),
         condition: "Chờ cứu hộ",
         vulnerableGroup: "Người cao tuổi",
       },
-      { id: "AP-0242-10", name: "Đào Hồng Trà", condition: "Chờ cứu hộ" },
-      { id: "AP-0242-11", name: "Lưu Thị Thanh Trúc", condition: "Chờ cứu hộ" },
+      { id: "AP-0242-10", name: personName(PERSONNEL.DAO_HONG_TRA.id), condition: "Chờ cứu hộ" },
+      { id: "AP-0242-11", name: personName(PERSONNEL.LUU_THI_THANH_TRUC.id), condition: "Chờ cứu hộ" },
       {
         id: "AP-0242-12",
-        name: "Nguyễn Trần Thanh Vân",
+        name: personName(PERSONNEL.NGUYEN_TRAN_THANH_VAN.id),
         condition: "Chờ cứu hộ",
       },
     ],
@@ -185,7 +186,7 @@ export const initialSosRequests: SosRequest[] = [
     code: "SOS-0243",
     receivedAt: "21/08/2026 10:18",
     reporter: {
-      name: "Nguyễn Tuấn Hưng",
+      name: personName(PERSONNEL.NGUYEN_TUAN_HUNG.id),
       contact: "Chưa xác nhận",
       source: "Người dân",
     },
@@ -200,8 +201,8 @@ export const initialSosRequests: SosRequest[] = [
     description:
       "Báo có hai người chưa rời khỏi lán ven sông; vị trí cần xác minh.",
     affectedPeople: [
-      { id: "AP-0243-01", name: "Lê Huy Hoàng", condition: "Chờ cứu hộ" },
-      { id: "AP-0243-02", name: "Ngô Ngọc Ly", condition: "Chờ cứu hộ" },
+      { id: "AP-0243-01", name: personName(PERSONNEL.LE_HUY_HOANG.id), condition: "Chờ cứu hộ" },
+      { id: "AP-0243-02", name: personName(PERSONNEL.NGO_NGOC_LY.id), condition: "Chờ cứu hộ" },
     ],
     peopleAtRisk: 2,
     injuredCount: 0,
@@ -230,7 +231,7 @@ export const initialSosRequests: SosRequest[] = [
     code: "SOS-0244",
     receivedAt: "21/08/2026 07:42",
     reporter: {
-      name: "Phạm Đức Trung",
+      name: personName(PERSONNEL.PHAM_DUC_TRUNG.id),
       contact: "0905 881 206",
       source: "Ứng dụng hiện trường",
     },
@@ -244,7 +245,7 @@ export const initialSosRequests: SosRequest[] = [
     },
     description: "Một người bị kẹt trong xe do cây đổ chắn đường.",
     affectedPeople: [
-      { id: "AP-0244-01", name: "Hà Nhật Long", condition: "Đã an toàn" },
+      { id: "AP-0244-01", name: personName(PERSONNEL.HA_NHAT_LONG.id), condition: "Đã an toàn" },
     ],
     peopleAtRisk: 1,
     injuredCount: 0,
@@ -285,7 +286,7 @@ export const initialSosEvents: SosEvent[] = [
     sosId: "SOS-0241",
     type: "dispatch",
     message: "Giao nhiệm vụ TSK-0241 cho CH-01",
-    actor: "Lê Nguyễn Minh Trí",
+    actor: personName(PERSONNEL.RESCUE_MEMBER.id),
     timestamp: "09:18",
     source: "Trung tâm điều hành",
   },
@@ -303,7 +304,7 @@ export const initialSosEvents: SosEvent[] = [
     sosId: "SOS-0242",
     type: "route",
     message: "Hoạt động EVAC-002 tạm dừng do tuyến Âu Cơ bị chặn",
-    actor: "Trần Thiện Thanh Bảo",
+    actor: personName(PERSONNEL.TRAN_THIEN_THANH_BAO.id),
     timestamp: "10:33",
     source: "Điều hành sơ tán",
   },

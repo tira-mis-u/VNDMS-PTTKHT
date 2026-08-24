@@ -81,7 +81,7 @@ test("severity mapping và cờ yêu cầu xác nhận", () => {
   assert.equal(stalled.severity, "medium");
 });
 
-test("sắp xếp theo severity rồi thởi điểm ghi nhận", () => {
+test("sắp xếp theo severity rồi thời điểm ghi nhận", () => {
   const alerts = derive();
   for (let index = 1; index < alerts.length; index++)
     assert.ok(
@@ -153,7 +153,7 @@ test("ngoại lệ simulation-like thay đổi severity thì alert đổi theo",
   );
 });
 
-test("morph alert state theo ngườii dùng: chưa đọc → đã đọc → đã xác nhận", () => {
+test("morph alert state theo người dùng: chưa đọc → đã đọc → đã xác nhận", () => {
   const [alert] = derive();
   const unread = resolveAlertState(alert, undefined, "USR-CMD-001");
   assert.equal(unread.status, "Chưa đọc");
@@ -164,7 +164,7 @@ test("morph alert state theo ngườii dùng: chưa đọc → đã đọc → �
   const read = resolveAlertState(alert, interactions[0], "USR-CMD-001");
   assert.equal(read.status, "Đã đọc");
   assert.equal(read.readAt, "21/08/2026 10:45");
-  // ngườii dùng khác vẫn chưa đọc
+  // người dùng khác vẫn chưa đọc
   assert.equal(
     resolveAlertState(alert, interactions[0], "USR-OPS-001").status,
     "Chưa đọc",

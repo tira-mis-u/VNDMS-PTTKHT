@@ -1,7 +1,7 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
-  ChevronDown,
   ChevronRight,
   Clock3,
   Search,
@@ -17,7 +17,7 @@ import {
   isProjectOverdue,
 } from "@/domain/recovery/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress } from "@/components/ui";
+import { Badge, Button, PageSectionHeader, Progress, Input } from "@/components/ui";
 function Select({
   value,
   onChange,
@@ -29,12 +29,11 @@ function Select({
 }) {
   return (
     <label className="filter-select">
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <UiSelect value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((item) => (
           <option key={item}>{item}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }
@@ -64,26 +63,18 @@ export function RecoveryProjectListPage({
   );
   return (
     <div className="workspace-content recovery-page">
-      <div className="page-header recovery-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Phục hồi</span>
-            <ChevronRight size={13} />
-            <b>Dự án khôi phục</b>
-          </div>
-          <h1>Dự án khôi phục</h1>
-          <p>
-            Triển khai từ assessment đã xác minh tới milestone, nguồn lực và
-            hoàn thành
-          </p>
-        </div>
-        <Button
-          variant="secondary"
-          onClick={() => navigate("/recovery/assessments")}
-        >
-          Đánh giá thiệt hại
-        </Button>
-      </div>
+      <PageSectionHeader
+        section="Phục hồi"
+        title="Dự án khôi phục"
+        description="Triển khai từ đánh giá đã xác minh tới mốc tiến độ, nguồn lực và hoàn thành."
+        icon={Clock3}
+        className="recovery-header"
+        actions={
+          <Button variant="secondary" onClick={() => navigate("/recovery/assessments")}>
+            Đánh giá thiệt hại
+          </Button>
+        }
+      />
       <section className="recovery-strip">
         <span
           className={
@@ -106,9 +97,9 @@ export function RecoveryProjectListPage({
       </section>
       <section className="relief-worklist">
         <div className="relief-filters">
-          <label className="incident-search">
+          <label className="ui-search incident-search">
             <Search size={15} />
-            <input
+            <Input
               value={filters.search}
               onChange={(e) => patch("search", e.target.value)}
               placeholder="Tìm mã, tên, khu vực hoặc phụ trách…"
@@ -183,7 +174,7 @@ export function RecoveryProjectListPage({
           <span>
             <b>{rows.length}</b> dự án
           </span>
-          <span>Progress dẫn xuất từ milestone và Task canonical</span>
+          <span>Tiến độ được tính từ các mốc công việc và nhiệm vụ chính thức</span>
         </div>
         <div className="recovery-project-table">
           <div className="project-table-head">
@@ -212,18 +203,22 @@ export function RecoveryProjectListPage({
                   {item.category} · {item.incidentId}
                 </small>
               </span>
-              <Badge
-                tone={
-                  item.priority === "Khẩn cấp"
-                    ? "red"
-                    : item.priority === "Cao"
-                      ? "amber"
-                      : "blue"
-                }
-              >
-                {item.priority}
-              </Badge>
               <span>
+                <small className="project-mobile-label">Ưu tiên</small>
+                <Badge
+                  tone={
+                    item.priority === "Khẩn cấp"
+                      ? "red"
+                      : item.priority === "Cao"
+                        ? "amber"
+                        : "blue"
+                  }
+                >
+                  {item.priority}
+                </Badge>
+              </span>
+              <span>
+                <small className="project-mobile-label">Trạng thái</small>
                 <Badge
                   tone={
                     item.status === "Hoàn thành"
@@ -238,15 +233,21 @@ export function RecoveryProjectListPage({
                   {item.status}
                 </Badge>
               </span>
-              <span>{item.geographicScope}</span>
               <span>
+                <small className="project-mobile-label">Khu vực</small>
+                {item.geographicScope}
+              </span>
+              <span>
+                <small className="project-mobile-label">Ngân sách</small>
                 <b>{money(item.approvedBudget || item.estimatedBudget)}</b>
                 <small>{budgetUsage(item)}% đã sử dụng</small>
               </span>
               <span className={isBudgetRisk(item) ? "budget-risk" : ""}>
+                <small className="project-mobile-label">Đã chi</small>
                 <b>{money(item.spentBudget)}</b>
               </span>
               <span>
+                <small className="project-mobile-label">Tiến độ</small>
                 <b>{item.progress}%</b>
                 <Progress
                   value={item.progress}
@@ -254,12 +255,14 @@ export function RecoveryProjectListPage({
                 />
               </span>
               <span className={isProjectOverdue(item) ? "overdue" : ""}>
+                <small className="project-mobile-label">Ngày mục tiêu</small>
                 <Clock3 size={12} />
                 {item.targetDate}
                 <small>{isProjectOverdue(item) ? "Quá hạn" : "Mục tiêu"}</small>
               </span>
               <span>
-                <b>{item.owner || "Chưa có owner"}</b>
+                <small className="project-mobile-label">Phụ trách</small>
+                <b>{item.owner || "Chưa có đơn vị phụ trách"}</b>
               </span>
               <ChevronRight size={15} />
             </button>

@@ -27,7 +27,7 @@ export interface TeamLocation {
   longitude: number;
   accuracy: number;
   timestamp: string;
-  source: "GPS" | "Thiết bị di động" | "Điều hành viên";
+  source: "Thiết bị định vị" | "Thiết bị di động" | "Điều hành viên";
   communicationStatus: "Kết nối" | "Gián đoạn" | "Mất liên lạc";
 }
 export interface RescueTeam {

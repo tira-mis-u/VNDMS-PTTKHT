@@ -31,6 +31,13 @@ import type {
 } from "../../domain/alerts/types";
 
 export interface OperationalSnapshot {
+  /** Provenance của lát cắt dữ liệu; không phải đồng hồ thời gian thực. */
+  metadata: {
+    scenarioId: string;
+    scenarioName: string;
+    asOf: string;
+    source: string;
+  };
   incidents: Incident[];
   events: IncidentEvent[];
   tasks: IncidentTask[];

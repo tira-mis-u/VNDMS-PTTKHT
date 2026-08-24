@@ -1,3 +1,4 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -26,7 +27,7 @@ import type {
   PlaybookStepExecution,
 } from "@/domain/playbooks/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, EmptyState, Progress } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, EmptyState, Progress, Textarea } from "@/components/ui";
 const tone = (
   status: string,
 ): "red" | "amber" | "green" | "blue" | "neutral" =>
@@ -64,11 +65,11 @@ export function PlaybookExecutionPage({
     return (
       <div className="workspace-content">
         <EmptyState
-          title="Chưa có execution"
-          description="Kích hoạt playbook trong context của một Incident trước khi thực thi."
+          title="Chưa có đợt thực hiện"
+          description="Kích hoạt phương án điều phối trong bối cảnh của một sự cố trước khi thực thi."
           action={
             <Button onClick={() => navigate(`/playbooks/${playbookId}`)}>
-              Mở playbook
+              Mở phương án điều phối
             </Button>
           }
         />
@@ -112,7 +113,7 @@ export function PlaybookExecutionPage({
           onClick={() => navigate(`/playbooks/${playbook.id}`)}
         >
           <ArrowLeft size={15} />
-          Chi tiết playbook
+          Chi tiết phương án điều phối
         </button>
         <div className="detail-actions">
           {store.can("recovery_project_create") && (
@@ -162,7 +163,7 @@ export function PlaybookExecutionPage({
                 }
               >
                 <Ban size={14} />
-                Hủy execution
+                Hủy đợt thực hiện
               </Button>
             )}
           {execution.status === "Đang hoạt động" &&
@@ -173,7 +174,7 @@ export function PlaybookExecutionPage({
                 }
               >
                 <CheckCircle2 size={14} />
-                Hoàn thành playbook
+                Hoàn thành phương án điều phối
               </Button>
             )}
         </div>
@@ -244,7 +245,7 @@ export function PlaybookExecutionPage({
               ? "Bắt đầu bước"
               : selected.status === "Đang thực hiện"
                 ? "Ghi nhận bằng chứng và hoàn thành"
-                : "Theo dõi execution"}
+                : "Theo dõi đợt thực hiện"}
         </span>
       </div>
       {error && (
@@ -472,8 +473,8 @@ export function PlaybookExecutionPage({
       <section className="execution-timeline detail-section">
         <div className="section-heading">
           <div>
-            <h2>Timeline thực thi</h2>
-            <p>Mọi thay đổi quan trọng được ghi vào audit hiện tại</p>
+            <h2>Nhật ký thực hiện</h2>
+            <p>Mọi thay đổi quan trọng được ghi vào nhật ký hiện tại</p>
           </div>
         </div>
         <div className="detail-timeline">
@@ -640,7 +641,7 @@ function EvidenceDialog({
   };
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div className="incident-form-dialog playbook-dialog">
         <header>
           <h2>Bằng chứng bước tác chiến</h2>
@@ -651,7 +652,7 @@ function EvidenceDialog({
         <div className="incident-form-body">
           <label className="field field-full">
             <span>Ghi chú nghiệp vụ</span>
-            <textarea
+            <Textarea
               rows={4}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
@@ -660,7 +661,7 @@ function EvidenceDialog({
           {template.type === "Xác minh" && (
             <label className="field field-full">
               <span>Kết quả xác minh</span>
-              <textarea
+              <Textarea
                 rows={3}
                 value={verification}
                 onChange={(event) => setVerification(event.target.value)}
@@ -669,8 +670,8 @@ function EvidenceDialog({
           )}
           {options.length > 0 && (
             <label className="field field-full">
-              <span>Liên kết hồ sơ canonical</span>
-              <select
+              <span>Liên kết hồ sơ nghiệp vụ chính thức</span>
+              <UiSelect
                 value={selected}
                 onChange={(event) => setSelected(event.target.value)}
               >
@@ -680,11 +681,11 @@ function EvidenceDialog({
                     {item.label}
                   </option>
                 ))}
-              </select>
+              </UiSelect>
             </label>
           )}
           <p className="form-hint">
-            Liên kết chỉ lưu ID của entity hiện có; không tạo bản sao dữ liệu
+            Liên kết chỉ lưu mã của đối tượng hiện có; không tạo bản sao dữ liệu
             nghiệp vụ.
           </p>
         </div>
@@ -697,7 +698,7 @@ function EvidenceDialog({
                 onClose();
               }}
             >
-              Tạo Task từ bước
+              Tạo nhiệm vụ từ bước
             </Button>
           )}
           <Button variant="secondary" onClick={onClose}>

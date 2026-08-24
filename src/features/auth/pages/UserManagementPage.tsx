@@ -1,3 +1,5 @@
+import { PageSectionHeader, Input } from "@/components/ui";
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   CheckCircle2,
@@ -11,14 +13,24 @@ import {
   X,
 } from "lucide-react";
 import { permissionMatrix } from "@/lib/permissions/permissions";
-import { initials, roleLabels, roleOptions } from "@/domain/auth/labels";
+import { permissionLabel } from "@/lib/permissions/labels";
+import {
+  auditActionLabel,
+  auditTimestampLabel,
+  initials,
+  roleLabels,
+  roleOptions,
+} from "@/domain/auth/labels";
 import type { AuthUser, GeographicScopeLevel, Role } from "@/domain/auth/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { AccessDeniedPage } from "./AccessDeniedPage";
+
 export function UserManagementPage({
   navigate,
+  mode = "users",
 }: {
   navigate: (path: string) => void;
+  mode?: "users" | "permissions";
 }) {
   const store = useOperationalState();
   const [query, setQuery] = useState("");
@@ -43,28 +55,28 @@ export function UserManagementPage({
     return (
       <AccessDeniedPage
         navigate={navigate}
-        reason="Chức năng quản lý người dùng yêu cầu quyền quản trị user_manage."
+        reason="Tài khoản hiện tại chưa được cấp quyền quản lý người dùng."
       />
     );
   return (
     <main className="admin-page">
-      <header className="admin-page-header">
-        <div>
-          <span>
-            <UserCog size={14} />
-            Quản trị truy cập
-          </span>
-          <h1>Người dùng</h1>
-          <p>
-            Quản lý vai trò, trạng thái và phạm vi địa lý của tài khoản trình
-            diễn.
-          </p>
-        </div>
-        <button onClick={() => navigate("/admin/audit")}>
-          <ShieldCheck size={15} />
-          Nhật ký bảo mật
-        </button>
-      </header>
+      <PageSectionHeader
+        section="Quản trị truy cập"
+        title={mode === "permissions" ? "Phân quyền" : "Người dùng"}
+        description={
+          mode === "permissions"
+            ? "Gán vai trò và phạm vi địa lý; quyền hiệu lực được lấy từ ma trận phân quyền hiện hữu."
+            : "Quản lý vai trò, trạng thái và phạm vi địa lý của tài khoản trình diễn."
+        }
+        icon={UserCog}
+        className="admin-page-header"
+        actions={
+          <button onClick={() => navigate("/admin/audit")}>
+            <ShieldCheck size={15} />
+            Nhật ký bảo mật
+          </button>
+        }
+      />
       <div className="admin-summary">
         <div>
           <b>{store.users.length}</b>
@@ -91,9 +103,9 @@ export function UserManagementPage({
       </div>
       <section className="admin-content">
         <div className="admin-filters">
-          <label>
+          <label className="input-with-icon">
             <Search size={15} />
-            <input
+            <Input
               aria-label="Tìm kiếm tài khoản"
               placeholder="Tìm họ tên hoặc mã tài khoản"
               value={query}
@@ -102,7 +114,7 @@ export function UserManagementPage({
           </label>
           <label>
             <Filter size={14} />
-            <select
+            <UiSelect
               aria-label="Lọc theo vai trò"
               value={role}
               onChange={(event) => setRole(event.target.value)}
@@ -113,9 +125,9 @@ export function UserManagementPage({
                   {item.label}
                 </option>
               ))}
-            </select>
+            </UiSelect>
           </label>
-          <select
+          <UiSelect
             aria-label="Lọc theo trạng thái tài khoản"
             value={status}
             onChange={(event) => setStatus(event.target.value)}
@@ -123,7 +135,7 @@ export function UserManagementPage({
             <option value="all">Mọi trạng thái</option>
             <option value="true">Đang hoạt động</option>
             <option value="false">Đã vô hiệu hóa</option>
-          </select>
+          </UiSelect>
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table">
@@ -242,7 +254,7 @@ function UserDrawer({
           <h3>Quyền và trạng thái</h3>
           <label>
             Vai trò
-            <select
+            <UiSelect
               value={user.role}
               onChange={(event) =>
                 store.updateUserRole(user.id, event.target.value as Role)
@@ -253,7 +265,7 @@ function UserDrawer({
                   {item.label}
                 </option>
               ))}
-            </select>
+            </UiSelect>
           </label>
           <button
             className={user.active ? "deactivate" : "activate"}
@@ -267,7 +279,7 @@ function UserDrawer({
           <h3>Phạm vi địa lý</h3>
           <label>
             Cấp phạm vi
-            <select
+            <UiSelect
               value={scopeLevel}
               onChange={(event) =>
                 setScopeLevel(event.target.value as GeographicScopeLevel)
@@ -278,18 +290,18 @@ function UserDrawer({
               <option value="district">Quận/huyện</option>
               <option value="commune">Xã/phường</option>
               <option value="warehouse">Kho được giao</option>
-            </select>
+            </UiSelect>
           </label>
           <label>
             Tên phạm vi
-            <input
+            <Input
               value={scopeName}
               onChange={(event) => setScopeName(event.target.value)}
             />
           </label>
           <label>
             Mã phạm vi
-            <input
+            <Input
               value={scopeCode}
               onChange={(event) => setScopeCode(event.target.value)}
             />
@@ -311,17 +323,17 @@ function UserDrawer({
           <h3>Quyền hiệu lực ({permissionMatrix[user.role].length})</h3>
           <div className="permission-list">
             {permissionMatrix[user.role].map((permission) => (
-              <span key={permission}>{permission}</span>
+              <span key={permission}>{permissionLabel(permission)}</span>
             ))}
           </div>
         </section>
         <section>
-          <h3>Audit gần đây</h3>
+          <h3>Nhật ký gần đây</h3>
           <div className="user-audit-list">
             {audits.map((event) => (
               <div key={event.id}>
-                <b>{event.action}</b>
-                <span>{event.timestamp}</span>
+                <b>{auditActionLabel(event.action)}</b>
+                <span>{auditTimestampLabel(event.timestamp)}</span>
                 <p>{event.reason}</p>
               </div>
             ))}

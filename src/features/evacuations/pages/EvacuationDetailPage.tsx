@@ -7,6 +7,7 @@ import {
   ExternalLink,
   LifeBuoy,
   MapPin,
+  MapPinned,
   Route as RouteIcon,
   Siren,
   TriangleAlert,
@@ -20,6 +21,7 @@ import {
   alertSeverityTones,
 } from "@/domain/alerts/types";
 import { alertDetailPath } from "@/application/alerts/alertQueries";
+import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   getEvacuationPermissions,
   getEvacuationView,
@@ -132,6 +134,13 @@ export function EvacuationDetailPage({
           </p>
         </div>
         <div className="evac-header-actions">
+          <Button
+            variant="secondary"
+            onClick={() => navigate(operationalMapFocusPath(operation.id))}
+          >
+            <MapPinned size={15} />
+            Xem trên bản đồ
+          </Button>
           <Badge
             tone={
               operation.status === "Tạm dừng"
@@ -211,7 +220,7 @@ export function EvacuationDetailPage({
             disabled={!perms.update}
             title={
               perms.update
-                ? "Cập nhật số ngườii đã sơ tán"
+                ? "Cập nhật số người đã sơ tán"
                 : "Không có quyền cập nhật hoặc hoạt động đã kết thúc"
             }
             onClick={() => setDialog("progress")}
@@ -265,7 +274,7 @@ export function EvacuationDetailPage({
             <small>Đã sơ tán</small>
             <b>
               {operation.evacuatedPopulation.toLocaleString("vi-VN")}
-              <span>/{operation.estimatedPopulation.toLocaleString("vi-VN")} ngườii</span>
+              <span>/{operation.estimatedPopulation.toLocaleString("vi-VN")} người</span>
             </b>
           </div>
           <Progress
@@ -282,7 +291,7 @@ export function EvacuationDetailPage({
         </div>
         <div className="evac-hero-meta">
           <span>
-            Còn lại: <b>{view.remainingPopulation.toLocaleString("vi-VN")} ngườii</b>
+            Còn lại: <b>{view.remainingPopulation.toLocaleString("vi-VN")} người</b>
           </span>
           <span>
             Bắt đầu: <b>{operation.startTime ?? "Chưa triển khai"}</b>
@@ -421,7 +430,7 @@ export function EvacuationDetailPage({
               <dd>{operation.route.distanceKm} km</dd>
             </div>
             <div>
-              <dt>Thởi gian ước tính</dt>
+              <dt>Thời gian ước tính</dt>
               <dd>{operation.route.estimatedMinutes} phút</dd>
             </div>
             <div>
@@ -489,7 +498,7 @@ export function EvacuationDetailPage({
             </ul>
           )}
           <p className="evac-route-hint">
-            Cảnh báo được suy ra từ canonical state và tự hết hiệu lực khi điều
+            Cảnh báo được suy ra từ dữ liệu nghiệp vụ chính thức và tự hết hiệu lực khi điều
             kiện nghiệp vụ được xử lý.
           </p>
         </section>

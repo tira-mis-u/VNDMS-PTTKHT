@@ -304,7 +304,7 @@ test("Gửi cảnh báo: chỉ nhận cảnh báo chờ xác nhận; key lạ/kh
   );
 });
 
-test("Điều phối đội: dispatch bị chặn khi đội bận; thu hồi CH-03 theo lifecycle rồii dispatch hợp lệ", () => {
+test("Điều phối đội: dispatch bị chặn khi đội bận; thu hồi CH-03 theo lifecycle rồi dispatch hợp lệ", () => {
   const { context } = commanderView();
   const blocked = buildDispatchTeamPlan(context, {
     confirmed: true,

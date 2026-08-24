@@ -1,3 +1,4 @@
+import { PERSONNEL, personName } from "../../data/identity/personnel";
 import type { UserRole } from "../../domain/shared/auth";
 import type {
   DistributionReceipt,
@@ -337,7 +338,7 @@ export function confirmShipmentReceipt(
     receiverRole: role,
     items: shipment.items,
     conditionNote: note,
-    confirmedBy: "Lê Nguyễn Minh Trí",
+    confirmedBy: personName(PERSONNEL.RESCUE_MEMBER.id),
   };
   return {
     ...shipment,

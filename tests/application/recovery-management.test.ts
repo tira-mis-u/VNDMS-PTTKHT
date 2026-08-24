@@ -78,7 +78,7 @@ test("verified assessment không sửa trực tiếp và revision giữ nguồn"
   const value = clone(initialDamageAssessments[0]);
   assert.throws(
     () => updateDamageAssessment(value, { summary: "Sửa" }, "x"),
-    /revision/,
+    /bản điều chỉnh/,
   );
   const revision = createRevision("DA-0241-R2", value, "B", "x");
   assert.equal(revision.status, "Nháp");
@@ -92,7 +92,7 @@ test("verification yêu cầu actor evidence note; rejection yêu cầu reason",
   };
   assert.throws(
     () => verifyDamageAssessment(review, "A", [], "", "x"),
-    /evidence/,
+    /căn cứ/,
   );
   assert.equal(
     verifyDamageAssessment(
@@ -139,7 +139,7 @@ test("budget vượt mức cần explicit override", () => {
   const project = clone(initialRecoveryProjects[0]);
   assert.throws(
     () => updateRecoveryBudget(project, project.approvedBudget + 1, null, "x"),
-    /override/,
+    /phê duyệt ngoại lệ/,
   );
   assert.equal(
     updateRecoveryBudget(

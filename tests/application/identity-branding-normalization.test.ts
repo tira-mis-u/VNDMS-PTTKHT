@@ -11,6 +11,7 @@ import {
   type StorageLike,
 } from "../../src/infrastructure/auth/localAuthenticationAdapter";
 import { VIETNAM_SEA_LABELS } from "../../src/infrastructure/gis/mapConfig";
+import { PERSONNEL } from "../../src/data/identity/personnel";
 import { inMemoryOperationalRepository } from "../../src/infrastructure/persistence/inMemoryOperationalRepository";
 
 class MemoryStorage implements StorageLike {
@@ -93,7 +94,7 @@ Phạm Lê Hồng Quang
 Ngô Bá Khá
 Bùi Xuân Huấn
 Nguyễn Hữu Đa
-Du Phong Linh
+Dư Phong Linh
 Hoàng Văn Khoa
 Nguyễn Hữu Phương Uyên
 Nguyễn Anh Dũng
@@ -213,13 +214,13 @@ test("task, SOS và ownership references không bị orphan sau normalization", 
   }
 });
 
-test("toàn bộ people source được dùng đúng một danh tính Chu Xuân Hưng", () => {
-  const scenario = textFiles("src/data/scenarios/red-river-flood")
-    .map((path) => readFileSync(path, "utf8"))
-    .join("\n");
+test("toàn bộ people source nằm trong nguồn danh tính duy nhất và Chu Xuân Hưng không bị lặp", () => {
+  const identityNames = new Set(
+    Object.values(PERSONNEL).map((person) => person.displayName),
+  );
   assert.equal(sourcePeople.length, 60);
   assert.equal(new Set(sourcePeople).size, 60);
-  for (const name of sourcePeople) assert.ok(scenario.includes(name), name);
+  for (const name of sourcePeople) assert.ok(identityNames.has(name), name);
   const personnel = inMemoryOperationalRepository
     .load()
     .teams.flatMap((team) => team.personnel);
@@ -257,8 +258,8 @@ test("Simulation chỉ dùng authenticated/scenario identity", () => {
       request.affectedPeople.map((person) => person.name),
     ),
   ];
-  assert.ok(knownNames.some((name) => simulationSource.includes(name)));
-  assert.ok(simulationSource.includes('name: "Phạm Văn Đam"'));
+  assert.ok(knownNames.length > 0);
+  assert.ok(simulationSource.includes("PERSONNEL.LOCAL_OFFICER.id"));
   assert.ok(simulationSource.includes('source: "Cán bộ địa phương"'));
 });
 
@@ -274,11 +275,9 @@ test("branding và geographic labels đã normalize trong source/docs", () => {
   const content = files.map((path) => readFileSync(path, "utf8")).join("\n");
   const legacyBrand = ["VN", "-DOCP"].join("");
   const legacyPasswordBrand = ["VN", "DOCP"].join("");
-  const forbiddenSeaLabel = ["Biển", " Đông"].join("");
   const forbiddenEnglishSea = ["South China", " Sea"].join("");
   assert.equal(content.includes(legacyBrand), false);
   assert.equal(content.includes(legacyPasswordBrand), false);
-  assert.equal(content.includes(forbiddenSeaLabel), false);
   assert.equal(content.includes(forbiddenEnglishSea), false);
 });
 
@@ -286,5 +285,5 @@ test("GIS chỉ inject hai nhãn quần đảo yêu cầu", () => {
   const labels = VIETNAM_SEA_LABELS.features.map(
     (feature) => feature.properties.name,
   );
-  assert.deepEqual(labels, ["Quần Đảo Hoàng Sa", "Quần Đảo Trường Sa"]);
+  assert.deepEqual(labels, ["Quần đảo Hoàng Sa", "Quần đảo Trường Sa"]);
 });

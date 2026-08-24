@@ -40,7 +40,7 @@ export function executeGroundedAction(
       if (!task || !team)
         return {
           status: "stale",
-          message: "Task hoặc Team không còn tồn tại trong trạng thái chuẩn.",
+          message: "Nhiệm vụ hoặc đội cứu hộ không còn tồn tại trong trạng thái chính thức.",
         };
       if (task.teamId || task.status !== "Chờ giao")
         return {
@@ -75,7 +75,7 @@ export function executeGroundedAction(
       if (!sos || !team)
         return {
           status: "stale",
-          message: "SOS hoặc Team không còn tồn tại trong trạng thái chuẩn.",
+          message: "Yêu cầu SOS hoặc đội cứu hộ không còn tồn tại trong trạng thái chính thức.",
         };
       if (
         sos.verificationStatus !== "Đã xác minh" ||
@@ -105,7 +105,7 @@ export function executeGroundedAction(
       if (!task)
         return {
           status: "stale",
-          message: "Task không còn tồn tại trong trạng thái chuẩn.",
+          message: "Nhiệm vụ không còn tồn tại trong trạng thái chính thức.",
         };
       const ownerAccess = authorize(
         user,
@@ -163,7 +163,7 @@ export function executeGroundedAction(
       if (!incident)
         return {
           status: "stale",
-          message: "Incident không còn tồn tại trong trạng thái chuẩn.",
+          message: "Sự cố không còn tồn tại trong dữ liệu nghiệp vụ.",
         };
       const id = executor.createTask({
         incidentId: incident.id,

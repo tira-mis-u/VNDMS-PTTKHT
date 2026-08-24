@@ -117,7 +117,7 @@ test("worklist lọc tiến độ: chưa bắt đầu, đang diễn ra và trễ
   );
 });
 
-test("sort Hoàn thành dự kiến theo trình tự thờii gian", () => {
+test("sort Hoàn thành dự kiến theo trình tự thời gian", () => {
   const rows = sortEvacuations(operations, { sort: "Hoàn thành dự kiến" });
   assert.deepEqual(
     rows.map((item) => item.id),

@@ -1,7 +1,8 @@
+import { Select as UiSelect } from "@/components/ui/Select";
+import { PERSONNEL, personName } from "../../../data/identity/personnel";
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
-  ChevronDown,
   ChevronRight,
   ClipboardPlus,
   Clock3,
@@ -15,7 +16,7 @@ import {
 } from "@/application/recovery/recoveryQueries";
 import { isAssessmentVerificationOverdue } from "@/domain/recovery/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, PageSectionHeader, Input, Textarea } from "@/components/ui";
 function Select({
   value,
   onChange,
@@ -27,7 +28,7 @@ function Select({
 }) {
   return (
     <label className="filter-select">
-      <select
+      <UiSelect
         aria-label={options[0]}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -35,8 +36,7 @@ function Select({
         {options.map((item) => (
           <option key={item}>{item}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }
@@ -71,31 +71,28 @@ export function DamageAssessmentListPage({
   ).length;
   return (
     <div className="workspace-content recovery-page">
-      <div className="page-header recovery-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Phục hồi</span>
-            <ChevronRight size={13} />
-            <b>Đánh giá thiệt hại</b>
-          </div>
-          <h1>Đánh giá thiệt hại</h1>
-          <p>Ghi nhận, thẩm định và xác minh cơ sở cho hoạt động khôi phục</p>
-        </div>
-        <div className="detail-actions">
-          <Button
-            variant="secondary"
-            onClick={() => navigate("/recovery/projects")}
-          >
-            Dự án khôi phục
-          </Button>
-          {can("damage_assessment_create") && (
-            <Button onClick={() => setCreate(true)}>
-              <ClipboardPlus size={15} />
-              Tạo đánh giá
+      <PageSectionHeader
+        section="Phục hồi"
+        title="Đánh giá thiệt hại"
+        description="Ghi nhận, thẩm định và xác minh cơ sở cho hoạt động khôi phục."
+        icon={ShieldCheck}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => navigate("/recovery/projects")}
+            >
+              Dự án khôi phục
             </Button>
-          )}
-        </div>
-      </div>
+            {can("damage_assessment_create") && (
+              <Button onClick={() => setCreate(true)}>
+                <ClipboardPlus size={15} />
+                Tạo đánh giá
+              </Button>
+            )}
+          </>
+        }
+      />
       <section className="recovery-strip">
         <span className={pending ? "warning" : ""}>
           <ShieldCheck size={16} />
@@ -116,9 +113,9 @@ export function DamageAssessmentListPage({
       </section>
       <section className="relief-worklist">
         <div className="relief-filters">
-          <label className="incident-search">
+          <label className="ui-search incident-search">
             <Search size={15} />
-            <input
+            <Input
               value={filters.search}
               onChange={(event) => patch("search", event.target.value)}
               placeholder="Tìm mã, khu vực, cán bộ hoặc nội dung đánh giá…"
@@ -194,13 +191,13 @@ export function DamageAssessmentListPage({
         </div>
         <div className="incident-result-bar">
           <span>
-            <b>{rows.length}</b> assessment
+            <b>{rows.length}</b> hồ sơ đánh giá
           </span>
           <span>Danh sách nghiệp vụ, không phải báo cáo thống kê</span>
         </div>
         <div className="assessment-table">
           <div className="assessment-table-head">
-            <span>Assessment / Khu vực</span>
+            <span>Hồ sơ đánh giá / Khu vực</span>
             <span>Loại</span>
             <span>Mức độ</span>
             <span>Trạng thái</span>
@@ -222,7 +219,7 @@ export function DamageAssessmentListPage({
                 </b>
                 <small>{item.summary}</small>
                 <small>
-                  {item.incidentId} · revision {item.revision}
+                  {item.incidentId} · bản điều chỉnh {item.revision}
                 </small>
               </span>
               <span>{item.assessmentType}</span>
@@ -300,7 +297,7 @@ function CreateAssessmentDialog({
   const { incidents, createDamageAssessment } = useOperationalState();
   const [incidentId, setIncident] = useState("INC-0241");
   const [area, setArea] = useState("Tây Hồ, Hà Nội");
-  const [assessor, setAssessor] = useState("Lê Nguyễn Minh Trí");
+  const [assessor, setAssessor] = useState<string>(personName(PERSONNEL.RESCUE_MEMBER.id));
   const [summary, setSummary] = useState("");
   const [error, setError] = useState("");
   const save = () => {
@@ -351,13 +348,13 @@ function CreateAssessmentDialog({
       navigate(`/recovery/assessments/${id}`);
     } catch (reason) {
       setError(
-        reason instanceof Error ? reason.message : "Không thể tạo assessment.",
+        reason instanceof Error ? reason.message : "Không thể tạo đánh giá thiệt hại.",
       );
     }
   };
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div className="incident-form-dialog recovery-dialog">
         <header>
           <h2>Tạo đánh giá thiệt hại</h2>
@@ -367,8 +364,8 @@ function CreateAssessmentDialog({
         </header>
         <div className="incident-form-body">
           <label className="field">
-            <span>Incident</span>
-            <select
+            <span>Sự cố</span>
+            <UiSelect
               value={incidentId}
               onChange={(e) => setIncident(e.target.value)}
             >
@@ -377,22 +374,22 @@ function CreateAssessmentDialog({
                   {item.id} — {item.title}
                 </option>
               ))}
-            </select>
+            </UiSelect>
           </label>
           <label className="field">
             <span>Khu vực / phạm vi</span>
-            <input value={area} onChange={(e) => setArea(e.target.value)} />
+            <Input value={area} onChange={(e) => setArea(e.target.value)} />
           </label>
           <label className="field field-full">
             <span>Cán bộ đánh giá</span>
-            <input
+            <Input
               value={assessor}
               onChange={(e) => setAssessor(e.target.value)}
             />
           </label>
           <label className="field field-full">
             <span>Tóm tắt ban đầu</span>
-            <textarea
+            <Textarea
               rows={3}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
@@ -409,7 +406,7 @@ function CreateAssessmentDialog({
           <Button variant="secondary" onClick={onClose}>
             Hủy
           </Button>
-          <Button onClick={save}>Tạo assessment</Button>
+          <Button onClick={save}>Tạo hồ sơ đánh giá</Button>
         </footer>
       </div>
     </>

@@ -15,7 +15,7 @@ import {
 } from "../../src/lib/permissions/permissions";
 import type { UserRole } from "../../src/domain/shared/auth";
 import {
-  VIETNAM_ISLAND_ZONES,
+  VIETNAM_SEA_LABEL_PROVENANCE,
   VIETNAM_SEA_LABELS,
 } from "../../src/infrastructure/gis/mapConfig";
 
@@ -31,7 +31,7 @@ const allLabels = navigationGroups.flatMap((group) =>
 test("nhãn điều hướng tách biệt: Báo cáo vs Phân tích vs Quản trị", () => {
   assert.equal(
     activeNavigationLabel(parseRoute("/analytics/reports")),
-    "Báo cáo",
+    "Báo cáo tác nghiệp",
   );
   assert.equal(
     activeNavigationLabel(parseRoute("/analytics")),
@@ -43,7 +43,7 @@ test("nhãn điều hướng tách biệt: Báo cáo vs Phân tích vs Quản tr
   );
   assert.equal(
     activeNavigationLabel(parseRoute("/admin/audit")),
-    "Nhật ký hệ thống",
+    "Nhật ký bảo mật",
   );
   assert.equal(
     activeNavigationLabel(parseRoute("/admin/users")),
@@ -100,12 +100,12 @@ test("tài khoản kho chỉ thấy đúng các module được phân quyền", 
   assert.ok(groups.every((group) => group.label !== "Quản trị"));
 });
 
-test("điều hành viên thấy Nhật ký hệ thống nhưng không thấy mục Người dùng", () => {
+test("điều hành viên thấy Nhật ký bảo mật nhưng không thấy mục Người dùng", () => {
   const groups = visibleNavigationGroups(canFor("operator"));
   const labels = groups.flatMap((group) =>
     group.items.map((item) => item.label),
   );
-  assert.ok(labels.includes("Nhật ký hệ thống"));
+  assert.ok(labels.includes("Nhật ký bảo mật"));
   assert.ok(!labels.includes("Người dùng"));
 });
 
@@ -116,35 +116,20 @@ test("trang đích sau đăng nhập theo vai trò", () => {
   assert.equal(firstAccessibleNavPath(() => false), "/");
 });
 
-test("nhãn hai quần đảo giữ nguyên và có vùng khái quát bao phủ", () => {
+test("nhãn hai quần đảo chỉ dùng điểm neo có nguồn, không suy diễn vùng", () => {
   const names = VIETNAM_SEA_LABELS.features.map((feature) => feature.properties.name);
-  assert.deepEqual(names, ["Quần Đảo Hoàng Sa", "Quần Đảo Trường Sa"]);
-  const zones = VIETNAM_ISLAND_ZONES.features;
-  assert.equal(zones.length, 2);
-  const contains = (
-    ring: readonly (readonly number[])[],
-    [x, y]: readonly number[],
-  ) => {
-    // Ray casting đơn giản trên mặt phẳng lon/lat.
-    let inside = false;
-    for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
-      const [xi, yi] = ring[i];
-      const [xj, yj] = ring[j];
-      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)
-        inside = !inside;
-    }
-    return inside;
-  };
+  assert.deepEqual(names, ["Quần đảo Hoàng Sa", "Quần đảo Trường Sa"]);
+  assert.equal(VIETNAM_SEA_LABEL_PROVENANCE.displayCrs, "EPSG:4326");
+  assert.match(VIETNAM_SEA_LABEL_PROVENANCE.geometryPolicy, /không suy diễn polygon/i);
   for (const feature of VIETNAM_SEA_LABELS.features) {
-    const zone = zones.find(
-      (entry) => entry.properties.name === feature.properties.name,
-    );
-    assert.ok(zone, `${feature.properties.name} cần vùng khái quát riêng`);
-    const ring = zone.geometry.coordinates[0];
-    assert.ok(ring.length >= 48, "vùng quần đảo đủ mịn để nhìn rõ khi zoom");
-    assert.ok(
-      contains(ring, feature.geometry.coordinates),
-      `${feature.properties.name}: nhãn phải nằm trong vùng khái quát`,
-    );
+    assert.equal(feature.geometry.type, "Point");
+    assert.equal(feature.properties.kind, "place-label");
+    assert.match(feature.properties.sourceUrl, /^https:\/\//);
+    assert.equal(feature.properties.displayCrs, "EPSG:4326");
+    assert.equal(feature.properties.conversion, "DMS sang độ thập phân");
+    assert.equal(feature.properties.accessedAt, "2026-08-23");
+    const [longitude, latitude] = feature.geometry.coordinates;
+    assert.ok(longitude >= 111 && longitude <= 118);
+    assert.ok(latitude >= 6 && latitude <= 18);
   }
 });

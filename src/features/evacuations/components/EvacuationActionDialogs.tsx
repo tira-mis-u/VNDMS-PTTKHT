@@ -1,3 +1,4 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import type {
@@ -5,7 +6,7 @@ import type {
   RouteStatus,
 } from "@/domain/evacuations/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Button } from "@/components/ui";
+import { DialogBackdrop, Button, Input } from "@/components/ui";
 
 export type EvacuationDialog =
   | "assign"
@@ -27,7 +28,7 @@ function Frame({
 }) {
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div
         className="incident-form-dialog shelter-form-dialog"
         role="dialog"
@@ -120,7 +121,7 @@ function AssignTeam({
     >
       <label className="field field-full">
         <span>Đội phụ trách</span>
-        <select value={teamId} onChange={(event) => setTeamId(event.target.value)}>
+        <UiSelect value={teamId} onChange={(event) => setTeamId(event.target.value)}>
           <option value="">Chưa gán đội</option>
           {operation.assignedTeamId && (
             <option value={operation.assignedTeamId}>
@@ -132,7 +133,7 @@ function AssignTeam({
               {team.id} — {team.name}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <p className="form-hint">
         Chỉ liệt kê đội đang sẵn sàng trong phạm vi phân quyền; đội được gán sẽ
@@ -179,8 +180,8 @@ function UpdateProgress({
       }
     >
       <label className="field field-full">
-        <span>Số ngườii đã sơ tán</span>
-        <input
+        <span>Số người đã sơ tán</span>
+        <Input
           type="number"
           min={0}
           max={operation.estimatedPopulation}
@@ -190,12 +191,12 @@ function UpdateProgress({
       </label>
       <p className="form-hint">
         Tổng dự kiến {operation.estimatedPopulation.toLocaleString("vi-VN")}{" "}
-        ngườii; còn lại{" "}
+        người; còn lại{" "}
         {Math.max(
           0,
           operation.estimatedPopulation - operation.evacuatedPopulation,
         ).toLocaleString("vi-VN")}{" "}
-        ngườii. Tiến độ phần trăm được tính lại từ canonical state sau khi lưu.
+        người. Tiến độ phần trăm được tính lại từ dữ liệu nghiệp vụ chính thức sau khi lưu.
       </p>
       <ErrorText value={error} />
     </Frame>
@@ -239,7 +240,7 @@ function UpdateRoute({
     >
       <label className="field field-full">
         <span>Tình trạng tuyến</span>
-        <select
+        <UiSelect
           value={status}
           onChange={(event) => setStatus(event.target.value as RouteStatus)}
         >
@@ -247,7 +248,7 @@ function UpdateRoute({
           <option>Hạn chế</option>
           <option>Bị chặn</option>
           <option>Đang dùng tuyến thay thế</option>
-        </select>
+        </UiSelect>
       </label>
       <p className="form-hint">
         Báo “Bị chặn” khi hoạt động đang triển khai sẽ tự chuyển hoạt động sang
@@ -303,13 +304,13 @@ function Redirect({
     >
       <label className="field field-full">
         <span>Điểm sơ tán thay thế</span>
-        <select value={id} onChange={(event) => setId(event.target.value)}>
+        <UiSelect value={id} onChange={(event) => setId(event.target.value)}>
           {candidates.map((shelter) => (
             <option key={shelter.id} value={shelter.id}>
               {shelter.id} — {shelter.name}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <p className="form-hint">
         Sức chứa dự phòng còn lại sẽ được chuyển từ điểm cũ sang điểm mới.

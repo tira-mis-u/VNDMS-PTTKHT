@@ -173,7 +173,6 @@ export function AppHeader({
                 <span>
                   <b>{user.displayName}</b>
                   <small>{roleLabels[user.role]}</small>
-                  <i className="account-active-state">Đang hoạt động</i>
                 </span>
               </div>
               <div className="account-session-context">

@@ -92,14 +92,6 @@
 .scope-switch strong {
   font-size: 17px;
 }
-.scope-switch select {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
 .topbar .btn-icon {
   width: 46px;
   height: 46px;
@@ -276,20 +268,16 @@
 .field > span {
   font-size: 13.5px;
 }
-.field input,
-.field select,
-.field textarea {
-  font-size: 13.5px;
-}
 .workspace p {
   font-size: max(12px, 0.78rem);
 }
 .workspace small {
   font-size: 13px;
 }
-.workspace button,
+.workspace button {
+  line-height: 1.35;
+}
 .workspace input,
-.workspace select,
 .workspace textarea {
   line-height: 1.35;
 }
@@ -431,15 +419,10 @@ html[data-theme="dark"] .task-list-row,
 html[data-theme="dark"] .incident-list-row {
   color: #9aa7b8;
 }
-html[data-theme="dark"] input,
-html[data-theme="dark"] select,
-html[data-theme="dark"] textarea,
 html[data-theme="dark"] .filter-select,
 html[data-theme="dark"] .date-filter,
 html[data-theme="dark"] .incident-search,
 html[data-theme="dark"] .input-with-icon {
-  background: #111821;
-  border-color: #344151;
   color: #e6ebf2;
 }
 html[data-theme="dark"] .incident-detail-header,
@@ -543,10 +526,7 @@ body {
   font-size: var(--font-body);
   line-height: 1.55;
 }
-button,
-input,
-select,
-textarea {
+button {
   font: inherit;
   font-size: var(--font-control);
 }
@@ -675,69 +655,6 @@ textarea {
 }
 
 /* One consistent native-select treatment preserves platform keyboard behavior. */
-select {
-  min-height: 40px;
-  color: #344054;
-  border-color: #cfd6df;
-  border-radius: var(--radius-control);
-  padding: 0 36px 0 12px;
-  background-color: #fff;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 11px center;
-  background-size: 15px;
-  appearance: none;
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    background-color 0.15s ease;
-}
-select:hover {
-  border-color: #98a2b3;
-}
-select:focus-visible {
-  outline: none;
-  border-color: #528bdb;
-  box-shadow: 0 0 0 3px rgba(82, 139, 219, 0.17);
-}
-select option {
-  min-height: 38px;
-  padding: 10px 12px;
-  font-size: 17px;
-}
-.filter-select,
-.date-filter,
-.admin-filters label,
-.analytics-filters label {
-  min-height: 40px;
-  border-radius: var(--radius-control);
-}
-.filter-select select,
-.admin-filters label select,
-.analytics-filters label select {
-  min-height: 38px;
-}
-.field input,
-.field select,
-.field textarea,
-.admin-user-drawer input,
-.admin-user-drawer select,
-.admin-filters input,
-.admin-filters select,
-.analytics-filters input,
-.analytics-filters select {
-  font-size: 17px;
-}
-.field input,
-.field select,
-.admin-user-drawer input,
-.admin-user-drawer select {
-  min-height: 42px;
-}
-.field textarea {
-  padding: 11px 12px;
-}
 
 /* Header, profile menu and visual identity */
 .topbar {
@@ -1067,7 +984,7 @@ select option {
   display: flex;
   gap: 7px;
   align-items: baseline;
-  font-size: 15px !important;
+  font-size: var(--font-size-meta);
   line-height: 1.45;
 }
 .cc-playbook-current > span,
@@ -1314,13 +1231,6 @@ select option {
   width: 8px;
   height: 8px;
 }
-
-html[data-theme="dark"] select {
-  color: #e6ebf2;
-  border-color: #344151;
-  background-color: #111821;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aa7b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-}
 html[data-theme="dark"] .cc-panel,
 html[data-theme="dark"] .profile-card {
   background: #171f2a;
@@ -1504,9 +1414,7 @@ html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
   font-size: 16.5px;
   line-height: 1.58;
 }
-.workspace button,
-.workspace input,
-.workspace textarea {
+.workspace button {
   font-size: 16.5px;
 }
 .workspace label {
@@ -1570,10 +1478,6 @@ html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
 }
 .admin-content {
   border-radius: 10px;
-}
-.admin-filters {
-  gap: 10px;
-  padding: 14px;
 }
 .admin-table td {
   font-size: 16px;
@@ -1729,9 +1633,6 @@ html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
   width: 19px;
   height: 19px;
 }
-.login-card input {
-  font-size: 18px;
-}
 .login-card label button svg {
   width: 19px;
   height: 19px;
@@ -1812,38 +1713,6 @@ html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
 }
 
 /* Final select normalization after feature-level shorthand declarations */
-.workspace select {
-  min-height: 40px;
-  border-radius: 8px;
-  padding: 0 36px 0 12px;
-  font-size: 17px;
-  background-color: #fff;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 11px center;
-  background-size: 15px;
-  appearance: none;
-}
-.filter-select {
-  min-height: 42px;
-  border-radius: 8px;
-  padding-inline: 11px;
-}
-.filter-select select {
-  min-height: 38px;
-  padding: 0 5px;
-  border: 0;
-  border-radius: 0;
-  background-image: none;
-  box-shadow: none;
-}
-html[data-theme="dark"] .workspace select {
-  background-color: #111821;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aa7b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-}
-html[data-theme="dark"] .filter-select select {
-  background-image: none;
-}
 
 /* Session panel, profile and theme hardening */
 :root {
@@ -2296,10 +2165,6 @@ html[data-theme="dark"] .login-card > label > div {
   background: var(--surface-muted);
   border-color: var(--control-border);
 }
-html[data-theme="dark"] .login-card input {
-  background: transparent;
-  color: var(--text-primary);
-}
 html[data-theme="dark"] .demo-account-hint code {
   background: var(--surface-hover);
   color: var(--text-secondary);
@@ -2433,35 +2298,6 @@ html[data-theme="dark"]
     .profile-information-grid > div
   ) {
   border-color: var(--border);
-}
-html[data-theme="dark"]
-  :where(
-    input,
-    textarea,
-    select,
-    .filter-select,
-    .date-filter,
-    .incident-search,
-    .input-with-icon,
-    .admin-filters label,
-    .analytics-filters label
-  ) {
-  background-color: var(--surface-muted);
-  border-color: var(--control-border);
-  color: var(--text-primary);
-}
-html[data-theme="dark"] :where(input, textarea)::placeholder {
-  color: #77869a;
-}
-html[data-theme="dark"] :where(button, input, textarea, select):focus-visible {
-  outline-color: #6ca4f4;
-  box-shadow: 0 0 0 3px var(--focus-ring);
-}
-html[data-theme="dark"] :where(button, input, textarea, select):disabled {
-  color: #6f7d8e;
-  background-color: #141d27;
-  border-color: #2b3745;
-  opacity: 0.72;
 }
 html[data-theme="dark"]
   :where(
@@ -2800,17 +2636,6 @@ html:not([data-theme="dark"])
 }
 html:not([data-theme="dark"]) .priority-block.p1 {
   color: #a92920;
-}
-.app-shell select,
-.login-page select {
-  background-repeat: no-repeat;
-  background-position: right 11px center;
-  background-size: 16px 16px;
-}
-.app-shell .app-body .workspace select {
-  background-repeat: no-repeat;
-  background-position: right 11px center;
-  background-size: 16px 16px;
 }
 html:not([data-theme="dark"])
   .app-shell
@@ -3260,7 +3085,7 @@ html[data-theme="dark"] .cc-situation-icon {
   min-width: 22px;
   height: 22px;
   padding: 0 5px;
-  font-size: 12.5px;
+  font-size: var(--type-metadata, 13px);
   border: 2px solid #f2f4f7;
   z-index: 2;
 }
@@ -3373,46 +3198,14 @@ html[data-theme="dark"] .btn-danger:hover {
 /* ---- Form control system: input / select / textarea ---- */
 .workspace-content
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
-.workspace-content select,
 .workspace-content textarea,
 .ai-drawer textarea,
 .ai-drawer input {
-  font-family: inherit;
-  font-size: 14.5px;
   line-height: 1.35;
-  color: #1d2939;
-  background: #fff;
-  border: 1px solid #c8d1dc;
-  border-radius: 8px;
-  padding: 8px 13px;
-  min-height: 40px;
-  outline: none;
 }
 .workspace-content textarea,
 .ai-drawer textarea {
-  min-height: 96px;
   resize: vertical;
-}
-.workspace-content input::placeholder {
-  color: #8e99aa;
-  font-size: inherit;
-}
-.workspace-content select:not(.scope-switch) {
-  appearance: none;
-  -webkit-appearance: none;
-  padding-right: 38px;
-  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%23677884' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  cursor: pointer;
-}
-.workspace-content
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus-visible,
-.workspace-content select:focus-visible,
-.workspace-content textarea:focus-visible,
-.ai-drawer textarea:focus-visible {
-  border-color: #3f8cff;
-  box-shadow: 0 0 0 3px rgba(59, 140, 255, 0.15);
 }
 
 /* Các wrapper lọc đã tự vẽ khung: dẹp khung bên trong, đồng bộ 40px */
@@ -3420,43 +3213,15 @@ html[data-theme="dark"] .btn-danger:hover {
 .input-with-icon,
 .filter-select,
 .date-filter {
-  min-height: 40px;
-  border-radius: 8px;
-  border-color: #c8d1dc;
   position: relative;
 }
 .workspace-content .incident-search input,
-.workspace-content .input-with-icon input,
-.workspace-content .filter-select select {
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: transparent none;
-  background-image: none;
-  box-shadow: none;
+.workspace-content .input-with-icon input {
   min-width: 0;
-}
-.workspace-content .date-filter input,
-.workspace-content .date-filter select {
-  background-image: none;
 }
 .incident-search,
 .input-with-icon {
-  padding: 0 12px;
   gap: 8px;
-}
-.incident-search:focus-within,
-.input-with-icon:focus-within,
-.filter-select:focus-within,
-.date-filter:focus-within {
-  border-color: #3f8cff;
-  box-shadow: 0 0 0 3px rgba(59, 140, 255, 0.15);
-}
-.filter-select select {
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  flex: 1;
 }
 .filter-select > svg:last-child {
   position: absolute;
@@ -3469,36 +3234,8 @@ html[data-theme="dark"] .btn-danger:hover {
 .filter-select {
   padding-right: 32px;
 }
-.workspace-content .date-filter input {
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: transparent none;
-}
 .date-filter input[type="date"]::-webkit-calendar-picker-indicator {
   margin: 0;
 }
 
 /* Dark cho form control */
-html[data-theme="dark"] .workspace-content
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
-html[data-theme="dark"] .workspace-content select,
-html[data-theme="dark"] .workspace-content textarea,
-html[data-theme="dark"] .ai-drawer textarea,
-html[data-theme="dark"] .ai-drawer input {
-  background: #111821;
-  border-color: #344151;
-  color: #e6ebf2;
-}
-html[data-theme="dark"] .workspace-content select:not(.scope-switch) {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-}
-html[data-theme="dark"] .workspace-content input::placeholder {
-  color: #64748b;
-}
-html[data-theme="dark"] .incident-search,
-html[data-theme="dark"] .input-with-icon,
-html[data-theme="dark"] .filter-select,
-html[data-theme="dark"] .date-filter {
-  border-color: #344151;
-}

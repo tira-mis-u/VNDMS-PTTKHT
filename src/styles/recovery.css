@@ -135,7 +135,7 @@
 }
 .budget-risk,
 .budget-risk b {
-  color: #b54708 !important;
+  color: var(--text-warning);
 }
 .assessment-detail-header,
 .project-detail-header {
@@ -612,6 +612,47 @@
   }
   .damage-impact-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+.project-mobile-label {
+  display: none;
+}
+@media (max-width: 900px) {
+  .recovery-project-table {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+  .project-table-head {
+    display: none;
+  }
+  .project-row {
+    position: relative;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+    min-height: 0;
+    margin-bottom: 10px;
+    padding: 15px;
+    gap: 13px 16px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-surface);
+    background: var(--surface-card);
+  }
+  .project-row > span:first-child {
+    grid-column: 1 / -1;
+    padding: 0 28px 11px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .project-row > svg:last-child {
+    position: absolute;
+    top: 18px;
+    right: 14px;
+  }
+  .project-row .project-mobile-label {
+    display: block;
+    color: var(--text-muted);
+    font-size: var(--font-size-meta);
+    font-weight: var(--weight-medium);
   }
 }
 @media (max-width: 700px) {

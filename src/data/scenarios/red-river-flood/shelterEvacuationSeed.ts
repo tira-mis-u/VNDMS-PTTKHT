@@ -1,3 +1,4 @@
+import { PERSONNEL, personName } from "../../identity/personnel";
 import type { Shelter, ShelterEvent } from "../../../domain/shelters/types";
 import type {
   EvacuationEvent,
@@ -20,7 +21,7 @@ export const initialShelters: Shelter[] = [
     readiness: "Sẵn sàng",
     accessibility: "Tiếp cận bình thường",
     responsibleOfficer: {
-      name: "Đặng Thu Hà",
+      name: personName(PERSONNEL.DANG_THU_HA.id),
       role: "Phụ trách điểm sơ tán",
       organization: "UBND phường Phú Thượng",
       phone: "0904 220 115",
@@ -77,7 +78,7 @@ export const initialShelters: Shelter[] = [
     readiness: "Hạn chế",
     accessibility: "Tiếp cận hạn chế",
     responsibleOfficer: {
-      name: "Phạm Khánh Sơn",
+      name: personName(PERSONNEL.PHAM_KHANH_SON.id),
       role: "Chỉ huy tiếp nhận",
       organization: "UBND phường Tứ Liên",
       phone: "0912 301 116",
@@ -127,7 +128,7 @@ export const initialShelters: Shelter[] = [
     readiness: "Hạn chế",
     accessibility: "Tiếp cận bình thường",
     responsibleOfficer: {
-      name: "Trần Huyền My",
+      name: personName(PERSONNEL.TRAN_HUYEN_MY.id),
       role: "Trưởng điểm tiếp nhận",
       organization: "UBND phường Phúc Tân",
       phone: "0983 411 027",
@@ -177,7 +178,7 @@ export const initialShelters: Shelter[] = [
     readiness: "Không sẵn sàng",
     accessibility: "Không thể tiếp cận",
     responsibleOfficer: {
-      name: "Trương Đình Hoàng",
+      name: personName(PERSONNEL.TRUONG_DINH_HOANG.id),
       role: "Điều phối cơ sở",
       organization: "UBND quận Ba Đình",
       phone: "0906 118 903",
@@ -220,7 +221,7 @@ export const initialShelters: Shelter[] = [
     readiness: "Sẵn sàng",
     accessibility: "Tiếp cận bình thường",
     responsibleOfficer: {
-      name: "Bác sĩ Vũ Đinh Trọng Thắng",
+      name: personName(PERSONNEL.VU_DINH_TRONG_THANG.id, "Bác sĩ"),
       role: "Phụ trách y tế và tiếp nhận",
       organization: "Trung tâm Y tế Long Biên",
       phone: "0977 204 118",
@@ -390,7 +391,7 @@ export const initialShelterEvents: ShelterEvent[] = [
     shelterId: "TH-01",
     type: "occupancy",
     message: "Tiếp nhận thêm 45 người từ Phúc Tân, tổng số hiện tại 420 người",
-    actor: "Đặng Thu Hà",
+    actor: personName(PERSONNEL.DANG_THU_HA.id),
     timestamp: "10:42",
     source: "Tổ tiếp nhận",
   },
@@ -399,7 +400,7 @@ export const initialShelterEvents: ShelterEvent[] = [
     shelterId: "TH-02",
     type: "warning",
     message: "Sức chứa khả dụng còn 15 chỗ sau khi trừ khu vực dự phòng",
-    actor: "Phạm Khánh Sơn",
+    actor: personName(PERSONNEL.PHAM_KHANH_SON.id),
     timestamp: "10:40",
     source: "Điều hành sơ tán",
   },
@@ -408,7 +409,7 @@ export const initialShelterEvents: ShelterEvent[] = [
     shelterId: "TH-03",
     type: "overload",
     message: "Điểm sơ tán vượt sức chứa 18 người, yêu cầu chuyển hướng",
-    actor: "Trần Huyền My",
+    actor: personName(PERSONNEL.TRAN_HUYEN_MY.id),
     timestamp: "10:44",
     source: "Tổ tiếp nhận",
   },
@@ -417,7 +418,7 @@ export const initialShelterEvents: ShelterEvent[] = [
     shelterId: "TH-04",
     type: "access",
     message: "Tạm dừng mở điểm do tuyến Văn Cao không thể tiếp cận",
-    actor: "Trương Đình Hoàng",
+    actor: personName(PERSONNEL.TRUONG_DINH_HOANG.id),
     timestamp: "10:36",
     source: "Báo cáo hiện trường",
   },
@@ -437,7 +438,7 @@ export const initialEvacuationEvents: EvacuationEvent[] = [
     operationId: "EVAC-002",
     type: "route",
     message: "Tạm dừng do ngõ 124 Âu Cơ bị ngập sâu",
-    actor: "Trần Thiện Thanh Bảo",
+    actor: personName(PERSONNEL.TRAN_THIEN_THANH_BAO.id),
     timestamp: "10:33",
     source: "Trung tâm điều hành",
   },
@@ -446,7 +447,7 @@ export const initialEvacuationEvents: EvacuationEvent[] = [
     operationId: "EVAC-003",
     type: "created",
     message: "Lập phương án sơ tán dự phòng cho Ngọc Thụy",
-    actor: "Nguyễn Hoàng Long",
+    actor: personName(PERSONNEL.NGUYEN_HOANG_LONG.id),
     timestamp: "10:20",
     source: "Trung tâm điều hành",
   },

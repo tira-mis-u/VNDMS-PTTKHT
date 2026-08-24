@@ -137,7 +137,7 @@ export function canCompleteRecoveryProject(
       (item) => item.required && item.status !== "Hoàn thành",
     )
   )
-    reasons.push("Còn milestone bắt buộc chưa hoàn thành.");
+    reasons.push("Còn mốc công việc bắt buộc chưa hoàn thành.");
   if (
     project.requiredTaskIds.some(
       (id) =>

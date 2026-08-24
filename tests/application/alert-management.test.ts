@@ -172,7 +172,7 @@ test("markAlertReadReceipt và acknowledgeOperationalAlert use case", () => {
       acknowledgeOperationalAlert(
         interactions,
         { ...critical, acknowledgedAt: "21/08/2026 10:45" },
-        { id: "USR-OPS-001", name: "Ngườii khác" },
+        { id: "USR-OPS-001", name: "Người khác" },
         "21/08/2026 10:46",
       ),
     /đã được xác nhận/,
@@ -186,7 +186,7 @@ test("filterAndSortAlerts theo severity/category/status/search/time", () => {
     severity: "Tất cả mức độ",
     category: "Tất cả nhóm",
     status: "Tất cả trạng thái",
-    time: "Tất cả thởi gian",
+    time: "Tất cả thời gian",
   };
   assert.equal(
     filterAndSortAlerts(alerts, { ...base, severity: "Khẩn cấp" }).length,
@@ -216,7 +216,7 @@ test("filterAndSortAlerts theo severity/category/status/search/time", () => {
   });
   assert.ok(
     recent.every((item) => item.detectedAt >= "21/08/2026 10:15"),
-    "chỉ giữ alert phát sinh trong cửa sổ thởi gian",
+    "chỉ giữ alert phát sinh trong cửa sổ thời gian",
   );
   assert.ok(recent.length < alerts.length);
   const withRead = alerts.map((item, index) =>

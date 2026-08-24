@@ -43,7 +43,7 @@ export function buildDeterministicActions(
       currentState: [
         `${task.id}: ${task.status}`,
         `${taskTeam.id}: ${taskTeam.status}`,
-        `Incident: ${task.incidentId}`,
+        `Sự cố: ${task.incidentId}`,
         `Ưu tiên: ${task.priority}`,
       ],
       payload: { taskId: task.id, teamId: taskTeam.id },

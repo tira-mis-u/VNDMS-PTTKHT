@@ -11,8 +11,9 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import { Avatar, Button } from "@/components/ui";
+import { Avatar, Button, PageSectionHeader, Input } from "@/components/ui";
 import { initials, roleLabels } from "@/domain/auth/labels";
+import { resolvePersonnel } from "@/data/identity/personnel";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { loadProfileAvatar, saveProfileAvatar } from "../profileAvatar";
 
@@ -21,6 +22,7 @@ const MAX_AVATAR_BYTES = 1024 * 1024;
 export function ProfilePage() {
   const { currentUser, session } = useOperationalState();
   const user = currentUser!;
+  const identity = resolvePersonnel(user.id);
   const fileInput = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState(() => loadProfileAvatar(user.id));
   const [message, setMessage] = useState<{
@@ -91,16 +93,13 @@ export function ProfilePage() {
 
   return (
     <main className="profile-page workspace-content">
-      <header className="page-header profile-page-header">
-        <div>
-          <div className="breadcrumbs">
-            <UserRound size={15} />
-            Tài khoản <span>/</span> <b>Hồ sơ cá nhân</b>
-          </div>
-          <h1>Hồ sơ cá nhân</h1>
-          <p>Xem thông tin tài khoản và quản lý ảnh đại diện của bạn.</p>
-        </div>
-      </header>
+      <PageSectionHeader
+        section="Tài khoản"
+        title="Hồ sơ cá nhân"
+        description="Xem thông tin tài khoản và quản lý ảnh đại diện của bạn."
+        icon={UserRound}
+        className="profile-page-header"
+      />
 
       <section className="profile-hero" aria-labelledby="profile-name">
         <div className="profile-avatar-wrap">
@@ -141,7 +140,7 @@ export function ProfilePage() {
             )}
           </div>
         </div>
-        <input
+        <Input
           ref={fileInput}
           className="profile-file-input"
           type="file"
@@ -203,6 +202,18 @@ export function ProfilePage() {
             <dd>{roleLabels[user.role]}</dd>
           </div>
           <div>
+            <dt>Chức danh</dt>
+            <dd>{identity?.title ?? roleLabels[user.role]}</dd>
+          </div>
+          <div>
+            <dt>Đơn vị</dt>
+            <dd>{identity?.organization ?? "Chưa cập nhật"}</dd>
+          </div>
+          <div>
+            <dt>Liên hệ</dt>
+            <dd>{identity?.contact ?? "Chưa cập nhật"}</dd>
+          </div>
+          <div>
             <dt>Phạm vi địa lý</dt>
             <dd>
               <MapPinned size={17} />
@@ -245,8 +256,8 @@ export function ProfilePage() {
         <footer className="profile-security-note">
           <ShieldCheck size={19} />
           <p>
-            Vai trò, quyền, phạm vi và ownership chỉ được thay đổi trong chức
-            năng quản trị truy cập bởi tài khoản có thẩm quyền.
+            Vai trò, quyền, phạm vi và trách nhiệm phụ trách chỉ được thay đổi
+            trong chức năng quản trị truy cập bởi tài khoản có thẩm quyền.
           </p>
         </footer>
       </section>

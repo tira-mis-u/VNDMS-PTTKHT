@@ -86,30 +86,10 @@
   border-radius: 7px;
   overflow: hidden;
 }
-.relief-filters {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  flex-wrap: wrap;
-  padding: 12px;
-}
-.relief-filters .incident-search {
-  flex: 1;
-  min-width: 310px;
-}
 .filter-select {
   position: relative;
   display: flex;
   align-items: center;
-}
-.filter-select select {
-  appearance: none;
-  border: 1px solid #d7dde6;
-  background: #fff;
-  border-radius: 5px;
-  padding: 7px 25px 7px 9px;
-  color: #475467;
-  font-size: 16px;
 }
 .filter-select svg {
   position: absolute;
@@ -636,9 +616,6 @@
 }
 .allocation-editor input {
   width: 90px;
-  padding: 7px;
-  border: 1px solid #d4dae3;
-  border-radius: 5px;
 }
 .allocation-editor .unavailable {
   background: #f8f8f8;
@@ -842,9 +819,6 @@
   }
   .relief-summary p {
     display: none;
-  }
-  .relief-filters .incident-search {
-    min-width: 100%;
   }
   .relief-detail-header,
   .warehouse-detail-header {

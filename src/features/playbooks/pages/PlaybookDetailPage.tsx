@@ -1,3 +1,4 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useState } from "react";
 import {
   AlertTriangle,
@@ -13,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, EmptyState } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, EmptyState, Input, Textarea } from "@/components/ui";
 export function PlaybookDetailPage({
   playbookId,
   navigate,
@@ -29,7 +30,7 @@ export function PlaybookDetailPage({
     return (
       <div className="workspace-content">
         <EmptyState
-          title="Không tìm thấy playbook"
+          title="Không tìm thấy phương án điều phối"
           description={playbookId}
           action={
             <Button onClick={() => navigate("/playbooks")}>Về danh sách</Button>
@@ -47,7 +48,7 @@ export function PlaybookDetailPage({
       <div className="detail-topline">
         <button className="back-link" onClick={() => navigate("/playbooks")}>
           <ArrowLeft size={15} />
-          Playbooks
+          Phương án ứng phó
         </button>
         <div className="detail-actions">
           {store.can("playbook_edit") && playbook.status !== "Lưu trữ" && (
@@ -73,7 +74,7 @@ export function PlaybookDetailPage({
               onClick={() => navigate(`/playbooks/${playbook.id}/execute`)}
             >
               <Play size={15} />
-              Mở execution
+              Mở đợt thực hiện
             </Button>
           ) : (
             store.can("playbook_activate") && (
@@ -226,8 +227,8 @@ export function PlaybookDetailPage({
             <div className="playbook-relation">
               <GitBranch size={18} />
               <p>
-                Template được giữ độc lập. Mỗi lần kích hoạt tạo execution gắn
-                với đúng một Incident.
+                Mẫu phương án được quản lý độc lập. Mỗi lần kích hoạt tạo một
+                đợt thực hiện gắn với đúng một sự cố.
               </p>
             </div>
             {execution && (
@@ -283,16 +284,16 @@ function ActivationDialog({
       setError(
         reason instanceof Error
           ? reason.message
-          : "Không thể kích hoạt playbook.",
+          : "Không thể kích hoạt phương án ứng phó.",
       );
     }
   };
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div className="incident-form-dialog playbook-dialog">
         <header>
-          <h2>Kích hoạt playbook</h2>
+          <h2>Kích hoạt phương án điều phối</h2>
           <button onClick={onClose}>
             <X size={18} />
           </button>
@@ -301,13 +302,13 @@ function ActivationDialog({
           <div className="playbook-warning">
             <ShieldCheck size={17} />
             <p>
-              Execution mới sẽ tham chiếu trực tiếp Incident và các hồ sơ vận
-              hành hiện có.
+              Đợt thực hiện mới sẽ liên kết trực tiếp với sự cố và các hồ sơ
+              vận hành hiện có.
             </p>
           </div>
           <label className="field field-full">
-            <span>Incident</span>
-            <select value={id} onChange={(event) => setId(event.target.value)}>
+            <span>Sự cố</span>
+            <UiSelect value={id} onChange={(event) => setId(event.target.value)}>
               {incidents
                 .filter((item) => item.status !== "Đã đóng")
                 .map((item) => (
@@ -315,7 +316,7 @@ function ActivationDialog({
                     {item.id} — {item.title}
                   </option>
                 ))}
-            </select>
+            </UiSelect>
           </label>
           {error && (
             <p className="team-form-error">
@@ -347,25 +348,25 @@ function EditDialog({
   const [description, setDescription] = useState(playbook.description);
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div className="incident-form-dialog playbook-dialog">
         <header>
-          <h2>Chỉnh sửa playbook</h2>
+          <h2>Chỉnh sửa phương án điều phối</h2>
           <button onClick={onClose}>
             <X size={18} />
           </button>
         </header>
         <div className="incident-form-body">
           <label className="field field-full">
-            <span>Tên playbook</span>
-            <input
+            <span>Tên phương án điều phối</span>
+            <Input
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
           </label>
           <label className="field field-full">
             <span>Mô tả</span>
-            <textarea
+            <Textarea
               rows={4}
               value={description}
               onChange={(event) => setDescription(event.target.value)}

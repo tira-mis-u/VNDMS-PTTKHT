@@ -1,7 +1,7 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
-  ChevronDown,
   ChevronRight,
   Clock3,
   MapPin,
@@ -17,7 +17,7 @@ import {
 } from "@/application/sos/sosQueries";
 import { isSosWaitingTooLong } from "@/domain/sos/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge } from "@/components/ui";
+import { Badge, PageSectionHeader, Input } from "@/components/ui";
 const priorityTone = (priority: string) =>
   priority.startsWith("P1")
     ? "red"
@@ -45,7 +45,7 @@ function Select({
 }) {
   return (
     <label className="filter-select">
-      <select
+      <UiSelect
         aria-label={options[0]}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -53,8 +53,7 @@ function Select({
         {options.map((option) => (
           <option key={option}>{option}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }
@@ -102,21 +101,13 @@ export function SosListPage({
   ).length;
   return (
     <div className="workspace-content sos-page">
-      <div className="page-header sos-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Ứng phó</span>
-            <ChevronRight size={13} />
-            <b>SOS</b>
-          </div>
-          <h1>SOS & Yêu cầu khẩn cấp</h1>
-          <p>
-            Tiếp nhận, xác minh, phân loại và điều phối cứu hộ từ một hàng đợi
-            tác nghiệp thống nhất
-          </p>
-        </div>
-      </div>
-      <section className="sos-queue-summary">
+      <PageSectionHeader
+        section="Ứng phó"
+        title="SOS và yêu cầu khẩn cấp"
+        description="Tiếp nhận, xác minh, phân loại và điều phối cứu hộ từ một hàng đợi tác nghiệp thống nhất."
+        icon={Radio}
+      />
+      <section className="sos-queue-summary" tabIndex={0} aria-label="Tóm tắt hàng đợi SOS">
         <div className={p1 ? "danger" : ""}>
           <AlertTriangle size={16} />
           <span>
@@ -141,9 +132,9 @@ export function SosListPage({
       </section>
       <section className="sos-worklist">
         <div className="sos-filters">
-          <label className="incident-search">
+          <label className="ui-search incident-search">
             <Search size={15} />
-            <input
+            <Input
               value={filters.search}
               onChange={(event) => patch("search", event.target.value)}
               placeholder="Tìm mã SOS, người báo, số liên hệ hoặc địa chỉ…"
@@ -278,7 +269,7 @@ export function SosListPage({
                 <small>{sos.reporter.source}</small>
               </span>
               <span className="sos-links">
-                <b>{sos.linkedIncidentId ?? "Chưa có Incident"}</b>
+                <b>{sos.linkedIncidentId ?? "Chưa có sự cố"}</b>
                 <small>
                   {sos.assignedTeamId ?? "Chưa giao đội"}
                   {sos.linkedTaskId ? ` · ${sos.linkedTaskId}` : ""}

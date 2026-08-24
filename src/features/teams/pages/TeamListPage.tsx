@@ -1,7 +1,7 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState } from "react";
 import {
   ArrowUpDown,
-  ChevronDown,
   ChevronRight,
   Clock3,
   MapPin,
@@ -18,7 +18,7 @@ import {
   type TeamSortMode,
 } from "@/application/teams/teamQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge } from "@/components/ui";
+import { Badge, PageSectionHeader, Input } from "@/components/ui";
 
 const tabs = [
   "Tất cả",
@@ -86,20 +86,13 @@ export function TeamListPage({
   ).length;
   return (
     <div className="workspace-content teams-page">
-      <div className="page-header teams-list-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Ứng phó</span>
-            <ChevronRight size={13} />
-            <b>Đội cứu hộ</b>
-          </div>
-          <h1>Đội cứu hộ</h1>
-          <p>
-            Quản lý trạng thái sẵn sàng, năng lực, vị trí và phân công lực lượng
-          </p>
-        </div>
-      </div>
-      <section className="team-operational-summary">
+      <PageSectionHeader
+        section="Ứng phó"
+        title="Đội cứu hộ"
+        description="Quản lý trạng thái sẵn sàng, năng lực, vị trí và phân công lực lượng."
+        icon={Users}
+      />
+      <section className="team-operational-summary" tabIndex={0} aria-label="Tóm tắt hoạt động đội cứu hộ">
         <div>
           <ShieldCheck size={16} />
           <span>
@@ -119,7 +112,7 @@ export function TeamListPage({
           </span>
         </div>
         <p>
-          Dữ liệu vị trí là bản ghi GPS gần nhất, không phải luồng thời gian
+          Dữ liệu vị trí là bản ghi định vị gần nhất, không phải luồng thời gian
           thực.
         </p>
       </section>
@@ -137,9 +130,9 @@ export function TeamListPage({
       </div>
       <section className="team-worklist">
         <div className="team-filters">
-          <label className="incident-search">
+          <label className="ui-search incident-search">
             <Search size={15} />
-            <input
+            <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Tìm mã đội, tên đội, đội trưởng hoặc khu vực…"
@@ -183,7 +176,7 @@ export function TeamListPage({
           />
           <label className="filter-select team-sort">
             <ArrowUpDown size={12} />
-            <select
+            <UiSelect
               aria-label="Sắp xếp danh sách đội"
               value={sort}
               onChange={(event) => setSort(event.target.value as TeamSortMode)}
@@ -191,8 +184,7 @@ export function TeamListPage({
               <option>Ưu tiên vận hành</option>
               <option>Cập nhật gần nhất</option>
               <option>Mã đội A–Z</option>
-            </select>
-            <ChevronDown size={12} />
+            </UiSelect>
           </label>
         </div>
         <div className="incident-result-bar">
@@ -281,7 +273,7 @@ function Select({
 }) {
   return (
     <label className="filter-select">
-      <select
+      <UiSelect
         aria-label={options[0]}
         value={value}
         onChange={(event) => setValue(event.target.value)}
@@ -289,8 +281,7 @@ function Select({
         {options.map((option) => (
           <option key={option}>{option}</option>
         ))}
-      </select>
-      <ChevronDown size={12} />
+      </UiSelect>
     </label>
   );
 }

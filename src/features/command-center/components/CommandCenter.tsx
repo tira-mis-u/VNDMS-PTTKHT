@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 import {
   CalendarDays,
-  ChevronDown,
   ChevronRight,
   FlaskConical,
   RefreshCw,
@@ -11,7 +10,7 @@ import {
   getCommandCenterHeader,
   type CommandCenterEntityRef,
 } from "@/application/command-center/commandCenterQueries";
-import { Badge, Button, StatusDot } from "@/components/ui";
+import { Button, PageSectionHeader, StatusDot } from "@/components/ui";
 import { ActionDialog } from "./ActionDialog";
 import { ActionQueue } from "./ActionQueue";
 import { CoordinationTimeline } from "./CoordinationTimeline";
@@ -77,42 +76,42 @@ export function CommandCenter({
 
   return (
     <div className="workspace-content cc-command-center">
-      <div className="page-header cc-page-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Quản lý & điều hành</span>
-            <ChevronRight size={13} />
-            <b>Trung tâm điều hành</b>
-          </div>
-          <h1>Trung tâm điều hành</h1>
-          <div className="cc-page-context">
-            <span>
-              Phạm vi: <b>{scenario.scope}</b>
-            </span>
+      <PageSectionHeader
+        section="Quản lý & điều hành"
+        title="Trung tâm điều hành"
+        description={
+          <span className="cc-page-context">
+            <span>Phạm vi: <b>{scenario.scope}</b></span>
             <i />
             <span className="cc-operation-status">
               <StatusDot tone="blue" />
               Trạng thái vận hành: <b>{scenario.status}</b>
             </span>
+          </span>
+        }
+        icon={SlidersHorizontal}
+        className="cc-page-header"
+        actions={
+          <div className="cc-header-controls">
+            <span className="filter-chip" aria-label="Phạm vi thời gian 24 giờ gần nhất">
+              <CalendarDays size={15} />
+              <span>24 giờ gần nhất</span>
+            </span>
+            <span className="filter-chip" aria-label={`Kịch bản ${scenario.name}`}>
+              <SlidersHorizontal size={15} />
+              <span>{scenario.name}</span>
+            </span>
+            <Button
+              variant="secondary"
+              onClick={refresh}
+              aria-label={refreshing ? "Đang làm mới dữ liệu" : "Làm mới dữ liệu"}
+            >
+              <RefreshCw size={15} className={refreshing ? "spin-once" : ""} />
+              <span>{refreshing ? "Đang làm mới" : "Làm mới"}</span>
+            </Button>
           </div>
-        </div>
-        <div className="cc-header-controls">
-          <button>
-            <CalendarDays size={15} />
-            <span>24 giờ gần nhất</span>
-            <ChevronDown size={13} />
-          </button>
-          <button>
-            <SlidersHorizontal size={15} />
-            <span>{scenario.name}</span>
-            <ChevronDown size={13} />
-          </button>
-          <Button variant="secondary" onClick={refresh}>
-            <RefreshCw size={15} className={refreshing ? "spin-once" : ""} />
-            <span>{refreshing ? "Đang làm mới" : "Làm mới"}</span>
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {simulation.tick > 0 && (
         <button
@@ -122,9 +121,9 @@ export function CommandCenter({
           <FlaskConical size={15} />
           <b>DỮ LIỆU MÔ PHỎNG</b>
           <span>
-            Tick {simulation.tick}/{simulation.maxTick} · {simulation.stage} ·
+            Bước mô phỏng {simulation.tick}/{simulation.maxTick} · {simulation.stage} ·
             Mực nước {simulation.riverLevel.toFixed(2)} m · Các bảng dưới đây
-            đang đọc state canonical đã lan truyền.
+            đang đọc dữ liệu nghiệp vụ đã được đồng bộ.
           </span>
           <ChevronRight size={14} />
         </button>
@@ -149,11 +148,6 @@ export function CommandCenter({
         <LogisticsExceptions navigate={navigate} />
         <PlaybookOperations navigate={navigate} />
         <RecoveryExceptions navigate={navigate} />
-        <div className="cc-updated">
-          <StatusDot />
-          <span>Dữ liệu nghiệp vụ đã đồng bộ · {scenario.updatedAt}</span>
-          <Badge tone="neutral">Kịch bản đang hoạt động</Badge>
-        </div>
       </div>
       <DetailDrawer
         selected={selected}

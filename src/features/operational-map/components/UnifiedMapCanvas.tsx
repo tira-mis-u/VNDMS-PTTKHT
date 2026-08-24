@@ -144,7 +144,6 @@ export function UnifiedMapCanvas({
             "text-halo-width": 1.6,
           },
         });
-        if (layer.key === "evacuation") continue;
         map.on("click", `om-${layer.key}-points`, (event: MapLayerMouseEvent) => {
           const props = event.features?.[0]?.properties;
           if (!props) return;

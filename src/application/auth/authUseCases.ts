@@ -47,7 +47,7 @@ export async function loginUser(
         timestamp,
         geographicScope: result.user.geographicScope.name,
         result: "SUCCESS",
-        reason: "Xác thực demo adapter thành công.",
+        reason: "Xác thực bằng bộ kết nối thử nghiệm thành công.",
       }),
     };
   } catch (error) {
@@ -95,7 +95,7 @@ export function logoutUser(
     timestamp: now().toISOString(),
     geographicScope: user.geographicScope.name,
     result: "SUCCESS",
-    reason: "Phiên đã bị hủy tại local authentication adapter.",
+    reason: "Phiên đăng nhập đã được hủy trên bộ xác thực cục bộ.",
   });
 }
 export function setUserActive(

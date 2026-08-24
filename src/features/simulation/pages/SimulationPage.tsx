@@ -1,3 +1,5 @@
+import { PageSectionHeader } from "@/components/ui";
+import { Select as UiSelect } from "@/components/ui/Select";
 import {
   Activity,
   AlertTriangle,
@@ -42,7 +44,7 @@ export function SimulationPage({
         <div className="simulation-denied">
           <AlertTriangle size={18} />
           <h1>Không có quyền xem mô phỏng</h1>
-          <p>Vai trò hiện tại không được cấp quyền simulation_view.</p>
+          <p>Vai trò hiện tại không được cấp quyền xem mô phỏng.</p>
         </div>
       </main>
     );
@@ -54,43 +56,24 @@ export function SimulationPage({
         <b>DỮ LIỆU MÔ PHỎNG</b>
         <span>
           Không phải dữ liệu quan trắc thời gian thực · Mọi thay đổi được áp
-          dụng vào scenario deterministic và có thể Reset.
+          dụng vào kịch bản xác định trước và có thể đặt lại.
         </span>
       </div>
-      <header className="simulation-header">
-        <div>
-          <span className="simulation-eyebrow">
-            <Waves size={15} /> Simulation Engine
-          </span>
-          <h1>Lũ Sông Hồng — Hà Nội</h1>
-          <p>
-            Kịch bản tác nghiệp đầu-cuối với state propagation qua các phân hệ
-            canonical VNDMS.
-          </p>
-        </div>
-        <dl>
-          <div>
-            <dt>Seed</dt>
-            <dd>20240901</dd>
-          </div>
-          <div>
-            <dt>Trạng thái</dt>
-            <dd>
-              <Status value={sim.status} />
-            </dd>
-          </div>
-          <div>
-            <dt>Thời gian mô phỏng</dt>
-            <dd>{sim.simulationTime}</dd>
-          </div>
-          <div>
-            <dt>Tick</dt>
-            <dd>
-              {sim.tick} / {sim.maxTick}
-            </dd>
-          </div>
-        </dl>
-      </header>
+      <PageSectionHeader
+        section="Mô phỏng ứng phó thiên tai"
+        title="Lũ Sông Hồng — Hà Nội"
+        description="Kịch bản tác nghiệp xuyên suốt, đồng bộ thay đổi giữa các phân hệ trên nguồn dữ liệu nghiệp vụ thống nhất của VNDMS."
+        icon={Waves}
+        className="simulation-header"
+        actions={
+          <dl>
+            <div><dt>Mã kịch bản</dt><dd>20240901</dd></div>
+            <div><dt>Trạng thái</dt><dd><Status value={sim.status} /></dd></div>
+            <div><dt>Thời gian mô phỏng</dt><dd>{sim.simulationTime}</dd></div>
+            <div><dt>Bước mô phỏng</dt><dd>{sim.tick} / {sim.maxTick}</dd></div>
+          </dl>
+        }
+      />
       <section className="simulation-controls">
         <div className="simulation-control-buttons">
           <button
@@ -125,12 +108,12 @@ export function SimulationPage({
           </button>
           <button onClick={store.resetSimulation} disabled={!canControl}>
             <RefreshCcw size={15} />
-            Đặt lại baseline
+            Đặt lại ban đầu
           </button>
         </div>
         <label>
           Tốc độ
-          <select
+          <UiSelect
             value={sim.speed}
             onChange={(event) =>
               store.setSimulationSpeed(
@@ -143,14 +126,14 @@ export function SimulationPage({
             <option value={1}>1×</option>
             <option value={2}>2×</option>
             <option value={4}>4×</option>
-          </select>
+          </UiSelect>
         </label>
         <div className="simulation-progress">
           <span style={{ width: `${progress}%` }} />
           <b>{progress}%</b>
         </div>
       </section>
-      <section className="simulation-stage">
+      <section className="simulation-stage" tabIndex={0} aria-label="Không gian mô phỏng">
         <div>
           {stages.map((stage, index) => {
             const current = stages.indexOf(sim.stage);
@@ -194,8 +177,8 @@ export function SimulationPage({
               <Condition
                 icon={<Activity size={16} />}
                 label="Tốc độ mực nước"
-                value={`${sim.riverLevelRate > 0 ? "+" : ""}${sim.riverLevelRate.toFixed(2)} m/tick`}
-                note="So với tick trước"
+                value={`${sim.riverLevelRate > 0 ? "+" : ""}${sim.riverLevelRate.toFixed(2)} m/bước`}
+                note="So với bước trước"
               />
               <Condition
                 icon={<Gauge size={16} />}
@@ -211,9 +194,9 @@ export function SimulationPage({
               />
               <Condition
                 icon={<MapPin size={16} />}
-                label="Hazard đang hoạt động"
+                label="Hiểm họa đang hoạt động"
                 value={String(sim.activeHazards.length)}
-                note={sim.activeHazards[0] ?? "Baseline ổn định"}
+                note={sim.activeHazards[0] ?? "Mức nền ổn định"}
               />
             </div>
             <div className="simulation-thresholds">
@@ -236,11 +219,11 @@ export function SimulationPage({
               <div>
                 <h2>Lan truyền vào hệ thống tác nghiệp</h2>
                 <p>
-                  Mutation đã áp dụng vào entity canonical; chọn để mở hồ sơ
-                  thật.
+                  Thay đổi đã được áp dụng vào hồ sơ nghiệp vụ chính thức;
+                  chọn để mở hồ sơ.
                 </p>
               </div>
-              <span>{sim.generatedOperationalEvents.length} mutation</span>
+              <span>{sim.generatedOperationalEvents.length} thay đổi</span>
             </header>
             <div className="simulation-propagation">
               {sim.triggeredEvents
@@ -263,7 +246,7 @@ export function SimulationPage({
                 ))}
               {!sim.generatedOperationalEvents.length && (
                 <p className="simulation-empty">
-                  Chưa có mutation. Chọn “Tiến 1 bước” để bắt đầu kịch bản.
+                  Chưa có thay đổi nghiệp vụ. Chọn “Tiến 1 bước” để bắt đầu kịch bản.
                 </p>
               )}
             </div>
@@ -274,7 +257,7 @@ export function SimulationPage({
             <div>
               <h2>Bản đồ kịch bản & tác nghiệp</h2>
               <p>
-                MapLibre thật; lớp mô phỏng được phân biệt với marker canonical.
+                Bản đồ tác nghiệp; lớp mô phỏng được phân biệt với điểm dữ liệu nghiệp vụ chính thức.
               </p>
             </div>
             <span className="simulated-tag">Mô phỏng</span>
@@ -292,9 +275,9 @@ export function SimulationPage({
       <section className="simulation-panel log-panel">
         <header>
           <div>
-            <h2>Nhật ký simulation event</h2>
+            <h2>Nhật ký sự kiện mô phỏng</h2>
             <p>
-              Thứ tự deterministic theo tick; ID ổn định bảo đảm idempotency.
+              Thứ tự được xác định trước theo từng bước; mã ổn định bảo đảm không lặp tác động.
             </p>
           </div>
           <span>
@@ -310,12 +293,12 @@ export function SimulationPage({
           <table>
             <thead>
               <tr>
-                <th>Tick</th>
+                <th>Bước</th>
                 <th>Thời gian mô phỏng</th>
                 <th>Loại</th>
                 <th>Sự kiện & nguyên nhân</th>
                 <th>Hệ quả</th>
-                <th>Entity</th>
+                <th>Đối tượng</th>
                 <th>Trạng thái</th>
               </tr>
             </thead>
@@ -357,7 +340,7 @@ export function SimulationPage({
           </table>
           {!sim.triggeredEvents.length && (
             <p className="simulation-empty">
-              Nhật ký sẽ xuất hiện khi engine tiến tới tick đầu tiên.
+              Nhật ký sẽ xuất hiện khi bộ mô phỏng tiến tới bước đầu tiên.
             </p>
           )}
         </div>

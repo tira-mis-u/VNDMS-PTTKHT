@@ -1,6 +1,7 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Crosshair, Layers3, Search, X } from "lucide-react";
-import { Badge, Button } from "@/components/ui";
+import { Crosshair, Layers3, Search, X } from "lucide-react";
+import { Badge, Button, PageSectionHeader, Input } from "@/components/ui";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import {
   UNIFIED_MAP_LAYER_CONFIG,
@@ -70,8 +71,20 @@ export function OperationalMapWorkspacePage({
     [evacuationOperations],
   );
   const totals = useMemo(() => countByLayer(allPoints), [allPoints]);
-  const dataStamp = getUnifiedMapDataStamp(store);
-
+  const dataStamp = useMemo(() => getUnifiedMapDataStamp(store), [store]);
+  const formattedDataStamp = useMemo(() => {
+    if (!dataStamp) return "Chưa có sự kiện cập nhật trong phạm vi quyền";
+    const parsed = new Date(dataStamp);
+    return Number.isNaN(parsed.getTime())
+      ? `Cập nhật ${dataStamp}`
+      : `Cập nhật ${parsed.toLocaleString("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })}`;
+  }, [dataStamp]);
   const [search, setSearch] = useState("");
   const [severity, setSeverity] = useState<"" | UnifiedMapSeverity>("");
   const [layers, setLayers] = useState(defaultUnifiedMapLayers);
@@ -139,34 +152,29 @@ export function OperationalMapWorkspacePage({
 
   return (
     <div className="workspace-content operational-map-page">
-      <div className="page-header">
-        <div>
-          <div className="breadcrumbs">
-            <span>Quản lý &amp; điều hành</span>
-            <ChevronRight size={13} />
-            <b>Bản đồ tác nghiệp</b>
+      <PageSectionHeader
+        section="Không gian tác nghiệp thống nhất"
+        title="Bản đồ tác nghiệp"
+        description="Góc nhìn không gian tổng hợp của toàn bộ hoạt động tác nghiệp — chỉ hiển thị các đối tượng trong phạm vi quyền đọc của tài khoản."
+        icon={Layers3}
+        actions={
+          <div className="om-header-side">
+            <span className="om-data-stamp" role="status">
+              <i aria-hidden="true" />
+              <span>Dữ liệu vận hành được phân quyền · {formattedDataStamp}</span>
+            </span>
+            <Button
+              variant="secondary"
+              onClick={() => setPanelOpen((open) => !open)}
+              aria-expanded={panelOpen}
+              aria-controls="om-layer-panel"
+            >
+              <Layers3 size={15} />
+              Lớp dữ liệu
+            </Button>
           </div>
-          <h1>Bản đồ tác nghiệp</h1>
-          <p>
-            Góc nhìn không gian tổng hợp của toàn bộ hoạt động tác nghiệp —
-            chỉ hiển thị các đối tượng trong phạm vi quyền đọc của tài khoản.
-          </p>
-        </div>
-        <div className="om-header-side">
-          <span className="om-data-stamp">
-            <i /> Dữ liệu nghiệp vụ đã đồng bộ{dataStamp ? ` · ${dataStamp}` : ""}
-          </span>
-          <Button
-            variant="secondary"
-            onClick={() => setPanelOpen((open) => !open)}
-            aria-expanded={panelOpen}
-            aria-controls="om-layer-panel"
-          >
-            <Layers3 size={15} />
-            Lớp dữ liệu
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       <div className={`om-layout${panelOpen ? "" : " om-panel-collapsed"}`}>
         <div className="om-map-zone">
@@ -179,7 +187,7 @@ export function OperationalMapWorkspacePage({
           />
           <div className="om-legend" aria-label="Chú giải bản đồ">
             {UNIFIED_MAP_LAYER_CONFIG.map((layer) =>
-              totals[layer.key] > 0 ? (
+              layers[layer.key] && totals[layer.key] > 0 ? (
                 <span key={layer.key}>
                   <i style={{ background: layer.color }} /> {layer.label}
                 </span>
@@ -218,10 +226,10 @@ export function OperationalMapWorkspacePage({
           aria-label="Bảng lớp dữ liệu và bộ lọc"
         >
           <div className="om-panel-section">
-            <h2>Lọc đối tượng</h2>
-            <label className="incident-search om-search">
+            <h2>Bộ lọc đối tượng</h2>
+            <label className="ui-search incident-search om-search">
               <Search size={15} />
-              <input
+              <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Tìm theo mã, tên hoặc khu vực…"
@@ -237,7 +245,7 @@ export function OperationalMapWorkspacePage({
                 </button>
               )}
             </label>
-            <select
+            <UiSelect
               value={severity}
               onChange={(event) =>
                 setSeverity(event.target.value as "" | UnifiedMapSeverity)
@@ -249,12 +257,12 @@ export function OperationalMapWorkspacePage({
                   {option === "" ? "Tất cả mức ưu tiên" : option}
                 </option>
               ))}
-            </select>
+            </UiSelect>
           </div>
 
           <div className="om-panel-section">
             <h2>
-              Lớp tác nghiệp <small>{visibleTotal} đối tượng hiển thị</small>
+              Lớp dữ liệu <small>{visibleTotal} đối tượng hiển thị</small>
             </h2>
             <ul className="om-layer-list" role="list">
               {UNIFIED_MAP_LAYER_CONFIG.map((layer) => {
@@ -265,7 +273,7 @@ export function OperationalMapWorkspacePage({
                     <label
                       className={`om-layer-row${count === 0 ? " is-empty" : ""}`}
                     >
-                      <input
+                      <Input
                         type="checkbox"
                         checked={active}
                         onChange={() => toggleLayer(layer.key)}

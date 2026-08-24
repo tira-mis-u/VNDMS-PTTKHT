@@ -1,3 +1,4 @@
+import { Select as UiSelect } from "@/components/ui/Select";
 import { useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import type { Shelter } from "@/domain/shelters/types";
@@ -8,7 +9,7 @@ import type {
 } from "@/domain/evacuations/types";
 import { getEvacuationTransitions } from "@/domain/evacuations/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Button } from "@/components/ui";
+import { DialogBackdrop, Button, Input, Textarea } from "@/components/ui";
 export type ShelterDialog =
   | "capacity"
   | "occupancy"
@@ -30,7 +31,7 @@ function Frame({
 }) {
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div className="incident-form-dialog shelter-form-dialog">
         <header>
           <h2>{title}</h2>
@@ -116,7 +117,7 @@ function Capacity({
     >
       <label className="field">
         <span>Sức chứa danh định</span>
-        <input
+        <Input
           type="number"
           value={capacity}
           onChange={(event) => setCapacity(event.target.value)}
@@ -124,7 +125,7 @@ function Capacity({
       </label>
       <label className="field">
         <span>Chỗ đang dự phòng</span>
-        <input
+        <Input
           type="number"
           value={reserved}
           onChange={(event) => setReserved(event.target.value)}
@@ -171,14 +172,14 @@ function Occupancy({
     >
       <label className="field field-full">
         <span>Số người hiện có tại điểm</span>
-        <input
+        <Input
           type="number"
           value={value}
           onChange={(event) => setValue(event.target.value)}
         />
       </label>
       <p className="form-hint">
-        Trạng thái gần đầy/quá tải được tính lại từ state sau khi lưu.
+        Tình trạng gần đầy hoặc quá tải được tính lại từ dữ liệu sau khi lưu.
       </p>
       <ErrorText value={error} />
     </Frame>
@@ -241,41 +242,41 @@ function Resources({
           <span>
             {["Nước sạch", "Lương thực", "Nguồn điện", "Vệ sinh"][index]}
           </span>
-          <select
+          <UiSelect
             value={form[key]}
             onChange={(event) => set(key, event.target.value)}
           >
             <option>Đầy đủ</option>
             <option>Hạn chế</option>
             <option>Thiếu</option>
-          </select>
+          </UiSelect>
         </label>
       ))}
       <label className="field">
         <span>Mức sẵn sàng</span>
-        <select
+        <UiSelect
           value={form.readiness}
           onChange={(event) => set("readiness", event.target.value)}
         >
           <option>Sẵn sàng</option>
           <option>Hạn chế</option>
           <option>Không sẵn sàng</option>
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Khả năng tiếp cận</span>
-        <select
+        <UiSelect
           value={form.accessibility}
           onChange={(event) => set("accessibility", event.target.value)}
         >
           <option>Tiếp cận bình thường</option>
           <option>Tiếp cận hạn chế</option>
           <option>Không thể tiếp cận</option>
-        </select>
+        </UiSelect>
       </label>
       <label className="field field-full">
         <span>Ghi chú vận hành</span>
-        <textarea
+        <Textarea
           rows={3}
           value={form.notes}
           onChange={(event) => set("notes", event.target.value)}
@@ -337,7 +338,7 @@ function CreateEvacuation({
     >
       <label className="field field-full">
         <span>Sự cố</span>
-        <select
+        <UiSelect
           value={incidentId}
           onChange={(event) => {
             setIncident(event.target.value);
@@ -352,18 +353,18 @@ function CreateEvacuation({
               {item.id} — {item.title}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field field-full">
         <span>Khu vực nguồn</span>
-        <input
+        <Input
           value={sourceArea}
           onChange={(event) => setArea(event.target.value)}
         />
       </label>
       <label className="field">
         <span>Dân số dự kiến</span>
-        <input
+        <Input
           type="number"
           value={population}
           onChange={(event) => setPopulation(event.target.value)}
@@ -371,7 +372,7 @@ function CreateEvacuation({
       </label>
       <label className="field">
         <span>Ưu tiên</span>
-        <select
+        <UiSelect
           value={priority}
           onChange={(event) =>
             setPriority(event.target.value as typeof priority)
@@ -381,11 +382,11 @@ function CreateEvacuation({
           <option>Cao</option>
           <option>Trung bình</option>
           <option>Thấp</option>
-        </select>
+        </UiSelect>
       </label>
       <label className="field field-full">
         <span>Hoàn thành dự kiến</span>
-        <input
+        <Input
           value={expected}
           onChange={(event) => setExpected(event.target.value)}
         />
@@ -469,7 +470,7 @@ function OperationActions({
     >
       <label className="field">
         <span>Đội phụ trách</span>
-        <select
+        <UiSelect
           value={teamId}
           onChange={(event) => setTeam(event.target.value)}
         >
@@ -484,11 +485,11 @@ function OperationActions({
               {team.id} — {team.name}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Đã sơ tán</span>
-        <input
+        <Input
           type="number"
           value={evacuated}
           onChange={(event) => setEvacuated(event.target.value)}
@@ -496,7 +497,7 @@ function OperationActions({
       </label>
       <label className="field">
         <span>Chuyển trạng thái</span>
-        <select
+        <UiSelect
           value={status}
           onChange={(event) =>
             setStatus(event.target.value as EvacuationStatus)
@@ -506,11 +507,11 @@ function OperationActions({
           {getEvacuationTransitions(operation.status).map((item) => (
             <option key={item}>{item}</option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <label className="field">
         <span>Trạng thái tuyến</span>
-        <select
+        <UiSelect
           value={routeStatus}
           onChange={(event) => setRoute(event.target.value as RouteStatus)}
         >
@@ -518,7 +519,7 @@ function OperationActions({
           <option>Hạn chế</option>
           <option>Bị chặn</option>
           <option>Đang dùng tuyến thay thế</option>
-        </select>
+        </UiSelect>
       </label>
       <ErrorText value={error} />
     </Frame>
@@ -572,13 +573,13 @@ function Redirect({
     >
       <label className="field field-full">
         <span>Điểm sơ tán thay thế</span>
-        <select value={id} onChange={(event) => setId(event.target.value)}>
+        <UiSelect value={id} onChange={(event) => setId(event.target.value)}>
           {candidates.map((shelter) => (
             <option key={shelter.id} value={shelter.id}>
               {shelter.id} — {shelter.name}
             </option>
           ))}
-        </select>
+        </UiSelect>
       </label>
       <p className="form-hint">
         Sức chứa dự phòng còn lại sẽ được chuyển từ điểm cũ sang điểm mới.

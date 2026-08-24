@@ -1,3 +1,4 @@
+import { PERSONNEL, personName } from "../../data/identity/personnel";
 import type { OperationalSnapshot } from "../operations/operationalSnapshot";
 import type {
   SimulationEvent,
@@ -74,7 +75,7 @@ function incidentEvent(
     incidentId: "INC-0241",
     type,
     message,
-    actor: "Simulation Engine",
+    actor: "Bộ mô phỏng",
     timestamp: timeOnly(event.simulationTime),
     source: "Dữ liệu mô phỏng",
     metadata: { simulationEventId: event.id, seed: "20240901" },
@@ -90,7 +91,7 @@ function teamEvent(
     teamId,
     type: "simulation",
     message,
-    actor: "Simulation Engine",
+    actor: "Bộ mô phỏng",
     timestamp: timeOnly(event.simulationTime),
     source: "Dữ liệu mô phỏng",
   };
@@ -101,7 +102,7 @@ function shelterEvent(event: SimulationEvent, message: string): ShelterEvent {
     shelterId: "TH-01",
     type: "simulation",
     message,
-    actor: "Simulation Engine",
+    actor: "Bộ mô phỏng",
     timestamp: timeOnly(event.simulationTime),
     source: "Dữ liệu mô phỏng",
   };
@@ -115,7 +116,7 @@ function evacuationEvent(
     operationId: "EVAC-001",
     type: "simulation",
     message,
-    actor: "Simulation Engine",
+    actor: "Bộ mô phỏng",
     timestamp: timeOnly(event.simulationTime),
     source: "Dữ liệu mô phỏng",
   };
@@ -126,7 +127,7 @@ function sosEvent(event: SimulationEvent, message: string): SosEvent {
     sosId: "SOS-SIM-001",
     type: "simulation",
     message,
-    actor: "Simulation Engine",
+    actor: "Bộ mô phỏng",
     timestamp: timeOnly(event.simulationTime),
     source: "Dữ liệu mô phỏng",
   };
@@ -138,7 +139,7 @@ function reliefEvent(event: SimulationEvent, message: string): ReliefEvent {
     entityId: "REQ-SIM-001",
     type: "simulation",
     message,
-    actor: "Simulation Engine",
+    actor: "Bộ mô phỏng",
     timestamp: timeOnly(event.simulationTime),
     source: "Dữ liệu mô phỏng",
   };
@@ -151,7 +152,7 @@ function recoveryEvent(event: SimulationEvent, message: string): RecoveryEvent {
     incidentId: "INC-0241",
     type: "simulation",
     message,
-    actor: "Simulation Engine",
+    actor: "Bộ mô phỏng",
     timestamp: event.simulationTime,
     source: "Dữ liệu mô phỏng",
   };
@@ -272,8 +273,8 @@ export function applyOperationalPropagation(
               stepId: "PBS-06",
               type: "simulation_trigger",
               message:
-                "Simulation Engine xác nhận trigger BĐ III cho playbook lũ",
-              actor: "Simulation Engine",
+                "Bộ mô phỏng xác nhận ngưỡng báo động III cho phương án ứng phó lũ",
+              actor: "Bộ mô phỏng",
               timestamp,
               source: "Dữ liệu mô phỏng",
             };
@@ -365,7 +366,7 @@ export function applyOperationalPropagation(
           "SOS-SIM-001",
           {
             reporter: {
-              name: "Phạm Văn Đam",
+              name: personName(PERSONNEL.LOCAL_OFFICER.id),
               contact: "0912 409 118",
               source: "Cán bộ địa phương",
             },
@@ -503,7 +504,7 @@ export function applyOperationalPropagation(
         let request = createReliefRequest(
           "REQ-SIM-001",
           {
-            requester: "Đặng Thu Hà",
+            requester: personName(PERSONNEL.DANG_THU_HA.id),
             requesterRole: "Phụ trách điểm sơ tán",
             origin: "Điểm sơ tán",
             incidentId: "INC-0241",
@@ -668,7 +669,7 @@ export function applyOperationalPropagation(
               assessmentIds: [assessment.id],
               category: "Khôi phục hạ tầng thiết yếu",
               priority: "Cao",
-              owner: "Phạm Lê Hồng Quang",
+              owner: personName(PERSONNEL.PHAM_LE_HONG_QUANG.id),
               geographicScope: "Tây Hồ, Hà Nội",
               estimatedBudget: 12800000000,
               targetDate: "30/09/2026",

@@ -63,25 +63,25 @@ export class OperationalMutationBoundary<TSnapshot, TControl> {
 
   readSnapshot() {
     if (!this.draft)
-      throw new Error("Operational mutation draft chưa được khởi tạo.");
+      throw new Error("Bản nháp thay đổi nghiệp vụ chưa được khởi tạo.");
     return this.draft.snapshot;
   }
 
   readControl() {
     if (!this.draft)
-      throw new Error("Operational mutation draft chưa được khởi tạo.");
+      throw new Error("Bản nháp thay đổi nghiệp vụ chưa được khởi tạo.");
     return this.draft.control;
   }
 
   updateSnapshot(update: (snapshot: TSnapshot) => TSnapshot) {
     if (!this.draft)
-      throw new Error("Operational mutation draft chưa được khởi tạo.");
+      throw new Error("Bản nháp thay đổi nghiệp vụ chưa được khởi tạo.");
     this.draft.snapshot = update(this.draft.snapshot);
   }
 
   updateControl(update: (control: TControl) => TControl) {
     if (!this.draft)
-      throw new Error("Operational mutation draft chưa được khởi tạo.");
+      throw new Error("Bản nháp thay đổi nghiệp vụ chưa được khởi tạo.");
     this.draft.control = update(this.draft.control);
   }
 }

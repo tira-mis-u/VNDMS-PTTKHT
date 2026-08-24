@@ -52,7 +52,7 @@ export function AppSidebar({
             <ShieldCheck size={22} />
           </div>
           <strong>VNDMS</strong>
-          <button onClick={closeMobile}>
+          <button onClick={closeMobile} aria-label="Đóng thanh điều hướng">
             <X size={22} />
           </button>
         </div>

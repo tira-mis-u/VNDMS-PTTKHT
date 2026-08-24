@@ -222,7 +222,7 @@ export function groundOperationalQuestion(
     return base(
       "alert_overview",
       all.length
-        ? `Có ${all.length} cảnh báo đang hiệu lực (${critical} khẩn cấp, ${pendingAck} chờ xác nhận) được suy ra từ canonical state trong phạm vi được phân quyền.`
+        ? `Có ${all.length} cảnh báo đang hiệu lực (${critical} khẩn cấp, ${pendingAck} chờ xác nhận) được tổng hợp từ dữ liệu nghiệp vụ trong phạm vi được phân quyền.`
         : "Không có cảnh báo tác nghiệp nào trong phạm vi được phân quyền.",
       [],
     );
@@ -453,7 +453,7 @@ export function groundOperationalQuestion(
     return base(
       classification.intent,
       entityId
-        ? `Sức chứa hiện tại của ${entityId} được tính từ capacity, occupancy và reserved capacity.`
+        ? `Sức chứa hiện tại của ${entityId} được tính từ sức chứa tổng, số người đang lưu trú và số chỗ đã giữ.`
         : `Đã kiểm tra ${values.length} điểm sơ tán.`,
     );
   }
@@ -670,7 +670,7 @@ export function groundOperationalQuestion(
           ["Đang hoạt động", "Tạm dừng"].includes(item.status),
         );
     if (!executions.length)
-      say("UNKNOWN", "Chưa có playbook execution phù hợp trong hệ thống.");
+      say("UNKNOWN", "Chưa có đợt thực hiện kế hoạch ứng phó phù hợp trong hệ thống.");
     executions.forEach((item) => {
       const playbook = data.playbooks.find(
         (value) => value.id === item.playbookId,
@@ -734,7 +734,7 @@ export function groundOperationalQuestion(
     });
     return base(
       classification.intent,
-      `Đã kiểm tra ${executions.length} playbook execution.`,
+      `Đã kiểm tra ${executions.length} đợt thực hiện kế hoạch ứng phó.`,
     );
   }
   if (classification.intent === "recovery_status") {
@@ -836,7 +836,7 @@ export function groundOperationalQuestion(
     [urgent.length, "SOS P1 đã xác minh chưa có đội", "SOS" as const],
     [late.length, "nhiệm vụ quá hạn", "Task" as const],
     [pressure.length, "điểm sơ tán chịu áp lực sức chứa", "Shelter" as const],
-    [blocked.length, "bước playbook bị chặn", "PlaybookExecution" as const],
+    [blocked.length, "bước kế hoạch ứng phó bị chặn", "PlaybookExecution" as const],
     [shortages.length, "dòng vật tư thiếu phân bổ", "ReliefRequest" as const],
   ].forEach(([count, label, type]) => {
     if (Number(count) > 0)

@@ -1,157 +1,207 @@
-# Unified Operational Map — Completion Report
+# Báo cáo hoàn tất Unified Operational Map
 
-## 1. Tổng quan kiến trúc
+**Module:** Bản đồ tác nghiệp thống nhất
 
-Module mới **Bản đồ tác nghiệp** (`/workspace/Bản đồ tác nghiệp`) là góc nhìn không gian
-read-only của toàn bộ hoạt động response/evacuation/relief/recovery. Module tuân đúng
-chuỗi phân lớp đã chốt:
+**Route:** `/workspace/Bản đồ tác nghiệp`
 
+**Ngày hoàn tất:** 22/08/2026
+
+**Trạng thái:** **DONE** — toàn bộ quality gate trong phạm vi đã đạt
+
+## 1. Kết quả thực hiện
+
+Workspace bản đồ tác nghiệp đã được hoàn thiện trên MapLibre/OpenFreeMap hiện hữu. Bản đồ đọc từ authorized canonical operational view và biểu diễn 33 đối tượng đang hoạt động trong kịch bản mặc định, không tạo operational GIS dataset, store, context, repository hoặc seed bản đồ thứ hai.
+
+Các khả năng đã có:
+
+- bản đồ chiếm vùng chính, panel lớp dữ liệu, chú giải và trạng thái dữ liệu ở header;
+- tìm theo mã, tên hoặc khu vực;
+- lọc mức ưu tiên và bật/tắt từng layer;
+- số lượng theo layer và empty state khi không có dữ liệu trong phạm vi quyền;
+- điểm tác nghiệp và tuyến sơ tán; tuyến bị chặn/hạn chế dùng nét đứt đỏ;
+- click điểm hoặc tuyến để mở drawer;
+- drawer có loại entity, ID, trạng thái, metadata và link tới trang canonical detail;
+- deep-link `?focus=ENTITY_ID`, hỗ trợ refresh mà vẫn giữ context;
+- light/dark mode và responsive desktop/tablet/mobile;
+- keyboard-accessible filter, result list, drawer close/Escape và toolbar.
+
+## 2. Kiến trúc
+
+Luồng dữ liệu được giữ đúng boundary hiện hữu:
+
+```text
+Presentation
+src/features/operational-map
+        ↓
+Pure geospatial application queries
+src/application/map/unifiedMapQueries.ts
+        ↓
+Authorized Operational View
+createAuthorizedOperationalView(...)
+        ↓
+OperationalProvider canonical state
 ```
-Presentation (features/operational-map)
-        ↓ props thuần, không đọc repository
-Application (src/application/map/unifiedMapQueries.ts — pure functions)
-        ↓ đọc từ
-Authorized Operational View (createAuthorizedOperationalView trong OperationalContext)
-        ↓ đọc từ
-OperationalProvider — canonical state owner duy nhất
-```
 
-- Không có store/context/GIS abstraction mới; page dùng `useOperationalState()` —
-  chính là authorized snapshot đã được lọc theo quyền + phạm vi địa lý.
-- Không dataset song song: mọi map point dẫn 1-1 tới entity canonical qua `id`,
-  resolve chi tiết bằng `findUnifiedMapDetail` trên cùng snapshot.
-- Read-only: không mutation nào phát sinh từ bản đồ, nên không cần confirmation/
-  resource auth/rollback mới; simulation vẫn chạy qua canonical mutation boundary
-  hiện hữu và map query tự phản ánh (verified by test 10).
+`OperationalMapWorkspacePage` chỉ dùng `useOperationalState()`. Giá trị context này là authorized snapshot do `OperationalContext` tạo từ canonical state trước khi truyền vào presentation.
 
-## 2. Query tầng application (authorized geospatial query)
+Các giới hạn kiến trúc đã được kiểm tra tĩnh:
 
-`src/application/map/unifiedMapQueries.ts` — pure functions trên `OperationalSnapshot`:
+- feature không import repository hoặc persistence adapter;
+- feature không tự gọi authorization để lấy raw data;
+- application query không import React context;
+- không có file GIS Store, Context hoặc Repository trong feature;
+- không có operational entity hoặc mutation mới;
+- không bypass `OperationalProvider` hay `OperationalMutationBoundary`.
 
-- `getUnifiedMapPoints(snapshot)`: 9 loại entity có tọa độ → UnifiedMapPoint
-  (`id`, `kind`, `title`, `area`, `coordinates`, `severity`, `status`, `statusTone`,
-  `detailPath`). Closed entities (incident "Đã cóng…"/"Đã kiểm soát", SOS đã xử lý/
-  đã đóng/từ chối/hủy, task hoàn thành/hủy, evacuation/relief đã đóng) không
-  còn xuất hiện trên bản đồ bận nghiệp nghiệp vụ.
-- `getUnifiedMapRoutes(snapshot)`: polyline từ `evacuationOperations.route.coordinates`,
-  cờ `blocked` khi route status "Bị chặn"/"Hạn chế" → render dashed đỏ.
-- `defaultUnifiedMapLayers`, `countByLayer`, `filterUnifiedMapPoints`
-  (search id/title/area + severity + layer map), `visibleUnifiedMapRoutes` (routes
-  chỉ hiển thị cùng evacuation points đang hiển thị), `getUnifiedMapDataStamp`
-  (canonical event timestamp mới nhất → header "Dữ liệu nghiệp vụ đồng bộ").
-- Severity hợp nhất P1–P4 → "Khẩn cấp / Cao / Trung bình / Thấp" (`sosSev`) dùng
-  cho cả SOS lẫn Relief priority.
+Bản đồ hiện là read-only. Vì không có mutation trên map nên không phát sinh confirmation/rollback contract mới. Simulation tiếp tục mutate canonical snapshot qua boundary hiện hữu; query bản đồ tự phản ánh snapshot mới.
 
-Authorization **không nằm trong query** — query nhận đúng snapshot đã qua
-`createAuthorizedOperationalView`, nên out-of-scope entities không thể xuất hiện
-trong kết quả (tests 3, 5, 6, 12 assert chủ động).
+## 3. Authorized geospatial query
 
-## 3. Layers & UI contract
+`src/application/map/unifiedMapQueries.ts` cung cấp các hàm thuần:
 
-Layer panel (có thể toggle từng lớp, hiển thị số lượng từng lớp trong phạm vi quyền):
+- `getUnifiedMapPoints` — chuyển authorized canonical entities có tọa độ thành map points;
+- `getUnifiedMapRoutes` — đọc polyline từ canonical evacuation route;
+- `filterUnifiedMapPoints` — layer/search/severity filter trên tập đã phân quyền;
+- `visibleUnifiedMapRoutes` — tuyến chỉ hiện khi operation tương ứng còn nhìn thấy;
+- `countByLayer` — số lượng theo layer;
+- `findUnifiedMapDetail` — resolve drawer từ authorized snapshot, trả `undefined` nếu entity không còn trong scope;
+- `getUnifiedMapDataStamp` — lấy mốc sự kiện canonical mới nhất trong phạm vi quyền.
 
-| Layer | Màu | Bán kính | Lọc status |
-|---|---|---|---|
-| Sự cố | amber `#f79009` | 7.5 | Đang xử lý/Đang điều tra; skip đã đóng |
-| SOS | đỏ `#d92d20` | 8 | Đang hoạt động; skip xử lý xong |
-| Nhiệm vụ | tím `#7a5af8` | 6.5 | Skip Hoàn thành/Hủy |
-| Đội cứu hộ | xanh dương `#2c72e4` | 6 | Theo operational status |
-| Điểm sơ tán | xanh lá `#12b76a` | 6 | Theo capacity |
-| Hoạt động sơ tán | teal `#0e7490` | 6 | Skip đã đóng |
-| Yêu cầu cứu trợ | cam `#f04438`/amber | 6 | Skip closed |
-| Kho vật tư | tím `#6941c6` | 6 | Hạn chế/Tạm đóng theo WarehouseStatus |
-| Dự án phục hồi | xám `#475467` | 6 | Theo lifecycle |
+Authorization xảy ra trước presentation. Search, filter, layer toggle và drawer không thể khôi phục entity đã bị authorized view loại bỏ.
 
-- Routes: line layer `#0e7490` (solid) và `#d92d20` (dashed) cho tuyến bị chặn/hạn chế.
-- Circle layer + white stroke 2px + symbol label (id) từ minzoom 11.2 — tránh clutter.
-- Zoom toolbar (+/−/Scan-fitBounds), flyTo theo `?focus=` deep-link.
-- Click circle/line → `EntityDetailDrawer` (role=dialog, Esc đóng, auto-focus nút đóng):
-  loại, mã, trạng thái Badge, meta đặc thù từng kind, nút **Mở trang chi tiết** điều hướng
-  sang canonical detail page (`/incidents/:id`, `/sos/:id`, `/tasks/:id`, `/teams/:id`,
-  `/shelters/:id`, `/evacuations/:id`, `/relief/requests/:id`, `/relief/warehouses/:id`,
-  `/recovery/projects/:id`).
-- Search theo mã/tên/khu vực + lọc mức ưu tiên; kết quả render trong panel và nhảy
-  tới đối tượng khi bấm.
-- Header có badge "Dữ liệu nghiệp vụ đã đồng bộ · HH:mm" từ canonical timestamp.
-- Empty states: từng layer rỗng → "Không có dữ liệu trong phạm vi quyền";
-  toàn bộ map rỗng → overlay trên map.
-- Legend tự thu theo các lớp đang bật; ký hiệu tuyến sơ tán / tuyến bị chặn riêng.
-- Route sidebar hoạt + breadcrumb "Quản lý & điều hành › Bản đồ tác nghiệp" vì
-  nav item có `path` trỏ thẳng route (encodeURIComponent).
-- Command Center map có text-action **"Mở bản đồ tác nghiệp"** dẫn thẳng route.
+Không có map-specific source trong AI grounding và không có simulation map state riêng.
 
-GIS: reuse đúng MapLibre + `mapConfig` + OpenFreeMap + `addVietnamSeaLabels(map, "om")`
-(island labels vẫn chính xác `Quần Đảo Hoàng Sa` / `Quần Đảo Trường Sa`, không nhãn biển lệch chuẩn nào khác),
-`ResizeObserver` giữ canvas khớp kích thước (fix cho layout lưới 2-cột).
+## 4. Layers và GIS
 
-## 4. RBAC behavior map
+| Layer | Nguồn canonical | Detail route |
+|---|---|---|
+| Sự cố | `incidents` | `/incidents/:id` |
+| SOS | `sosRequests` | `/sos/:id` |
+| Nhiệm vụ | `tasks` | `/tasks/:id` |
+| Đội cứu hộ | `teams` | `/teams/:id` |
+| Điểm sơ tán | `shelters` | `/shelters/:id` |
+| Hoạt động sơ tán | `evacuationOperations` | `/evacuations/:id` |
+| Yêu cầu cứu trợ | `reliefRequests` | `/relief/requests/:id` |
+| Kho vật tư | `warehouses` | `/relief/warehouses/:id` |
+| Dự án phục hồi | `recoveryProjects` | `/recovery/projects/:id` |
 
-| Vai trò | Kết quả query |
+Tuyến sơ tán lấy trực tiếp từ `evacuationOperations.route.coordinates`. Trạng thái `Bị chặn` hoặc `Hạn chế` được render bằng line layer nét đứt; không tạo route seed phụ.
+
+Hạ tầng được tái sử dụng:
+
+- `maplibre-gl` hiện hữu;
+- `MAP_BASE_STYLE` của OpenFreeMap;
+- `applyVietnameseMapLabels` và geographic conventions trong `mapConfig`;
+- chỉ bổ sung hai nhãn `Quần Đảo Hoàng Sa` và `Quần Đảo Trường Sa` qua `addVietnamSeaLabels`;
+- không thêm nhãn vùng biển ngoài hai nhãn quần đảo được yêu cầu và không vẽ polygon/vùng chủ quyền suy diễn.
+
+Số điểm hiện tại là 33 nên chưa cần clustering. Label ID chỉ hiện từ zoom 11.2 để giảm nhiễu.
+
+## 5. RBAC và chống rò dữ liệu
+
+| Vai trò | Kết quả đã kiểm thử |
 |---|---|
-| Chỉ huy / Điều hành viên | Toàn bộ 9 lớp Hà Nội (33 đối tượng ở kịch bản Red River) |
-| Cán bộ địa phương (Phạm Văn Đam — Tây Hồ) | Chỉ entity thuộc scope (Sự cố 2, SOS 1, Nhiệm vụ 2, Đội 1, Điểm sơ tán 2, Kho 1, Dự án 2; Sơ tán 0, Cứu trợ 0 và báo "Không có dữ liệu trong phạm vi quyền") |
-| Đội trưởng/phó cứu hộ | Team/task/sos theo ownership từ authorized view |
-| Nhân viên kho | Chỉ kho được phân; incident/SOS/sơ tán/cứu trợ rỗng |
-| Công dân | Không operational layer nào |
+| Chỉ huy | Global visibility, đủ cả 9 layer |
+| Điều hành viên | Global visibility bằng Chỉ huy trong kịch bản hiện tại |
+| Cán bộ địa phương | Chỉ nhận entity thuộc scope Tây Hồ; `INC-0234` Long Biên không xuất hiện |
+| Vai trò cứu hộ | Layer đội bị giới hạn theo ownership; tài khoản test chỉ thấy `CH-05` |
+| Nhân viên kho | Chỉ thấy kho sở hữu `KHO-01`; không nhận Incident/SOS |
+| Công dân | Query trả mảng rỗng cho toàn bộ operational layers |
 
-`operational-map` map tới quyền `"view"` trong `requiredPermission` — route không từ chối
-citizen (spec là về dữ liệu: citizen vào được page nhưng mọi lớp operational trả về 0).
+No-leak test xây tập ID từ từng collection trong authorized view và xác nhận mọi map point đều thuộc đúng tập đó. Drawer cũng không resolve được entity ngoài scope.
 
-## 5. Tích hợp & cross-links
+## 6. Tích hợp và điều hướng
 
-- Router: union member `{ name: "operational-map"; focus: string | null }`,
-  `parseRoute(pathname, search)` đọc `?focus=` bằng `URLSearchParams`; App.tsx giữ
-  cả pathname+search trong state nên popstate/refresh/deep-link giữ nguyên focus.
-- `OPERATIONAL_MAP_WORKSPACE_PATH` export để Command Center cross-link.
-- Detail navigation reuse `navigate` của App shell → canonical pages, không copy UI.
+- Sidebar trỏ trực tiếp tới `/workspace/Bản đồ tác nghiệp`.
+- Command Center có link mở workspace.
+- `operationalMapFocusPath(entityId)` tạo deep-link thống nhất.
+- Incident Detail, Task Detail, Team Detail, Shelter Detail, SOS Detail và Evacuation Detail có nút **Xem trên bản đồ** với đúng entity focus.
+- Alert Detail có **Xem nguồn trên bản đồ** khi cảnh báo có geographic scope; focus dùng source entity và vẫn chịu authorized query.
+- Click map/result/tuyến mở drawer; **Mở trang chi tiết** dẫn về canonical detail route.
+- Browser test xác nhận focus `SOS-0241`, refresh giữ drawer và link mở đúng `/sos/SOS-0241`.
 
-## 6. Tests (12 focused — `tests/application/unified-operational-map.test.ts`)
+## 7. Focused tests
 
-1. Query đọc đúng canonical entities có tọa độ, mọi point resolve detail.
-2. Commander đủ layer.
-3. Local Officer geo-filter (không thấy INC-0234 Long Biên).
-4. Rescue ownership bảo toàn sau authorized view.
-5. Warehouse role chỉ thấy kho được phân; incident/sos rỗng.
-6. Citizen bị từ chối toàn bộ operational layers.
-7. Click map → detailPath canonical cho cả 9 kinds.
-8. Layer toggle + search + severity filter trong tập authorized.
-9. Không duplicate id/kind; không dataset phụ.
-10. 13 simulation ticks → canonical mutation thay đổi points/routes.
-11. Tuyến bị chặn → `blocked`, ẩn cùng lớp evacuation khi tắt.
-12. `findUnifiedMapDetail` không resolve được entity ngoài scope (no-leak).
+`tests/application/unified-operational-map.test.ts` có 13 nhóm kiểm tra:
 
-Toàn bộ chạy trong context composer (`inMemoryOperationalRepository.load()` +
-`createAuthorizedOperationalView`), không chạm presentation.
+1. unified query đọc đúng canonical entities có tọa độ;
+2. Commander và Operator global visibility;
+3. Local Officer geographic filtering;
+4. rescue ownership filtering;
+5. warehouse ownership filtering;
+6. Citizen denial toàn bộ layer;
+7. entity/detail/deep-link mapping;
+8. layer, search và severity filters;
+9. không duplicate map entity/dataset;
+10. simulation canonical state propagation;
+11. route line và blocked-route behavior;
+12. data stamp, drawer no-leak và kiểm tra mọi point thuộc authorized collection;
+13. static architecture scan chống Provider/repository/GIS store bypass.
 
-## 7. Validation gates
+Không có mutation trên map, vì vậy các test confirmation, lifecycle re-check, rollback và audit mới không áp dụng. Mutation/simulation liên quan vẫn được bao phủ bởi focused boundary tests hiện hữu.
 
-| Gate | Kết quả |
+## 8. Browser và responsive verification
+
+Bằng chứng nằm tại `docs/05-architecture/unified-operational-map-evidence/`.
+
+| Chế độ | Viewport | Map | Panel | Tràn ngang | Axe serious/critical |
+|---|---:|---:|---:|---:|---:|
+| Sáng desktop | 1440×900 | 754×648 | 650px | 0 | 0 |
+| Tối desktop | 1440×900 | 754×648 | 650px | 0 | 0 |
+| Sáng tablet | 820×1180 | 756×558 | 680px, nội dung cuộn | 0 | 0 |
+| Sáng mobile | 390×844 | 326×558 | 680px, nội dung cuộn | 0 | 0 |
+
+Các kiểm tra tương tác trình duyệt:
+
+- 9 layer controls và 33 result rows được render;
+- tắt layer SOS làm số kết quả giảm từ 33 xuống 30;
+- deep-link `?focus=SOS-0241` mở đúng drawer;
+- refresh deep-link vẫn mở đúng drawer;
+- canonical detail path là `/sos/SOS-0241`;
+- trạng thái header lấy từ canonical event và hiển thị “Dữ liệu vận hành được phân quyền”;
+- 0 horizontal overflow;
+- 0 Axe serious/critical.
+
+## 9. Quality gates
+
+| Gate | Kết quả cuối |
 |---|---|
-| `npm test` | 281 pass / 0 fail |
-| `npm run test:focused` | 46 pass / 0 fail (đã thêm file mới vào script) |
-| `npm run typecheck` (tsc -b) | 0 lỗi |
-| `npm run lint` (oxlint) | 0 warning, 0 error |
-| `npm run build` | ✓ built (không đổi bundler) |
-| Route smoke + deep-link refresh (`vite preview` 4180) | 200 cho root và `/workspace/Bản đồ tác nghiệp?focus=SOS-0241` (SPA fallback) |
-| Browser verification (Puppeteer) | Light + dark render, click marker → drawer → canonical detail route (`/recovery/projects/RP-0242`), deep-link focus mở drawer đúng SOS-0241, layer toggle cập nhật counts, officer scope + empty states đúng, mobile 480px collapse sidebar + panel |
+| `npm test` | **286/286 pass** |
+| `npm run test:focused` | **47/47 pass** |
+| `npm run lint` | **0 warning, 0 error trên 222 files** |
+| TypeScript (`tsc -b` trong build) | **Pass** |
+| `npm run build` | **Pass, 1985 modules transformed** |
+| `git diff --check` | **Pass** |
+| Static architecture scan | **Pass** |
+| Dev browser smoke | **Pass** |
+| Production preview `/` | **HTTP 200** |
+| Production preview workspace route | **HTTP 200** |
+| Production preview deep-link refresh | **HTTP 200** |
+| Light/dark/responsive browser verification | **Pass** |
 
-## 8. Giới hạn còn lại / hàm ý sang scope khác
+Build vẫn phát cảnh báo đã biết về alerts import tĩnh/động và chunk MapLibre lớn. Theo phạm vi yêu cầu, bundler và MapLibre infrastructure không được refactor chỉ để loại cảnh báo này.
 
-- Damage Assessment có tọa độ nội bộ nhưng chưa được kéo vào map vì thuộc trục
-  Recovery/six operational layers đã chốt trong spec — có thể bổ sung sau này mà
-  không đổi query contract.
-- Không clustering: số point nhỏ, label-id chỉ bật từ mức zoom 11.2 nên chưa
-  cần (spec yêu cầu "chỉ khi thật sự cần").
-- Không có mutation từ map; khi cần (ví dụ vẽ tuyến, gán đội trên bản đồ) phải
-  đi qua mutation boundary: confirmation → re-read authorized state → resource/
-  lifecycle auth → rollback + audit.
-- Pre-existing UI typo "ngườii dùng" trong `alertUseCases` và comment file khác
-  nằm ngoài scope task này — đã ghi nhận, chưa sửa để không lấn scope.
-- MapLibre preview trong sandbox có flake về composite trong screenshot fullscreen
-  nhưng DOM/canvas đều xác nhận đúng kích thước và nội dung.
+Ứng dụng là Vite SPA, không có SSR runtime riêng; vì vậy gate tương ứng được thực hiện bằng production SPA preview, route fallback và deep-link refresh.
 
-## 9. Ngoài scope — các module khác
+## 10. Limitations
 
-Hazard Situation (`/workspace/Tình hình thiên tai`), History, Trends, Configuration,
-các module placeholder khác và các P2/P3 đã liệt kê vẫn giữ nguyên — không động tới
-trong task này.
+- Không clustering vì 33 điểm hiện tại chưa gây quá tải; có thể bổ sung khi dữ liệu thực tế vượt ngưỡng phù hợp.
+- Basemap OpenFreeMap cần kết nối mạng; canonical point/filter/drawer vẫn thuộc ứng dụng, không phụ thuộc một map dataset giả.
+- Workspace read-only; thao tác trực tiếp như vẽ tuyến hoặc điều phối trên map không nằm trong phạm vi.
+- Damage Assessment chưa là layer riêng; Recovery Project đã được biểu diễn khi có geographic representation.
+
+## 11. Ngoài phạm vi
+
+Không triển khai hoặc thay đổi nghiệp vụ cho:
+
+- Hazard Situation;
+- Disaster History;
+- Trends;
+- Configuration;
+- các module P2/P3 khác;
+- Provider, repository, event bus hoặc audit architecture mới;
+- bundle architecture ngoài việc giữ lazy loading hiện hữu.
+
+## 12. Kết luận
+
+Unified Operational Map được đánh dấu **DONE** vì authorized query, 9 layer, RBAC/no-leak, canonical links, deep-link refresh, dark/light responsive UX, focused/full tests, lint, TypeScript, production build, production route smoke và static architecture scan đều đạt.

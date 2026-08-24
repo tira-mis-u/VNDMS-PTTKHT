@@ -24,7 +24,7 @@ import { parseVietnameseDate, demoCurrentTime } from "../../domain/tasks/rules";
  * Authorized Alert View: cảnh báo chỉ được suy ra từ Authorized Operational
  * View (canonical read model đã qua lọc quyền) và yêu cầu thêm alert_view.
  * Một điều kiện không nhìn thấy được ở entity nguồn thì alert của nó cũng
- * không tồn tại đối với ngườii dùng đó — không có đường bypass nào.
+ * không tồn tại đối với người dùng đó — không có đường bypass nào.
  */
 export function deriveAuthorizedAlerts(
   user: AuthUser | null,
@@ -61,7 +61,7 @@ export interface AlertFilters {
 }
 
 export const alertTimeOptions = [
-  "Tất cả thởi gian",
+  "Tất cả thời gian",
   "30 phút gần nhất",
   "1 giờ gần nhất",
   "3 giờ gần nhất",

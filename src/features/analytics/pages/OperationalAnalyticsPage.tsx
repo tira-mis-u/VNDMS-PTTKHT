@@ -35,7 +35,7 @@ export function OperationalAnalyticsPage({
   const store = useOperationalState();
   const [filter, setFilter] = useState<AnalyticsPeriod>({
     geographicScope: "Toàn bộ Hà Nội",
-    referenceTime: "21/08/2026 10:45",
+    referenceTime: store.metadata.asOf,
   });
   const data = store as AnalyticsData;
   const summary = useMemo(
@@ -58,14 +58,14 @@ export function OperationalAnalyticsPage({
         active="/analytics/operations"
         navigate={navigate}
         title="Tổng quan tác nghiệp"
-        description="Tổng hợp có truy vết từ dữ liệu điều hành canonical; không mô phỏng dữ liệu thời gian thực."
+        description="Tổng hợp có truy vết từ dữ liệu điều hành thống nhất; không giả lập dữ liệu thời gian thực."
         actions={
           <button
             className="analytics-secondary"
             onClick={() =>
               setFilter({
                 geographicScope: "Toàn bộ Hà Nội",
-                referenceTime: "21/08/2026 10:45",
+                referenceTime: store.metadata.asOf,
               })
             }
           >
@@ -78,6 +78,8 @@ export function OperationalAnalyticsPage({
         value={filter}
         onChange={setFilter}
         incidents={store.incidents}
+        asOf={store.metadata.asOf}
+        source={store.metadata.source}
       />
       <div className="analytics-metric-grid">
         {summary.metrics.map((metric) => (
@@ -91,7 +93,7 @@ export function OperationalAnalyticsPage({
       <div className="analytics-layout-2">
         <Section
           title="Cảnh báo tác nghiệp"
-          description="Aggregation từ Authorized Alert View; Analytics không phải nguồn cảnh báo."
+          description="Tổng hợp từ dữ liệu cảnh báo đã phân quyền; phân hệ Phân tích không phải nguồn tạo cảnh báo."
           action={
             <span className="analytics-section-count">
               <BellRing size={14} />
@@ -188,7 +190,7 @@ export function OperationalAnalyticsPage({
       <div className="analytics-layout-2">
         <Section
           title="Điểm nghẽn SOS"
-          description="Chờ xác minh, chưa phân công hoặc Task chưa được giao."
+          description="Chờ xác minh, chưa phân công hoặc nhiệm vụ chưa được giao."
         >
           <div className="analytics-compact-table">
             <table>
@@ -224,13 +226,13 @@ export function OperationalAnalyticsPage({
               <b>{sos.unassigned}</b> chưa phân công
             </span>
             <span>
-              <b>{sos.incidentConversionRate}%</b> chuyển thành Incident
+              <b>{sos.incidentConversionRate}%</b> chuyển thành sự cố
             </span>
           </div>
         </Section>
         <Section
           title="Phục hồi cần chú ý"
-          description="Tiến độ, ngân sách và milestone từ Recovery canonical."
+          description="Tiến độ, ngân sách và mốc công việc từ dữ liệu phục hồi."
         >
           <div className="analytics-project-list">
             {recovery.projectRows.map((item) => (

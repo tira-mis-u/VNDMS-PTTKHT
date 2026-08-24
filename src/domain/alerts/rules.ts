@@ -237,7 +237,7 @@ function deriveSosAlerts(input: AlertDerivationInput): DerivedAlert[] {
           condition: "sos_p1_verified_unassigned",
           severity: "critical",
           title: `SOS khẩn cấp ${sos.code} đã xác minh nhưng chưa điều phối`,
-          message: `${sos.peopleAtRisk} ngườii đang gặp nguy hiểm tại ${sos.location.name}. Yêu cầu đã xác minh từ ${sos.receivedAt} nhưng chưa có đội cứu hộ nào được điều phối.`,
+          message: `${sos.peopleAtRisk} người đang gặp nguy hiểm tại ${sos.location.name}. Yêu cầu đã xác minh từ ${sos.receivedAt} nhưng chưa có đội cứu hộ nào được điều phối.`,
           detectedAt: sos.receivedAt,
         }),
       );
@@ -425,7 +425,7 @@ function deriveShelterAlerts(input: AlertDerivationInput): DerivedAlert[] {
           condition: "shelter_overloaded",
           severity: "critical",
           title: `Điểm sơ tán ${shelter.code} đang quá tải`,
-          message: `${shelter.name} đang chứa ${shelter.currentOccupancy}/${shelter.capacity} ngườii. Cần mở điểm mới hoặc điều chuyển ngay.`,
+          message: `${shelter.name} đang chứa ${shelter.currentOccupancy}/${shelter.capacity} người. Cần mở điểm mới hoặc điều chuyển ngay.`,
           detectedAt: shelter.updatedAt,
         }),
       );
@@ -482,7 +482,7 @@ function deriveEvacuationAlerts(input: AlertDerivationInput): DerivedAlert[] {
           title: `Sơ tán ${operation.code} đang ${
             operation.status === "Tạm dừng" ? "tạm dừng" : "bị chặn tuyến"
           }`,
-          message: `${operation.code} từ ${operation.sourceArea} đã di dờii ${operation.evacuatedPopulation}/${operation.estimatedPopulation} ngườii, tuyến ${operation.route.name} đang “${operation.route.status}”. Cần kích hoạt tuyến thay thế hoặc điều đội hỗ trợ.`,
+          message: `${operation.code} từ ${operation.sourceArea} đã di dời ${operation.evacuatedPopulation}/${operation.estimatedPopulation} người, tuyến ${operation.route.name} đang “${operation.route.status}”. Cần kích hoạt tuyến thay thế hoặc điều đội hỗ trợ.`,
           detectedAt: operation.updatedAt,
         }),
       );
@@ -498,7 +498,7 @@ function deriveEvacuationAlerts(input: AlertDerivationInput): DerivedAlert[] {
           condition: "evacuation_slow",
           severity: "medium",
           title: `Sơ tán ${operation.code} tiến độ chậm`,
-          message: `Sau ${fmtDuration(minutesBetween(operation.startTime, alertClock))} triển khai chỉ đạt ${operation.progress}% (${operation.evacuatedPopulation}/${operation.estimatedPopulation} ngườii). Dự kiến hoàn thành ${operation.expectedCompletion}.`,
+          message: `Sau ${fmtDuration(minutesBetween(operation.startTime, alertClock))} triển khai chỉ đạt ${operation.progress}% (${operation.evacuatedPopulation}/${operation.estimatedPopulation} người). Dự kiến hoàn thành ${operation.expectedCompletion}.`,
           detectedAt: operation.startTime,
         }),
       );
@@ -610,7 +610,7 @@ function deriveReliefAlerts(input: AlertDerivationInput): DerivedAlert[] {
           condition: "shipment_delayed",
           severity: "high",
           title: `Chuyến hàng ${shipment.code} quá giờ dự kiến`,
-          message: `Dự kiến tới ${shipment.destination} lúc ${shipment.estimatedArrival} nhưng hiện vẫn “${shipment.status}”. Cần liên hệ đơn vị vận chuyển và cập nhật ETA.`,
+          message: `Dự kiến tới ${shipment.destination} lúc ${shipment.estimatedArrival} nhưng hiện vẫn “${shipment.status}”. Cần liên hệ đơn vị vận chuyển và cập nhật thời gian đến dự kiến.`,
           detectedAt: shipment.estimatedArrival,
         }),
       );

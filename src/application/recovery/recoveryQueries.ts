@@ -192,7 +192,7 @@ export function getRecoveryExceptions(
             ? `${item.code} vượt ngân sách`
             : budgetUsage(item) >= 85
               ? `${item.code} có rủi ro ngân sách`
-              : `${item.code} có milestone bị chặn`,
+              : `${item.code} có mốc công việc bị chặn`,
         severity:
           isProjectOverdue(item) || budgetUsage(item) >= 100
             ? "Khẩn cấp"

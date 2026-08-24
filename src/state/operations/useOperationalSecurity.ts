@@ -63,7 +63,7 @@ export function useOperationalSecurity() {
         timestamp: new Date().toISOString(),
         geographicScope: restoredSession.user.geographicScope.name,
         result: "SUCCESS",
-        reason: "Khôi phục phiên local sau refresh.",
+        reason: "Khôi phục phiên lưu trên thiết bị sau khi tải lại trang.",
       });
     if (event) {
       auditGateway.replace([event, ...existing]);

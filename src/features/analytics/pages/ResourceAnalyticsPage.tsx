@@ -31,7 +31,7 @@ export function ResourceAnalyticsPage({
   const store = useOperationalState();
   const [filter, setFilter] = useState<AnalyticsPeriod>({
     geographicScope: "Toàn bộ Hà Nội",
-    referenceTime: "21/08/2026 10:45",
+    referenceTime: store.metadata.asOf,
   });
   const data = store as AnalyticsData;
   const team = useMemo(() => getTeamAnalytics(data, filter), [data, filter]);
@@ -53,12 +53,14 @@ export function ResourceAnalyticsPage({
         active="/analytics/resources"
         navigate={navigate}
         title="Phân tích nguồn lực"
-        description="Năng lực cứu hộ, điểm sơ tán, vận chuyển cứu trợ và tồn kho từ các phân hệ canonical."
+        description="Năng lực cứu hộ, điểm sơ tán, vận chuyển cứu trợ và tồn kho từ các phân hệ nghiệp vụ hiện hành."
       />
       <AnalyticsFilters
         value={filter}
         onChange={setFilter}
         incidents={store.incidents}
+        asOf={store.metadata.asOf}
+        source={store.metadata.source}
       />
       <div className="analytics-metric-grid compact">
         <MetricCard
@@ -103,7 +105,7 @@ export function ResourceAnalyticsPage({
       <div className="analytics-layout-2">
         <Section
           title="Tải công việc đội cứu hộ"
-          description="Assignment lấy từ Task, Incident, Evacuation và Shipment hiện hữu."
+          description="Phân công lấy từ nhiệm vụ, sự cố, hoạt động sơ tán và chuyến hàng hiện hữu."
           action={<ShieldCheck size={17} />}
         >
           <div className="analytics-compact-table">
@@ -111,7 +113,7 @@ export function ResourceAnalyticsPage({
               <thead>
                 <tr>
                   <th>Đội</th>
-                  <th>Task mở</th>
+                  <th>Nhiệm vụ đang mở</th>
                   <th>Phân công hiện tại</th>
                 </tr>
               </thead>
@@ -139,7 +141,7 @@ export function ResourceAnalyticsPage({
         </Section>
         <Section
           title="Nhu cầu năng lực"
-          description="Nhu cầu được dẫn xuất từ loại Task mở và hoạt động sơ tán chưa có đội."
+          description="Nhu cầu được dẫn xuất từ loại Nhiệm vụ đang mở và hoạt động sơ tán chưa có đội."
         >
           <div className="analytics-capability-list">
             {team.capability.slice(0, 8).map((item) => (
@@ -163,7 +165,7 @@ export function ResourceAnalyticsPage({
       </div>
       <Section
         title="Điểm sơ tán & sức chứa"
-        description="Occupancy là ghi nhận; utilization được dẫn xuất từ currentOccupancy/capacity."
+        description="Số người đang lưu trú là dữ liệu ghi nhận; tỷ lệ sử dụng được tính từ số người hiện có và sức chứa."
         action={<Building2 size={17} />}
       >
         <div className="analytics-table-wrap">
@@ -282,7 +284,7 @@ export function ResourceAnalyticsPage({
       </div>
       <Section
         title="Yêu cầu cứu trợ có áp lực"
-        description="Shortage tính từ lượng đã duyệt trừ reservation chưa giải phóng."
+        description="Số lượng thiếu được tính từ nhu cầu đã duyệt sau khi trừ phần phân bổ chưa giải phóng."
       >
         <div className="analytics-table-wrap">
           <table className="analytics-table">

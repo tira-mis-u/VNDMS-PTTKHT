@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { DamageItem } from "@/domain/recovery/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, EmptyState } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, EmptyState, Input, Textarea } from "@/components/ui";
 const RecoveryOperationalMap = lazy(
   () => import("../components/RecoveryOperationalMap"),
 );
@@ -44,7 +44,7 @@ export function DamageAssessmentDetailPage({
     return (
       <div className="workspace-content">
         <EmptyState
-          title="Không tìm thấy assessment"
+          title="Không tìm thấy hồ sơ đánh giá"
           description={assessmentId}
           action={
             <Button onClick={() => navigate("/recovery/assessments")}>
@@ -94,7 +94,7 @@ export function DamageAssessmentDetailPage({
               </Button>
               <Button variant="secondary" onClick={() => setDialog("evidence")}>
                 <Paperclip size={14} />
-                Evidence
+                Căn cứ
               </Button>
             </>
           )}
@@ -142,7 +142,7 @@ export function DamageAssessmentDetailPage({
                 }
               >
                 <RotateCcw size={14} />
-                Tạo revision
+                Tạo bản điều chỉnh
               </Button>
             )}
         </div>
@@ -186,7 +186,7 @@ export function DamageAssessmentDetailPage({
           </div>
           <h1>{value.area}</h1>
           <p>
-            {value.assessmentType} · revision {value.revision}
+            {value.assessmentType} · bản điều chỉnh {value.revision}
             {value.revisionOf ? ` từ ${value.revisionOf}` : ""}
           </p>
         </div>
@@ -274,7 +274,7 @@ export function DamageAssessmentDetailPage({
           <section className="detail-section">
             <div className="section-heading">
               <div>
-                <h2>Evidence và xác minh</h2>
+                <h2>Căn cứ và xác minh</h2>
                 <p>Nguồn, thời điểm, trạng thái và ghi chú</p>
               </div>
             </div>
@@ -317,7 +317,7 @@ export function DamageAssessmentDetailPage({
                   <p>{value.verification.note}</p>
                   <small>
                     {value.verification.timestamp} ·{" "}
-                    {value.verification.evidence.length} evidence
+                    {value.verification.evidence.length} căn cứ
                   </small>
                 </div>
               </div>
@@ -327,7 +327,7 @@ export function DamageAssessmentDetailPage({
             <div className="section-heading">
               <div>
                 <h2>Bản đồ thiệt hại và khôi phục</h2>
-                <p>Assessment, vùng ảnh hưởng, Incident và dự án liên quan</p>
+                <p>Đánh giá, vùng ảnh hưởng, sự cố và dự án liên quan</p>
               </div>
             </div>
             <Suspense
@@ -348,10 +348,10 @@ export function DamageAssessmentDetailPage({
         </main>
         <aside>
           <section className="detail-section">
-            <h2>Hồ sơ assessment</h2>
+            <h2>Hồ sơ đánh giá</h2>
             <dl className="relief-facts">
               <div>
-                <dt>Incident</dt>
+                <dt>Sự cố</dt>
                 <dd>
                   <button
                     onClick={() => navigate(`/incidents/${value.incidentId}`)}
@@ -382,7 +382,7 @@ export function DamageAssessmentDetailPage({
             </dl>
           </section>
           <section className="detail-section">
-            <h2>Dự án dựa trên assessment</h2>
+            <h2>Dự án dựa trên đánh giá</h2>
             <div className="recovery-related-list">
               {projects.map((item) => (
                 <button
@@ -404,7 +404,7 @@ export function DamageAssessmentDetailPage({
             </div>
           </section>
           <section className="detail-section">
-            <h2>Timeline</h2>
+            <h2>Nhật ký diễn biến</h2>
             <div className="detail-timeline">
               {events.map((event) => (
                 <div key={event.id}>
@@ -488,7 +488,7 @@ function AssessmentDialog({
           source: "Ứng dụng hiện trường",
           timestamp: "21/08/2026 10:45",
           verificationStatus: "Chưa xác minh",
-          note: "Evidence bổ sung trong assessment.",
+          note: "Bằng chứng bổ sung trong đánh giá.",
         });
       onClose();
     } catch (reason) {
@@ -497,15 +497,15 @@ function AssessmentDialog({
   };
   const title =
     mode === "verify"
-      ? "Xác minh assessment"
+      ? "Xác minh đánh giá"
       : mode === "reject"
-        ? "Từ chối assessment"
+        ? "Từ chối đánh giá"
         : mode === "item"
           ? "Thêm hạng mục thiệt hại"
-          : "Gắn evidence";
+          : "Gắn bằng chứng";
   return (
     <>
-      <button className="dialog-backdrop" onClick={onClose} />
+      <DialogBackdrop onClick={onClose} />
       <div className="incident-form-dialog recovery-dialog">
         <header>
           <h2>{title}</h2>
@@ -519,12 +519,12 @@ function AssessmentDialog({
               {mode === "item"
                 ? "Mô tả hạng mục"
                 : mode === "evidence"
-                  ? "Tên evidence"
+                  ? "Tên bằng chứng"
                   : mode === "reject"
                     ? "Lý do từ chối"
                     : "Ghi chú xác minh"}
             </span>
-            <textarea
+            <Textarea
               rows={3}
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -533,7 +533,7 @@ function AssessmentDialog({
           {mode === "item" && (
             <label className="field field-full">
               <span>Chi phí ước tính</span>
-              <input
+              <Input
                 type="number"
                 value={cost}
                 onChange={(e) => setCost(Number(e.target.value))}
@@ -543,7 +543,7 @@ function AssessmentDialog({
           {mode === "verify" && !value.evidence.length && (
             <p className="team-form-error">
               <AlertTriangle size={14} />
-              Cần gắn evidence trước khi xác minh.
+              Cần gắn căn cứ trước khi xác minh.
             </p>
           )}
           {error && (

@@ -37,6 +37,7 @@ import {
   initialRecoveryProjects,
 } from "../../src/data/scenarios/red-river-flood/recoverySeed";
 const data: AnalyticsData = {
+  metadata: { asOf: "21/08/2026 10:45", source: "Nguồn kiểm thử" },
   incidents: initialIncidents,
   events: initialEvents,
   tasks: initialTasks,
@@ -65,7 +66,9 @@ test("tổng hợp tác nghiệp dùng các canonical collection", () => {
     3,
   );
   assert.equal(
-    result.metrics.find((item) => item.label === "Playbook đang chạy")?.value,
+    result.metrics.find(
+      (item) => item.label === "Kế hoạch ứng phó đang thực hiện",
+    )?.value,
     1,
   );
   assert.ok(result.exceptions.some((item) => item.path === "/tasks/TSK-0242"));
@@ -152,15 +155,20 @@ test("recovery analytics tổng hợp damage, project và budget", () => {
   assert.equal(result.projectsRequiringAttention, 1);
 });
 test("report builder tạo đủ nội dung và audit metadata", () => {
-  const report = buildOperationalReport(data, "Báo cáo tình hình tác chiến", {
-    ...filter,
-    incidentId: "INC-0241",
-  });
+  const report = buildOperationalReport(
+    data,
+    "Báo cáo tình hình tác chiến",
+    { ...filter, incidentId: "INC-0241" },
+    { id: "USR-CMD-001", displayName: "Người lập từ registry" },
+  );
   assert.match(report.situationSummary, /sự cố/);
   assert.ok(
     report.responseStatistics.some((item) => item.basis === "Dẫn xuất"),
   );
   assert.ok(report.majorExceptions.every((item) => item.path.startsWith("/")));
-  assert.equal(report.audit.source, "OperationalProvider — dữ liệu canonical");
+  assert.match(report.audit.source, /Nguồn kiểm thử/);
+  assert.equal(report.audit.generatedById, "USR-CMD-001");
+  assert.equal(report.audit.generatedBy, "Người lập từ registry");
+  assert.equal(report.audit.generatedAt, data.metadata.asOf);
   assert.equal(report.recoveryStatus.length, 3);
 });

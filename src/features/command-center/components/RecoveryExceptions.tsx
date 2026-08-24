@@ -19,7 +19,7 @@ export function RecoveryExceptions({
       <div className="cc-panel-header">
         <div>
           <span>Ngoại lệ khôi phục</span>
-          <small>Xác minh, thời hạn, ngân sách và milestone</small>
+          <small>Xác minh, thời hạn, ngân sách và mốc tiến độ</small>
         </div>
         <button onClick={() => navigate("/recovery")}>
           Mở nghiệp vụ
@@ -49,7 +49,7 @@ export function RecoveryExceptions({
               <b>{item.label}</b>
               <small>
                 {item.kind === "assessment"
-                  ? "Assessment cần quyết định xác minh"
+                  ? "Đánh giá cần quyết định xác minh"
                   : "Dự án cần can thiệp điều hành"}
               </small>
             </span>

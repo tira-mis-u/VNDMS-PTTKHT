@@ -12,6 +12,8 @@
     "test:focused": "tsx --test tests/application/operational-mutation-boundary.test.ts tests/application/p0-resource-mutation-authorization.test.ts tests/application/final-readiness-hardening.test.ts tests/application/phase2-operational-insights.test.ts tests/application/unified-operational-map.test.ts tests/integration/ai-confirmed-actions.test.ts tests/integration/simulation-cross-module.test.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
+    "@upstash/redis": "^1.38.3",
     "lucide-react": "^1.33.0",
     "maplibre-gl": "^6.4.1",
     "react": "^19.2.8",
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
+    "@types/google.maps": "^3.66.0",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

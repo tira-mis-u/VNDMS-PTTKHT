@@ -1,0 +1,936 @@
+/* ─────────────── Citizen Portal Styling ─────────────── */
+.citizen-portal {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 28px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Hero Emergency Banner */
+.citizen-hero-banner {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+  color: #fff;
+  border-radius: 12px;
+  padding: 16px 22px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(30, 58, 138, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.citizen-hero-banner::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.citizen-hero-content {
+  max-width: 680px;
+  z-index: 1;
+}
+
+.citizen-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.citizen-hero-content h1 {
+  font-size: 21px;
+  font-weight: 750;
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+
+.citizen-hero-content p {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+}
+
+.citizen-sos-actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  z-index: 1;
+}
+
+.citizen-sos-trigger-btn {
+  background: #dc2626;
+  color: #fff;
+  border: 1.5px solid #ef4444;
+  border-radius: 9px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+  transition: all 0.2s ease;
+  z-index: 1;
+  letter-spacing: 0.02em;
+  animation: pulse-red 2s infinite;
+}
+
+.citizen-sos-trigger-btn:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.55);
+}
+
+.citizen-sos-trigger-btn:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.citizen-sos-form-trigger {
+  border: 0;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 5px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s;
+}
+
+.citizen-sos-form-trigger:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* ─────────────── Citizen Interactive Map ─────────────── */
+.citizen-map-section {
+  overflow: hidden;
+}
+
+.citizen-map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 560px;
+  min-height: 480px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid #cbd5e1;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="dark"] .citizen-map-wrapper {
+  border-color: #334155;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+}
+
+.citizen-map-container {
+  width: 100%;
+  height: 100%;
+}
+
+.citizen-map-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
+/* Map Markers */
+.citizen-gps-marker {
+  position: relative;
+  cursor: pointer;
+}
+
+.gps-dot {
+  font-size: 24px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.gps-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.35);
+  animation: gps-wave 1.8s infinite ease-out;
+}
+
+@keyframes gps-wave {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0;
+  }
+}
+
+.citizen-shelter-marker {
+  font-size: 20px;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+.citizen-incident-marker {
+  font-size: 20px;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+.citizen-sos-pin-marker {
+  position: relative;
+  cursor: pointer;
+}
+
+.sos-pin-icon {
+  font-size: 24px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 5px rgba(220, 38, 38, 0.5));
+}
+
+.sos-pin-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.4);
+  animation: sos-wave 1.5s infinite ease-out;
+}
+
+@keyframes sos-wave {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Quick Stats Bar */
+.citizen-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.citizen-stat-card {
+  background: #fff;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.citizen-stat-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.citizen-stat-icon.red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.citizen-stat-icon.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.citizen-stat-icon.amber {
+  background: #fffbeb;
+  color: #d97706;
+}
+.citizen-stat-icon.green {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.citizen-stat-info b {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.citizen-stat-info span {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Layout Split */
+.citizen-main-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1.2fr);
+  gap: 24px;
+}
+
+.citizen-section-card {
+  background: #fff;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.citizen-card-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.citizen-card-header h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1e293b;
+}
+
+.citizen-card-header small {
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* Active Alerts in Citizen Portal */
+.citizen-alert-list {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.citizen-alert-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border-left: 4px solid;
+}
+
+.citizen-alert-item.critical {
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #991b1b;
+}
+
+.citizen-alert-item.warning {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.citizen-alert-item.info {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+
+.citizen-alert-item h4 {
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.citizen-alert-item p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.citizen-alert-item small {
+  font-size: 12.5px;
+  opacity: 0.8;
+}
+
+/* My SOS Requests */
+.citizen-my-sos-list {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.citizen-sos-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  background: #fafafa;
+}
+
+.citizen-sos-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.citizen-sos-head b {
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.citizen-sos-desc {
+  font-size: 13.5px;
+  color: #334155;
+  margin: 0 0 10px;
+  line-height: 1.45;
+}
+
+.citizen-sos-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12.5px;
+  color: #64748b;
+  align-items: center;
+}
+
+.citizen-sos-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Shelters List in Citizen Portal */
+.citizen-shelter-grid {
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.citizen-shelter-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.citizen-shelter-card h4 {
+  font-size: 14.5px;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+}
+
+.citizen-shelter-card p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.citizen-shelter-capacity {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: #475569;
+}
+
+.citizen-shelter-capacity b {
+  color: #16a34a;
+}
+
+/* Hotline Card */
+.citizen-hotline-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 16px 20px;
+}
+
+.citizen-hotline-item {
+  border: 1px solid #fee2e2;
+  background: #fff5f5;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #991b1b;
+  transition: transform 0.15s;
+}
+
+.citizen-hotline-item:hover {
+  transform: translateY(-2px);
+  background: #fee2e2;
+}
+
+.citizen-hotline-item .hotline-num {
+  font-size: 20px;
+  font-weight: 900;
+  color: #dc2626;
+  font-family: var(--font-family-mono, monospace);
+}
+
+.citizen-hotline-item .hotline-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Survival Guidelines */
+.citizen-guide-list {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.citizen-guide-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.citizen-guide-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.citizen-guide-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #1e293b;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.citizen-guide-content h5 {
+  font-size: 13.5px;
+  font-weight: 700;
+  margin: 0 0 3px;
+  color: #0f172a;
+}
+
+.citizen-guide-content p {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* SOS Form Dialog */
+.citizen-sos-modal {
+  position: fixed;
+  z-index: 150;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(600px, calc(100vw - 32px));
+  max-height: min(90vh, 760px);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.citizen-sos-modal-header {
+  background: #dc2626;
+  color: #fff;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.citizen-sos-modal-header h3 {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.citizen-sos-modal-header button {
+  border: 0;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.citizen-sos-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.citizen-sos-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #f8fafc;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .citizen-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .citizen-main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .citizen-portal {
+    padding: 16px;
+  }
+  .citizen-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .citizen-hotline-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─────────────── MapLibre CSS-Only Markers (no emoji) ─────────────── */
+.citizen-gps-marker {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+.citizen-gps-marker::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.5);
+  z-index: 2;
+}
+.citizen-gps-marker::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.25);
+  animation: gps-pulse 1.8s ease-out infinite;
+  z-index: 1;
+}
+@keyframes gps-pulse {
+  0%   { transform: scale(0.7); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.citizen-shelter-marker {
+  width: 22px;
+  height: 22px;
+  background: #16a34a;
+  border-radius: 5px;
+  border: 2.5px solid #fff;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.citizen-shelter-marker::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  clip-path: polygon(50% 0%, 0% 60%, 30% 60%, 30% 100%, 70% 100%, 70% 60%, 100% 60%);
+}
+
+.citizen-incident-marker {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.citizen-incident-marker::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-bottom: 20px solid #d97706;
+  filter: drop-shadow(0 2px 4px rgba(217, 119, 6, 0.5));
+}
+
+.citizen-sos-pin-marker {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+.citizen-sos-pin-marker::before {
+  content: "SOS";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #dc2626;
+  border: 2.5px solid #fff;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.55);
+  font-size: 6px;
+  font-weight: 900;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.05em;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+}
+.citizen-sos-pin-marker::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.22);
+  animation: sos-pulse 1.2s ease-out infinite;
+  z-index: 1;
+}
+@keyframes sos-pulse {
+  0%   { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.citizen-map-legend {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--surface-card, #fff);
+  border-top: 1px solid var(--border-color, #e2e8f0);
+  font-size: 12.5px;
+  color: var(--text-secondary, #475467);
+}
+.citizen-map-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.legend-dot.red {
+  background: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+.legend-dot.green {
+  background: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+.legend-dot.amber {
+  background: #d97706;
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
+}
+
+/* ─────────────── DARK MODE: Citizen Portal ─────────────── */
+html[data-theme="dark"] .citizen-stat-card {
+  background: #1a2435;
+  border-color: #253145;
+}
+html[data-theme="dark"] .citizen-stat-info b {
+  color: #e2eaf5;
+}
+html[data-theme="dark"] .citizen-stat-info span {
+  color: #8da4be;
+}
+html[data-theme="dark"] .citizen-section-card {
+  background: #1a2435;
+  border-color: #253145;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+html[data-theme="dark"] .citizen-card-header {
+  background: #151e2d;
+  border-bottom-color: #253145;
+}
+html[data-theme="dark"] .citizen-card-header h2 {
+  color: #e2eaf5;
+}
+html[data-theme="dark"] .citizen-card-header small {
+  color: #8da4be;
+}
+html[data-theme="dark"] .citizen-alert-item.critical {
+  background: #2d1818;
+  border-color: #dc2626;
+  color: #fca5a5;
+}
+html[data-theme="dark"] .citizen-alert-item.warning {
+  background: #2d2416;
+  border-color: #d97706;
+  color: #fde68a;
+}
+html[data-theme="dark"] .citizen-alert-item.info {
+  background: #172b45;
+  border-color: #2563eb;
+  color: #93c5fd;
+}
+html[data-theme="dark"] .citizen-alert-item h4 {
+  color: #fff;
+}
+html[data-theme="dark"] .citizen-alert-item p {
+  color: #e2eaf5;
+}
+html[data-theme="dark"] .citizen-shelter-card {
+  background: #111827;
+  border-color: #253145;
+}
+html[data-theme="dark"] .citizen-shelter-card h4 {
+  color: #e2eaf5;
+}
+html[data-theme="dark"] .citizen-shelter-card p {
+  color: #8da4be;
+}
+html[data-theme="dark"] .citizen-shelter-capacity {
+  color: #8da4be;
+}
+html[data-theme="dark"] .citizen-sos-card {
+  background: #111827;
+  border-color: #253145;
+}
+html[data-theme="dark"] .citizen-sos-head b {
+  color: #e2eaf5;
+}
+html[data-theme="dark"] .citizen-sos-desc {
+  color: #c3d4e8;
+}
+html[data-theme="dark"] .citizen-sos-meta {
+  color: #8da4be;
+}
+html[data-theme="dark"] .citizen-hotline-item {
+  background: #231618;
+  border-color: #5c2626;
+  color: #fca5a5;
+}
+html[data-theme="dark"] .citizen-hotline-item:hover {
+  background: #331d20;
+}
+html[data-theme="dark"] .citizen-guide-item {
+  border-bottom-color: #253145;
+}
+html[data-theme="dark"] .citizen-guide-icon {
+  background: #111827;
+  color: #60a5fa;
+}
+html[data-theme="dark"] .citizen-guide-content h5 {
+  color: #e2eaf5;
+}
+html[data-theme="dark"] .citizen-guide-content p {
+  color: #8da4be;
+}
+html[data-theme="dark"] .citizen-map-legend {
+  background: rgba(17, 24, 39, 0.92);
+  border-color: #253145;
+  color: #e2eaf5;
+}
+html[data-theme="dark"] .citizen-sos-modal {
+  background: #1a2435;
+  border: 1px solid #253145;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+}
+html[data-theme="dark"] .citizen-sos-modal-body {
+  background: #1a2435;
+}
+html[data-theme="dark"] .citizen-sos-modal-body .label-text {
+  color: #b0c4d8;
+}
+html[data-theme="dark"] .citizen-sos-modal-body input,
+html[data-theme="dark"] .citizen-sos-modal-body textarea,
+html[data-theme="dark"] .citizen-sos-modal-body select {
+  background: #111827;
+  border-color: #2a3c52;
+  color: #e2eaf5;
+}
+html[data-theme="dark"] .citizen-sos-modal-footer {
+  background: #151e2d;
+  border-top-color: #253145;
+}
+

@@ -63,6 +63,7 @@ import type {
 import { assertShelterCanReceive } from "../../domain/shelters/rules";
 import {
   assertSosScope,
+  createSosRequest,
   evacuationInputFromSos,
   incidentInputFromSos,
   linkSosIncident as applySosIncident,
@@ -73,6 +74,7 @@ import {
   transitionSos,
   updateSosLocation as applySosLocation,
   verifySos as applySosVerification,
+  type NewSosInput,
 } from "../../application/sos/sosUseCases";
 import type { SosLocation, SosPriority } from "../../domain/sos/types";
 import {
@@ -201,10 +203,12 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     can,
     enforcePermission,
     login,
+    register,
     logout,
     updateUserActive,
     updateUserRole,
     updateUserScope,
+    updateSelfProfile,
   } = useOperationalSecurity();
   const {
     incidents,
@@ -1483,6 +1487,25 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       sosId,
       `Chuyển ${sos.peopleAtRisk} người vào hoạt động ${id} tới ${shelterId}`,
       "evacuation",
+    );
+    return id;
+  };
+  const createSos = (input: NewSosInput) => {
+    enforcePermission("sos_create", [
+      { type: "SosRequest", id: "new", geographicScope: input.location.address },
+    ]);
+    const maxNum = Math.max(
+      100,
+      ...sosRequests.map((item) => Number(item.id.replace(/\D/g, "")) || 0),
+    );
+    const id = `SOS-${String(maxNum + 1).padStart(4, "0")}`;
+    const newSos = createSosRequest(id, input, now());
+    setSosRequests((current) => [newSos, ...current]);
+    pushSosEvent(
+      id,
+      `Gửi yêu cầu SOS khẩn cấp tại ${input.location.address}`,
+      "created",
+      input.reporter.name,
     );
     return id;
   };
@@ -3380,10 +3403,12 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     role,
     can,
     login,
+    register,
     logout,
     updateUserActive,
     updateUserRole,
     updateUserScope,
+    updateSelfProfile,
     createIncident: atomic(createIncident),
     updateStatus: atomic(updateStatus),
     updateSeverity: atomic(updateSeverity),
@@ -3419,6 +3444,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     addSosUpdate: atomic(addSosUpdate),
     markSosNoContact: atomic(markSosNoContact),
     routeSosToShelter: atomic(routeSosToShelter),
+    createSos: atomic(createSos),
     resolveSos: atomic(resolveSos),
     closeSos: atomic(closeSos),
     cancelSos: atomic(cancelSos),

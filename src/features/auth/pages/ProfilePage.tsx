@@ -1,15 +1,19 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   Building2,
   Camera,
   CheckCircle2,
   Clock3,
+  Edit3,
   ImagePlus,
   LifeBuoy,
   MapPinned,
+  Phone,
+  Save,
   ShieldCheck,
   Trash2,
   UserRound,
+  X,
 } from "lucide-react";
 import { Avatar, Button, PageSectionHeader, Input } from "@/components/ui";
 import { initials, roleLabels } from "@/domain/auth/labels";
@@ -20,8 +24,8 @@ import { loadProfileAvatar, saveProfileAvatar } from "../profileAvatar";
 const MAX_AVATAR_BYTES = 1024 * 1024;
 
 export function ProfilePage() {
-  const { currentUser, session } = useOperationalState();
-  const user = currentUser!;
+  const store = useOperationalState();
+  const user = store.currentUser!;
   const identity = resolvePersonnel(user.id);
   const fileInput = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState(() => loadProfileAvatar(user.id));
@@ -29,11 +33,23 @@ export function ProfilePage() {
     tone: "success" | "error";
     text: string;
   } | null>(null);
-  const sessionExpiresAt = session
+
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [displayName, setDisplayName] = useState(user.displayName);
+  const [phone, setPhone] = useState(
+    user.organization?.startsWith("SĐT: ")
+      ? user.organization.replace("SĐT: ", "")
+      : identity?.contact || "",
+  );
+  const [scopeName, setScopeName] = useState(user.geographicScope.name);
+  const [scopeCode, setScopeCode] = useState(user.geographicScope.code);
+
+  const sessionExpiresAt = store.session
     ? new Intl.DateTimeFormat("vi-VN", {
         dateStyle: "medium",
         timeStyle: "short",
-      }).format(new Date(session.expiresAt))
+      }).format(new Date(store.session.expiresAt))
     : "Không có thông tin";
 
   const chooseAvatar = (event: ChangeEvent<HTMLInputElement>) => {
@@ -91,12 +107,41 @@ export function ProfilePage() {
     }
   };
 
+  const handleSaveProfile = (e: FormEvent) => {
+    e.preventDefault();
+    if (!displayName.trim()) {
+      setMessage({ tone: "error", text: "Họ và tên không được để trống." });
+      return;
+    }
+    try {
+      store.updateSelfProfile({
+        displayName: displayName.trim(),
+        organization: phone.trim() ? `SĐT: ${phone.trim()}` : undefined,
+        geographicScope: {
+          level: user.geographicScope.level,
+          name: scopeName.trim() || user.geographicScope.name,
+          code: scopeCode.trim() || user.geographicScope.code,
+        },
+      });
+      setIsEditing(false);
+      setMessage({
+        tone: "success",
+        text: "Thông tin cá nhân, liên hệ và địa bàn đã được cập nhật thành công!",
+      });
+    } catch (err) {
+      setMessage({
+        tone: "error",
+        text: err instanceof Error ? err.message : "Có lỗi xảy ra khi cập nhật thông tin.",
+      });
+    }
+  };
+
   return (
     <main className="profile-page workspace-content">
       <PageSectionHeader
         section="Tài khoản"
         title="Hồ sơ cá nhân"
-        description="Xem thông tin tài khoản và quản lý ảnh đại diện của bạn."
+        description="Xem và chỉnh sửa thông tin cá nhân, số điện thoại liên hệ, địa bàn cư trú và ảnh đại diện."
         icon={UserRound}
         className="profile-page-header"
       />
@@ -183,81 +228,148 @@ export function ProfilePage() {
       >
         <header>
           <div>
-            <span>Thông tin được cấp từ phiên đăng nhập</span>
+            <span>Thông tin cá nhân & Địa bàn tác nghiệp</span>
             <h2 id="account-info-title">Thông tin tài khoản</h2>
             <p>
-              Các thuộc tính phân quyền chỉ được xem tại đây và không thể chỉnh
-              sửa từ hồ sơ cá nhân.
+              Bạn có thể cập nhật họ tên hiển thị, số điện thoại liên hệ và địa bàn cư trú bất kỳ lúc nào.
             </p>
           </div>
-          <ShieldCheck size={24} />
+          {!isEditing ? (
+            <Button type="button" onClick={() => setIsEditing(true)}>
+              <Edit3 size={16} />
+              Chỉnh sửa thông tin
+            </Button>
+          ) : (
+            <Button type="button" variant="secondary" onClick={() => setIsEditing(false)}>
+              <X size={16} />
+              Hủy chỉnh sửa
+            </Button>
+          )}
         </header>
-        <dl className="profile-information-grid">
-          <div>
-            <dt>Họ và tên</dt>
-            <dd>{user.displayName}</dd>
-          </div>
-          <div>
-            <dt>Vai trò</dt>
-            <dd>{roleLabels[user.role]}</dd>
-          </div>
-          <div>
-            <dt>Chức danh</dt>
-            <dd>{identity?.title ?? roleLabels[user.role]}</dd>
-          </div>
-          <div>
-            <dt>Đơn vị</dt>
-            <dd>{identity?.organization ?? "Chưa cập nhật"}</dd>
-          </div>
-          <div>
-            <dt>Liên hệ</dt>
-            <dd>{identity?.contact ?? "Chưa cập nhật"}</dd>
-          </div>
-          <div>
-            <dt>Phạm vi địa lý</dt>
-            <dd>
-              <MapPinned size={17} />
-              {user.geographicScope.name}
-            </dd>
-          </div>
-          <div>
-            <dt>Trạng thái tài khoản</dt>
-            <dd className="profile-active-value">
-              <CheckCircle2 size={17} />
-              Đang hoạt động
-            </dd>
-          </div>
-          {user.teamId && (
+
+        {isEditing ? (
+          <form onSubmit={handleSaveProfile} className="profile-edit-form" style={{ padding: "20px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+              <label className="field">
+                <span className="label-text">
+                  Họ và tên hiển thị <b className="req">*</b>
+                </span>
+                <Input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="VD: Nguyễn Văn A"
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span className="label-text">Số điện thoại liên hệ</span>
+                <Input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="VD: 0912 345 678"
+                />
+              </label>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px", marginBottom: "20px" }}>
+              <label className="field">
+                <span className="label-text">Địa bàn / Khu vực cư trú</span>
+                <Input
+                  value={scopeName}
+                  onChange={(e) => setScopeName(e.target.value)}
+                  placeholder="VD: Tây Hồ, Hà Nội"
+                />
+              </label>
+
+              <label className="field">
+                <span className="label-text">Mã định danh địa bàn</span>
+                <Input
+                  value={scopeCode}
+                  onChange={(e) => setScopeCode(e.target.value)}
+                  placeholder="VD: HN-TAYHO"
+                />
+              </label>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              <Button type="button" variant="secondary" onClick={() => setIsEditing(false)}>
+                Hủy
+              </Button>
+              <Button type="submit">
+                <Save size={16} />
+                Lưu thay đổi
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <dl className="profile-information-grid">
             <div>
-              <dt>Đội phụ trách</dt>
+              <dt>Họ và tên</dt>
+              <dd>{user.displayName}</dd>
+            </div>
+            <div>
+              <dt>Tên đăng nhập</dt>
+              <dd>@{user.username}</dd>
+            </div>
+            <div>
+              <dt>Vai trò</dt>
+              <dd>{roleLabels[user.role]}</dd>
+            </div>
+            <div>
+              <dt>Số điện thoại liên hệ</dt>
               <dd>
-                <LifeBuoy size={17} />
-                {user.teamId}
+                <Phone size={15} />
+                {user.organization?.replace("SĐT: ", "") || identity?.contact || "Chưa cập nhật"}
               </dd>
             </div>
-          )}
-          {user.warehouseId && (
             <div>
-              <dt>Kho phụ trách</dt>
+              <dt>Phạm vi địa lý</dt>
               <dd>
-                <Building2 size={17} />
-                {user.warehouseId}
+                <MapPinned size={17} />
+                {user.geographicScope.name} ({user.geographicScope.code})
               </dd>
             </div>
-          )}
-          <div>
-            <dt>Phiên đăng nhập hết hạn</dt>
-            <dd>
-              <Clock3 size={17} />
-              {sessionExpiresAt}
-            </dd>
-          </div>
-        </dl>
+            <div>
+              <dt>Trạng thái tài khoản</dt>
+              <dd className="profile-active-value">
+                <CheckCircle2 size={17} />
+                Đang hoạt động
+              </dd>
+            </div>
+            {user.teamId && (
+              <div>
+                <dt>Đội phụ trách</dt>
+                <dd>
+                  <LifeBuoy size={17} />
+                  {user.teamId}
+                </dd>
+              </div>
+            )}
+            {user.warehouseId && (
+              <div>
+                <dt>Kho phụ trách</dt>
+                <dd>
+                  <Building2 size={17} />
+                  {user.warehouseId}
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt>Phiên đăng nhập hết hạn</dt>
+              <dd>
+                <Clock3 size={17} />
+                {sessionExpiresAt}
+              </dd>
+            </div>
+          </dl>
+        )}
+
         <footer className="profile-security-note">
           <ShieldCheck size={19} />
           <p>
-            Vai trò, quyền, phạm vi và trách nhiệm phụ trách chỉ được thay đổi
-            trong chức năng quản trị truy cập bởi tài khoản có thẩm quyền.
+            Thông tin liên hệ và địa bàn được sử dụng để lực lượng cứu hộ xác định vị trí và liên lạc hỗ trợ khi bạn gửi yêu cầu SOS.
           </p>
         </footer>
       </section>

@@ -134,10 +134,18 @@ export interface OperationalStore {
     username: string,
     password: string,
   ) => Promise<{ ok: boolean; error: string; user?: AuthUser }>;
+  register: (
+    input: import("@/domain/auth/types").RegisterInput,
+  ) => Promise<{ ok: boolean; error: string; user?: AuthUser }>;
   logout: () => void;
   updateUserActive: (userId: string, active: boolean) => void;
   updateUserRole: (userId: string, role: Role) => void;
   updateUserScope: (userId: string, scope: GeographicScope) => void;
+  updateSelfProfile: (input: {
+    displayName?: string;
+    geographicScope?: GeographicScope;
+    organization?: string;
+  }) => void;
   createIncident: (data: CreateIncidentInput) => string;
   updateStatus: (id: string, status: IncidentStatus) => void;
   updateSeverity: (id: string, severity: IncidentSeverity) => void;
@@ -192,6 +200,9 @@ export interface OperationalStore {
   addSosUpdate: (sosId: string, message: string) => void;
   markSosNoContact: (sosId: string) => void;
   routeSosToShelter: (sosId: string, shelterId: string) => string;
+  createSos: (
+    input: import("@/application/sos/sosUseCases").NewSosInput,
+  ) => string;
   resolveSos: (sosId: string, summary: string) => void;
   closeSos: (sosId: string) => void;
   cancelSos: (sosId: string) => void;

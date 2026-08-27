@@ -17,6 +17,8 @@ export interface AuthUser {
   active: boolean;
   teamId?: string;
   warehouseId?: string;
+  organization?: string;
+  phone?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,10 +54,19 @@ export type AuditAction =
   | "SESSION_EXPIRED"
   | "PERMISSION_DENIED"
   | "MUTATION_AUTHORIZED"
+  | "USER_REGISTERED"
   | "USER_ACTIVATED"
   | "USER_DEACTIVATED"
   | "USER_ROLE_CHANGED"
   | "USER_SCOPE_CHANGED";
+export interface RegisterInput {
+  displayName: string;
+  username: string;
+  password: string;
+  role: Role;
+  geographicScope?: GeographicScope;
+  organization?: string;
+}
 export interface SecurityAuditEvent {
   id: string;
   actorId: string | null;

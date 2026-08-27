@@ -19,7 +19,7 @@ function files(directory: string, extension: string): string[] {
 test("mọi lựa chọn giao diện dùng Select chung có hỗ trợ bàn phím", () => {
   const tsx = files("src", ".tsx").map((file) => readFileSync(file, "utf8"));
   assert.equal(tsx.some((source) => /<select\b/.test(source)), false);
-  assert.equal(tsx.reduce((sum, source) => sum + (source.match(/<UiSelect\b/g)?.length ?? 0), 0), 81);
+  assert.equal(tsx.reduce((sum, source) => sum + (source.match(/<UiSelect\b/g)?.length ?? 0), 0), 83);
   const source = readFileSync("src/components/ui/Select.tsx", "utf8");
   for (const contract of [
     'role="combobox"',
@@ -41,7 +41,9 @@ test("tên nhân sự chỉ được khai báo tại nguồn danh tính duy nh�
   const allowed = "src/data/identity/personnel.ts";
   for (const person of Object.values(PERSONNEL)) {
     const duplicates = sourceFiles.filter(
-      (file) => file !== allowed && readFileSync(file, "utf8").includes(`"${person.displayName}"`),
+      (file) =>
+        file.replace(/\\/g, "/") !== allowed &&
+        readFileSync(file, "utf8").includes(`"${person.displayName}"`),
     );
     assert.deepEqual(duplicates, [], `${person.displayName} còn bị khai báo lặp`);
   }

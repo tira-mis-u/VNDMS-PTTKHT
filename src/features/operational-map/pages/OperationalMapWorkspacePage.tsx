@@ -19,6 +19,7 @@ import {
 } from "@/application/map/unifiedMapQueries";
 import { UnifiedMapCanvas } from "../components/UnifiedMapCanvas";
 import { EntityDetailDrawer } from "../components/EntityDetailDrawer";
+import { EcmwfWeatherPanel } from "@/features/command-center/components/EcmwfWeatherPanel";
 
 const SEVERITY_OPTIONS: Array<"" | UnifiedMapSeverity> = [
   "",
@@ -323,6 +324,10 @@ export function OperationalMapWorkspacePage({
             )}
           </div>
         </aside>
+      </div>
+
+      <div style={{ marginTop: "24px" }}>
+        <EcmwfWeatherPanel />
       </div>
     </div>
   );

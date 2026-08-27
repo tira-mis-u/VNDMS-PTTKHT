@@ -1,39 +1,35 @@
 import type { ComponentType } from "react";
 import {
-  Activity,
   BarChart3,
   Bell,
-  Bot,
   Boxes,
   Building2,
   CalendarCheck,
   ClipboardCheck,
   FileBarChart,
   FileClock,
-  FlaskConical,
   History,
   Home,
   LifeBuoy,
   ListTodo,
   LockKeyhole,
-  Map,
+  MapPinned,
   PackageOpen,
   Radio,
-  Settings,
   Siren,
   Truck,
-  Users,
   Warehouse,
   Waves,
+  UserRound,
 } from "lucide-react";
+import type { UserRole } from "@/domain/shared/auth";
 import type { Permission } from "@/lib/permissions/permissions";
 import {
-  CONFIGURATION_WORKSPACE_PATH,
   HISTORY_WORKSPACE_PATH,
+  OPERATIONAL_MAP_WORKSPACE_PATH,
   PERMISSIONS_WORKSPACE_PATH,
   RECONSTRUCTION_WORKSPACE_PATH,
   SITUATION_WORKSPACE_PATH,
-  TRENDS_WORKSPACE_PATH,
 } from "../../app/routes/router";
 export type NavItem = {
   label: string;
@@ -53,8 +49,8 @@ export const navigationGroups: NavGroup[] = [
     label: "Quản lý & điều hành",
     items: [
       { label: "Trung tâm điều hành", icon: Home, path: "/", permission: "view" },
+      { label: "Bản đồ tác nghiệp", icon: MapPinned, path: OPERATIONAL_MAP_WORKSPACE_PATH, permission: "view" },
       { label: "Tình hình thiên tai", icon: Waves, path: SITUATION_WORKSPACE_PATH, permission: "view" },
-      { label: "Bản đồ tác nghiệp", icon: Map, path: `/workspace/${encodeURIComponent("Bản đồ tác nghiệp")}`, permission: "view" },
       { label: "Cảnh báo", icon: Bell, path: "/alerts", permission: "alert_view" },
       { label: "Sự cố", icon: Siren, badge: "6", path: "/incidents", permission: "view" },
     ],
@@ -89,28 +85,32 @@ export const navigationGroups: NavGroup[] = [
     items: [
       { label: "Phân tích tác nghiệp", icon: BarChart3, path: "/analytics", permission: "view" },
       { label: "Báo cáo tác nghiệp", icon: FileBarChart, path: "/analytics/reports", permission: "view" },
-      { label: "Mô phỏng ứng phó", icon: FlaskConical, path: "/simulation", permission: "simulation_view" },
       { label: "Lịch sử thiên tai", icon: History, path: HISTORY_WORKSPACE_PATH, permission: "view" },
-      { label: "Xu hướng", icon: Activity, path: TRENDS_WORKSPACE_PATH, permission: "view" },
     ],
-  },
-  {
-    label: "Hỗ trợ",
-    items: [{ label: "Trợ lý AI", icon: Bot, path: "/ai-assistant", permission: "ai_assistant_use" }],
   },
   {
     label: "Quản trị",
     admin: true,
     items: [
-      { label: "Người dùng", icon: Users, path: "/admin/users", permission: "user_manage" },
       { label: "Phân quyền", icon: LockKeyhole, path: PERMISSIONS_WORKSPACE_PATH, permission: "user_manage" },
       { label: "Nhật ký bảo mật", icon: FileClock, path: "/admin/audit", permission: "audit_view" },
-      { label: "Cấu hình", icon: Settings, path: CONFIGURATION_WORKSPACE_PATH, permission: "user_manage" },
     ],
   },
 ];
+export const citizenNavigationGroups: NavGroup[] = [
+  {
+    label: "Cổng thông tin công dân",
+    items: [
+      { label: "Trang chủ & Bản đồ", icon: Home, path: "/", permission: "sos_create" },
+      { label: "Điểm sơ tán an toàn", icon: Building2, path: "/shelters", permission: "sos_create" },
+      { label: "Cảnh báo thiên tai", icon: Bell, path: "/alerts", permission: "sos_create" },
+      { label: "Hồ sơ & Địa bàn", icon: UserRound, path: "/profile", permission: "sos_create" },
+    ],
+  },
+];
+
 export function findNavigationItem(label: string) {
-  for (const group of navigationGroups) {
+  for (const group of [...navigationGroups, ...citizenNavigationGroups]) {
     const item = group.items.find((entry) => entry.label === label);
     if (item) return { group, item };
   }
@@ -122,7 +122,8 @@ export type NavigationPermissionCheck = (permission: Permission) => boolean;
  * đọc bị ẩn hoàn toàn khỏi sidebar, nhóm không còn mục nào cũng bị ẩn.
  * Truy cập trực tiếp bằng URL vẫn do route guard xử lý (AccessDeniedPage).
  */
-export function visibleNavigationGroups(can: NavigationPermissionCheck) {
+export function visibleNavigationGroups(can: NavigationPermissionCheck, role?: UserRole) {
+  if (role === "citizen") return citizenNavigationGroups;
   return navigationGroups
     .map((group) => ({
       ...group,

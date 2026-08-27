@@ -40,44 +40,51 @@
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 9px;
-  overflow: hidden;
+  overflow-x: auto;
 }
-.shelter-filters {
-  border-bottom: 1px solid var(--border);
-}
-.shelter-sort {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.shelter-table {
+  min-width: 980px;
 }
 .shelter-table-head,
 .shelter-row {
   display: grid;
   grid-template-columns:
-    minmax(190px, 1.4fr)
-    105px 140px 70px 135px 125px 105px 16px;
-  gap: 10px;
+    minmax(210px, 1.8fr)
+    145px
+    180px
+    85px
+    140px
+    130px
+    115px
+    20px;
+  gap: 14px;
   align-items: center;
 }
 .shelter-table-head {
-  height: 35px;
-  padding: 0 13px;
+  height: 38px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--border);
   font-size: var(--type-metadata, 13px);
   color: #667085;
+  font-weight: 600;
 }
 .shelter-row {
   width: 100%;
   min-height: 76px;
-  padding: 9px 13px;
+  padding: 10px 16px;
   border: 0;
   border-bottom: 1px solid #edf0f2;
   background: #fff;
   text-align: left;
   cursor: pointer;
+  transition: background 0.12s ease;
 }
 .shelter-row:hover {
-  background: #fafcff;
+  background: #f8fafc;
+}
+.shelter-row .badge {
+  white-space: nowrap;
+  display: inline-flex;
 }
 .shelter-primary,
 .shelter-capacity,

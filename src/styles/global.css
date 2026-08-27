@@ -1,12 +1,14 @@
 html {
   background: #f4f6f8;
   height: 100%;
+  font-size: 13px;
 }
 body {
   margin: 0;
   min-width: 320px;
   height: 100%;
   overflow: hidden;
+  font-size: 13px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

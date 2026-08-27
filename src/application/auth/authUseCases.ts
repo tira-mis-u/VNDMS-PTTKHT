@@ -73,6 +73,54 @@ export async function loginUser(
     };
   }
 }
+export async function registerUser(
+  gateway: AuthenticationGateway,
+  input: import("../../domain/auth/types").RegisterInput,
+  now = () => new Date(),
+): Promise<LoginOutcome> {
+  const timestamp = now().toISOString();
+  try {
+    const result = await gateway.register(input);
+    return {
+      ok: true,
+      ...result,
+      error: "",
+      audit: createSecurityAudit({
+        actorId: result.user.id,
+        actorName: result.user.displayName,
+        role: result.user.role,
+        action: "USER_REGISTERED",
+        resourceType: "User",
+        resourceId: result.user.id,
+        timestamp,
+        geographicScope: result.user.geographicScope.name,
+        result: "SUCCESS",
+        reason: "Đăng ký tài khoản tác nghiệp mới thành công.",
+      }),
+    };
+  } catch (error) {
+    const reason =
+      error instanceof Error ? error.message : "Đăng ký thất bại.";
+    return {
+      ok: false,
+      user: null,
+      session: null,
+      error: reason,
+      audit: createSecurityAudit({
+        actorId: null,
+        actorName: input.displayName || input.username || "Không xác định",
+        role: null,
+        action: "LOGIN_FAILED",
+        resourceType: "User",
+        resourceId: null,
+        timestamp,
+        geographicScope: input.geographicScope?.name ?? "Không xác định",
+        result: "FAILED",
+        reason,
+      }),
+    };
+  }
+}
 export function restoreUserSession(
   gateway: AuthenticationGateway,
 ): SessionValidation {

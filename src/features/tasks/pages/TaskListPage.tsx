@@ -333,7 +333,9 @@ function CreateTaskDialog({
                 "Kiểm tra tuyến đường",
                 "Hỗ trợ y tế",
               ].map((v) => (
-                <option key={v}>{v}</option>
+                <option value={v} key={v}>
+                  {v}
+                </option>
               ))}
             </UiSelect>
           </label>
@@ -362,10 +364,10 @@ function CreateTaskDialog({
               value={priority}
               onChange={(e) => setPriority(e.target.value as TaskPriority)}
             >
-              <option>Khẩn cấp</option>
-              <option>Cao</option>
-              <option>Trung bình</option>
-              <option>Thấp</option>
+              <option value="Khẩn cấp">Khẩn cấp</option>
+              <option value="Cao">Cao</option>
+              <option value="Trung bình">Trung bình</option>
+              <option value="Thấp">Thấp</option>
             </UiSelect>
           </label>
           <label className="field">

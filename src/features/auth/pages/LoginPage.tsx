@@ -1,47 +1,35 @@
 import { Input } from "@/components/ui";
-import { PERSONNEL, personName } from "../../../data/identity/personnel";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   AlertCircle,
+  CheckCircle2,
   Eye,
   EyeOff,
   LockKeyhole,
   LogIn,
   Moon,
+  Phone,
   ShieldCheck,
   Sun,
+  UserPlus,
   UserRound,
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import type { AuthUser } from "@/domain/auth/types";
-const hints = [
-  [personName(PERSONNEL.COMMANDER.id), "Chỉ huy"],
-  [personName(PERSONNEL.OPERATOR.id), "Điều hành viên"],
-  [personName(PERSONNEL.LOCAL_OFFICER.id), "Cán bộ địa phương"],
-  [personName(PERSONNEL.RESCUE_LEADER.id), "Đội trưởng đội cứu hộ"],
-  [personName(PERSONNEL.RESCUE_MEMBER.id), "Thành viên cứu hộ"],
-  [personName(PERSONNEL.WAREHOUSE_STAFF.id), "Nhân viên kho"],
-];
-export function LoginPage({
-  onSuccess,
-}: {
-  onSuccess: (user: AuthUser) => void;
-}) {
+
+type AuthMode = "login" | "register";
+
+/* ─────────────── Login form ─────────────── */
+function LoginForm({ onSuccess }: { onSuccess: (user: AuthUser) => void }) {
   const { login } = useOperationalState();
-  const [username, setUsername] = useState<string>(personName(PERSONNEL.WAREHOUSE_STAFF.id));
-  const [password, setPassword] = useState("VNDMS@2026");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">(() =>
-    localStorage.getItem("vndms-theme") === "dark" ? "dark" : "light",
-  );
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    localStorage.setItem("vndms-theme", theme);
-  }, [theme]);
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
     setError("");
     setBusy(true);
     const result = await login(username, password);
@@ -49,6 +37,287 @@ export function LoginPage({
     if (result.ok && result.user) onSuccess(result.user);
     else setError(result.error);
   };
+
+  return (
+    <form className="login-form-inner" onSubmit={submit} id="login-form">
+      <header className="auth-form-header">
+        <span>
+          <LockKeyhole size={20} />
+        </span>
+        <div>
+          <h2>Đăng nhập vào tài khoản</h2>
+          <p>Nhập thông tin tài khoản VNDMS.</p>
+        </div>
+      </header>
+
+      {error && (
+        <div className="login-error" role="alert">
+          <AlertCircle size={15} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <label className="auth-field-label">
+        <span className="label-text">
+          Tên đăng nhập <b className="req">*</b>
+        </span>
+        <span className="input-with-icon">
+          <UserRound size={16} />
+          <Input
+            id="login-username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+            placeholder="Tên đăng nhập của bạn"
+            required
+            autoFocus
+          />
+        </span>
+      </label>
+
+      <label className="auth-field-label">
+        <span className="label-text">
+          Mật khẩu <b className="req">*</b>
+        </span>
+        <span className="input-with-icon">
+          <LockKeyhole size={16} />
+          <Input
+            id="login-password"
+            type={show ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            placeholder="Mật khẩu"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShow(!show)}
+            aria-label={show ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          >
+            {show ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </span>
+      </label>
+
+      <button
+        id="login-submit-btn"
+        className="login-submit"
+        type="submit"
+        disabled={busy}
+      >
+        <LogIn size={16} />
+        {busy ? "Đang xác thực…" : "Đăng nhập"}
+      </button>
+
+      <small className="local-security-note">
+        Phiên đăng nhập có hiệu lực 8 giờ. Mọi thao tác được ghi nhật ký bảo mật.
+      </small>
+    </form>
+  );
+}
+
+function RegisterForm({ onSuccess }: { onSuccess: (user: AuthUser) => void }) {
+  const { register } = useOperationalState();
+  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const passwordMismatch = confirm.length > 0 && password !== confirm;
+  const valid =
+    displayName.trim().length >= 2 &&
+    username.trim().length >= 3 &&
+    password.length >= 6 &&
+    password === confirm;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!valid) return;
+    setError("");
+    setBusy(true);
+    const result = await register({
+      displayName: displayName.trim(),
+      username: username.trim(),
+      password,
+      role: "citizen",
+      geographicScope: {
+        level: "national",
+        name: "Toàn quốc",
+        code: "VN",
+      },
+      organization: phone.trim() ? `SĐT: ${phone.trim()}` : undefined,
+    });
+    setBusy(false);
+    if (result.ok && result.user) onSuccess(result.user);
+    else setError(result.error);
+  };
+
+  return (
+    <form className="login-form-inner register-form-inner" onSubmit={submit} id="register-form">
+      <header className="auth-form-header">
+        <span className="register-icon">
+          <UserPlus size={20} />
+        </span>
+        <div>
+          <h2>Đăng ký tài khoản công dân</h2>
+          <p>Tạo tài khoản để nhận cảnh báo và gửi yêu cầu cứu trợ khẩn cấp.</p>
+        </div>
+      </header>
+
+      {error && (
+        <div className="login-error" role="alert">
+          <AlertCircle size={15} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <label className="auth-field-label">
+        <span className="label-text">
+          Họ và tên <b className="req">*</b>
+        </span>
+        <span className="input-with-icon">
+          <UserRound size={16} />
+          <Input
+            id="reg-display-name"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            autoComplete="name"
+            placeholder="Ví dụ: Nguyễn Văn An"
+            required
+            autoFocus
+          />
+        </span>
+      </label>
+
+      <label className="auth-field-label">
+        <span className="label-text">
+          Tên đăng nhập <b className="req">*</b>
+        </span>
+        <span className="input-with-icon">
+          <UserRound size={16} />
+          <Input
+            id="reg-username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+            placeholder="Tên đăng nhập (viết liền không dấu)"
+            required
+          />
+        </span>
+      </label>
+
+      <label className="auth-field-label">
+        <span className="label-text">Số điện thoại liên hệ</span>
+        <span className="input-with-icon">
+          <Phone size={16} />
+          <Input
+            id="reg-phone"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            autoComplete="tel"
+            placeholder="VD: 0912 345 678"
+          />
+        </span>
+      </label>
+
+      <label className="auth-field-label">
+        <span className="label-text">
+          Mật khẩu <b className="req">*</b>
+        </span>
+        <span className="input-with-icon">
+          <LockKeyhole size={16} />
+          <Input
+            id="reg-password"
+            type={showPwd ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            placeholder="Tối thiểu 6 ký tự"
+            required
+            minLength={6}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPwd(!showPwd)}
+            aria-label={showPwd ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          >
+            {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </span>
+      </label>
+
+      <label className="auth-field-label">
+        <span className="label-text">
+          Xác nhận mật khẩu <b className="req">*</b>
+        </span>
+        <span className={`input-with-icon${passwordMismatch ? " input-error" : ""}`}>
+          <LockKeyhole size={16} />
+          <Input
+            id="reg-confirm-password"
+            type={showConfirm ? "text" : "password"}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            autoComplete="new-password"
+            placeholder="Nhập lại mật khẩu"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirm(!showConfirm)}
+            aria-label={showConfirm ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          >
+            {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </span>
+        {passwordMismatch && (
+          <span className="field-error">Mật khẩu xác nhận không khớp.</span>
+        )}
+        {!passwordMismatch && password.length >= 6 && confirm === password && (
+          <span className="field-ok">
+            <CheckCircle2 size={13} /> Mật khẩu khớp.
+          </span>
+        )}
+      </label>
+
+      <button
+        id="register-submit-btn"
+        className="login-submit"
+        type="submit"
+        disabled={busy || !valid}
+      >
+        <UserPlus size={16} />
+        {busy ? "Đang đăng ký tài khoản…" : "Đăng ký tài khoản"}
+      </button>
+
+      <small className="local-security-note">
+        Tài khoản công dân có quyền gửi định vị SOS cứu nạn và tra cứu điểm sơ tán an toàn.
+      </small>
+    </form>
+  );
+}
+
+/* ─────────────── Main LoginPage ─────────────── */
+export function LoginPage({
+  onSuccess,
+}: {
+  onSuccess: (user: AuthUser) => void;
+}) {
+  const [mode, setMode] = useState<AuthMode>("login");
+  const [theme, setTheme] = useState<"light" | "dark">(() =>
+    localStorage.getItem("vndms-theme") === "dark" ? "dark" : "light",
+  );
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("vndms-theme", theme);
+  }, [theme]);
+
   return (
     <main className="login-page">
       <button
@@ -68,6 +337,7 @@ export function LoginPage({
       >
         {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
       </button>
+
       <section className="login-identity">
         <div className="login-brand">
           <span>
@@ -79,110 +349,71 @@ export function LoginPage({
           </div>
         </div>
         <div className="login-context">
-          <span>NỀN TẢNG TÁC NGHIỆP</span>
-          <h1>Đăng nhập hệ thống</h1>
+          <span>NỀN TẢNG QUẢN LÝ THIÊN TAI</span>
+          <h1>
+            {mode === "login" ? "Đăng nhập hệ thống" : "Đăng ký tài khoản công dân"}
+          </h1>
           <p>
-            Truy cập các chức năng điều hành theo vai trò, phạm vi địa lý và
-            phiên làm việc được kiểm soát.
+            {mode === "login"
+              ? "Truy cập các chức năng điều hành, cứu nạn cứu hộ và phòng chống thiên tai theo phân quyền."
+              : "Đăng ký tài khoản để kịp thời theo dõi diễn biến bão lũ, nhận cảnh báo khẩn cấp và gửi tín hiệu cứu nạn SOS khi gặp nguy hiểm."}
           </p>
           <ul>
             <li>
               <ShieldCheck size={15} />
-              Phân quyền tập trung theo vai trò
+              Theo dõi tình hình thiên tai và cảnh báo tức thời
             </li>
             <li>
               <LockKeyhole size={15} />
-              Phiên đăng nhập có thời hạn
+              Gửi tín hiệu cứu hộ SOS khẩn cấp tới lực lượng tác chiến
             </li>
             <li>
               <UserRound size={15} />
-              Mọi thao tác nhạy cảm được ghi vào nhật ký bảo mật
+              Tra cứu điểm sơ tán, kho cứu trợ và số hotline khẩn cấp
             </li>
           </ul>
         </div>
         <footer>
-          Dữ liệu tài khoản bên dưới chỉ dành cho môi trường trình diễn cục bộ.
+          Hệ thống VNDMS — Giám sát & Ứng phó thiên tai Quốc gia.
         </footer>
       </section>
+
       <section className="login-form-side">
-        <form className="login-card" onSubmit={submit}>
-          <header>
-            <span>
-              <LockKeyhole size={20} />
-            </span>
-            <div>
-              <h2>Xác thực người dùng</h2>
-              <p>Nhập thông tin tài khoản VNDMS.</p>
-            </div>
-          </header>
-          {error && (
-            <div className="login-error">
-              <AlertCircle size={15} />
-              <span>{error}</span>
-            </div>
-          )}
-          <label>
-            Tên đăng nhập
-            <span className="input-with-icon">
-              <UserRound size={16} />
-              <Input
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                autoComplete="username"
-                required
-                autoFocus
-              />
-            </span>
-          </label>
-          <label>
-            Mật khẩu
-            <span className="input-with-icon">
-              <LockKeyhole size={16} />
-              <Input
-                type={show ? "text" : "password"}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShow(!show)}
-                aria-label={show ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-              >
-                {show ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </span>
-          </label>
-          <button className="login-submit" disabled={busy}>
-            <LogIn size={16} />
-            {busy ? "Đang xác thực…" : "Đăng nhập"}
-          </button>
-          <div className="demo-account-hint">
-            <b>Tài khoản trình diễn</b>
-            <p>
-              Mật khẩu dùng chung: <code>VNDMS@2026</code>
-            </p>
-            <div>
-              {hints.map(([account, role]) => (
-                <button
-                  type="button"
-                  key={account}
-                  onClick={() => {
-                    setUsername(account);
-                    setPassword("VNDMS@2026");
-                  }}
-                >
-                  <span>{account}</span>
-                  <small>{role}</small>
-                </button>
-              ))}
-            </div>
+        <div className="login-card-unified">
+          {/* Integrated tabs inside the unified card */}
+          <div className="login-tabs-bar" role="tablist">
+            <button
+              id="tab-login"
+              role="tab"
+              aria-selected={mode === "login"}
+              className={`login-tab-btn ${mode === "login" ? "active" : ""}`}
+              onClick={() => setMode("login")}
+              type="button"
+            >
+              <LogIn size={15} />
+              Đăng nhập
+            </button>
+            <button
+              id="tab-register"
+              role="tab"
+              aria-selected={mode === "register"}
+              className={`login-tab-btn ${mode === "register" ? "active" : ""}`}
+              onClick={() => setMode("register")}
+              type="button"
+            >
+              <UserPlus size={15} />
+              Đăng ký công dân
+            </button>
           </div>
-          <small className="local-security-note">
-            Bộ điều hợp xác thực cục bộ; không phải dịch vụ xác thực máy chủ vận hành.
-          </small>
-        </form>
+
+          {/* Form content — both always mounted to preserve input state when switching tabs */}
+          <div className="login-form-content" style={{ display: mode === "login" ? "block" : "none" }}>
+            <LoginForm onSuccess={onSuccess} />
+          </div>
+          <div className="login-form-content" style={{ display: mode === "register" ? "block" : "none" }}>
+            <RegisterForm onSuccess={onSuccess} />
+          </div>
+        </div>
       </section>
     </main>
   );

@@ -95,7 +95,7 @@ test("tài khoản kho chỉ thấy đúng các module được phân quyền", 
   const labels = groups.flatMap((group) =>
     group.items.map((item) => item.label),
   );
-  assert.deepEqual(labels, ["Cảnh báo", "Kho vật tư", "Phân phối cứu trợ", "Trợ lý AI"]);
+  assert.deepEqual(labels, ["Cảnh báo", "Kho vật tư", "Phân phối cứu trợ"]);
   // Nhóm Quản trị bị ẩn hoàn toàn vì không còn mục nào hợp lệ.
   assert.ok(groups.every((group) => group.label !== "Quản trị"));
 });

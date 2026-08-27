@@ -104,7 +104,17 @@ export function Select({
       )
         setOpen(false);
     };
-    const closeOnViewportChange = () => setOpen(false);
+    const closeOnViewportChange = (event?: Event) => {
+      // Khi người dùng cuộn danh sách các options bên trong chính popover dropdown, không được đóng menu!
+      if (
+        event &&
+        popover.current &&
+        (event.target === popover.current || popover.current.contains(event.target as Node))
+      ) {
+        return;
+      }
+      setOpen(false);
+    };
     document.addEventListener("pointerdown", closeOutside);
     window.addEventListener("resize", closeOnViewportChange);
     // Trình duyệt có thể tự cuộn control vào khung nhìn ngay khi người dùng mở

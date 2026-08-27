@@ -19,6 +19,7 @@ import {
   createSecurityAudit,
   loginUser,
   logoutUser,
+  registerUser,
   setUserActive,
 } from "@/application/auth/authUseCases";
 
@@ -126,6 +127,20 @@ export function useOperationalSecurity() {
       user: outcome.ok && outcome.user ? outcome.user : undefined,
     };
   };
+  const register = async (input: import("@/domain/auth/types").RegisterInput) => {
+    const outcome = await registerUser(authGateway, input);
+    appendSecurityAudit(outcome.audit);
+    if (outcome.ok) {
+      setSession(outcome.session);
+      setCurrentUser(outcome.user);
+      setUsers(authGateway.listUsers());
+    }
+    return {
+      ok: outcome.ok,
+      error: outcome.error,
+      user: outcome.ok && outcome.user ? outcome.user : undefined,
+    };
+  };
   const logout = () => {
     if (currentUser && session)
       appendSecurityAudit(logoutUser(authGateway, currentUser, session));
@@ -213,6 +228,43 @@ export function useOperationalSecurity() {
     if (session?.userId === userId)
       setCurrentUser(next.find((item) => item.id === userId) ?? null);
   };
+  const updateSelfProfile = (input: {
+    displayName?: string;
+    geographicScope?: GeographicScope;
+    organization?: string;
+  }) => {
+    if (!currentUser) return;
+    const nowStr = new Date().toISOString();
+    const next = users.map((u) =>
+      u.id === currentUser.id
+        ? {
+            ...u,
+            displayName: input.displayName?.trim() || u.displayName,
+            geographicScope: input.geographicScope || u.geographicScope,
+            organization: input.organization ?? u.organization,
+            updatedAt: nowStr,
+          }
+        : u,
+    );
+    setUsers(next);
+    authGateway.saveUsers(next);
+    const updated = next.find((u) => u.id === currentUser.id) ?? null;
+    setCurrentUser(updated);
+    appendSecurityAudit(
+      createSecurityAudit({
+        actorId: currentUser.id,
+        actorName: input.displayName || currentUser.displayName,
+        role: currentUser.role,
+        action: "MUTATION_AUTHORIZED",
+        resourceType: "User",
+        resourceId: currentUser.id,
+        timestamp: nowStr,
+        geographicScope: input.geographicScope?.name || currentScopeName,
+        result: "SUCCESS",
+        reason: "Người dùng cập nhật thông tin cá nhân và phạm vi địa lý.",
+      }),
+    );
+  };
   useEffect(() => {
     if (!session) return;
     const timer = window.setInterval(() => {
@@ -260,9 +312,11 @@ export function useOperationalSecurity() {
     can,
     enforcePermission,
     login,
+    register,
     logout,
     updateUserActive,
     updateUserRole,
     updateUserScope,
+    updateSelfProfile,
   };
 }

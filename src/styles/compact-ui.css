@@ -1,27 +1,27 @@
 /* Final compact-density pass requested for 100% browser zoom.
    Kept separate and loaded last so feature CSS remains easy to maintain. */
 :root {
-  --font-body: 14px;
-  --font-meta: 13px;
-  --font-control: 14px;
-  --space-section: 18px;
+  --font-body: 13.5px;
+  --font-meta: 12.5px;
+  --font-control: 13.5px;
+  --space-section: 16px;
 }
 body {
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 13.5px;
+  line-height: 1.42;
 }
 
 /* Compact application shell and content blocks without browser zoom hacks. */
 .topbar {
-  height: 70px;
-  padding-inline: 20px;
+  height: 58px;
+  padding-inline: 16px;
 }
 .app-body {
-  height: calc(100vh - 70px);
+  height: calc(100vh - 58px);
 }
 .sidebar {
-  top: 70px;
-  height: calc(100vh - 70px);
+  top: 58px;
+  height: calc(100vh - 58px);
 }
 .brand-mark {
   width: 38px;
@@ -52,14 +52,14 @@ body {
   font-size: var(--type-metadata, 13px);
 }
 .workspace-content {
-  padding: 24px 26px 44px;
+  padding: 18px 20px 36px;
 }
 .page-header {
   margin-bottom: 20px;
 }
 .page-header h1,
 .admin-page-header h1 {
-  font-size: 30px;
+  font-size: 26px;
 }
 .page-header p,
 .admin-page-header p,
@@ -215,56 +215,72 @@ html[data-theme="dark"] .sidebar-collapsed .nav-group-title {
   border-color: #344151;
 }
 
-/* Login must fit at 100% zoom, including all six demo accounts. */
+/* Login must fit at 100% zoom and be strictly vertically centered. */
 .login-page {
-  height: 100vh;
-  min-height: 0;
-  overflow-y: auto;
-  grid-template-columns: minmax(330px, 40%) 1fr;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-columns: minmax(280px, 34%) 1fr !important;
 }
 .login-identity {
-  min-height: 100vh;
-  padding: 34px 44px;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  padding: 24px 30px !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
 }
 .login-brand > span {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
 }
 .login-brand b {
-  font-size: 20px;
+  font-size: 18px;
 }
 .login-brand small {
-  font-size: var(--type-metadata, 13px);
+  font-size: var(--type-metadata, 12.5px);
 }
 .login-context h1 {
-  margin: 9px 0 7px;
-  font-size: 34px;
+  margin: 6px 0 5px;
+  font-size: 26px;
 }
 .login-context > span {
-  font-size: 13px;
+  font-size: 12.5px;
 }
 .login-context > p {
-  margin-bottom: 20px;
-  font-size: 14px;
-  line-height: 1.55;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.45;
 }
 .login-context ul {
-  gap: 9px;
+  gap: 7px;
 }
 .login-context li {
-  font-size: 13px;
+  font-size: 12.5px;
 }
 .login-identity footer {
-  font-size: 13px;
+  font-size: 12.5px;
 }
 .login-form-side {
-  align-items: center;
-  padding: 22px;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 16px !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+.login-card-unified {
+  width: min(350px, 100%) !important;
+  margin: auto 0 !important;
 }
 .login-card {
-  width: min(450px, 100%);
-  padding: 23px 25px;
-  border-radius: 11px;
+  width: min(350px, 100%) !important;
+  padding: 18px 20px !important;
+  border-radius: 10px !important;
+  margin: auto 0 !important;
 }
 .login-card > header {
   margin-bottom: 17px;
@@ -1576,4 +1592,675 @@ html[data-theme="dark"] .filter-chip {
 .app-shell .workspace .report-block h2 {
   font-size: var(--font-size-card-title);
   line-height: var(--line-height-heading);
+}
+
+/* ─────────────── Enhanced Chevron & Collapse Icon Visibility ─────────────── */
+.ui-select-trigger svg,
+.ui-select-trigger .lucide-chevron-down,
+.collapse-trigger svg,
+.accordion-trigger svg,
+[class*="collapse"] svg,
+[class*="chevron"],
+svg.lucide-chevron-down,
+svg.lucide-chevron-right,
+svg.lucide-chevron-up {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  stroke-width: 2.25px !important;
+  color: var(--text-secondary, #475467) !important;
+  opacity: 0.9 !important;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+button:hover svg.lucide-chevron-down,
+button:hover svg.lucide-chevron-right,
+button:hover svg.lucide-chevron-up,
+.ui-select-trigger:hover svg {
+  color: var(--color-primary, #175cd3) !important;
+  opacity: 1 !important;
+}
+
+/* ─────────────── Comprehensive Dark Mode High-Specificity Seal ─────────────── */
+html[data-theme="dark"] body,
+html[data-theme="dark"] .app-shell,
+html[data-theme="dark"] .workspace,
+html[data-theme="dark"] .workspace-content {
+  background: #0f172a !important;
+  color: #e2eaf5 !important;
+}
+
+html[data-theme="dark"] .content-section,
+html[data-theme="dark"] .side-section,
+html[data-theme="dark"] .cc-panel,
+html[data-theme="dark"] .report-card,
+html[data-theme="dark"] .summary-card,
+html[data-theme="dark"] .detail-card,
+html[data-theme="dark"] .detail-section,
+html[data-theme="dark"] .action-dialog,
+html[data-theme="dark"] .filter-bar,
+html[data-theme="dark"] .table-card,
+html[data-theme="dark"] .ui-select-popover,
+html[data-theme="dark"] .ui-select-trigger {
+  background: #1a2435 !important;
+  border-color: #253145 !important;
+  color: #e2eaf5 !important;
+}
+
+html[data-theme="dark"] .section-heading,
+html[data-theme="dark"] .cc-panel-header,
+html[data-theme="dark"] .dialog-header,
+html[data-theme="dark"] .action-dialog header {
+  background: #151e2d !important;
+  border-bottom-color: #253145 !important;
+  color: #e2eaf5 !important;
+}
+
+html[data-theme="dark"] .section-heading h2,
+html[data-theme="dark"] .cc-panel-header h2,
+html[data-theme="dark"] .cc-panel-header > div > span,
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] b:not(.req),
+html[data-theme="dark"] strong {
+  color: #f1f5f9 !important;
+}
+
+/* Preserve red required field indicator in dark mode */
+html[data-theme="dark"] b.req,
+html[data-theme="dark"] .req {
+  color: #f87171 !important;
+}
+
+html[data-theme="dark"] p,
+html[data-theme="dark"] span,
+html[data-theme="dark"] td,
+html[data-theme="dark"] dd,
+html[data-theme="dark"] label {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] small,
+html[data-theme="dark"] dt,
+html[data-theme="dark"] time,
+html[data-theme="dark"] .meta,
+html[data-theme="dark"] .hint,
+html[data-theme="dark"] .helper {
+  color: #8da4be !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select,
+html[data-theme="dark"] .ui-input,
+html[data-theme="dark"] .ui-textarea,
+html[data-theme="dark"] .ui-select-trigger {
+  background: #111827 !important;
+  border-color: #2a3c52 !important;
+  color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #4a6279 !important;
+}
+
+html[data-theme="dark"] table {
+  border-color: #253145 !important;
+}
+
+html[data-theme="dark"] th {
+  background: #151e2d !important;
+  color: #8da4be !important;
+  border-bottom-color: #253145 !important;
+}
+
+html[data-theme="dark"] td {
+  border-bottom-color: #1f2d3d !important;
+}
+
+html[data-theme="dark"] tr:hover td {
+  background: #1f2d3d !important;
+}
+
+html[data-theme="dark"] .btn-secondary {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f5 !important;
+}
+
+html[data-theme="dark"] .btn-secondary:hover {
+  background: #283548 !important;
+  border-color: #475569 !important;
+}
+
+html[data-theme="dark"] .filter-chip {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .ui-select-popover li {
+  color: #e2eaf5 !important;
+}
+
+html[data-theme="dark"] .ui-select-popover li:hover,
+html[data-theme="dark"] .ui-select-popover li.is-active {
+  background: #253145 !important;
+  color: #60a5fa !important;
+}
+
+/* ─────────────── ECMWF Weather Panel Dark Mode ─────────────── */
+html[data-theme="dark"] .ecmwf-weather-panel {
+  background: #1a2435 !important;
+  border-color: #253145 !important;
+}
+
+html[data-theme="dark"] .weather-station-tabs {
+  background: #111827;
+  border-bottom-color: #253145;
+}
+
+html[data-theme="dark"] .weather-station-tab {
+  color: #8da4be;
+  background: transparent;
+  border-color: transparent;
+}
+
+html[data-theme="dark"] .weather-station-tab.active {
+  background: #1a2435;
+  color: #60a5fa;
+  border-color: #3b82f6;
+}
+
+html[data-theme="dark"] .weather-station-tab:hover:not(.active) {
+  background: #1f2d3d;
+  color: #c3d4e8;
+}
+
+html[data-theme="dark"] .weather-metric-card {
+  background: #111827 !important;
+  border-color: #1f2d3d !important;
+}
+
+html[data-theme="dark"] .metric-lbl {
+  color: #8da4be !important;
+}
+
+html[data-theme="dark"] .metric-val {
+  color: #e2eaf5 !important;
+}
+
+html[data-theme="dark"] .metric-icon-wrap {
+  opacity: 0.85;
+}
+
+/* ─────────────── Universal Dark Mode Tables & Rows ─────────────── */
+html[data-theme="dark"] :is(
+  .shelter-worklist,
+  .admin-table-wrap,
+  .data-table-wrap,
+  .shelter-summary,
+  .admin-summary
+) {
+  background: #111827 !important;
+  border-color: #1f2d3d !important;
+}
+
+html[data-theme="dark"] :is(
+  .shelter-table-head,
+  .admin-table thead th,
+  .data-table thead th
+) {
+  background: #162032 !important;
+  border-bottom-color: #1f2d3d !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] :is(
+  .shelter-row,
+  .team-list-row,
+  .task-list-row,
+  .sos-row,
+  .relief-row,
+  .warehouse-row,
+  .assessment-row,
+  .project-row,
+  .playbook-row,
+  .incident-list-row,
+  .cc-incident-row,
+  .cc-action-item,
+  .admin-table tbody tr,
+  .data-table tbody tr
+) {
+  background: #111827 !important;
+  border-bottom-color: #1f2d3d !important;
+  color: #e2eaf5 !important;
+}
+
+html[data-theme="dark"] :is(
+  .shelter-row,
+  .team-list-row,
+  .task-list-row,
+  .sos-row,
+  .relief-row,
+  .warehouse-row,
+  .assessment-row,
+  .project-row,
+  .playbook-row,
+  .incident-list-row,
+  .cc-incident-row,
+  .cc-action-item,
+  .admin-table tbody tr,
+  .data-table tbody tr
+):hover {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .shelter-primary b,
+html[data-theme="dark"] .shelter-capacity b,
+html[data-theme="dark"] .shelter-condition b,
+html[data-theme="dark"] .shelter-officer b,
+html[data-theme="dark"] .shelter-operation b,
+html[data-theme="dark"] .admin-table b {
+  color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .shelter-primary small,
+html[data-theme="dark"] .shelter-capacity small,
+html[data-theme="dark"] .shelter-condition small,
+html[data-theme="dark"] .shelter-officer small,
+html[data-theme="dark"] .shelter-operation small,
+html[data-theme="dark"] .admin-table small {
+  color: #8da4be !important;
+}
+
+html[data-theme="dark"] .username-tag {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+  border: 1px solid #334155 !important;
+}
+
+html[data-theme="dark"] .direct-role-picker .ui-select-trigger {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .weather-day-card {
+  background: #111827 !important;
+  border-color: #1f2d3d !important;
+}
+
+html[data-theme="dark"] .day-date {
+  color: #8da4be !important;
+}
+
+html[data-theme="dark"] .day-temps b {
+  color: #e2eaf5 !important;
+}
+
+html[data-theme="dark"] .day-temps small {
+  color: #8da4be !important;
+}
+
+html[data-theme="dark"] .weather-forecast-timeline h4 {
+  color: #8da4be !important;
+}
+
+/* ─────────────── Global specificity exceptions ─────────────── */
+/* Prevent global dark span override from wiping icon SVG fill/stroke */
+html[data-theme="dark"] svg {
+  color: inherit;
+}
+
+/* ================================================================
+   FINAL DENSITY SEAL — loaded last, overrides all earlier passes.
+   Purpose: resolve btn-md/topbar size conflict between
+   interface-polish.css "production readability" section (40px/17px)
+   and earlier compact-ui passes (34px/13px). Target: 36px / label-size.
+   NEVER remove or reorder — order is critical in this cascade.
+   ================================================================ */
+
+/* Topbar: 62px — compact but comfortable; header still breathes */
+.app-shell .topbar {
+  height: 62px !important;
+  padding-block: 0 !important;
+}
+.app-shell .app-body {
+  height: calc(100vh - 62px) !important;
+}
+.app-shell .sidebar {
+  top: 62px !important;
+  height: calc(100vh - 62px) !important;
+}
+@media (max-width: 900px) {
+  .app-shell .sidebar { top: 0 !important; height: 100vh !important; }
+  .app-shell .topbar { height: 64px !important; }
+  .app-shell .app-body { height: calc(100vh - 64px) !important; }
+}
+@media (max-width: 640px) {
+  .app-shell .topbar { height: 58px !important; }
+  .app-shell .app-body { height: calc(100vh - 58px) !important; }
+}
+
+/* Buttons: 36px md / 30px sm — accessible touch target, visually compact */
+.app-shell .btn-md,
+.app-shell .workspace .btn-md {
+  min-height: 36px !important;
+  max-height: 36px !important;
+  height: 36px !important;
+  padding-inline: 13px !important;
+  font-size: var(--font-size-label) !important;
+  line-height: 1 !important;
+}
+.app-shell .btn-sm,
+.app-shell .workspace .btn-sm {
+  min-height: 30px !important;
+  max-height: 30px !important;
+  height: 30px !important;
+  padding-inline: 10px !important;
+  font-size: var(--font-size-meta) !important;
+}
+.app-shell .btn-icon,
+.app-shell .topbar .btn-icon {
+  width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+}
+
+/* Inputs & Select controls: gọn gàng đồng bộ 36px (thay vì 42px) */
+.app-shell .workspace :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):not([type="file"]):not(.incident-search input):not(.input-with-icon input),
+  .ui-input:not(.incident-search input):not(.input-with-icon input)
+),
+.app-shell .ui-select,
+.app-shell .ui-select-trigger,
+.app-shell .incident-search,
+.app-shell .input-with-icon,
+.app-shell .filter-select,
+.app-shell .date-filter,
+.app-shell .filter-chip {
+  min-height: 36px !important;
+  height: 36px !important;
+  font-size: var(--font-size-label) !important;
+  border-radius: 7px !important;
+}
+.app-shell .workspace :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):not([type="file"]):not(.incident-search input):not(.input-with-icon input),
+  .ui-input:not(.incident-search input):not(.input-with-icon input)
+) {
+  padding: 6px 11px !important;
+}
+.app-shell .ui-select-trigger {
+  padding: 0 10px 0 11px !important;
+}
+.app-shell .ui-select-popover li {
+  min-height: 34px !important;
+  padding: 6px 9px !important;
+  font-size: var(--font-size-label) !important;
+}
+.app-shell .workspace :where(
+  .incident-filters,
+  .task-filters,
+  .team-filters,
+  .sos-filters,
+  .relief-filters,
+  .shelter-filters,
+  .evac-toolbar,
+  .analytics-filters,
+  .admin-filters,
+  .alerts-toolbar
+) {
+  min-height: 52px !important;
+  padding: 10px 14px !important;
+  gap: 8px !important;
+}
+
+/* Khắc phục triệt để input nằm trong search/filter wrapper: không bị lòi khung, không viền kép, nền trong suốt đồng bộ */
+.app-shell .workspace :where(.incident-search, .input-with-icon) {
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+.app-shell .workspace :where(.incident-search, .input-with-icon) input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 0 4px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+.app-shell .workspace :where(.incident-search, .input-with-icon) input:focus,
+.app-shell .workspace :where(.incident-search, .input-with-icon) input:focus-visible {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+/* Nền và viền dark mode đồng bộ cho Search và Input wrapper */
+html[data-theme="dark"] .app-shell .workspace :where(.incident-search, .input-with-icon) {
+  background: #1a2435 !important;
+  border-color: #2e3d52 !important;
+  color: #e2eaf5 !important;
+}
+html[data-theme="dark"] .app-shell .workspace :where(.incident-search, .input-with-icon) input {
+  background: transparent !important;
+  color: #f1f5f9 !important;
+}
+
+/* Bỏ bộ lọc tối / filter làm mờ bản đồ trong dark mode — bản đồ sắc nét, sáng rõ */
+html[data-theme="dark"] .map-canvas,
+html[data-theme="dark"] .maplibregl-canvas,
+html[data-theme="dark"] .map-shell .map-canvas {
+  filter: none !important;
+}
+
+/* Workspace content: tighter padding without cramping */
+.app-shell .workspace-content {
+  padding: 20px 24px 40px !important;
+}
+
+/* Page header: tighter vertical rhythm */
+.app-shell .workspace .page-header {
+  margin-bottom: 18px !important;
+  gap: 16px !important;
+}
+.app-shell .workspace .page-header h1,
+.app-shell .workspace .admin-page-header h1 {
+  font-size: 26px !important;
+  margin-top: 6px !important;
+}
+.app-shell .workspace .page-header p,
+.app-shell .workspace .admin-page-header p {
+  font-size: var(--font-size-label) !important;
+  margin-top: 5px !important;
+}
+
+/* Section headings: reduce padding for less vertical whitespace */
+.app-shell .workspace .section-heading {
+  min-height: 58px !important;
+  padding: 13px 18px !important;
+}
+.app-shell .workspace .section-heading h2 {
+  font-size: var(--font-size-section-title) !important;
+}
+
+/* Situation band: less vertical padding */
+.app-shell .workspace .situation-band {
+  padding: 14px 18px !important;
+  margin-bottom: 18px !important;
+}
+
+/* Overview grid: tighter gap */
+.app-shell .workspace .overview-grid,
+.app-shell .workspace .main-column,
+.app-shell .workspace .right-column {
+  gap: 16px !important;
+}
+
+/* Notification popover: snap to new topbar height */
+.app-shell .notification-popover {
+  top: 50px !important;
+}
+.app-shell .account-popover {
+  top: 50px !important;
+}
+
+/* Nav items: slightly tighter */
+.app-shell .sidebar .nav-item {
+  min-height: 34px !important;
+  padding-block: 0 !important;
+}
+.app-shell .sidebar .sidebar-scroll {
+  padding: 10px 9px 20px !important;
+}
+.app-shell .sidebar .nav-group + .nav-group {
+  margin-top: 14px !important;
+}
+
+/* ================================================================
+   DARK MODE — Badge / Status / Nav-Count Color Protection
+   The global "html[data-theme=dark] span { color: #cbd5e1 }" rule
+   (compact-ui.css L1683) is too broad and would desaturate colored
+   badges, status dots, and nav counts. Re-assert their colors here.
+   ================================================================ */
+
+/* Badge colors: restore semantic tone in dark mode */
+html[data-theme="dark"] .badge-red {
+  background: #3f0f0e !important;
+  border-color: #7f1d1d !important;
+  color: #fca5a5 !important;
+}
+html[data-theme="dark"] .badge-amber {
+  background: #3d1f00 !important;
+  border-color: #78350f !important;
+  color: #fcd34d !important;
+}
+html[data-theme="dark"] .badge-green {
+  background: #052e16 !important;
+  border-color: #14532d !important;
+  color: #6ee7b7 !important;
+}
+html[data-theme="dark"] .badge-blue {
+  background: #0c1a3a !important;
+  border-color: #1e3a6a !important;
+  color: #93c5fd !important;
+}
+html[data-theme="dark"] .badge-neutral {
+  background: #1a2435 !important;
+  border-color: #2e3d52 !important;
+  color: #bdc8d6 !important;
+}
+
+/* Status dots: must keep their semantic color (red/amber/green/blue) */
+html[data-theme="dark"] .status-dot {
+  background: #12b76a !important;
+  box-shadow: 0 0 0 3px rgba(18, 183, 106, 0.18) !important;
+}
+html[data-theme="dark"] .status-dot-red {
+  background: #f04438 !important;
+  box-shadow: 0 0 0 3px rgba(240, 68, 56, 0.18) !important;
+}
+html[data-theme="dark"] .status-dot-amber {
+  background: #f79009 !important;
+  box-shadow: 0 0 0 3px rgba(247, 144, 9, 0.18) !important;
+}
+html[data-theme="dark"] .status-dot-blue {
+  background: #2e90fa !important;
+  box-shadow: 0 0 0 3px rgba(46, 144, 250, 0.18) !important;
+}
+
+/* Nav count badge: urgent red, must stay visible */
+html[data-theme="dark"] .sidebar:not(.sidebar-collapsed) .nav-count,
+html[data-theme="dark"] .sidebar .nav-item.active .nav-count {
+  background: #b91c1c !important;
+  color: #fef2f2 !important;
+  border-color: transparent !important;
+}
+
+/* Priority bars (attention rows): restore semantic colors */
+html[data-theme="dark"] .priority-red { background: #ef4444 !important; }
+html[data-theme="dark"] .priority-amber { background: #f97316 !important; }
+html[data-theme="dark"] .priority-blue { background: #3b82f6 !important; }
+
+/* Timeline dots: semantic colors must remain */
+html[data-theme="dark"] .timeline-dot.blue { color: #60a5fa !important; background: #60a5fa !important; }
+html[data-theme="dark"] .timeline-dot.green { color: #34d399 !important; background: #34d399 !important; }
+html[data-theme="dark"] .timeline-dot.amber { color: #fbbf24 !important; background: #fbbf24 !important; }
+
+/* ================================================================
+   OPERATIONAL MAP — Dark Mode Surfaces
+   om-panel and om-map-zone had no dark mode treatment.
+   ================================================================ */
+html[data-theme="dark"] .om-panel {
+  background: var(--surface-card) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--foreground, #e2eaf5) !important;
+}
+html[data-theme="dark"] .om-panel-header {
+  background: var(--surface-muted) !important;
+  border-bottom-color: var(--border-subtle) !important;
+}
+html[data-theme="dark"] .om-panel-results {
+  background: var(--surface-card) !important;
+}
+html[data-theme="dark"] .om-result-area {
+  color: #8da4be !important;
+}
+html[data-theme="dark"] .om-data-stamp {
+  color: #8da4be !important;
+}
+
+/* ================================================================
+   LIGHT MODE — Map toolbar protection (hard-coded white in shell.css)
+   Already correct for light mode; ensure dark mode overrides stay clean.
+   ================================================================ */
+html[data-theme="dark"] .map-toolbar,
+html[data-theme="dark"] .map-toolbar button {
+  background: #1a2435 !important;
+  border-color: #334155 !important;
+  color: #e2eaf5 !important;
+}
+html[data-theme="dark"] .map-toolbar button:hover {
+  background: #253145 !important;
+}
+html[data-theme="dark"] .map-toolbar span {
+  background: #334155 !important;
+}
+html[data-theme="dark"] .map-layers {
+  background: #1a2435 !important;
+  border-color: #334155 !important;
+  color: #e2eaf5 !important;
+}
+html[data-theme="dark"] .map-legend {
+  background: rgba(26, 36, 53, 0.95) !important;
+  border-color: #334155 !important;
+  color: #e2eaf5 !important;
+}
+
+/* ================================================================
+   ECMWF hover popup — protect against broad dark span rule
+   ================================================================ */
+html[data-theme="dark"] .weather-hover-card .weather-hover-title,
+html[data-theme="dark"] .weather-hover-card .weather-hover-cell-val {
+  color: inherit !important;
+}
+html[data-theme="dark"] .weather-hover-card .weather-hover-region {
+  color: #8da4be !important;
+}
+html[data-theme="dark"] .weather-hover-card .weather-hover-cell-lbl {
+  color: #8da4be !important;
 }

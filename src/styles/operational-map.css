@@ -42,11 +42,17 @@
 
 .om-map-zone {
   position: relative;
-  border: 1px solid #dfe4ea;
+  border: 1.5px solid #cbd5e1;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
   border-radius: 12px;
   overflow: hidden;
   background: #eef1f4;
-  min-height: 620px;
+  min-height: 720px;
+  height: calc(100vh - 180px);
+}
+html[data-theme="dark"] .om-map-zone {
+  border-color: #334155;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
 }
 .om-canvas-wrap {
   position: absolute;
@@ -141,18 +147,30 @@
 
 /* ---- Panel lớp dữ liệu ---- */
 .om-panel {
-  border: 1px solid #e1e6ec;
+  border: 1.5px solid #cbd5e1;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
   border-radius: 12px;
   background: #fff;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 190px);
+  height: calc(100vh - 180px);
+  min-height: 720px;
   position: sticky;
   top: 96px;
+  overflow: hidden;
 }
+html[data-theme="dark"] .om-panel {
+  border-color: #334155;
+  background: #1e293b;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+}
+
 .om-panel-section {
   padding: 14px 16px;
   border-bottom: 1px solid #eef0f4;
+}
+html[data-theme="dark"] .om-panel-section {
+  border-bottom-color: #334155;
 }
 .om-panel-section:last-child {
   border-bottom: 0;
@@ -167,6 +185,9 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+}
+html[data-theme="dark"] .om-panel-section h2 {
+  color: #94a3b8;
 }
 .om-panel-section h2 small {
   font-weight: 500;
@@ -200,6 +221,12 @@
 .om-layer-row:hover {
   background: #f4f7fa;
 }
+html[data-theme="dark"] .om-layer-row {
+  color: #f1f5f9;
+}
+html[data-theme="dark"] .om-layer-row:hover {
+  background: #334155;
+}
 .om-layer-row input {
   width: 16px;
   height: 16px;
@@ -224,6 +251,10 @@
   border-radius: 999px;
   padding: 2px 9px;
 }
+html[data-theme="dark"] .om-layer-count {
+  color: #94a3b8;
+  background: #334155;
+}
 .om-layer-row.is-empty .om-layer-name {
   color: #8e99aa;
 }
@@ -237,7 +268,20 @@
 .om-panel-results {
   overflow-y: auto;
   flex: 1;
-  min-height: 0;
+  min-height: 260px;
+  padding: 14px 16px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+.om-panel-results::-webkit-scrollbar {
+  width: 6px;
+}
+.om-panel-results::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+html[data-theme="dark"] .om-panel-results::-webkit-scrollbar-thumb {
+  background-color: #475569;
 }
 .om-panel-none {
   font-size: 13.5px;

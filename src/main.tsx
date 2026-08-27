@@ -25,6 +25,7 @@ import "@/styles/alerts.css";
 import "@/styles/evacuations.css";
 import "@/styles/operational-map.css";
 import "@/styles/operational-insights.css";
+import "@/styles/citizen.css";
 import "@/styles/interface-polish.css";
 import "@/styles/compact-ui.css";
 

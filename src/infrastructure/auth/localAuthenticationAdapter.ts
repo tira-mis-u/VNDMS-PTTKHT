@@ -10,8 +10,9 @@ export interface StorageLike {
   setItem(key: string, value: string): void;
   removeItem(key: string): void;
 }
-const SESSION_KEY = "vndms.auth.session.v2";
-const USERS_KEY = "vndms.auth.users.v2";
+const SESSION_KEY = "vndms.auth.session.v5";
+const USERS_KEY = "vndms.auth.users.v5";
+const CREDENTIALS_KEY = "vndms.auth.credentials.v5";
 async function sha256(value: string) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -19,16 +20,49 @@ async function sha256(value: string) {
     .map((item) => item.toString(16).padStart(2, "0"))
     .join("");
 }
-function safeUsers(storage: StorageLike) {
+function safeUsers(storage: StorageLike): AuthUser[] {
   try {
     const raw = storage.getItem(USERS_KEY);
-    if (!raw) return structuredClone(demoUsers);
+    if (!raw) {
+      storage.setItem(USERS_KEY, JSON.stringify(demoUsers));
+      return structuredClone(demoUsers);
+    }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? (parsed as AuthUser[])
-      : structuredClone(demoUsers);
+    if (!Array.isArray(parsed)) {
+      storage.setItem(USERS_KEY, JSON.stringify(demoUsers));
+      return structuredClone(demoUsers);
+    }
+    // Synchronize canonical usernames from demoUsers definition
+    const synced = parsed.map((user: AuthUser) => {
+      const demo = demoUsers.find((d) => d.id === user.id);
+      if (demo) {
+        return {
+          ...user,
+          username: demo.username,
+          displayName: demo.displayName,
+        };
+      }
+      return user;
+    });
+    demoUsers.forEach((demo) => {
+      if (!synced.some((u) => u.id === demo.id)) {
+        synced.push(structuredClone(demo));
+      }
+    });
+    storage.setItem(USERS_KEY, JSON.stringify(synced));
+    return synced;
   } catch {
     return structuredClone(demoUsers);
+  }
+}
+function safeCredentials(storage: StorageLike) {
+  try {
+    const raw = storage.getItem(CREDENTIALS_KEY);
+    if (!raw) return structuredClone(demoCredentials);
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : structuredClone(demoCredentials);
+  } catch {
+    return structuredClone(demoCredentials);
   }
 }
 export class LocalAuthenticationAdapter implements AuthenticationGateway {
@@ -50,8 +84,9 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
       (item) => item.username.toLowerCase() === username.trim().toLowerCase(),
     );
     const hash = await sha256(password);
+    const credentials = safeCredentials(this.storage);
     const credential = user
-      ? demoCredentials.find((item) => item.userId === user.id)
+      ? credentials.find((item: { userId: string; passwordHash: string }) => item.userId === user.id)
       : null;
     if (!user || !credential || credential.passwordHash !== hash)
       throw new Error("Tên đăng nhập hoặc mật khẩu không chính xác.");
@@ -71,6 +106,52 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
     };
     this.storage.setItem(SESSION_KEY, JSON.stringify(session));
     return { user: structuredClone(user), session };
+  }
+  async register(input: import("../../domain/auth/types").RegisterInput) {
+    const users = safeUsers(this.storage);
+    const trimmedUsername = input.username.trim();
+    if (
+      users.some(
+        (u) => u.username.toLowerCase() === trimmedUsername.toLowerCase(),
+      )
+    ) {
+      throw new Error("Tên đăng nhập này đã được sử dụng.");
+    }
+    const id = `USR-REG-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
+    const nowStr = this.clock().toISOString();
+    const newUser: AuthUser = {
+      id,
+      displayName: input.displayName.trim(),
+      username: trimmedUsername,
+      role: input.role,
+      geographicScope: input.geographicScope ?? {
+        level: "district",
+        code: "HN-TAYHO",
+        name: "Tây Hồ, Hà Nội",
+      },
+      active: true,
+      createdAt: nowStr,
+      updatedAt: nowStr,
+    };
+    const passwordHash = await sha256(input.password);
+    const nextUsers = [...users, newUser];
+    this.saveUsers(nextUsers);
+    const credentials = safeCredentials(this.storage);
+    credentials.push({ userId: id, passwordHash });
+    this.storage.setItem(CREDENTIALS_KEY, JSON.stringify(credentials));
+
+    const issued = this.clock();
+    const expires = new Date(issued.getTime() + 8 * 60 * 60 * 1000);
+    const session: Session = {
+      id: `SES-${this.tokenFactory()}`,
+      token: this.tokenFactory(),
+      userId: newUser.id,
+      issuedAt: issued.toISOString(),
+      expiresAt: expires.toISOString(),
+      lastValidatedAt: issued.toISOString(),
+    };
+    this.storage.setItem(SESSION_KEY, JSON.stringify(session));
+    return { user: structuredClone(newUser), session };
   }
   restoreSession(): SessionValidation {
     const raw = this.storage.getItem(SESSION_KEY);

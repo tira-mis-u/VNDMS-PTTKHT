@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, PanelLeftClose, ShieldCheck, X } from "lucide-react";
 import {
+  citizenNavigationGroups,
   navigationGroups,
   visibleNavigationGroups,
 } from "@/components/navigation/navigationConfig";
@@ -21,14 +22,13 @@ export function AppSidebar({
   const unreadAlerts = store.alerts.filter(
     (alert) => alert.status === "Chưa đọc",
   ).length;
-  // Ẩn hoàn toàn các mục tài khoản không có quyền đọc; route guard vẫn chặn
-  // truy cập trực tiếp bằng URL (AccessDeniedPage).
-  const groups = visibleNavigationGroups((permission) =>
-    store.can(permission),
+  const groups = visibleNavigationGroups(
+    (permission) => store.can(permission),
+    store.role,
   );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
-      navigationGroups.map((group) => [group.label, !group.admin]),
+      [...navigationGroups, ...citizenNavigationGroups].map((group) => [group.label, !group.admin]),
     ),
   );
   const go = (label: string, path?: string) => {

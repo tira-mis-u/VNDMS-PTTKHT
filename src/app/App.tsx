@@ -18,6 +18,11 @@ const CommandCenter = lazy(() =>
     default: module.CommandCenter,
   })),
 );
+const CitizenPortal = lazy(() =>
+  import("@/features/citizen").then((module) => ({
+    default: module.CitizenPortal,
+  })),
+);
 const OperationalMapWorkspacePage = lazy(() =>
   import("@/features/operational-map").then((module) => ({
     default: module.OperationalMapWorkspacePage,
@@ -272,9 +277,11 @@ export default function App() {
           // Vai trò không có quyền xem Trung tâm điều hành được đưa thẳng tới
           // module đầu tiên được phân quyền thay vì gặp màn hình từ chối.
           navigate(
-            firstAccessibleNavPath(
-              (permission) => authorize(user, permission).allowed,
-            ),
+            user.role === "citizen"
+              ? "/"
+              : firstAccessibleNavPath(
+                  (permission) => authorize(user, permission).allowed,
+                ),
           )
         }
       />
@@ -282,8 +289,14 @@ export default function App() {
   const selectModule = (label: string, path?: string) =>
     navigate(path ?? placeholderPath(label));
   let content;
-  if (route.name === "login") content = <CommandCenter navigate={navigate} />;
-  else if (route.name === "profile") content = <ProfilePage />;
+  if (route.name === "login" || route.name === "command-center") {
+    content =
+      store.currentUser.role === "citizen" ? (
+        <CitizenPortal />
+      ) : (
+        <CommandCenter navigate={navigate} />
+      );
+  } else if (route.name === "profile") content = <ProfilePage />;
   else if (!store.can(requiredPermission(route)))
     content = (
       <AccessDeniedPage
@@ -291,8 +304,6 @@ export default function App() {
         reason={`Tài khoản ${store.currentUser.displayName} chưa được cấp quyền “${permissionLabel(requiredPermission(route))}” cho chức năng này.`}
       />
     );
-  else if (route.name === "command-center")
-    content = <CommandCenter navigate={navigate} />;
   else if (route.name === "incident-list")
     content = <IncidentListPage navigate={navigate} />;
   else if (route.name === "incident-detail")

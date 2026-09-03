@@ -20,6 +20,7 @@ import {
   loginUser,
   logoutUser,
   registerUser,
+  resetUserPassword,
   setUserActive,
 } from "@/application/auth/authUseCases";
 
@@ -139,6 +140,18 @@ export function useOperationalSecurity() {
       ok: outcome.ok,
       error: outcome.error,
       user: outcome.ok && outcome.user ? outcome.user : undefined,
+    };
+  };
+  const resetPassword = async (usernameOrPhone: string, newPassword: string) => {
+    const outcome = await resetUserPassword(authGateway, usernameOrPhone, newPassword);
+    appendSecurityAudit(outcome.audit);
+    if (outcome.ok) {
+      setUsers(authGateway.listUsers());
+    }
+    return {
+      ok: outcome.ok,
+      error: outcome.error,
+      user: outcome.user,
     };
   };
   const logout = () => {
@@ -261,7 +274,29 @@ export function useOperationalSecurity() {
         timestamp: nowStr,
         geographicScope: input.geographicScope?.name || currentScopeName,
         result: "SUCCESS",
-        reason: "Người dùng cập nhật thông tin cá nhân và phạm vi địa lý.",
+        reason: `Người dùng ${currentUser.displayName} (@${currentUser.username}) đã tự cập nhật thông tin cá nhân/liên hệ/địa bàn.`,
+      }),
+    );
+  };
+  const recordSecurityAudit = (
+    action: import("@/domain/auth/types").AuditAction,
+    reason: string,
+    resourceType = "Security",
+    resourceId: string | null = null,
+  ) => {
+    if (!currentUser) return;
+    appendSecurityAudit(
+      createSecurityAudit({
+        actorId: currentUser.id,
+        actorName: currentUser.displayName,
+        role: currentUser.role,
+        action,
+        resourceType,
+        resourceId,
+        timestamp: new Date().toISOString(),
+        geographicScope: currentScopeName,
+        result: "SUCCESS",
+        reason,
       }),
     );
   };
@@ -313,10 +348,12 @@ export function useOperationalSecurity() {
     enforcePermission,
     login,
     register,
+    resetPassword,
     logout,
     updateUserActive,
     updateUserRole,
     updateUserScope,
     updateSelfProfile,
+    recordSecurityAudit,
   };
 }

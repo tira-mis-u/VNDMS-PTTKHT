@@ -31,6 +31,7 @@ import {
   fetchEcmwfWeatherData,
   type StationForecast,
 } from "@/infrastructure/weather/ecmwfWeatherService";
+import { pushLiveLocationPing } from "@/infrastructure/redis/redisClient";
 import type { SosSeverity } from "@/domain/sos/types";
 
 /* ─────────────── Citizen Interactive Map Component (Google Maps + Fallback) ─────────────── */
@@ -401,6 +402,19 @@ export function CitizenPortal() {
           disabledCount: 0,
           severity: "Đe dọa tính mạng",
           communicationStatus: "Kết nối",
+        });
+
+        // Đồng bộ tọa độ khẩn cấp vào Redis cho toàn hệ thống
+        pushLiveLocationPing({
+          id: user.id,
+          type: "citizen",
+          role: "citizen",
+          name: user.displayName,
+          coordinates: coords,
+          phone: user.phone,
+          status: "CẢNH BÁO KHẨN CẤP (1-CHẠM)",
+          isPanicSOS: true,
+          timestamp: Date.now(),
         });
 
         setLocating(false);

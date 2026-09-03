@@ -1,7 +1,7 @@
 import { Select as UiSelect } from "@/components/ui/Select";
 import { useEffect, useMemo, useState } from "react";
-import { Crosshair, Layers3, Search, X } from "lucide-react";
-import { Badge, Button, PageSectionHeader, Input } from "@/components/ui";
+import { Crosshair, Layers3, Search, Thermometer, X } from "lucide-react";
+import { PageSectionHeader, Input } from "@/components/ui";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import {
   UNIFIED_MAP_LAYER_CONFIG,
@@ -14,12 +14,15 @@ import {
   getUnifiedMapRoutes,
   visibleUnifiedMapRoutes,
   type UnifiedMapKind,
-  type UnifiedMapPoint,
   type UnifiedMapSeverity,
 } from "@/application/map/unifiedMapQueries";
 import { UnifiedMapCanvas } from "../components/UnifiedMapCanvas";
 import { EntityDetailDrawer } from "../components/EntityDetailDrawer";
 import { EcmwfWeatherPanel } from "@/features/command-center/components/EcmwfWeatherPanel";
+import {
+  subscribeWeatherMetadata,
+  type WeatherMetadata,
+} from "@/infrastructure/weather/ecmwfWeatherService";
 
 const SEVERITY_OPTIONS: Array<"" | UnifiedMapSeverity> = [
   "",
@@ -36,6 +39,13 @@ export function OperationalMapWorkspacePage({
   navigate: (path: string) => void;
   focus: string | null;
 }) {
+  const [weatherMeta, setWeatherMeta] = useState<WeatherMetadata | null>(null);
+
+  useEffect(() => {
+    const unsub = subscribeWeatherMetadata(setWeatherMeta);
+    return unsub;
+  }, []);
+
   const store = useOperationalState();
   const {
     incidents,
@@ -89,7 +99,6 @@ export function OperationalMapWorkspacePage({
   const [search, setSearch] = useState("");
   const [severity, setSeverity] = useState<"" | UnifiedMapSeverity>("");
   const [layers, setLayers] = useState(defaultUnifiedMapLayers);
-  const [panelOpen, setPanelOpen] = useState(true);
   const [selected, setSelected] = useState<{
     kind: UnifiedMapKind;
     id: string;
@@ -134,15 +143,6 @@ export function OperationalMapWorkspacePage({
   const toggleLayer = (kind: UnifiedMapKind) =>
     setLayers((current) => ({ ...current, [kind]: !current[kind] }));
 
-  const jumpTo = (point: UnifiedMapPoint) => {
-    setSelected({ kind: point.kind, id: point.id });
-    setLayers((current) =>
-      current[point.kind] ? current : { ...current, [point.kind]: true },
-    );
-    setFocusKey((key) => key + 1);
-    setPendingFocus(point.id);
-  };
-
   // focusTarget override dành cho click từ danh sách (không đổi URL).
   const [pendingFocus, setPendingFocus] = useState<string | null>(null);
   const activeFocusTarget = pendingFocus
@@ -164,20 +164,77 @@ export function OperationalMapWorkspacePage({
               <i aria-hidden="true" />
               <span>Dữ liệu vận hành được phân quyền · {formattedDataStamp}</span>
             </span>
-            <Button
-              variant="secondary"
-              onClick={() => setPanelOpen((open) => !open)}
-              aria-expanded={panelOpen}
-              aria-controls="om-layer-panel"
-            >
-              <Layers3 size={15} />
-              Lớp dữ liệu
-            </Button>
           </div>
         }
       />
 
-      <div className={`om-layout${panelOpen ? "" : " om-panel-collapsed"}`}>
+      {/* ── Bộ lọc & Lớp dữ liệu — thanh ngang trên bản đồ ── */}
+      <div className="om-filter-bar" role="toolbar" aria-label="Bộ lọc và lớp dữ liệu bản đồ">
+        {/* Hàng 1: Tìm kiếm + Lọc mức ưu tiên + Tổng số đối tượng */}
+        <div className="om-filter-bar-top">
+          <div className="om-filter-search-box">
+            <label className="ui-search incident-search" style={{ margin: 0, width: "100%" }}>
+              <Search size={14} />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Tìm theo mã, tên hoặc khu vực…"
+                aria-label="Tìm đối tượng trên bản đồ"
+              />
+              {search && (
+                <button type="button" onClick={() => setSearch("")} aria-label="Xóa tìm kiếm">
+                  <X size={12} />
+                </button>
+              )}
+            </label>
+          </div>
+
+          <UiSelect
+            value={severity}
+            onChange={(e) => setSeverity(e.target.value as "" | UnifiedMapSeverity)}
+            aria-label="Lọc theo mức ưu tiên"
+            className="om-filter-severity-select"
+          >
+            {SEVERITY_OPTIONS.map((option) => (
+              <option key={option || "all"} value={option}>
+                {option === "" ? "Tất cả mức ưu tiên" : option}
+              </option>
+            ))}
+          </UiSelect>
+
+          <span className="om-filter-count-badge">
+            <b>{visibleTotal}</b> đối tượng hiển thị
+          </span>
+        </div>
+
+        {/* Hàng 2: Lớp dữ liệu tự động xuống dòng (flex-wrap: wrap), không tràn viền */}
+        <div className="om-filter-bar-bottom">
+          <span className="om-filter-bar-label">Lớp:</span>
+          <div className="om-layer-chips-wrap">
+            {UNIFIED_MAP_LAYER_CONFIG.map((layer) => {
+              const count = totals[layer.key];
+              const active = layers[layer.key];
+              return (
+                <button
+                  key={layer.key}
+                  type="button"
+                  onClick={() => toggleLayer(layer.key)}
+                  className={`om-layer-chip${active ? " active" : ""}${count === 0 ? " empty" : ""}`}
+                  aria-pressed={active}
+                  title={count === 0 ? "Không có dữ liệu" : `${count} đối tượng`}
+                >
+                  <i style={{ background: layer.color }} />
+                  <span>{layer.label}</span>
+                  {count > 0 && <span className="om-chip-count">{count}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bản đồ full-width ── */}
+      <div className="om-layout">
         <div className="om-map-zone">
           <UnifiedMapCanvas
             points={visiblePoints}
@@ -186,6 +243,31 @@ export function OperationalMapWorkspacePage({
             focusTarget={activeFocusTarget ?? null}
             onSelect={setSelected}
           />
+
+          {/* Temperature legend — always visible, bottom-left */}
+          <div className="om-temp-legend" role="region" aria-label="Trường nhiệt độ ECMWF-IFS">
+            <div className="om-temp-legend-title">
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                <Thermometer size={14} color="#f87171" /> Trường nhiệt độ ECMWF-IFS
+              </span>
+              <span style={{ fontSize: "10px", color: "#94a3b8" }}>Nội suy liên tục (°C)</span>
+            </div>
+            {weatherMeta && (
+              <div style={{ fontSize: "9.5px", marginTop: "2px", marginBottom: "4px", color: weatherMeta.isFallback ? "#b45309" : "#64748b", fontWeight: 500 }}>
+                {weatherMeta.statusText}
+              </div>
+            )}
+            <div className="om-temp-bar" />
+            <div className="om-temp-ticks">
+              <span>18°</span>
+              <span>22°</span>
+              <span>26°</span>
+              <span>30°</span>
+              <span>34°</span>
+            </div>
+          </div>
+
+          {/* Map symbol legend — bottom-left below temp legend */}
           <div className="om-legend" aria-label="Chú giải bản đồ">
             {UNIFIED_MAP_LAYER_CONFIG.map((layer) =>
               layers[layer.key] && totals[layer.key] > 0 ? (
@@ -194,141 +276,30 @@ export function OperationalMapWorkspacePage({
                 </span>
               ) : null,
             )}
-            <span className="om-legend-line">
-              <b /> Tuyến sơ tán
-            </span>
-            <span className="om-legend-line om-legend-line-blocked">
-              <b /> Tuyến bị chặn / hạn chế
-            </span>
+            <span className="om-legend-line"><b /> Tuyến sơ tán</span>
+            <span className="om-legend-line om-legend-line-blocked"><b /> Tuyến bị chặn / hạn chế</span>
           </div>
+
           {visibleTotal === 0 && (
             <div className="om-empty" role="status">
               <Crosshair size={18} />
-              <p>
-                Không có đối tượng nào khớp bộ lọc trong phạm vi quyền đọc.
-              </p>
+              <p>Không có đối tượng nào khớp bộ lọc trong phạm vi quyền đọc.</p>
             </div>
           )}
           {detail && (
             <EntityDetailDrawer
               detail={detail}
-              onClose={() => {
-                setSelected(null);
-                setPendingFocus(null);
-              }}
+              onClose={() => { setSelected(null); setPendingFocus(null); }}
               onOpenDetail={navigate}
             />
           )}
         </div>
-
-        <aside
-          id="om-layer-panel"
-          className="om-panel"
-          aria-label="Bảng lớp dữ liệu và bộ lọc"
-        >
-          <div className="om-panel-section">
-            <h2>Bộ lọc đối tượng</h2>
-            <label className="ui-search incident-search om-search">
-              <Search size={15} />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Tìm theo mã, tên hoặc khu vực…"
-                aria-label="Tìm đối tượng trên bản đồ"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  aria-label="Xóa tìm kiếm"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </label>
-            <UiSelect
-              value={severity}
-              onChange={(event) =>
-                setSeverity(event.target.value as "" | UnifiedMapSeverity)
-              }
-              aria-label="Lọc theo mức ưu tiên"
-            >
-              {SEVERITY_OPTIONS.map((option) => (
-                <option key={option || "all"} value={option}>
-                  {option === "" ? "Tất cả mức ưu tiên" : option}
-                </option>
-              ))}
-            </UiSelect>
-          </div>
-
-          <div className="om-panel-section">
-            <h2>
-              Lớp dữ liệu <small>{visibleTotal} đối tượng hiển thị</small>
-            </h2>
-            <ul className="om-layer-list" role="list">
-              {UNIFIED_MAP_LAYER_CONFIG.map((layer) => {
-                const count = totals[layer.key];
-                const active = layers[layer.key];
-                return (
-                  <li key={layer.key}>
-                    <label
-                      className={`om-layer-row${count === 0 ? " is-empty" : ""}`}
-                    >
-                      <Input
-                        type="checkbox"
-                        checked={active}
-                        onChange={() => toggleLayer(layer.key)}
-                      />
-                      <i style={{ background: layer.color }} />
-                      <span className="om-layer-name">{layer.label}</span>
-                      <span className="om-layer-count">{count}</span>
-                    </label>
-                    {count === 0 && (
-                      <p className="om-layer-empty">
-                        Không có dữ liệu trong phạm vi quyền
-                      </p>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-
-          <div className="om-panel-section om-panel-results">
-            <h2>Kết quả trên bản đồ</h2>
-            {visiblePoints.length === 0 ? (
-              <p className="om-panel-none">
-                Không có đối tượng nào — đổi bộ lọc hoặc bật thêm lớp.
-              </p>
-            ) : (
-              <ul className="om-result-list" role="list">
-                {visiblePoints.map((point) => (
-                  <li key={`${point.kind}:${point.id}`}>
-                    <button
-                      type="button"
-                      className={`om-result-row${
-                        selected?.id === point.id ? " active" : ""
-                      }`}
-                      onClick={() => jumpTo(point)}
-                    >
-                      <span className="om-result-head">
-                        <b>{point.code}</b>
-                        <Badge tone={point.tone}>{point.status}</Badge>
-                      </span>
-                      <span className="om-result-title">{point.title}</span>
-                      <span className="om-result-area">{point.area}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </aside>
       </div>
 
-      <div style={{ marginTop: "24px" }}>
+      <div style={{ marginTop: "20px" }}>
         <EcmwfWeatherPanel />
       </div>
     </div>
   );
 }
+

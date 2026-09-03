@@ -10,7 +10,9 @@ import {
 } from "lucide-react";
 import {
   fetchEcmwfWeatherData,
+  subscribeWeatherMetadata,
   type StationForecast,
+  type WeatherMetadata,
 } from "@/infrastructure/weather/ecmwfWeatherService";
 import { Badge, Button } from "@/components/ui";
 
@@ -29,10 +31,16 @@ export function EcmwfWeatherPanel() {
   const [selectedStationId, setSelectedStationId] = useState<string>("HAN");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [weatherMeta, setWeatherMeta] = useState<WeatherMetadata | null>(null);
 
-  const loadData = async () => {
+  useEffect(() => {
+    const unsub = subscribeWeatherMetadata(setWeatherMeta);
+    return unsub;
+  }, []);
+
+  const loadData = async (force = false) => {
     try {
-      const data = await fetchEcmwfWeatherData();
+      const data = await fetchEcmwfWeatherData(force);
       setStations(data);
     } catch {
       // ignore
@@ -48,7 +56,7 @@ export function EcmwfWeatherPanel() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadData();
+    loadData(true);
   };
 
   const filteredStations =
@@ -85,8 +93,28 @@ export function EcmwfWeatherPanel() {
             Dự báo Khí tượng & Thủy văn ECMWF Toàn quốc (10 Ngày)
           </span>
           <small>
-            Mô hình toàn cầu ECMWF-IFS · 20 trạm quan trắc quốc gia & hải đảo · Đồng bộ hiển thị trực tiếp trên Bản đồ số NDAMapVN
+            Mô hình toàn cầu ECMWF-IFS (Open-Meteo) · 20 trạm quan trắc quốc gia & hải đảo · Đồng bộ hiển thị trực tiếp trên Bản đồ số NDAMapVN
           </small>
+          {weatherMeta && (
+            <div style={{ marginTop: "4px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  background: weatherMeta.isFallback ? "#fef3c7" : weatherMeta.source === "cache" ? "#f1f5f9" : "#dcfce7",
+                  color: weatherMeta.isFallback ? "#92400e" : weatherMeta.source === "cache" ? "#334155" : "#166534",
+                  border: `1px solid ${weatherMeta.isFallback ? "#fde68a" : weatherMeta.source === "cache" ? "#cbd5e1" : "#bbf7d0"}`,
+                }}
+              >
+                {weatherMeta.statusText}
+              </span>
+            </div>
+          )}
         </div>
         <Button
           variant="secondary"
@@ -103,10 +131,10 @@ export function EcmwfWeatherPanel() {
       <div
         style={{
           display: "flex",
+          flexWrap: "wrap",
           gap: "6px",
           padding: "8px 14px",
           borderBottom: "1px solid var(--border)",
-          overflowX: "auto",
           background: "var(--surface-muted, #f8fafc)",
         }}
       >

@@ -58,7 +58,9 @@ export type AuditAction =
   | "USER_ACTIVATED"
   | "USER_DEACTIVATED"
   | "USER_ROLE_CHANGED"
-  | "USER_SCOPE_CHANGED";
+  | "USER_SCOPE_CHANGED"
+  | "PANIC_ALERT_TRIGGERED"
+  | "LIVE_BEACON_TOGGLED";
 export interface RegisterInput {
   displayName: string;
   username: string;

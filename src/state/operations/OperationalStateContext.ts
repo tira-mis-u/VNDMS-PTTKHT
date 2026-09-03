@@ -137,6 +137,10 @@ export interface OperationalStore {
   register: (
     input: import("@/domain/auth/types").RegisterInput,
   ) => Promise<{ ok: boolean; error: string; user?: AuthUser }>;
+  resetPassword: (
+    usernameOrPhone: string,
+    newPassword: string,
+  ) => Promise<{ ok: boolean; error: string; user?: AuthUser }>;
   logout: () => void;
   updateUserActive: (userId: string, active: boolean) => void;
   updateUserRole: (userId: string, role: Role) => void;
@@ -146,6 +150,12 @@ export interface OperationalStore {
     geographicScope?: GeographicScope;
     organization?: string;
   }) => void;
+  recordSecurityAudit: (
+    action: import("@/domain/auth/types").AuditAction,
+    reason: string,
+    resourceType?: string,
+    resourceId?: string | null,
+  ) => void;
   createIncident: (data: CreateIncidentInput) => string;
   updateStatus: (id: string, status: IncidentStatus) => void;
   updateSeverity: (id: string, severity: IncidentSeverity) => void;

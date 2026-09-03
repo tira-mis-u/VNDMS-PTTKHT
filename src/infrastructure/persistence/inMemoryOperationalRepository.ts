@@ -7,27 +7,27 @@ import {
   initialTeamEvents,
   initialTeams,
   scenarioMetadata,
-} from "../../data/scenarios/red-river-flood/operationalSeed";
+} from "../../data/scenarios/yagi-2024-national/operationalSeed";
 import {
   initialEvacuationEvents,
   initialEvacuationOperations,
   initialShelterEvents,
   initialShelters,
-} from "../../data/scenarios/red-river-flood/shelterEvacuationSeed";
+} from "../../data/scenarios/yagi-2024-national/shelterEvacuationSeed";
 import {
   initialSosEvents,
   initialSosRequests,
-} from "../../data/scenarios/red-river-flood/sosSeed";
+} from "../../data/scenarios/yagi-2024-national/sosSeed";
 import {
   initialDamageAssessments,
   initialRecoveryEvents,
   initialRecoveryProjects,
-} from "../../data/scenarios/red-river-flood/recoverySeed";
+} from "../../data/scenarios/yagi-2024-national/recoverySeed";
 import {
   initialPlaybookEvents,
   initialPlaybookExecutions,
   initialPlaybooks,
-} from "../../data/scenarios/red-river-flood/playbookSeed";
+} from "../../data/scenarios/yagi-2024-national/playbookSeed";
 import {
   initialInventory,
   initialReliefEvents,
@@ -35,7 +35,7 @@ import {
   initialReservations,
   initialShipments,
   initialWarehouses,
-} from "../../data/scenarios/red-river-flood/reliefSeed";
+} from "../../data/scenarios/yagi-2024-national/reliefSeed";
 
 function clone<T>(value: T): T {
   return structuredClone(value);

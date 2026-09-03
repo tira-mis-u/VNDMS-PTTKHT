@@ -7,7 +7,6 @@ import {
   MapPinned,
   Menu,
   Moon,
-  ShieldCheck,
   Sun,
   UserRound,
 } from "lucide-react";
@@ -22,6 +21,7 @@ import {
   loadProfileAvatar,
   PROFILE_AVATAR_CHANGED,
 } from "@/features/auth/profileAvatar";
+import { LiveTrackingQuickBar } from "./LiveTrackingQuickBar";
 export function AppHeader({
   openMobile,
   navigate,
@@ -95,8 +95,12 @@ export function AppHeader({
         >
           <Menu size={24} />
         </button>
-        <div className="brand-mark">
-          <ShieldCheck size={26} />
+        <div className="brand-mark" style={{ overflow: "hidden", background: "transparent" }}>
+          <img
+            src="/earthIcon.png"
+            alt="VNDMS"
+            style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "8px" }}
+          />
         </div>
         <div className="brand-copy">
           <strong>VNDMS</strong>
@@ -104,6 +108,8 @@ export function AppHeader({
         </div>
       </div>
       <div className="topbar-actions">
+        <LiveTrackingQuickBar />
+        <div className="topbar-divider" />
         <Button
           variant="ghost"
           size="icon"

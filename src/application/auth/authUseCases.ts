@@ -121,6 +121,53 @@ export async function registerUser(
     };
   }
 }
+export async function resetUserPassword(
+  gateway: AuthenticationGateway,
+  usernameOrPhone: string,
+  newPassword: string,
+  now = () => new Date(),
+): Promise<{ ok: boolean; error: string; audit: SecurityAuditEvent; user?: AuthUser }> {
+  const timestamp = now().toISOString();
+  try {
+    const result = await gateway.resetPassword(usernameOrPhone, newPassword);
+    return {
+      ok: true,
+      error: "",
+      user: result.user,
+      audit: createSecurityAudit({
+        actorId: result.user.id,
+        actorName: result.user.displayName,
+        role: result.user.role,
+        action: "MUTATION_AUTHORIZED",
+        resourceType: "User",
+        resourceId: result.user.id,
+        timestamp,
+        geographicScope: result.user.geographicScope.name,
+        result: "SUCCESS",
+        reason: "Đặt lại mật khẩu tài khoản thành công.",
+      }),
+    };
+  } catch (error) {
+    const reason =
+      error instanceof Error ? error.message : "Đặt lại mật khẩu thất bại.";
+    return {
+      ok: false,
+      error: reason,
+      audit: createSecurityAudit({
+        actorId: null,
+        actorName: usernameOrPhone || "Không xác định",
+        role: null,
+        action: "LOGIN_FAILED",
+        resourceType: "User",
+        resourceId: null,
+        timestamp,
+        geographicScope: "Không xác định",
+        result: "FAILED",
+        reason,
+      }),
+    };
+  }
+}
 export function restoreUserSession(
   gateway: AuthenticationGateway,
 ): SessionValidation {

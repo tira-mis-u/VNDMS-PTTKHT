@@ -101,11 +101,16 @@ export default function SosOperationalMap({
         new Marker({ element: el, anchor: "center" }).setLngLat(coords).addTo(map);
       };
 
+      const incId = incident?.id;
+      const taskId = task?.id;
+      const teamId = team?.id;
+      const shelterId = shelter?.id;
+
       addMLMarker(sos.location.coordinates, "sos", sos.code);
-      if (incident) addMLMarker(incident.location.coordinates, "incident", incident.id, () => navigate(`/incidents/${incident.id}`));
-      if (task) addMLMarker(task.coordinates, "task", task.id, () => navigate(`/tasks/${task.id}`));
-      if (team) addMLMarker(team.coordinates, "team", team.id, () => navigate(`/teams/${team.id}`));
-      if (shelter) addMLMarker(shelter.coordinates, "shelter", shelter.id, () => navigate(`/shelters/${shelter.id}`));
+      if (incident) addMLMarker(incident.location.coordinates, "incident", incident.id, () => { if (incId) navigate(`/incidents/${incId}`); });
+      if (task) addMLMarker(task.coordinates, "task", task.id, () => { if (taskId) navigate(`/tasks/${taskId}`); });
+      if (team) addMLMarker(team.coordinates, "team", team.id, () => { if (teamId) navigate(`/teams/${teamId}`); });
+      if (shelter) addMLMarker(shelter.coordinates, "shelter", shelter.id, () => { if (shelterId) navigate(`/shelters/${shelterId}`); });
 
       if (evacuation) {
         if (!map.getSource("sos-evac-route")) {

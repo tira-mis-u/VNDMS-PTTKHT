@@ -19,8 +19,15 @@ const auditActionLabels: Record<string, string> = {
   LOGOUT: "Đăng xuất",
   SESSION_EXPIRED: "Phiên làm việc hết hạn",
   SESSION_RESTORED: "Khôi phục phiên làm việc",
-  MUTATION_AUTHORIZED: "Cho phép thay đổi dữ liệu",
+  MUTATION_AUTHORIZED: "Cập nhật thông tin tài khoản",
   PERMISSION_DENIED: "Từ chối quyền thao tác",
+  USER_REGISTERED: "Đăng ký tài khoản mới",
+  USER_ACTIVATED: "Kích hoạt tài khoản",
+  USER_DEACTIVATED: "Vô hiệu hóa tài khoản",
+  USER_ROLE_CHANGED: "Thay đổi vai trò",
+  USER_SCOPE_CHANGED: "Thay đổi phạm vi địa bàn",
+  PANIC_ALERT_TRIGGERED: "Bật cảnh báo 1 chạm (SOS Panic)",
+  LIVE_BEACON_TOGGLED: "Bật/Tắt phát định vị Realtime",
 };
 const auditResultLabels: Record<string, string> = {
   SUCCESS: "Thành công",

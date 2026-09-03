@@ -153,6 +153,30 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
     this.storage.setItem(SESSION_KEY, JSON.stringify(session));
     return { user: structuredClone(newUser), session };
   }
+  async resetPassword(usernameOrPhone: string, newPassword: string) {
+    const users = safeUsers(this.storage);
+    const target = usernameOrPhone.trim().toLowerCase();
+    const user = users.find(
+      (u) =>
+        u.username.toLowerCase() === target ||
+        (u.phone && u.phone.trim() === target),
+    );
+    if (!user) {
+      throw new Error("Không tìm thấy tài khoản với tên đăng nhập hoặc số điện thoại này.");
+    }
+    const passwordHash = await sha256(newPassword);
+    const credentials = safeCredentials(this.storage);
+    const index = credentials.findIndex((c: { userId: string }) => c.userId === user.id);
+    if (index >= 0) {
+      credentials[index].passwordHash = passwordHash;
+    } else {
+      credentials.push({ userId: user.id, passwordHash });
+    }
+    this.storage.setItem(CREDENTIALS_KEY, JSON.stringify(credentials));
+    user.updatedAt = this.clock().toISOString();
+    this.saveUsers(users);
+    return { user: structuredClone(user) };
+  }
   restoreSession(): SessionValidation {
     const raw = this.storage.getItem(SESSION_KEY);
     if (!raw)

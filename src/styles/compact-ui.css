@@ -400,24 +400,22 @@ html[data-theme="dark"] :is(.breadcrumbs, .analytics-eyebrow, .ai-eyebrow, .simu
   color: #82adf5;
 }
 
-/* Bản đồ và bảng lớp dữ liệu dùng chung một hàng co giãn, cùng mép trên/dưới. */
+/* Bản đồ tác nghiệp full-width với chiều cao cố định tối ưu theo viewport */
 .om-layout {
-  --om-workspace-height: clamp(560px, calc(100dvh - 250px), 700px);
-  align-items: stretch;
-  grid-auto-rows: var(--om-workspace-height);
+  width: 100%;
+  height: clamp(580px, calc(100vh - 220px), 780px);
+  position: relative;
+  display: block;
 }
-.om-map-zone,
-.om-panel {
-  min-height: 0;
+.om-map-zone {
+  width: 100%;
   height: 100%;
-  max-height: none;
+  min-height: 580px;
+  position: relative;
 }
-.om-panel { position: relative; top: auto; }
-.om-panel-results { min-height: 0; overflow-y: auto; }
 @media (max-width: 980px) {
-  .om-layout { grid-auto-rows: auto; }
-  .om-map-zone { height: clamp(480px, 62dvh, 600px); min-height: 0; }
-  .om-panel { height: auto; min-height: 0; max-height: min(680px, 76dvh); }
+  .om-layout { height: clamp(480px, 65vh, 600px); }
+  .om-map-zone { min-height: 480px; }
 }
 
 /* Badges and worklists may scroll, but labels must never overlap columns. */

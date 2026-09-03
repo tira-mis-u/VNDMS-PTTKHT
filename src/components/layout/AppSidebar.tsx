@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, PanelLeftClose, ShieldCheck, X } from "lucide-react";
+import { ChevronDown, PanelLeftClose, X } from "lucide-react";
 import {
   citizenNavigationGroups,
   navigationGroups,
@@ -48,8 +48,12 @@ export function AppSidebar({
         className={`sidebar ${collapsed ? "sidebar-collapsed" : ""} ${mobileOpen ? "sidebar-mobile-open" : ""}`}
       >
         <div className="mobile-sidebar-top">
-          <div className="brand-mark">
-            <ShieldCheck size={22} />
+          <div className="brand-mark" style={{ overflow: "hidden", background: "transparent" }}>
+            <img
+              src="/earthIcon.png"
+              alt="VNDMS"
+              style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "8px" }}
+            />
           </div>
           <strong>VNDMS</strong>
           <button onClick={closeMobile} aria-label="Đóng thanh điều hướng">

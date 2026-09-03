@@ -2,9 +2,11 @@ import { Input } from "@/components/ui";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   AlertCircle,
+  ArrowLeft,
   CheckCircle2,
   Eye,
   EyeOff,
+  KeyRound,
   LockKeyhole,
   LogIn,
   Moon,
@@ -17,10 +19,16 @@ import {
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import type { AuthUser } from "@/domain/auth/types";
 
-type AuthMode = "login" | "register";
+type AuthMode = "login" | "register" | "forgot";
 
 /* ─────────────── Login form ─────────────── */
-function LoginForm({ onSuccess }: { onSuccess: (user: AuthUser) => void }) {
+function LoginForm({
+  onSuccess,
+  onForgot,
+}: {
+  onSuccess: (user: AuthUser) => void;
+  onForgot: () => void;
+}) {
   const { login } = useOperationalState();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -76,10 +84,27 @@ function LoginForm({ onSuccess }: { onSuccess: (user: AuthUser) => void }) {
       </label>
 
       <label className="auth-field-label">
-        <span className="label-text">
-          Mật khẩu <b className="req">*</b>
-        </span>
-        <span className="input-with-icon">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+          <span className="label-text">
+            Mật khẩu <b className="req">*</b>
+          </span>
+          <button
+            type="button"
+            onClick={onForgot}
+            style={{
+              background: "none",
+              border: 0,
+              color: "#2563eb",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            Quên mật khẩu?
+          </button>
+        </div>
+        <span className="input-with-icon" style={{ marginTop: "4px" }}>
           <LockKeyhole size={16} />
           <Input
             id="login-password"
@@ -113,6 +138,185 @@ function LoginForm({ onSuccess }: { onSuccess: (user: AuthUser) => void }) {
       <small className="local-security-note">
         Phiên đăng nhập có hiệu lực 8 giờ. Mọi thao tác được ghi nhật ký bảo mật.
       </small>
+    </form>
+  );
+}
+
+/* ─────────────── Forgot Password Form ─────────────── */
+function ForgotPasswordForm({
+  onBackToLogin,
+}: {
+  onBackToLogin: () => void;
+}) {
+  const { resetPassword } = useOperationalState();
+  const [accountIdentifier, setAccountIdentifier] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const passwordMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const valid = accountIdentifier.trim().length >= 2 && newPassword.length >= 6 && newPassword === confirmPassword;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!valid) return;
+    setBusy(true);
+    const result = await resetPassword(accountIdentifier, newPassword);
+    setBusy(false);
+    if (result.ok) {
+      setSuccess(true);
+    } else {
+      setError(result.error);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="login-form-inner" style={{ textAlign: "center", padding: "20px 0" }}>
+        <div style={{
+          width: "56px",
+          height: "56px",
+          borderRadius: "50%",
+          background: "#ecfdf3",
+          color: "#16a34a",
+          display: "grid",
+          placeItems: "center",
+          margin: "0 auto 16px"
+        }}>
+          <CheckCircle2 size={32} />
+        </div>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px" }}>Đặt lại mật khẩu thành công!</h2>
+        <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "24px" }}>
+          Mật khẩu mới đã được cập nhật cho tài khoản <b>{accountIdentifier}</b>. Bạn có thể sử dụng ngay để đăng nhập vào VNDMS.
+        </p>
+        <button
+          type="button"
+          className="login-submit"
+          onClick={onBackToLogin}
+          style={{ width: "100%" }}
+        >
+          <LogIn size={16} /> Quay lại Đăng nhập
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form className="login-form-inner" onSubmit={submit} id="forgot-password-form">
+      <header className="auth-form-header">
+        <span style={{ background: "#fef3c7", color: "#d97706" }}>
+          <KeyRound size={20} />
+        </span>
+        <div>
+          <h2>Quên mật khẩu</h2>
+          <p>Nhập thông tin tài khoản để thiết lập mật khẩu mới.</p>
+        </div>
+      </header>
+
+      {error && (
+        <div className="login-error" role="alert">
+          <AlertCircle size={15} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <label className="auth-field-label">
+        <span className="label-text">
+          Tên đăng nhập hoặc Số điện thoại <b className="req">*</b>
+        </span>
+        <span className="input-with-icon">
+          <UserRound size={16} />
+          <Input
+            id="forgot-identifier"
+            value={accountIdentifier}
+            onChange={(e) => setAccountIdentifier(e.target.value)}
+            placeholder="Nhập username hoặc số điện thoại"
+            required
+            autoFocus
+          />
+        </span>
+      </label>
+
+      <label className="auth-field-label">
+        <span className="label-text">
+          Mật khẩu mới (tối thiểu 6 ký tự) <b className="req">*</b>
+        </span>
+        <span className="input-with-icon">
+          <LockKeyhole size={16} />
+          <Input
+            id="forgot-new-password"
+            type={show ? "text" : "password"}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Nhập mật khẩu mới"
+            required
+            minLength={6}
+          />
+          <button
+            type="button"
+            onClick={() => setShow(!show)}
+            aria-label={show ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          >
+            {show ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </span>
+      </label>
+
+      <label className="auth-field-label">
+        <span className="label-text">
+          Xác nhận mật khẩu mới <b className="req">*</b>
+        </span>
+        <span className="input-with-icon">
+          <LockKeyhole size={16} />
+          <Input
+            id="forgot-confirm-password"
+            type={show ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Nhập lại mật khẩu mới"
+            required
+          />
+        </span>
+        {passwordMismatch && (
+          <small style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>
+            Mật khẩu xác nhận không khớp.
+          </small>
+        )}
+      </label>
+
+      <button
+        id="forgot-submit-btn"
+        className="login-submit"
+        type="submit"
+        disabled={busy || !valid}
+      >
+        <KeyRound size={16} />
+        {busy ? "Đang xử lý…" : "Cập nhật mật khẩu"}
+      </button>
+
+      <div style={{ textAlign: "center", marginTop: "16px" }}>
+        <button
+          type="button"
+          onClick={onBackToLogin}
+          style={{
+            background: "none",
+            border: 0,
+            color: "#64748b",
+            fontSize: "13.5px",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          <ArrowLeft size={15} /> Quay lại trang đăng nhập
+        </button>
+      </div>
     </form>
   );
 }
@@ -340,8 +544,8 @@ export function LoginPage({
 
       <section className="login-identity">
         <div className="login-brand">
-          <span>
-            <ShieldCheck size={25} />
+          <span className="login-brand-logo">
+            <img src="/earthIcon.png" alt="VNDMS" width={36} height={36} style={{ objectFit: "contain", borderRadius: "8px" }} />
           </span>
           <div>
             <b>VNDMS</b>
@@ -351,12 +555,18 @@ export function LoginPage({
         <div className="login-context">
           <span>NỀN TẢNG QUẢN LÝ THIÊN TAI</span>
           <h1>
-            {mode === "login" ? "Đăng nhập hệ thống" : "Đăng ký tài khoản công dân"}
+            {mode === "login"
+              ? "Đăng nhập hệ thống"
+              : mode === "register"
+              ? "Đăng ký tài khoản công dân"
+              : "Khôi phục mật khẩu"}
           </h1>
           <p>
             {mode === "login"
               ? "Truy cập các chức năng điều hành, cứu nạn cứu hộ và phòng chống thiên tai theo phân quyền."
-              : "Đăng ký tài khoản để kịp thời theo dõi diễn biến bão lũ, nhận cảnh báo khẩn cấp và gửi tín hiệu cứu nạn SOS khi gặp nguy hiểm."}
+              : mode === "register"
+              ? "Đăng ký tài khoản để kịp thời theo dõi diễn biến bão lũ, nhận cảnh báo khẩn cấp và gửi tín hiệu cứu nạn SOS khi gặp nguy hiểm."
+              : "Thiết lập lại mật khẩu đăng nhập hệ thống VNDMS an toàn và nhanh chóng."}
           </p>
           <ul>
             <li>
@@ -381,38 +591,51 @@ export function LoginPage({
       <section className="login-form-side">
         <div className="login-card-unified">
           {/* Integrated tabs inside the unified card */}
-          <div className="login-tabs-bar" role="tablist">
-            <button
-              id="tab-login"
-              role="tab"
-              aria-selected={mode === "login"}
-              className={`login-tab-btn ${mode === "login" ? "active" : ""}`}
-              onClick={() => setMode("login")}
-              type="button"
-            >
-              <LogIn size={15} />
-              Đăng nhập
-            </button>
-            <button
-              id="tab-register"
-              role="tab"
-              aria-selected={mode === "register"}
-              className={`login-tab-btn ${mode === "register" ? "active" : ""}`}
-              onClick={() => setMode("register")}
-              type="button"
-            >
-              <UserPlus size={15} />
-              Đăng ký công dân
-            </button>
-          </div>
+          {mode !== "forgot" ? (
+            <div className="login-tabs-bar" role="tablist">
+              <button
+                id="tab-login"
+                role="tab"
+                aria-selected={mode === "login"}
+                className={`login-tab-btn ${mode === "login" ? "active" : ""}`}
+                onClick={() => setMode("login")}
+                type="button"
+              >
+                <LogIn size={15} />
+                Đăng nhập
+              </button>
+              <button
+                id="tab-register"
+                role="tab"
+                aria-selected={mode === "register"}
+                className={`login-tab-btn ${mode === "register" ? "active" : ""}`}
+                onClick={() => setMode("register")}
+                type="button"
+              >
+                <UserPlus size={15} />
+                Đăng ký công dân
+              </button>
+            </div>
+          ) : (
+            <div className="login-tabs-bar" style={{ justifyContent: "flex-start", padding: "12px 18px 0" }}>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: "#d97706", display: "flex", alignItems: "center", gap: "6px" }}>
+                <KeyRound size={16} /> Thiết lập lại mật khẩu
+              </span>
+            </div>
+          )}
 
-          {/* Form content — both always mounted to preserve input state when switching tabs */}
+          {/* Form content */}
           <div className="login-form-content" style={{ display: mode === "login" ? "block" : "none" }}>
-            <LoginForm onSuccess={onSuccess} />
+            <LoginForm onSuccess={onSuccess} onForgot={() => setMode("forgot")} />
           </div>
           <div className="login-form-content" style={{ display: mode === "register" ? "block" : "none" }}>
             <RegisterForm onSuccess={onSuccess} />
           </div>
+          {mode === "forgot" && (
+            <div className="login-form-content" style={{ display: "block" }}>
+              <ForgotPasswordForm onBackToLogin={() => setMode("login")} />
+            </div>
+          )}
         </div>
       </section>
     </main>

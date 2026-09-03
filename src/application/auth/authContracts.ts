@@ -11,6 +11,10 @@ export interface AuthenticationGateway {
   register(
     input: import("../../domain/auth/types").RegisterInput,
   ): Promise<{ user: AuthUser; session: Session }>;
+  resetPassword(
+    usernameOrPhone: string,
+    newPassword: string,
+  ): Promise<{ user: AuthUser }>;
   restoreSession(): SessionValidation;
   logout(sessionId?: string): void;
   listUsers(): AuthUser[];

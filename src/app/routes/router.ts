@@ -16,6 +16,7 @@ export type AppRoute =
   | { name: "relief-request-list" }
   | { name: "relief-request-detail"; id: string }
   | { name: "warehouse-list" }
+  | { name: "shipment-list" }
   | { name: "warehouse-detail"; id: string }
   | { name: "playbook-list" }
   | { name: "playbook-detail"; id: string }
@@ -91,6 +92,7 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
   const relief = pathname.match(/^\/relief\/requests\/([^/]+)$/);
   if (relief)
     return { name: "relief-request-detail", id: decodeURIComponent(relief[1]) };
+  if (pathname === "/relief/shipments") return { name: "shipment-list" };
   if (pathname === "/relief/warehouses") return { name: "warehouse-list" };
   const warehouse = pathname.match(/^\/relief\/warehouses\/([^/]+)$/);
   if (warehouse)
@@ -162,16 +164,22 @@ export function activeNavigationLabel(route: AppRoute) {
   if (route.name.startsWith("incident")) return "Sự cố";
   if (route.name.startsWith("task")) return "Nhiệm vụ";
   if (route.name.startsWith("team")) return "Đội cứu hộ";
-  if (route.name.startsWith("shelter")) return "Điểm sơ tán";
+  // Điểm sơ tán là tab của phân hệ Sơ tán ⇒ highlight cùng một mục sidebar.
+  if (route.name.startsWith("shelter")) return "Sơ tán";
   if (route.name.startsWith("evacuation")) return "Sơ tán";
   if (route.name.startsWith("sos")) return "SOS";
-  if (route.name.startsWith("relief")) return "Phân phối cứu trợ";
+  // Yêu cầu cứu trợ, kho & tồn, chuyến hàng đã gộp thành một mục "Cứu trợ"
+  // với ba tab trong trang; mọi route hậu cần highlight cùng mục đó.
+  if (route.name.startsWith("relief")) return "Cứu trợ";
+  if (route.name.startsWith("shipment")) return "Cứu trợ";
   if (route.name.startsWith("playbook")) return "Phương án ứng phó";
-  if (route.name.startsWith("assessment")) return "Đánh giá thiệt hại";
-  if (route.name.startsWith("recovery-project")) return "Tái thiết";
-  if (route.name.startsWith("warehouse")) return "Kho vật tư";
-  if (route.name.startsWith("alert")) return "Cảnh báo";
-  if (route.name === "analytics-reports") return "Báo cáo tác nghiệp";
+  // Thẩm định thiệt hại và dự án tái thiết là hai tab của "Phục hồi & tái thiết".
+  if (route.name.startsWith("assessment")) return "Phục hồi & tái thiết";
+  if (route.name.startsWith("recovery")) return "Phục hồi & tái thiết";
+  if (route.name.startsWith("warehouse")) return "Cứu trợ";
+  if (route.name === "alert-detail" || route.name === "alert-list") return "Cảnh báo";
+  // Báo cáo là tab bên trong phân hệ Phân tích tác nghiệp, không còn là mục
+  // điều hướng riêng nên vẫn highlight mục "Phân tích tác nghiệp" trên sidebar.
   if (route.name.startsWith("analytics")) return "Phân tích tác nghiệp";
   if (route.name === "ai-assistant") return "Trợ lý AI";
   if (route.name === "operational-map") return "Bản đồ tác nghiệp";

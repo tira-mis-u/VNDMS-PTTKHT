@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Avatar, Button } from "@/components/ui";
 import { initials, roleLabels } from "@/domain/auth/labels";
+import { DataFreshnessChip } from "./DataFreshnessChip";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import {
   AlertNotificationBell,
@@ -108,6 +109,7 @@ export function AppHeader({
         </div>
       </div>
       <div className="topbar-actions">
+        <DataFreshnessChip />
         <LiveTrackingQuickBar />
         <div className="topbar-divider" />
         <Button

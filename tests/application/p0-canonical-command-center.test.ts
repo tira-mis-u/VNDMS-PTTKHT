@@ -63,12 +63,15 @@ test("không còn Command Center operational dataset thứ hai", () => {
     existsSync("src/data/scenarios/red-river-flood/commandCenterSeed.ts"),
     false,
   );
+  // Danh sách bám theo các thành phần còn tồn tại sau đợt tinh giản: dòng thời
+  // gian phối hợp và bảng ngoại lệ nguồn lực đã bị xóa (trùng lặp với module
+  // gốc), bản đồ riêng của phòng chỉ huy được thay bằng bản đồ tác nghiệp.
   const files = [
     "src/features/command-center/components/CommandCenter.tsx",
     "src/features/command-center/components/ActionQueue.tsx",
-    "src/features/command-center/components/CoordinationTimeline.tsx",
+    "src/features/command-center/components/CommandCenterMap.tsx",
     "src/features/command-center/components/DetailDrawer.tsx",
-    "src/features/command-center/components/ResourceExceptions.tsx",
+    "src/features/command-center/components/ResourceAlertStrip.tsx",
     "src/features/command-center/components/SituationSummary.tsx",
   ];
   assert.ok(

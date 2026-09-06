@@ -205,14 +205,15 @@ export function UserManagementPage({
                 const badgeStyle = ROLE_COLORS[user.role] || ROLE_COLORS.citizen;
                 const isSelf = user.id === store.currentUser?.id;
                 return (
-                  <tr key={user.id} className={!user.active ? "row-inactive" : ""}>
-                    <td className="user-cell-hoverable">
+                  <tr
+                    key={user.id}
+                    className={`user-row${!user.active ? " row-inactive" : ""}`}
+                    onClick={() => setSelectedId(user.id)}
+                    title="Bấm để mở bảng điều khiển chi tiết tài khoản"
+                  >
+                    <td>
                       <div className="user-identity-wrap">
-                        <button
-                          className="user-identity"
-                          onClick={() => setSelectedId(user.id)}
-                          title="Bấm để mở bảng điều khiển chi tiết"
-                        >
+                        <div className="user-identity">
                           <span
                             style={{
                               background: badgeStyle.bg,
@@ -228,68 +229,14 @@ export function UserManagementPage({
                             </b>
                             <small>{user.id}</small>
                           </div>
-                        </button>
-
-                        {/* Popover xem thông tin nhanh khi hover */}
-                        <div className="user-hover-popover" role="tooltip">
-                          <div className="user-hover-header">
-                            <span
-                              className="user-hover-avatar"
-                              style={{
-                                background: badgeStyle.bg,
-                                color: badgeStyle.color,
-                                border: `1px solid ${badgeStyle.border}`,
-                              }}
-                            >
-                              {initials(user.displayName)}
-                            </span>
-                            <div>
-                              <strong>{user.displayName}</strong>
-                              <small>@{user.username} · {user.id}</small>
-                            </div>
-                          </div>
-                          <div className="user-hover-body">
-                            <div className="user-hover-row">
-                              <span>Vai trò:</span>
-                              <b style={{ color: badgeStyle.color }}>{roleLabels[user.role]}</b>
-                            </div>
-                            <div className="user-hover-row">
-                              <span>Địa bàn:</span>
-                              <b>{user.geographicScope.name || "Toàn quốc"} ({user.geographicScope.code})</b>
-                            </div>
-                            <div className="user-hover-row">
-                              <span>Trạng thái:</span>
-                              <b className={user.active ? "status-active" : "status-inactive"}>
-                                {user.active ? "● Đang hoạt động" : "○ Đã vô hiệu hóa"}
-                              </b>
-                            </div>
-                            {user.teamId && (
-                              <div className="user-hover-row">
-                                <span>Đội tác chiến:</span>
-                                <b>{user.teamId}</b>
-                              </div>
-                            )}
-                            {user.warehouseId && (
-                              <div className="user-hover-row">
-                                <span>Kho phụ trách:</span>
-                                <b>{user.warehouseId}</b>
-                              </div>
-                            )}
-                            <div className="user-hover-row">
-                              <span>Cập nhật:</span>
-                              <small>{user.updatedAt.includes("T") ? user.updatedAt.split("T")[0] : user.updatedAt}</small>
-                            </div>
-                          </div>
-                          <div className="user-hover-footer">
-                            <small>💡 Bấm vào hàng hoặc icon chi tiết để phân quyền chuyên sâu</small>
-                          </div>
                         </div>
                       </div>
                     </td>
                     <td>
                       <code className="username-tag">@{user.username}</code>
                     </td>
-                    <td>
+                    {/* Ô có control riêng: chặn bubble để không mở drawer ngoài ý muốn */}
+                    <td onClick={(event) => event.stopPropagation()}>
                       {isCommander ? (
                         <div className="direct-role-picker">
                           <UiSelect
@@ -323,7 +270,7 @@ export function UserManagementPage({
                         </span>
                       )}
                     </td>
-                    <td>
+                    <td onClick={(event) => event.stopPropagation()}>
                       <button
                         className="scope-cell-btn"
                         onClick={() => setSelectedId(user.id)}
@@ -333,7 +280,7 @@ export function UserManagementPage({
                         <span>{user.geographicScope.name || "Toàn quốc"}</span>
                       </button>
                     </td>
-                    <td>
+                    <td onClick={(event) => event.stopPropagation()}>
                       <button
                         className={`account-state-toggle ${user.active ? "active" : "inactive"}`}
                         onClick={() => !isSelf && handleStatusToggle(user.id, user.active)}

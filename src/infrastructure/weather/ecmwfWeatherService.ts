@@ -73,6 +73,8 @@ export interface ForecastGridSample {
   temperature: number;
   rain: number;
   windSpeed: number;
+  /** Hướng gió 10m (độ, hướng gió THỔI TỪ) — phục vụ lớp hạt gió động. */
+  windDirection?: number;
   cape?: number;
   uvIndex?: number;
   snowfall?: number;
@@ -418,6 +420,7 @@ function generateFallbackGridSamples(): ForecastGridSample[] {
       temperature: temp,
       rain: 0,
       windSpeed: 14,
+      windDirection: lat >= 16 ? 45 : 225,
       cape: 0,
       uvIndex: 6,
       snowfall: 0,
@@ -757,7 +760,7 @@ export async function fetchEcmwfGridSamples(force = false): Promise<ForecastGrid
     try {
       const lats = DETERMINISTIC_GRID_COORDINATES.map((c) => c.lat.toFixed(2)).join(",");
       const lngs = DETERMINISTIC_GRID_COORDINATES.map((c) => c.lng.toFixed(2)).join(",");
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lngs}&current=temperature_2m,rain,wind_speed_10m,cape,uv_index,snowfall,soil_temperature_0_to_7cm,soil_moisture_0_to_7cm&models=ecmwf_ifs`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lngs}&current=temperature_2m,rain,wind_speed_10m,wind_direction_10m,cape,uv_index,snowfall,soil_temperature_0_to_7cm,soil_moisture_0_to_7cm&models=ecmwf_ifs`;
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -791,6 +794,7 @@ export async function fetchEcmwfGridSamples(force = false): Promise<ForecastGrid
           temperature: isValidNumber(temp) ? temp : 26.0,
           rain: isValidNumber(current.rain) ? current.rain : 0,
           windSpeed: isValidNumber(current.wind_speed_10m) ? current.wind_speed_10m : 12,
+          windDirection: isValidNumber(current.wind_direction_10m) ? current.wind_direction_10m : undefined,
           cape: current.cape ?? 0,
           uvIndex: current.uv_index ?? 0,
           snowfall: current.snowfall ?? 0,
@@ -872,4 +876,471 @@ export function lookupWeatherFromCache(
   }
 
   return stationList[0] || null;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * TRƯỜNG BÃO & ÁP THẤP TRÊN BIỂN ĐÔNG (ECMWF-IFS)
+ *
+ * Trước đây pipeline chỉ khai thác nhiệt độ/mưa/gió tại trạm và lưới đất liền.
+ * Phần dưới bổ sung việc khai thác khí áp mực nước biển + gió 10m trên lưới
+ * Biển Đông để dò tâm xoáy thuận nhiệt đới và dựng đường đi dự báo 5 ngày,
+ * đồng thời cung cấp trường gió cho lớp hạt gió động trên bản đồ.
+ * ───────────────────────────────────────────────────────────── */
+
+import {
+  detectStormField,
+  type StormDiagnostics,
+  type StormGridInput,
+  type StormTrack,
+} from "./stormDetection.ts";
+
+export type { StormTrack, StormTrackPoint, StormCategory } from "./stormDetection.ts";
+
+/**
+ * Lưới 1° phủ Biển Đông **và vùng biển phía đông Philippines/Đài Loan**
+ * (5–26 °N, 105–130 °E — 546 điểm).
+ *
+ * Lưới 2° cũ (~220 km) quá thô: tâm bão bị "khoá" vào mắt lưới nên đường đi
+ * nhảy từng nấc 200 km và không thể phân biệt xoáy thật với nếp lõm khí áp.
+ * Ở 1° (~110 km) một xoáy nhiệt đới phủ 5–7 điểm lưới, đủ để kiểm tra hoàn
+ * lưu khép kín. Một lần gọi 378 điểm × 24 mốc 6 giờ mất dưới 1 giây.
+ *
+ * Lưới vẫn phủ cả đất liền vì cần khí áp xung quanh để tính độ hụt khí áp;
+ * việc loại tâm giả trên đất liền do `detectStormField` xử lý bằng cao độ.
+ *
+ * **Vì sao mở rộng tới 130 °E (đợt 7):** bão vào Biển Đông hầu hết sinh ra ở
+ * tây bắc Thái Bình Dương rồi mới vượt Luzon. Lưới cũ dừng ở 122 °E nên chỉ
+ * "nhìn thấy" bão khi nó đã ở trong nhà — bản đồ im lặng suốt giai đoạn đáng
+ * cảnh báo nhất. Đo thực tế ngày 06/9/2026: lưới cũ 0 xoáy, lưới mới thấy 2
+ * xoáy (một bão nhiệt đới phía đông Đài Loan và một áp thấp nhiệt đới hình
+ * thành trên Biển Đông ngày 12–15/9).
+ */
+export const MARINE_GRID_COORDINATES: Array<{ lat: number; lng: number }> = (() => {
+  const coords: Array<{ lat: number; lng: number }> = [];
+  for (let lat = 5; lat <= 26; lat += 1)
+    for (let lng = 105; lng <= 130; lng += 1) coords.push({ lat, lng });
+  return coords;
+})();
+
+export interface MarineWindSample {
+  lat: number;
+  lng: number;
+  windSpeed: number;
+  windGusts: number;
+  /** Hướng gió thổi tới từ (độ). */
+  windDirection: number;
+  pressure: number;
+}
+
+/**
+ * Chuỗi trường gió theo thời gian, phục vụ thanh trượt mốc dự báo.
+ * Lưu dạng cột (mảng số nguyên) thay vì mảng đối tượng để nhẹ bộ nhớ đệm:
+ * 378 điểm × 24 mốc chỉ tốn ~90 KB thay vì ~600 KB.
+ */
+export interface StormWindFrames {
+  points: Array<{ lat: number; lng: number }>;
+  /** Nhãn thời gian ISO (UTC) của từng mốc. */
+  times: string[];
+  /** speed[frame][point] — km/h, làm tròn. */
+  speed: number[][];
+  /** direction[frame][point] — độ, hướng gió thổi TỪ. */
+  direction: number[][];
+}
+
+export interface StormFieldSnapshot {
+  storms: StormTrack[];
+  /** Gió 10m tại bước thời gian gần hiện tại nhất trên toàn lưới biển. */
+  marineWind: MarineWindSample[];
+  /** Toàn bộ chuỗi thời gian của trường gió (cho thanh trượt mốc dự báo). */
+  frames: StormWindFrames | null;
+  /** Chỉ số mốc gần thời điểm hiện tại nhất trong `frames`. */
+  currentFrame: number;
+  /** Chẩn đoán trung thực: áp thấp sâu nhất, số tâm đạt chuẩn… */
+  diagnostics: StormDiagnostics | null;
+  fetchedAt: number;
+  source: WeatherSourceType;
+  /** Câu trạng thái hiển thị dưới chú giải bản đồ. */
+  statusText: string;
+}
+
+const STORM_CACHE_TTL = 60 * 60 * 1000; // 60 phút, khớp nhịp cập nhật IFS
+const STORAGE_KEY_STORM = "vndms_weather_storm_field_v1";
+
+let cachedStormField: { data: StormFieldSnapshot; expiresAt: number } | null = null;
+let inFlightStormPromise: Promise<StormFieldSnapshot> | null = null;
+const stormListeners = new Set<(snapshot: StormFieldSnapshot) => void>();
+
+export function subscribeStormField(fn: (snapshot: StormFieldSnapshot) => void): () => void {
+  stormListeners.add(fn);
+  if (cachedStormField) fn(cachedStormField.data);
+  return () => stormListeners.delete(fn);
+}
+
+function notifyStormField(snapshot: StormFieldSnapshot) {
+  stormListeners.forEach((fn) => fn(snapshot));
+}
+
+function restoreStormCache(): StormFieldSnapshot | null {
+  if (cachedStormField && Date.now() < cachedStormField.expiresAt) return cachedStormField.data;
+  if (typeof window === "undefined" || !window.sessionStorage) return null;
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY_STORM);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { data: StormFieldSnapshot; expiresAt: number };
+    if (parsed?.data && parsed.expiresAt > Date.now()) {
+      cachedStormField = parsed;
+      return parsed.data;
+    }
+  } catch {
+    // sessionStorage bị chặn hoặc dữ liệu hỏng
+  }
+  return null;
+}
+
+function saveStormCache(data: StormFieldSnapshot) {
+  cachedStormField = { data, expiresAt: Date.now() + STORM_CACHE_TTL };
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage)
+      window.sessionStorage.setItem(STORAGE_KEY_STORM, JSON.stringify(cachedStormField));
+  } catch {
+    // QuotaExceeded
+  }
+}
+
+function emptyStormField(source: WeatherSourceType, statusText: string): StormFieldSnapshot {
+  return {
+    storms: [],
+    marineWind: [],
+    frames: null,
+    currentFrame: 0,
+    diagnostics: null,
+    fetchedAt: Date.now(),
+    source,
+    statusText,
+  };
+}
+
+function stormStatusText(
+  storms: StormTrack[],
+  source: WeatherSourceType,
+  diagnostics?: StormDiagnostics | null,
+): string {
+  if (source === "fallback")
+    return "Chưa kết nối được trường khí áp ECMWF-IFS trên Biển Đông";
+  if (!storms.length) {
+    // Nói rõ CƠ SỞ của kết luận "không có bão" thay vì chỉ tuyên bố suông.
+    const low = diagnostics?.deepestLow;
+    const detail = low
+      ? ` Áp thấp sâu nhất trên biển: ${low.pressure} hPa (${low.lat.toFixed(0)}°N ${low.lng.toFixed(0)}°E), chưa có hoàn lưu khép kín.`
+      : "";
+    return `Biển Đông và vùng biển phía đông Philippines: không có xoáy thuận nhiệt đới trong 10 ngày tới (ECMWF-IFS).${detail}`;
+  }
+  // Nói rõ MỐC THỜI GIAN của từng xoáy: người trực cần biết "khi nào", không
+  // chỉ "có hay không". Xoáy còn ở tương lai thì ghi ngày bắt đầu ảnh hưởng.
+  const names = storms.map((storm) => {
+    const first = storm.points[0];
+    const start = first ? `${first.time.slice(8, 10)}/${first.time.slice(5, 7)}` : "";
+    const land = storm.landfall
+      ? `, đổ bộ ${storm.landfall.time.slice(8, 10)}/${storm.landfall.time.slice(5, 7)}`
+      : "";
+    return `${storm.name} (từ ${start}${land}, gió ${storm.maxWind} km/h)`;
+  });
+  return `ECMWF-IFS phát hiện ${storms.length} xoáy trong 10 ngày tới: ${names.join(" · ")}`;
+}
+
+/**
+ * Tải trường khí áp/gió biển và suy ra đường đi bão 5 ngày.
+ * Dùng chung cơ chế cooldown 429 với các pipeline thời tiết còn lại.
+ */
+export async function fetchEcmwfStormField(force = false): Promise<StormFieldSnapshot> {
+  const cached = restoreStormCache();
+  if (!force && cached) return cached;
+
+  const now = Date.now();
+  if (now < apiCooldownUntil) {
+    return cached ?? emptyStormField("fallback", "Tạm dừng gọi nguồn do giới hạn tần suất");
+  }
+  if (inFlightStormPromise) return inFlightStormPromise;
+
+  inFlightStormPromise = (async () => {
+    try {
+      const lats = MARINE_GRID_COORDINATES.map((c) => c.lat).join(",");
+      const lngs = MARINE_GRID_COORDINATES.map((c) => c.lng).join(",");
+      const url =
+        `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lngs}` +
+        `&hourly=pressure_msl,wind_speed_10m,wind_gusts_10m,wind_direction_10m` +
+        `&models=ecmwf_ifs&forecast_days=10&past_days=1&temporal_resolution=hourly_3`;
+
+      const controller = new AbortController();
+      // Lưới rộng hơn (546 điểm) và 10 ngày dự báo nên tải nặng hơn trước:
+      // đo thực tế ~1,1 MB / ~1,5 giây, nới hạn chờ để mạng chậm không hỏng.
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        if (response.status === 429) handleRateLimit429(response);
+        const fallback =
+          cached ?? emptyStormField("fallback", "Không tải được trường bão ECMWF-IFS");
+        notifyStormField(fallback);
+        return fallback;
+      }
+
+      const payload = await response.json();
+      const series = Array.isArray(payload) ? payload : [payload];
+      const times: string[] = series[0]?.hourly?.time ?? [];
+
+      const input: StormGridInput = {
+        coords: MARINE_GRID_COORDINATES,
+        // Cao độ do API trả về cho từng điểm: >0 m nghĩa là đất liền. Nhờ vậy
+        // thuật toán không còn nhận nhầm áp thấp nhiệt lực buổi chiều trên
+        // Lào/Thái Lan/Tây Nguyên là tâm bão.
+        elevation: series.map((item: any) =>
+          Number.isFinite(item?.elevation) ? item.elevation : 0,
+        ),
+        times,
+        pressure: series.map((item: any) => item?.hourly?.pressure_msl ?? []),
+        windSpeed: series.map((item: any) => item?.hourly?.wind_speed_10m ?? []),
+        windGusts: series.map((item: any) => item?.hourly?.wind_gusts_10m ?? []),
+        windDirection: series.map((item: any) => item?.hourly?.wind_direction_10m ?? []),
+      };
+
+      const { tracks: storms, diagnostics } = detectStormField(input);
+
+      // Bước thời gian gần hiện tại nhất cho trường gió nền
+      const nowMs = Date.now();
+      let currentIndex = 0;
+      for (let i = 0; i < times.length; i += 1) {
+        if (Date.parse(`${times[i]}Z`) <= nowMs) currentIndex = i;
+      }
+
+      // Chuỗi trường gió theo thời gian cho thanh trượt mốc dự báo
+      const frames: StormWindFrames = {
+        points: MARINE_GRID_COORDINATES,
+        times,
+        speed: times.map((_, t) =>
+          MARINE_GRID_COORDINATES.map((_, i) => Math.round(input.windSpeed[i]?.[t] ?? 0)),
+        ),
+        direction: times.map((_, t) =>
+          MARINE_GRID_COORDINATES.map((_, i) =>
+            Math.round(input.windDirection?.[i]?.[t] ?? 0),
+          ),
+        ),
+      };
+
+      const marineWind: MarineWindSample[] = MARINE_GRID_COORDINATES.map((coord, i) => ({
+        lat: coord.lat,
+        lng: coord.lng,
+        windSpeed: input.windSpeed[i]?.[currentIndex] ?? 0,
+        windGusts: input.windGusts[i]?.[currentIndex] ?? 0,
+        windDirection: series[i]?.hourly?.wind_direction_10m?.[currentIndex] ?? 0,
+        pressure: input.pressure[i]?.[currentIndex] ?? 1010,
+      })).filter((sample) => Number.isFinite(sample.windSpeed));
+
+      const snapshot: StormFieldSnapshot = {
+        storms,
+        marineWind,
+        frames,
+        currentFrame: currentIndex,
+        diagnostics,
+        fetchedAt: nowMs,
+        source: "open-meteo",
+        statusText: stormStatusText(storms, "open-meteo", diagnostics),
+      };
+      saveStormCache(snapshot);
+      notifyStormField(snapshot);
+      return snapshot;
+    } catch (error) {
+      console.warn("[VNDMS/ECMWF] Không tải được trường bão Biển Đông:", error);
+      const fallback =
+        cached ?? emptyStormField("fallback", "Không tải được trường bão ECMWF-IFS");
+      notifyStormField(fallback);
+      return fallback;
+    } finally {
+      inFlightStormPromise = null;
+    }
+  })();
+
+  return inFlightStormPromise;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * XEM LẠI BÃO LỊCH SỬ (TÁI PHÂN TÍCH ERA5)
+ * ─────────────────────────────────────────────────────────────────────────
+ * Vì sao cần: lớp bão trên bản đồ chỉ vẽ khi ECMWF-IFS thực sự phát hiện xoáy
+ * thuận trên Biển Đông. Phần lớn thời gian trong năm không có bão nào, nên
+ * người dùng mở bản đồ ra sẽ **không bao giờ nhìn thấy** đường đi bão, tâm bão
+ * hay vòng bán kính gió — và dễ kết luận rằng các ký hiệu đó chỉ để trang trí.
+ *
+ * Cách xử lý trung thực: cho phép nạp lại một cơn bão CÓ THẬT từ kho tái phân
+ * tích ERA5 (cùng nhà cung cấp Open-Meteo, endpoint archive-api), chạy đúng
+ * thuật toán dò bão đang dùng cho dự báo, và dán nhãn rõ ràng đây là dữ liệu
+ * quá khứ chứ không phải dự báo hiện tại. Không dựng dữ liệu giả, không vẽ
+ * đường đi tưởng tượng.
+ *
+ * Đây đồng thời là bài kiểm tra hồi quy sống cho thuật toán: nếu một ngày nào
+ * đó bộ dò bão hỏng, cơn Yagi 2024 sẽ không dựng lại được và người dùng thấy
+ * ngay.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+export interface HistoricalStormPreset {
+  id: string;
+  /** Nhãn hiển thị trên nút chọn. */
+  label: string;
+  /** Mô tả ngắn hiện trong dải cảnh báo khi đang xem lại. */
+  summary: string;
+  startDate: string;
+  endDate: string;
+  /** Mốc "hiện tại" giả định — quyết định đoạn nào vẽ liền, đoạn nào vẽ đứt. */
+  referenceIso: string;
+  bbox: { latMin: number; latMax: number; lngMin: number; lngMax: number };
+}
+
+export const HISTORICAL_STORM_PRESETS: HistoricalStormPreset[] = [
+  {
+    id: "yagi-2024",
+    label: "Bão số 3 Yagi — 09/2024",
+    summary:
+      "Tái phân tích ERA5 01–10/09/2024: Yagi vượt Biển Đông, đổ bộ Quảng Ninh – Hải Phòng ngày 07/09/2024 rồi tan dần trong đất liền ngày 08/09.",
+    startDate: "2024-09-01",
+    endDate: "2024-09-10",
+    referenceIso: "2024-09-05T00:00:00Z",
+    bbox: { latMin: 12, latMax: 23, lngMin: 105, lngMax: 124 },
+  },
+];
+
+const HISTORICAL_BATCH = 80;
+const historicalCache = new Map<string, StormFieldSnapshot>();
+
+function presetGrid(preset: HistoricalStormPreset) {
+  const coords: Array<{ lat: number; lng: number }> = [];
+  for (let lat = preset.bbox.latMin; lat <= preset.bbox.latMax; lat += 1)
+    for (let lng = preset.bbox.lngMin; lng <= preset.bbox.lngMax; lng += 1)
+      coords.push({ lat, lng });
+  return coords;
+}
+
+/**
+ * Nạp trường khí áp/gió ERA5 cho một cơn bão trong quá khứ và dựng lại đường đi
+ * bằng đúng `detectStormField` đang dùng cho dự báo.
+ *
+ * API archive giới hạn số toạ độ mỗi lần gọi nên lưới được chia lô 80 điểm;
+ * đo thực tế với lưới 240 điểm × 8 ngày × bước 3 giờ: 3 lô, ~690 KB, ~1,8 giây.
+ */
+export async function fetchHistoricalStormField(
+  presetId: string,
+): Promise<StormFieldSnapshot> {
+  const preset = HISTORICAL_STORM_PRESETS.find((item) => item.id === presetId);
+  if (!preset) return emptyStormField("fallback", "Không có kịch bản lịch sử này");
+  const cached = historicalCache.get(presetId);
+  if (cached) return cached;
+
+  const coords = presetGrid(preset);
+  const elevation: number[] = [];
+  const pressure: number[][] = [];
+  const windSpeed: number[][] = [];
+  const windGusts: number[][] = [];
+  const windDirection: number[][] = [];
+  let times: string[] = [];
+
+  try {
+    for (let start = 0; start < coords.length; start += HISTORICAL_BATCH) {
+      const batch = coords.slice(start, start + HISTORICAL_BATCH);
+      const url =
+        `https://archive-api.open-meteo.com/v1/archive` +
+        `?latitude=${batch.map((c) => c.lat).join(",")}` +
+        `&longitude=${batch.map((c) => c.lng).join(",")}` +
+        `&start_date=${preset.startDate}&end_date=${preset.endDate}` +
+        `&hourly=pressure_msl,wind_speed_10m,wind_gusts_10m,wind_direction_10m` +
+        `&temporal_resolution=hourly_3`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        if (response.status === 429) handleRateLimit429(response);
+        return emptyStormField(
+          "fallback",
+          `Không tải được dữ liệu tái phân tích ERA5 (mã ${response.status})`,
+        );
+      }
+      const payload = await response.json();
+      const series = Array.isArray(payload) ? payload : [payload];
+      if (!times.length) times = series[0]?.hourly?.time ?? [];
+      for (const item of series) {
+        elevation.push(Number.isFinite(item?.elevation) ? item.elevation : 0);
+        pressure.push(item?.hourly?.pressure_msl ?? []);
+        windSpeed.push(item?.hourly?.wind_speed_10m ?? []);
+        windGusts.push(item?.hourly?.wind_gusts_10m ?? []);
+        windDirection.push(item?.hourly?.wind_direction_10m ?? []);
+      }
+    }
+
+    if (!times.length)
+      return emptyStormField("fallback", "Dữ liệu ERA5 trả về rỗng");
+
+    const input: StormGridInput = {
+      coords,
+      elevation,
+      times,
+      pressure,
+      windSpeed,
+      windGusts,
+      windDirection,
+    };
+    const { tracks: storms, diagnostics } = detectStormField(
+      input,
+      preset.referenceIso,
+    );
+
+    const referenceMs = Date.parse(preset.referenceIso);
+    let currentIndex = 0;
+    for (let i = 0; i < times.length; i += 1) {
+      if (Date.parse(`${times[i]}Z`) <= referenceMs) currentIndex = i;
+    }
+
+    const frames: StormWindFrames = {
+      points: coords,
+      times,
+      speed: times.map((_, t) =>
+        coords.map((_, i) => Math.round(windSpeed[i]?.[t] ?? 0)),
+      ),
+      direction: times.map((_, t) =>
+        coords.map((_, i) => Math.round(windDirection[i]?.[t] ?? 0)),
+      ),
+    };
+
+    const marineWind: MarineWindSample[] = coords
+      .map((coord, i) => ({
+        lat: coord.lat,
+        lng: coord.lng,
+        windSpeed: windSpeed[i]?.[currentIndex] ?? 0,
+        windGusts: windGusts[i]?.[currentIndex] ?? 0,
+        windDirection: windDirection[i]?.[currentIndex] ?? 0,
+        pressure: pressure[i]?.[currentIndex] ?? 1010,
+      }))
+      .filter((sample) => Number.isFinite(sample.windSpeed));
+
+    const strongest = storms.reduce<StormTrack | null>(
+      (best, storm) => (!best || storm.maxWind > best.maxWind ? storm : best),
+      null,
+    );
+    const snapshot: StormFieldSnapshot = {
+      storms,
+      marineWind,
+      frames,
+      currentFrame: currentIndex,
+      diagnostics,
+      fetchedAt: Date.now(),
+      source: "open-meteo",
+      statusText: strongest
+        ? `Tái phân tích ERA5 — ${preset.label}: ${strongest.category}, gió mạnh nhất ${strongest.maxWind} km/h, khí áp thấp nhất ${strongest.minPressure} hPa (${strongest.points.length} mốc). KHÔNG phải dự báo hiện tại.`
+        : `Tái phân tích ERA5 — ${preset.label}: thuật toán không dựng được đường đi nào.`,
+    };
+    historicalCache.set(presetId, snapshot);
+    return snapshot;
+  } catch (error) {
+    console.warn("[VNDMS/ERA5] Không tải được dữ liệu bão lịch sử:", error);
+    return emptyStormField("fallback", "Không tải được dữ liệu tái phân tích ERA5");
+  }
 }

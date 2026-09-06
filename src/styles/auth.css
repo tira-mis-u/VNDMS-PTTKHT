@@ -535,131 +535,37 @@ span.input-error {
 .admin-table tr:last-child td {
   border-bottom: 0;
 }
-.user-cell-hoverable {
-  position: relative;
+/* Hàng người dùng: cả block bấm được, hover tối màu nhẹ và con trỏ bàn tay.
+   Không còn card thông tin nổi khi rê chuột (đã bỏ .user-hover-popover). */
+.admin-table tbody tr.user-row {
+  cursor: pointer;
+  transition: background 0.14s ease, box-shadow 0.14s ease;
+}
+.admin-table tbody tr.user-row:hover {
+  background: rgba(16, 24, 40, 0.05);
+  box-shadow: inset 3px 0 0 #175cd3;
+}
+.admin-table tbody tr.user-row:active {
+  background: rgba(16, 24, 40, 0.08);
+}
+.admin-table tbody tr.user-row:hover .user-identity b {
+  color: #175cd3;
+}
+.admin-table tbody tr.user-row :where(button, .ui-select, input, code) {
+  cursor: auto;
+}
+.admin-table tbody tr.user-row :where(button, .ui-select-trigger) {
+  cursor: pointer;
+}
+html[data-theme="dark"] .admin-table tbody tr.user-row:hover {
+  background: rgba(148, 163, 184, 0.14);
+  box-shadow: inset 3px 0 0 #78a9f5;
+}
+html[data-theme="dark"] .admin-table tbody tr.user-row:hover .user-identity b {
+  color: #b9d2ff;
 }
 .user-identity-wrap {
-  position: relative;
   display: inline-block;
-}
-
-.user-hover-popover {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 80;
-  width: 280px;
-  background: #ffffff;
-  border: 1px solid #d0d5dd;
-  border-radius: 10px;
-  box-shadow: 0 10px 25px -5px rgba(16, 24, 40, 0.15), 0 8px 10px -6px rgba(16, 24, 40, 0.1);
-  padding: 12px 14px;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translateY(-4px);
-  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
-}
-
-.user-identity-wrap:hover .user-hover-popover,
-.user-cell-hoverable:hover .user-hover-popover {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transform: translateY(0);
-  transition-delay: 0.12s;
-}
-
-.user-hover-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-bottom: 10px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid #f2f4f7;
-}
-.user-hover-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 13px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-.user-hover-header strong {
-  display: block;
-  font-size: 14px;
-  color: #101828;
-  line-height: 1.3;
-}
-.user-hover-header small {
-  font-size: 12px;
-  color: #667085;
-}
-
-.user-hover-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.user-hover-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-}
-.user-hover-row span {
-  color: #667085;
-  flex-shrink: 0;
-}
-.user-hover-row b {
-  color: #1d2939;
-  font-weight: 600;
-  text-align: right;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.user-hover-row .status-active {
-  color: #067647;
-}
-.user-hover-row .status-inactive {
-  color: #b42318;
-}
-
-.user-hover-footer {
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px dashed #eaecf0;
-}
-.user-hover-footer small {
-  display: block;
-  font-size: 11.5px;
-  color: #475467;
-}
-
-html[data-theme="dark"] .user-hover-popover {
-  background: #1e293b;
-  border-color: #334155;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-}
-html[data-theme="dark"] .user-hover-header {
-  border-bottom-color: #334155;
-}
-html[data-theme="dark"] .user-hover-header strong {
-  color: #f8fafc;
-}
-html[data-theme="dark"] .user-hover-body .user-hover-row b {
-  color: #e2e8f0;
-}
-html[data-theme="dark"] .user-hover-footer {
-  border-top-color: #334155;
-}
-html[data-theme="dark"] .user-hover-footer small {
-  color: #94a3b8;
 }
 
 .user-identity {
@@ -669,7 +575,6 @@ html[data-theme="dark"] .user-hover-footer small {
   gap: 8px;
   align-items: center;
   text-align: left;
-  cursor: pointer;
   padding: 0;
 }
 .user-identity > span,

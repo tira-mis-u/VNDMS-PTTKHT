@@ -4,6 +4,7 @@ import { calculateShelterCapacity } from "../../domain/shelters/rules";
 import { isEvacuationDelayed } from "../../domain/evacuations/rules";
 import { isSosWaitingTooLong } from "../../domain/sos/rules";
 import { isTaskOverdue, taskPriorityRank } from "../../domain/tasks/rules";
+import { hasRequestShortage, isReliefOverdue } from "../../domain/relief/rules";
 
 export type CommandCenterEntityKind =
   "incident" | "sos" | "team" | "shelter" | "warehouse";
@@ -104,8 +105,24 @@ export interface CommandCenterActionItem {
   ref: CommandCenterEntityRef;
 }
 
+/**
+ * HÀNG ĐỢI "CẦN XỬ LÝ" — LÕI CỦA TRUNG TÂM ĐIỀU HÀNH
+ *
+ * Trước đây hàng đợi chỉ gom SOS, sự cố, nhiệm vụ và đội mất liên lạc. Hệ quả:
+ * người làm hậu cần cứu trợ hoặc thẩm định thiệt hại mở Trung tâm điều hành ra
+ * thì **không thấy việc của mình ở đâu cả** — trong khi đúng những việc đó mới
+ * là thứ họ phải xử lý trong ca trực. Nay hàng đợi gom thêm:
+ *   • yêu cầu cứu trợ quá hạn / thiếu hàng,
+ *   • chuyến hàng gặp sự cố hoặc trễ so với dự kiến,
+ *   • hồ sơ đánh giá thiệt hại chờ thẩm định.
+ *
+ * `canRead` lọc theo quyền đọc của chính người đang trực: không có quyền nhìn
+ * loại hồ sơ nào thì loại đó không xuất hiện (tránh hàng đợi đầy việc mà người
+ * xem không mở được).
+ */
 export function getCommandCenterActionQueue(
   source: OperationalSnapshot,
+  canRead: (permission: string) => boolean = () => true,
 ): CommandCenterActionItem[] {
   const sosItems: CommandCenterActionItem[] = source.sosRequests
     .filter(
@@ -189,10 +206,95 @@ export function getCommandCenterActionQueue(
       path: `/teams/${team.id}`,
       ref: { kind: "team", id: team.id },
     }));
-  return [...sosItems, ...teamItems, ...taskItems, ...incidentItems].slice(
-    0,
-    5,
-  );
+  const nowMs = Date.now();
+
+  // Cứu trợ: quá hạn cam kết hoặc không đủ hàng để đáp ứng
+  const reliefItems: CommandCenterActionItem[] = source.reliefRequests
+    .filter(
+      (request) =>
+        !["Đã đóng", "Từ chối", "Hủy", "Đã xác nhận"].includes(request.status) &&
+        (isReliefOverdue(request) ||
+          hasRequestShortage(request, source.reservations)),
+    )
+    .map((request) => {
+      const overdue = isReliefOverdue(request);
+      return {
+        id: request.id,
+        type: "Yêu cầu cứu trợ",
+        priority: overdue ? "Quá hạn" : "Thiếu hàng",
+        tone: overdue ? ("red" as const) : ("amber" as const),
+        title: `${request.code} · ${request.justification}`,
+        area: request.destination,
+        time: request.requiredBy,
+        status: request.status,
+        action: "Xử lý",
+        path: `/relief/requests/${request.id}`,
+        ref: {
+          kind: "warehouse" as const,
+          id: request.assignedWarehouseIds[0] ?? request.id,
+        },
+      };
+    });
+
+  // Chuyến hàng: gặp sự cố hoặc đã quá giờ dự kiến tới nơi mà chưa tới
+  const shipmentItems: CommandCenterActionItem[] = source.shipments
+    .filter((shipment) => {
+      if (["Hoàn tất", "Đã giao"].includes(shipment.status)) return false;
+      if (shipment.status === "Có sự cố") return true;
+      const eta = Date.parse(shipment.estimatedArrival);
+      return (
+        !shipment.actualArrival && Number.isFinite(eta) && eta < nowMs
+      );
+    })
+    .map((shipment) => ({
+      id: shipment.id,
+      type: "Chuyến hàng",
+      priority: shipment.status === "Có sự cố" ? "Sự cố" : "Trễ hẹn",
+      tone: shipment.status === "Có sự cố" ? ("red" as const) : ("amber" as const),
+      title: `${shipment.code} → ${shipment.destination}`,
+      area: shipment.destination,
+      time: shipment.estimatedArrival,
+      status: shipment.status,
+      action: "Kiểm tra",
+      path: `/relief/requests/${shipment.reliefRequestId}`,
+      ref: { kind: "warehouse" as const, id: shipment.warehouseId },
+    }));
+
+  // Thiệt hại: hồ sơ đã gửi nhưng chưa thẩm định xong (nghĩa vụ theo TTLT 43/2015)
+  const assessmentItems: CommandCenterActionItem[] = source.damageAssessments
+    .filter((item) => ["Đã gửi", "Đang thẩm định"].includes(item.status))
+    .map((item) => ({
+      id: item.id,
+      type: "Đánh giá thiệt hại",
+      priority: item.status === "Đã gửi" ? "Chờ thẩm định" : "Đang thẩm định",
+      tone: "blue" as const,
+      title: `${item.code} · ${item.summary}`,
+      area: item.area,
+      time: item.assessedAt,
+      status: item.status,
+      action: "Thẩm định",
+      path: `/recovery/assessments/${item.id}`,
+      ref: { kind: "incident" as const, id: item.incidentId },
+    }));
+
+  const groups: Array<{ permission: string; items: CommandCenterActionItem[] }> = [
+    { permission: "sos_view", items: sosItems },
+    { permission: "team_view", items: teamItems },
+    { permission: "task_view", items: taskItems },
+    { permission: "view", items: incidentItems },
+    { permission: "relief_view", items: reliefItems },
+    { permission: "shipment_view", items: shipmentItems },
+    { permission: "damage_assessment_view", items: assessmentItems },
+  ];
+
+  const tonePriority = { red: 0, amber: 1, blue: 2 } as const;
+  // Trả về TOÀN BỘ hàng đợi đã xếp hạng; phần hiển thị tự quyết định cắt bao
+  // nhiêu dòng và tóm tắt phần còn lại (trước đây hàm cắt cứng 5 dòng nên
+  // những việc bị đẩy ra ngoài biến mất hoàn toàn khỏi giao diện).
+  return groups
+    .filter((group) => canRead(group.permission))
+    .flatMap((group) => group.items)
+    .sort((a, b) => tonePriority[a.tone] - tonePriority[b.tone]);
 }
 
 export interface CommandCenterTimelineItem {
@@ -255,28 +357,18 @@ export interface CommandCenterExceptionItem {
   tone: "red" | "amber" | "blue";
   action: string;
 }
+/**
+ * NGUỒN LỰC VƯỢT NGƯỠNG — **không bao gồm SOS**.
+ *
+ * Đợt 7: bỏ nguồn SOS khỏi dải này. Lý do đo được: ba ô đầu của dải trước đây
+ * lặp lại nguyên văn ba dòng đầu của hàng đợi xử lý ngay bên dưới (cùng mã,
+ * cùng chữ trạng thái), tức là chỉ huy đọc hai lần một thông tin. SOS là
+ * *việc phải làm* nên thuộc hàng đợi; dải này chỉ nói về *nguồn lực* — điểm
+ * sơ tán, đội, kho, tuyến sơ tán — thứ hàng đợi không có.
+ */
 export function getCommandCenterResourceExceptions(
   source: OperationalSnapshot,
 ): CommandCenterExceptionItem[] {
-  const sosItems: CommandCenterExceptionItem[] = source.sosRequests
-    .filter(
-      (sos) =>
-        !["Đã đóng", "Từ chối", "Hủy"].includes(sos.status) &&
-        (sos.priority.startsWith("P1") ||
-          isSosWaitingTooLong(sos) ||
-          !sos.assignedTeamId),
-    )
-    .map((sos) => ({
-      id: sos.id,
-      kind: "sos",
-      name: sos.location.name,
-      owner: `Yêu cầu ${sos.id}`,
-      value: sos.status === "Đang cứu hộ" ? 65 : sos.assignedTeamId ? 35 : 10,
-      display: !sos.assignedTeamId ? "Chưa giao đội" : sos.status,
-      state: sos.priority,
-      tone: sos.priority.startsWith("P1") ? "red" : "amber",
-      action: "Xử lý",
-    }));
   const shelterItems: CommandCenterExceptionItem[] = source.shelters
     .filter((shelter) =>
       ["Quá tải", "Gần đầy", "Không thể tiếp cận"].includes(shelter.status),
@@ -353,7 +445,6 @@ export function getCommandCenterResourceExceptions(
       action: "Theo dõi",
     }));
   return [
-    ...sosItems,
     ...shelterItems,
     ...evacuationItems,
     ...teamItems,

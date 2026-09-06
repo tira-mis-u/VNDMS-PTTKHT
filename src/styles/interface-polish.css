@@ -3497,48 +3497,142 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   color: #86efac;
 }
 
-/* ─────────────── Operational Map Live Markers ─────────────── */
+/* ─────────────── Operational Map Live Markers ───────────────
+ * Mặc định chỉ hiện một icon nhỏ (đội cứu hộ, công dân, cán bộ hoặc cảnh báo
+ * 1 chạm) để không che nhãn tỉnh/thành phố và quần đảo trên bản đồ. Tên chỉ
+ * bung ra khi bản đồ được phóng to (class .om-live-labels-visible do
+ * UnifiedMapCanvas gắn lên container theo mức zoom).
+ * ------------------------------------------------------------------- */
 .om-live-marker {
-  cursor: pointer;
-}
-.om-live-pin-inner {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  line-height: 1;
 }
 .om-live-marker .om-live-pulse {
   position: absolute;
-  width: 24px;
-  height: 24px;
+  left: 0;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  margin-top: -11px;
   border-radius: 50%;
   pointer-events: none;
 }
-.om-live-marker.live-beacon .om-live-pulse {
-  background: rgba(16, 185, 129, 0.4);
-  animation: beaconPing 1.8s infinite;
-}
-.om-live-marker.panic-sos .om-live-pulse {
-  background: rgba(220, 38, 38, 0.5);
-  animation: beaconPing 1.1s infinite;
-}
-.om-live-badge {
+.om-live-marker .om-live-icon {
   position: relative;
   z-index: 2;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
   border: 1.5px solid #ffffff;
-}
-.om-live-marker.live-beacon .om-live-badge {
-  background: #059669;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.35);
   color: #ffffff;
 }
-.om-live-marker.panic-sos .om-live-badge {
+.om-live-marker .om-live-name {
+  position: relative;
+  z-index: 2;
+  display: none;
+  max-width: 160px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1px solid #ffffff;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+}
+/* Chỉ hiện tên khi người dùng đã zoom to */
+.om-live-labels-visible .om-live-marker .om-live-name {
+  display: inline-block;
+}
+
+.om-live-marker.rescue-team .om-live-icon { background: #0e7490; }
+.om-live-marker.rescue-team .om-live-name { background: #ecfeff; color: #0e5c6f; }
+.om-live-marker.rescue-team .om-live-pulse {
+  background: rgba(14, 116, 144, 0.35);
+  animation: beaconPing 2s infinite;
+}
+.om-live-marker.citizen .om-live-icon { background: #059669; }
+.om-live-marker.citizen .om-live-name { background: #ecfdf5; color: #065f46; }
+.om-live-marker.citizen .om-live-pulse {
+  background: rgba(16, 185, 129, 0.32);
+  animation: beaconPing 2.2s infinite;
+}
+.om-live-marker.officer .om-live-icon { background: #2563eb; }
+.om-live-marker.officer .om-live-name { background: #eff6ff; color: #1d4ed8; }
+.om-live-marker.officer .om-live-pulse {
+  background: rgba(37, 99, 235, 0.3);
+  animation: beaconPing 2.2s infinite;
+}
+.om-live-marker.panic-sos .om-live-icon {
   background: #dc2626;
-  color: #ffffff;
   animation: panicPulse 1.2s infinite;
+}
+.om-live-marker.panic-sos .om-live-name {
+  background: #fef2f2;
+  color: #b42318;
+}
+.om-live-marker.panic-sos .om-live-pulse {
+  background: rgba(220, 38, 38, 0.45);
+  animation: beaconPing 1.1s infinite;
+}
+/* Cảnh báo khẩn luôn hiện nhãn dù ở mức zoom nào */
+.om-live-marker.panic-sos .om-live-name { display: inline-block; }
+
+/* ── Phương án ứng phó: nhóm bước theo giai đoạn quanh "giờ 0" ───────────── */
+.playbook-phase + .playbook-phase {
+  margin-top: 18px;
+}
+.playbook-phase-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-left: 4px solid #2f6fd0;
+  border-radius: 8px;
+  background: #f1f5f9;
+}
+.playbook-phase-head h3 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.playbook-phase-head h3 span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.playbook-phase-head p {
+  margin: 0;
+  font-size: 11.5px;
+  color: #64748b;
+}
+.playbook-phase:first-child .playbook-phase-head {
+  border-left-color: #ea580c;
+  background: #fff7ed;
+}
+.playbook-phase:first-child .playbook-phase-head h3 { color: #7c2d12; }
+html[data-theme="dark"] .playbook-phase-head {
+  background: #1e293b;
+}
+html[data-theme="dark"] .playbook-phase-head h3 { color: #e2e8f0; }
+html[data-theme="dark"] .playbook-phase:first-child .playbook-phase-head {
+  background: #431407;
 }

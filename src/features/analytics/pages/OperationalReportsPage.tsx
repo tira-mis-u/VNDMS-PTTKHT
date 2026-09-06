@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FileDown, FileText, Printer, ShieldCheck } from "lucide-react";
+import { FileText, Printer, ShieldCheck } from "lucide-react";
 import {
   buildOperationalReport,
   type AnalyticsData,
@@ -27,6 +27,12 @@ const types: OperationalReportType[] = [
   "Báo cáo phục hồi",
 ];
 
+/** "ngày 05 tháng 09 năm 2026" — dùng cho quốc hiệu và khối ký của bản in. */
+function printDate(now = new Date()) {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `ngày ${pad(now.getDate())} tháng ${pad(now.getMonth() + 1)} năm ${now.getFullYear()}`;
+}
+
 export function OperationalReportsPage({
   navigate,
 }: {
@@ -48,6 +54,24 @@ export function OperationalReportsPage({
     [store, type, filter, actorId],
   );
 
+  /**
+   * Mở màn hình in của trình duyệt. Trước khi in, đặt document.title theo tên
+   * báo cáo để tên tệp PDF mặc định là tên văn bản, sau đó trả lại tiêu đề cũ.
+   * Bố cục khổ A4, khối ký và chân trang do stylesheet `@media print` dựng.
+   */
+  const handlePrint = () => {
+    const previousTitle = document.title;
+    document.title = `${report.title} — ${printDate()}`;
+    const restore = () => {
+      document.title = previousTitle;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
+    // Safari/Firefox không phát afterprint nhất quán: khôi phục sau nhịp in.
+    window.setTimeout(restore, 1500);
+  };
+
   return (
     <main className="analytics-page reports-page">
       <AnalyticsHeader
@@ -58,19 +82,12 @@ export function OperationalReportsPage({
         actions={
           <div className="report-actions">
             <button
-              className="analytics-secondary"
-              disabled
-              title="Chức năng xuất tệp chưa có trong phiên bản hiện tại"
-            >
-              <FileDown size={14} />
-              Xuất tệp
-            </button>
-            <button
               className="analytics-primary"
-              onClick={() => window.print()}
+              onClick={handlePrint}
+              title="Mở màn hình in với đầy đủ bố cục văn bản báo cáo khổ A4"
             >
               <Printer size={14} />
-              In hoặc lưu PDF
+              In báo cáo
             </button>
           </div>
         }
@@ -106,6 +123,22 @@ export function OperationalReportsPage({
       )}
 
       <article className="operational-report" aria-label={report.title}>
+        {/* Quốc hiệu — tiêu ngữ: chỉ hiển thị trên bản in */}
+        <div className="report-national-heading print-only" aria-hidden="true">
+          <section>
+            <b>Ban chỉ huy PCTT &amp; TKCN</b>
+            <em>Thành phố Hà Nội</em>
+            <i />
+            <span>Số: ......./BC-BCH</span>
+          </section>
+          <section>
+            <b>Cộng hòa xã hội chủ nghĩa Việt Nam</b>
+            <em>Độc lập - Tự do - Hạnh phúc</em>
+            <i />
+            <span>{printDate()}</span>
+          </section>
+        </div>
+
         <header className="report-cover">
           <div className="report-official-head">
             <div className="report-agency">
@@ -285,6 +318,31 @@ export function OperationalReportsPage({
             </p>
           </div>
         </footer>
+
+        {/* Nơi nhận & khối ký: chỉ in ra giấy, không chiếm chỗ trên màn hình */}
+        <div className="report-signature-block print-only">
+          <section className="recipients">
+            <b>Nơi nhận:</b>
+            <ul>
+              <li>Thường trực Ban chỉ huy PCTT &amp; TKCN Thành phố;</li>
+              <li>Các thành viên Ban chỉ huy;</li>
+              <li>Ban chỉ huy PCTT &amp; TKCN các quận, huyện, thị xã;</li>
+              <li>Lưu: Văn phòng thường trực, hồ sơ tác nghiệp.</li>
+            </ul>
+          </section>
+          <section className="signer">
+            <span className="place-date">Hà Nội, {printDate()}</span>
+            <b>TM. Ban chỉ huy</b>
+            <span>Trưởng ban</span>
+            <span className="sign-space" />
+            <b>{report.audit.generatedBy}</b>
+          </section>
+        </div>
+
+        <p className="report-print-footnote print-only">
+          Bản in kết xuất từ Hệ thống VNDMS lúc {report.audit.generatedAt} · Mốc dữ liệu {store.metadata.asOf} ·
+          Người kết xuất: {report.audit.generatedBy} ({report.audit.generatedById}) · Văn bản chưa cấp số, chưa ký duyệt.
+        </p>
       </article>
     </main>
   );

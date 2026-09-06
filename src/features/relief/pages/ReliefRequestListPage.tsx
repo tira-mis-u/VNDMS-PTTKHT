@@ -7,7 +7,6 @@ import {
   PackageOpen,
   Search,
   Truck,
-  Warehouse,
   X,
 } from "lucide-react";
 import {
@@ -22,6 +21,7 @@ import {
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, PageSectionHeader, Input } from "@/components/ui";
 import { reliefOriginLabel } from "../labels";
+import { ReliefSectionTabs } from "../components/ReliefSectionTabs";
 const tone = (priority: string) =>
   priority.startsWith("P1")
     ? "red"
@@ -100,20 +100,12 @@ export function ReliefRequestListPage({
   return (
     <div className="workspace-content relief-page">
       <PageSectionHeader
-        section="Nguồn lực"
-        title="Phân phối cứu trợ"
+        section="Hậu cần"
+        title="Cứu trợ"
         description="Thẩm định nhu cầu, giữ hàng, xuất kho và xác nhận giao nhận."
         icon={PackageOpen}
-        actions={
-          <button
-            className="text-action"
-            onClick={() => navigate("/relief/warehouses")}
-          >
-            <Warehouse size={15} />
-            Quản lý kho
-          </button>
-        }
       />
+      <ReliefSectionTabs active="/relief/requests" navigate={navigate} />
       <section className="relief-summary">
         <div className={p1 ? "danger" : ""}>
           <AlertTriangle size={16} />

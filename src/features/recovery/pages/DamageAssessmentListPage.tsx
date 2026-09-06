@@ -16,6 +16,7 @@ import {
 } from "@/application/recovery/recoveryQueries";
 import { isAssessmentVerificationOverdue } from "@/domain/recovery/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
+import { RecoverySectionTabs } from "@/components/navigation/GroupedSectionTabs";
 import { DialogBackdrop, Badge, Button, PageSectionHeader, Input, Textarea } from "@/components/ui";
 function Select({
   value,
@@ -78,12 +79,6 @@ export function DamageAssessmentListPage({
         icon={ShieldCheck}
         actions={
           <>
-            <Button
-              variant="secondary"
-              onClick={() => navigate("/recovery/projects")}
-            >
-              Dự án khôi phục
-            </Button>
             {can("damage_assessment_create") && (
               <Button onClick={() => setCreate(true)}>
                 <ClipboardPlus size={15} />
@@ -93,6 +88,7 @@ export function DamageAssessmentListPage({
           </>
         }
       />
+      <RecoverySectionTabs active="/recovery" navigate={navigate} />
       <section className="recovery-strip">
         <span className={pending ? "warning" : ""}>
           <ShieldCheck size={16} />

@@ -91,6 +91,11 @@ const WarehouseListPage = lazy(() =>
     default: module.WarehouseListPage,
   })),
 );
+const ShipmentListPage = lazy(() =>
+  import("@/features/relief").then((module) => ({
+    default: module.ShipmentListPage,
+  })),
+);
 const WarehouseDetailPage = lazy(() =>
   import("@/features/relief").then((module) => ({
     default: module.WarehouseDetailPage,
@@ -212,7 +217,7 @@ import { useOperationalState } from "@/state/operations/OperationalStateContext"
 import type { Permission } from "@/lib/permissions/permissions";
 import { permissionLabel } from "@/lib/permissions/labels";
 import { authorize } from "@/lib/security/authorization";
-import { firstAccessibleNavPath } from "@/components/navigation/navigationConfig";
+import { landingPathForRole } from "@/components/navigation/navigationConfig";
 import {
   activeNavigationLabel,
   type AppRoute,
@@ -236,6 +241,7 @@ function requiredPermission(route: AppRoute): Permission {
   if (route.name.startsWith("sos")) return "sos_view";
   if (route.name.startsWith("relief")) return "relief_view";
   if (route.name.startsWith("warehouse")) return "warehouse_view";
+  if (route.name === "shipment-list") return "shipment_view";
   if (route.name.startsWith("playbook")) return "playbook_view";
   if (route.name.startsWith("assessment")) return "damage_assessment_view";
   if (route.name.startsWith("recovery-project")) return "recovery_project_view";
@@ -279,8 +285,9 @@ export default function App() {
           navigate(
             user.role === "citizen"
               ? "/"
-              : firstAccessibleNavPath(
+              : landingPathForRole(
                   (permission) => authorize(user, permission).allowed,
+                  user.role,
                 ),
           )
         }
@@ -336,6 +343,8 @@ export default function App() {
     );
   else if (route.name === "warehouse-list")
     content = <WarehouseListPage navigate={navigate} />;
+  else if (route.name === "shipment-list")
+    content = <ShipmentListPage navigate={navigate} />;
   else if (route.name === "warehouse-detail")
     content = (
       <WarehouseDetailPage warehouseId={route.id} navigate={navigate} />

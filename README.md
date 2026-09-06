@@ -1,174 +1,298 @@
-# VNDMS — Nền tảng Quản lý và Điều hành Phòng chống Thiên tai
+# VNDMS — Hệ thống quản lý, giám sát và phòng chống thiên tai
 
-VNDMS là đồ án modular-monolith frontend mô phỏng một hệ thống tác nghiệp điều phối phòng chống thiên tai tại Việt Nam. Ứng dụng tập trung vào bài toán liên kết Incident, Task, Rescue Team, Shelter/Evacuation, SOS, Relief/Warehouse, Playbook và Recovery trên **một canonical operational state** có phân quyền và mutation atomic cục bộ.
+VNDMS là một **ứng dụng web tác nghiệp** mô phỏng phòng điều hành phòng chống thiên tai của Việt Nam: từ lúc nhận tin cảnh báo, ra phương án ứng phó, điều động lực lượng, sơ tán dân, cấp phát cứu trợ, cho tới thẩm định thiệt hại và tái thiết. Toàn bộ nghiệp vụ chạy trên **một trạng thái tác nghiệp duy nhất** (canonical operational state) có phân quyền, có ranh giới ghi dữ liệu nguyên tử, và có bản đồ khí tượng dùng **dữ liệu thời tiết thật**.
 
-> Đây là application/frontend architecture có khả năng demo production-like. Project không có backend và không được xem là hệ thống production-secure.
+> **Phạm vi trung thực:** đây là một **frontend modular-monolith**, không có backend riêng. Toàn bộ dữ liệu nghiệp vụ nằm trong bộ nhớ trình duyệt và được nạp từ kịch bản mẫu. Phân quyền được thực thi trong trình duyệt để chứng minh kiến trúc ứng dụng — **không phải ranh giới bảo mật thật**. Riêng phần khí tượng – thuỷ văn là dữ liệu thật, gọi trực tiếp từ dịch vụ mở.
 
-## Bài toán
+---
 
-Điều hành thiên tai dễ phát sinh dữ liệu rời rạc: đội cứu hộ được giao ở nhiều màn hình, SOS không đồng bộ với Task, kho giữ hàng nhưng chuyến hàng không phản ánh, hoặc báo cáo khác dữ liệu chi tiết. VNDMS dùng một nguồn dữ liệu tác nghiệp duy nhất và các application use case để giữ các module nhất quán.
+## 1. Bài toán
 
-## Kiến trúc
+Điều hành thiên tai hỏng vì dữ liệu rời rạc chứ hiếm khi vì thiếu màn hình: đội cứu hộ được giao ở hai nơi, SOS không khớp với nhiệm vụ, kho báo giữ hàng nhưng chuyến xe không có, báo cáo tổng hợp lệch với hồ sơ gốc. VNDMS xử lý đúng chỗ đó:
+
+- **Một nguồn dữ liệu tác nghiệp duy nhất** cho mọi phân hệ — không phân hệ nào có bộ dữ liệu riêng.
+- **Một cửa ghi duy nhất**: mọi thay đổi đi qua `OperationalProvider`, kiểm quyền rồi mới vào `OperationalMutationBoundary`; hoặc **commit trọn vẹn**, hoặc **huỷ toàn bộ bản nháp**.
+- **Đọc cũng bị lọc quyền**: giao diện, phân tích và trợ lý AI chỉ nhìn thấy phần dữ liệu tài khoản đang đăng nhập được phép thấy.
+- **Nói thật về dữ liệu**: cái gì là quan trắc, cái gì là dự báo, cái gì là ước tính, cái gì chưa có — đều được ghi rõ ngay trên giao diện.
+
+---
+
+## 2. Kiến trúc
 
 ```text
-Presentation / Features
-  → Application use cases, queries và authorization
-  → Domain rules và entity types
-  → Infrastructure adapters
+Presentation (src/features, src/components)
+  → Application  (src/application)   use case · query · authorization
+  → Domain       (src/domain)        quy tắc nghiệp vụ · kiểu dữ liệu thuần
+  → Infrastructure (src/infrastructure) bản đồ · thời tiết · lưu trữ · phiên đăng nhập
 ```
 
-Luồng mutation:
+Luồng ghi dữ liệu:
 
 ```text
-UI hoặc AI-confirmed action
-  → OperationalProvider command
-  → permission + geography + ownership + linked-resource authorization
-  → OperationalMutationBoundary draft
-  → domain/application rules + canonical timeline
-  → one commit hoặc full draft discard
+Thao tác trên giao diện (hoặc hành động AI đã được xác nhận)
+  → lệnh của OperationalProvider
+  → kiểm quyền: vai · phạm vi địa lý · quyền sở hữu đội/kho · trạng thái vòng đời
+      · kiểm toàn bộ tài nguyên liên quan của lệnh đa tài nguyên
+  → OperationalMutationBoundary tạo bản nháp
+  → áp quy tắc domain/application + ghi dòng thời gian canonical
+  → commit một lần, hoặc huỷ sạch bản nháp
 ```
 
-- `OperationalProvider` là canonical state owner và application boundary duy nhất.
-- `OperationalMutationBoundary` cung cấp rollback xác định cho state in-memory; không phải database transaction.
-- Presentation chỉ nhận authorized canonical read view.
-- Command Center, Analytics, Simulation và Grounded AI không sở hữu dataset tác nghiệp riêng.
-- Feature routes được lazy-load; MapLibre nằm trong chunk riêng.
+Nguyên tắc bất biến của dự án:
 
-Xem [Architecture](./docs/05-architecture/ARCHITECTURE.md) và [Final System Readiness Audit](./docs/05-architecture/final-system-readiness-audit.md).
+| Nguyên tắc | Ý nghĩa |
+| --- | --- |
+| Một chủ sở hữu trạng thái | `OperationalProvider` là nơi duy nhất giữ và sửa dữ liệu tác nghiệp |
+| Không có dataset song song | Trung tâm điều hành, Phân tích, Mô phỏng, AI đều đọc cùng một state |
+| Đọc đã lọc quyền | Presentation nhận *authorized canonical read view*, không nhận state thô |
+| Rollback xác định | Bản nháp hỏng ở bước nào cũng bị huỷ toàn bộ, không để lại dữ liệu nửa vời |
+| Không có nút chết | Vai không có quyền thì nút biến mất, không phải bấm rồi bị chặn |
 
-## Module map
+Chi tiết: [`docs/05-architecture/ARCHITECTURE.md`](./docs/05-architecture/ARCHITECTURE.md).
 
-| Nhóm                 | Chức năng chính                                                                     |
-| -------------------- | ----------------------------------------------------------------------------------- |
-| Command Center       | Tình hình, action queue, timeline, bản đồ và ngoại lệ nguồn lực                     |
-| Incident             | Lifecycle, severity, task/team liên quan, timeline và đóng sự cố có invariant       |
-| Task & Rescue Team   | Assignment/release, progress, field update, readiness và GPS local                  |
-| Shelter & Evacuation | Capacity, occupancy, route, team assignment và redirect                             |
-| SOS                  | Triage có giải thích, verification, Incident/Task/Team và resolution đồng bộ        |
-| Relief & Warehouse   | Request, approval, stock reservation, shipment, receipt và ownership                |
-| Playbook/SOP         | Template, prerequisite, execution, evidence và linked canonical entities            |
-| Recovery             | Damage Assessment, milestone, budget, Task/Team/Relief và completion criteria       |
-| Analytics            | Pure queries và báo cáo từ authorized canonical state                               |
-| Simulation           | Kịch bản Lũ Sông Hồng deterministic, tick/reset qua mutation boundary               |
-| Grounded AI          | Trả lời có evidence, recommendation cần confirmation; không phải LLM/RAG production |
-| Admin & Audit        | Demo users, session local, role/scope management và security audit trail            |
+---
 
-Một số mục sidebar như Cảnh báo, Lịch sử thiên tai hoặc Cấu hình vẫn là placeholder có chủ đích và không tạo operational state riêng.
+## 3. Bản đồ phân hệ
 
-## Authorization
+Thanh điều hướng gom theo **nhịp công việc**, không theo sơ đồ tổ chức:
 
-Project có một permission matrix và một resource-aware authorization system:
+| Nhóm | Mục | Nội dung |
+| --- | --- | --- |
+| **Điều hành** | Trung tâm điều hành | Thao tác nhanh, tình hình chung, dải nguồn lực vượt ngưỡng, hàng đợi việc phải xử lý, dòng đếm cảnh báo, bản đồ thu gọn, sổ trực ban |
+| | Bản đồ tác nghiệp | Bản đồ hợp nhất mọi đối tượng + lớp khí tượng + trục thời gian dự báo |
+| | Cảnh báo | Cảnh báo **suy ra từ dữ liệu vận hành**, không phải bảng tin nhập tay |
+| | Sự cố | Vòng đời sự cố, mức độ, nhiệm vụ/đội liên quan, điều kiện đóng sự cố |
+| | Phân tích tác nghiệp | 4 tab: vận hành · nguồn lực · sự cố · báo cáo (có nút in) |
+| **Ứng phó** | SOS | Tiếp nhận, xác minh, phân loại ưu tiên, sinh nhiệm vụ, điều đội, kết thúc |
+| | Nhiệm vụ | Giao – nhận – bắt đầu – cập nhật hiện trường – hoàn thành |
+| | Đội cứu hộ | Trạng thái, sẵn sàng, thành viên, vị trí |
+| | Sơ tán | Lệnh sơ tán + tab điểm sơ tán (sức chứa, tuyến, chuyển hướng) |
+| | Phương án ứng phó | Kịch bản chuẩn hoá theo Điều 22 Luật PCTT, chia giai đoạn quanh "giờ 0" |
+| **Hậu cần** | Cứu trợ | Một chuỗi: yêu cầu → duyệt → giữ hàng ở kho → chuyến hàng → ký nhận |
+| **Phục hồi** | Phục hồi & tái thiết | Thẩm định thiệt hại và dự án tái thiết là hai tab của cùng hồ sơ |
+| **Quản trị** | Phân quyền · Nhật ký bảo mật | Ma trận quyền theo vai và vết kiểm tra bảo mật |
 
-- RBAC theo vai trò;
-- geographic scope;
-- Rescue Team/Warehouse ownership;
-- lifecycle/resource state;
-- kiểm tra toàn bộ linked resources của multi-resource command;
-- authorized read model trước Presentation, Analytics và AI;
-- final authorization lại khi thực thi AI action đã xác nhận.
+Ngoài sidebar còn có: **Cổng công dân** (giao diện riêng cho vai `citizen`: bản đồ, gửi SOS, tra điểm sơ tán, cảnh báo), **Mô phỏng** (`/simulation`) và **Trợ lý AI** (`/ai-assistant`).
 
-Đây vẫn là enforcement trong browser để chứng minh application architecture. Production bắt buộc lặp lại và thực thi chính sách ở server.
+---
 
-## GIS, Simulation và Grounded AI
+## 4. Phương án ứng phó — bám luật, không bám cảm tính
 
-- **GIS:** MapLibre GL JS, OpenFreeMap/OpenStreetMap, nhãn ưu tiên tiếng Việt và lớp tác nghiệp GeoJSON. Bản đồ cần kết nối mạng để tải vector tiles.
-- **Simulation:** deterministic scenario seed `20240901`; tác động được áp dụng vào canonical state qua application contract và có thể reset về baseline.
-- **Grounded AI:** engine rule/query-based cục bộ; FACT/INFERENCE/UNKNOWN có evidence canonical. Không gọi model bên ngoài, không embedding và không vector database.
+Mỗi bước trong phương án không chỉ có tên và người phụ trách, mà còn có **ba trường bắt buộc** để kiểm tra được:
 
-## Công nghệ
+- `leadTimeHours` — mốc giờ so với **"giờ 0"** (thời điểm bão đổ bộ / mực nước đạt báo động III). Âm là việc phải xong **trước** khi thiên tai xảy ra.
+- `riskLevels` — bước áp dụng cho cấp độ rủi ro thiên tai nào (1–5 theo **QĐ 18/2021/QĐ-TTg**).
+- `legalBasis` — bước đáp ứng khoản nào trong **6 nội dung bắt buộc của Điều 22 Luật Phòng, chống thiên tai**.
 
-React 19 · TypeScript 6 · Vite 8 · MapLibre GL JS · Lucide React · CSS design tokens · Node test runner qua `tsx`.
+Giao diện chi tiết phương án nhóm các bước thành **Trước thiên tai — Trong thiên tai — Sau thiên tai**. Hai kịch bản hiện có:
 
-## Tài khoản demo
+| Kịch bản | Số bước | Phân bố |
+| --- | --- | --- |
+| Ứng phó Bão Yagi 2024 — Quốc gia (`PB-YAGI-2024`) | 20 | 8 trước bão · 7 trong bão · 5 sau bão |
+| Ứng phó Lũ lớn Sông Hồng — Hà Nội (`PB-FLOOD-001`) | 16 | 5 trước lũ · 9 trong lũ · 2 kết thúc |
 
-Mật khẩu dùng chung: `VNDMS@2026`.
+Khối "trước thiên tai" bám mốc lead time theo thông lệ quốc tế (timeline phòng thiên tai của MLIT Nhật Bản, FEMA Phase 1, tín hiệu bão 36/24/18/12 giờ của PAGASA) và nội dung theo Điều 22: rà soát đê/hồ chứa/công trình trọng điểm (−72 h), kêu gọi tàu thuyền và đối chiếu tồn kho (−48 h), chốt danh sách hộ phải sơ tán ưu tiên nhóm dễ tổn thương (−36 h), chằng chống nhà cửa và chốt chặn ngầm tràn (−24 h), thử phương án liên lạc dự phòng khi mất sóng (−12 h), hoàn tất sơ tán (−6 h). Kết thúc bằng hai bước bắt buộc: **công bố kết thúc ứng phó** và **họp rút kinh nghiệm trong 7 ngày**.
 
-| Tên đăng nhập        | Vai trò demo                     |
-| -------------------- | -------------------------------- |
-| `Trần Quốc Thuận`    | Chỉ huy                          |
-| `Nguyễn Quốc Trung`  | Điều hành viên                   |
-| `Phạm Văn Đam`       | Cán bộ địa phương, scope Tây Hồ  |
-| `Phạm Trung Hiếu`    | Đội trưởng đội cứu hộ, đội CH-05 |
-| `Lê Nguyễn Minh Trí` | Thành viên cứu hộ, đội CH-05     |
-| `Nguyễn Nam Anh`     | Nhân viên kho KHO-01             |
+---
 
-## Chạy local
+## 5. Bản đồ và dữ liệu khí tượng — phần dùng dữ liệu thật
 
-Yêu cầu Node.js hiện đại và npm.
+Bản đồ nền là **NDAMapVN** (vector tile, nhãn tiếng Việt) hiển thị bằng **MapLibre GL JS**. Trên nền đó là các lớp tác nghiệp (sự cố, SOS, nhiệm vụ, đội, điểm sơ tán, hoạt động sơ tán, yêu cầu cứu trợ, kho, dự án phục hồi, tuyến sơ tán) và các lớp khí tượng:
+
+| Lớp | Nguồn | Ghi chú |
+| --- | --- | --- |
+| Trường nhiệt độ bề mặt | ECMWF-IFS qua Open-Meteo | Tô nền bằng WebGL shader |
+| Vệt gió 10 m động | ECMWF-IFS | Lớp hạt gió theo kiểu Windy |
+| Bão / áp thấp nhiệt đới | Tự dò từ trường khí áp mực biển ECMWF-IFS | Lưới 1°, miền **5–26 °N / 105–130 °E**, dự báo **10 ngày** |
+| Mưa và dòng chảy sông | Open-Meteo Forecast + Flood API (GloFAS) | Lưu lượng m³/s, **không** suy ra cấp báo động |
+
+**Bộ dò bão** tìm tâm áp thấp khép kín trên biển (loại tâm giả trên đất liền bằng cao độ), kiểm tra độ hụt khí áp so với môi trường và thành phần gió tiếp tuyến, rồi nối các tâm thành quỹ đạo theo tốc độ di chuyển hợp lý. Kết quả gồm quỹ đạo (đoạn đã qua vẽ liền, đoạn dự báo vẽ đứt), tâm bão xoay, vòng bán kính gió mạnh, **mốc đổ bộ** và **mốc tan**.
+
+Trục thời gian nằm dưới bản đồ, kéo được tới **từng giờ** trong toàn bộ dải dữ liệu, và luôn ghi rõ số liệu lấy lúc nào, của mô hình nào.
+
+**Chế độ xem lại bão lịch sử** nạp dữ liệu tái phân tích **ERA5** cho một cơn bão có thật (hiện có bão số 3 **Yagi, 09/2024**) và chạy qua **đúng thuật toán dò bão đang dùng cho dự báo**. Toàn giao diện đổi nhãn sang "tái phân tích ERA5" kèm dải cảnh báo **"DỮ LIỆU QUÁ KHỨ — KHÔNG PHẢI DỰ BÁO"**.
+
+> Mọi con số khí tượng trên giao diện đều ghi nguồn và ghi rõ đây là kết quả dò tự động, **không thay thế bản tin chính thức của Trung tâm Dự báo KTTV Quốc gia**.
+
+---
+
+## 6. Phân quyền
+
+Bảy vai: `commander`, `operator`, `local_officer`, `rescue_leader`, `rescue_member`, `warehouse_staff`, `citizen` (còn `relief_worker` trong ma trận quyền). Hệ thống kiểm **năm lớp**:
+
+1. **RBAC** — ma trận quyền theo vai (hơn 80 quyền chi tiết cho từng hành vi, không phải CRUD chung chung).
+2. **Phạm vi địa lý** — quốc gia / tỉnh / quận-huyện / phường-xã / cơ sở / kho.
+3. **Quyền sở hữu** — đội trưởng chỉ tác động lên đội mình, nhân viên kho chỉ lên kho mình.
+4. **Trạng thái vòng đời** — không cho phép hành động sai pha (ví dụ giao việc cho đội đang mất liên lạc).
+5. **Tài nguyên liên quan** — lệnh chạm nhiều đối tượng thì phải hợp lệ với **tất cả**, nếu không thì huỷ cả lệnh.
+
+Đọc dữ liệu đi qua *authorized read view*; hành động do AI đề xuất còn bị **kiểm quyền lại lần cuối** ngay trước khi thực thi.
+
+---
+
+## 7. Mô phỏng và trợ lý AI
+
+- **Mô phỏng** (`/simulation`): kịch bản lũ Sông Hồng – Hà Nội, seed cố định `20240901`, **16 bước**, đi qua các pha *Bình thường → Cảnh báo → Nguy hiểm → Ứng phó → Sơ tán → Cứu hộ → Ổn định → Phục hồi*. Tác động của từng bước được ghi vào chính trạng thái tác nghiệp qua cửa ghi chung, và có thể reset về mốc gốc.
+- **Trợ lý AI** (`/ai-assistant`): engine **luật + truy vấn cục bộ**, không gọi mô hình ngoài, không embedding, không vector database. Mỗi câu trả lời gắn nhãn **FACT / INFERENCE / UNKNOWN** kèm dẫn chứng là hồ sơ canonical; đề xuất hành động luôn phải được người dùng xác nhận rồi mới thực thi.
+
+---
+
+## 8. Dữ liệu mẫu
+
+Trạng thái khởi tạo lấy từ kịch bản **Bão Yagi 2024 — quy mô quốc gia** (`src/data/scenarios/yagi-2024-national`):
+
+| Đối tượng | Số lượng | | Đối tượng | Số lượng |
+| --- | ---: | --- | --- | ---: |
+| Sự cố | 7 | | Kho | 3 |
+| Nhiệm vụ | 7 | | Mặt hàng tồn kho | 11 |
+| Đội cứu hộ | 7 | | Yêu cầu cứu trợ | 3 |
+| Điểm sơ tán | 6 | | Chuyến hàng | 2 |
+| Hoạt động sơ tán | 3 | | Hồ sơ thiệt hại | 4 |
+| Yêu cầu SOS | 5 | | Dự án tái thiết | 4 |
+
+Kịch bản **Lũ Sông Hồng** (`src/data/scenarios/red-river-flood`) hiện đóng vai trò *fixture cho test* và định danh cho engine mô phỏng, không nạp vào runtime.
+
+---
+
+## 9. Tài khoản demo
+
+Mật khẩu dùng chung: **`VNDMS@2026`**.
+
+| Tên đăng nhập | Họ tên | Vai trò | Phạm vi / ràng buộc |
+| --- | --- | --- | --- |
+| `thuantq` | Trần Quốc Thuận | Chỉ huy | Toàn quốc |
+| `nguyentrung` | Nguyễn Quốc Trung | Điều hành viên | Toàn quốc |
+| `phamdam` | Phạm Văn Đam | Cán bộ địa phương | Quận Tây Hồ, Hà Nội |
+| `phamhieu` | Phạm Trung Hiếu | Đội trưởng cứu hộ | Hà Nội · đội `CH-05` |
+| `minhtri` | Lê Nguyễn Minh Trí | Thành viên cứu hộ | Hà Nội · đội `CH-05` |
+| `namanh` | Nguyễn Nam Anh | Nhân viên kho | Kho `KHO-01` |
+| `trantuan` | Trần Thái Tuấn | Công dân | Cổng công dân |
+
+Đăng nhập bằng hai tài khoản khác nhau là cách nhanh nhất để thấy ranh giới phân quyền: cùng một màn hình nhưng khác dữ liệu, khác nút bấm.
+
+---
+
+## 10. Công nghệ
+
+React 19 · TypeScript 6 · Vite 8 · MapLibre GL JS 6 · Lucide React · CSS design tokens (không dùng framework UI) · Node test runner chạy qua `tsx` · oxlint.
+
+Thư viện hạ tầng tuỳ chọn: `@supabase/supabase-js` (đồng bộ người dùng), `@upstash/redis` (chia sẻ vị trí trực tiếp giữa các máy). **Cả hai đều không bắt buộc** — thiếu biến môi trường thì ứng dụng tự chạy ở chế độ cục bộ, không lỗi.
+
+---
+
+## 11. Chạy dự án
+
+Yêu cầu Node.js 20 trở lên và npm.
 
 ```bash
 npm install
-npm run dev
+npm run dev            # http://localhost:5173
 ```
 
-Production build/preview:
+Build và xem thử bản production:
 
 ```bash
 npm run build
 npm run preview -- --host 0.0.0.0
 ```
 
-Quality gates:
+Cấu hình tuỳ chọn — sao chép `.env.example` thành `.env` nếu cần:
+
+| Biến | Dùng để làm gì | Thiếu thì sao |
+| --- | --- | --- |
+| `VITE_NDAMAPVN_API_KEY`, `VITE_NDAMAPVN_TILE_URL` | Bản đồ nền NDAMapVN | Dùng khoá và style mặc định đã nhúng sẵn |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | Đồng bộ tài khoản | Dùng danh sách tài khoản demo cục bộ |
+| `VITE_UPSTASH_REDIS_REST_URL`, `VITE_UPSTASH_REDIS_REST_TOKEN` | Chia sẻ vị trí trực tiếp | Tắt tính năng phát định vị, phần còn lại không đổi |
+
+Dữ liệu khí tượng (Open-Meteo) **không cần khoá API**, nhưng có giới hạn tần suất: gọi quá nhiều sẽ nhận HTTP 429 và ứng dụng tự hạ nhiệt theo bậc 60 s → 120 s → 240 s. Bản đồ và lớp thời tiết đều cần kết nối mạng.
+
+---
+
+## 12. Kiểm thử và chất lượng
 
 ```bash
-npm test
-npm run test:focused
+npm test            # toàn bộ: 43 tệp test, 294 kịch bản
+npm run test:focused # đường găng: mutation boundary, phân quyền, AI, mô phỏng
 npm run lint
 npm run build
 ```
 
-## Route demo chính
+Suite tập trung vào giá trị kiến trúc chứ không chạy theo phần trăm coverage: quy tắc vòng đời domain; use case và truy vấn phân tích; phiên đăng nhập và phân quyền theo tài nguyên; commit lồng nhau và rollback toàn phần; liên kết chéo Task–Team, SOS–Task–Team, Shelter–Evacuation–Team, Relief–Warehouse–Shipment; nhất quán Playbook/Recovery; lan truyền và reset mô phỏng; grounding và xác nhận của AI; quét tĩnh chống bypass cửa ghi.
 
-`/login` · `/command` · `/incidents` · `/tasks` · `/teams` · `/shelters` · `/sos` · `/relief` · `/playbooks` · `/recovery` · `/analytics` · `/simulation` · `/ai-assistant` · `/admin/users` · `/admin/audit`.
+**Trạng thái thật của suite:** hiện **185 kịch bản đạt / 109 không đạt** trên tổng 294. Phần không đạt là **nợ kỹ thuật có sẵn từ trước** (mong đợi trong test đã lệch so với dữ liệu và nhãn giao diện hiện tại, ví dụ `identity-branding-normalization` import hằng số đã bị gỡ). Vì vậy cổng chất lượng thực tế đang dùng là **`tsc -b` sạch + `npm run build` xanh + test có mục tiêu cho phần đang sửa**, và việc dọn suite là hạng mục còn nợ được ghi nhận công khai chứ không giấu.
 
-Các detail routes dùng ID canonical, ví dụ `/incidents/INC-0241`, `/tasks/TSK-0241` và `/playbooks/PB-FLOOD-001/execute`.
+Chi tiết chiến lược: [`tests/README.md`](./tests/README.md).
 
-## Testing
+---
 
-Test suite tập trung vào giá trị kiến trúc và nghiệp vụ thay vì coverage hình thức:
+## 13. Đường dẫn chính
 
-- domain lifecycle/transition rules;
-- application use cases và analytics queries;
-- authentication/session và resource authorization;
-- mutation success, nested commit và full rollback;
-- Task–Team, SOS–Task–Team, Shelter–Evacuation–Team, Relief–Warehouse–Shipment–Team;
-- Playbook/Recovery cross-module consistency;
-- deterministic Simulation propagation/reset;
-- AI grounding, confirmation và final authorization;
-- static scans cho canonical owner, permission matrix và mutation bypass.
+```text
+/login
+/                                  Trung tâm điều hành
+/workspace/Bản%20đồ%20tác%20nghiệp Bản đồ tác nghiệp
+/alerts        /incidents     /tasks        /teams
+/sos           /evacuations   /shelters
+/relief/requests  /relief/warehouses  /relief/shipments
+/playbooks     /recovery      /analytics
+/simulation    /ai-assistant  /profile
+/admin/audit   /workspace/Phân%20quyền
+```
 
-Chi tiết tại [`tests/README.md`](./tests/README.md).
+Trang chi tiết dùng đúng mã canonical, ví dụ `/incidents/INC-0241`, `/tasks/TSK-0241`, `/playbooks/PB-YAGI-2024`, `/playbooks/PB-FLOOD-001/execute`, `/relief/warehouses/KHO-01`.
 
-## Giới hạn production
+---
 
-Project hiện chưa có:
+## 14. Lộ trình xem thử trong 10 phút
 
-- backend/API và database persistence;
-- server-side authorization hoặc database row-level policy;
-- database transaction, concurrency control hoặc multi-client synchronization;
-- realtime transport;
-- immutable/tamper-proof audit;
-- HttpOnly session, MFA, rate limiting, CSRF protection hoặc secret management;
-- monitoring, observability, CI/CD và production deployment runbook;
-- tile service do hệ thống kiểm soát.
+1. Đăng nhập `thuantq` → **Trung tâm điều hành**: đọc hàng đợi việc, dải nguồn lực vượt ngưỡng và sổ trực ban.
+2. Mở **Bản đồ tác nghiệp**: xem lớp gió và nhiệt độ thật; nếu có xoáy thuận trong 10 ngày tới, dải phía trên sẽ nêu tên và mốc thời gian — bấm *Xem trên bản đồ*.
+3. Bấm **Xem lại Bão số 3 Yagi — 09/2024** rồi kéo trục thời gian: quan sát bão vượt Biển Đông, mốc **đổ bộ** và mốc **tan** trong đất liền.
+4. Vào **Ứng phó → Phương án ứng phó → Bão Yagi 2024**: đọc 20 bước chia ba giai đoạn, mỗi bước có mốc giờ, cấp độ rủi ro và căn cứ Điều 22.
+5. Mở một **SOS**, xác minh và sinh nhiệm vụ, điều đội — rồi quay lại xem sự cố, đội và phân tích đã đổi theo.
+6. Chạy vài bước **Mô phỏng** rồi reset về mốc gốc.
+7. Đăng nhập lại bằng `phamdam` (Tây Hồ) hoặc `phamhieu` (đội CH-05) để thấy ranh giới đọc/ghi thu hẹp đúng theo vai.
+8. Xem `/admin/audit` để hiểu vết kiểm tra bảo mật và giới hạn của bản demo cục bộ.
 
-Session, users và audit dùng local browser adapters; người dùng có thể sửa JavaScript/localStorage. Không dùng frontend này làm security boundary thực tế.
+---
 
-## Production roadmap
+## 15. Giới hạn — nói rõ để không hiểu nhầm năng lực
 
-1. Backend API với server-side auth/resource authorization và durable database transaction.
-2. Identity provider, HttpOnly session/MFA và immutable audit.
-3. Realtime event delivery, idempotency, optimistic concurrency và observability.
-4. CI/CD, browser E2E, accessibility regression và deployment hardening.
-5. Tile source/cache có SLA cho môi trường vận hành.
+Dự án **chưa có**:
 
-## Demo end-to-end gợi ý
+- backend, API và lưu trữ bền vững (mọi thay đổi mất khi tải lại trang);
+- phân quyền phía máy chủ hoặc chính sách bảo mật ở tầng cơ sở dữ liệu;
+- giao dịch cơ sở dữ liệu, kiểm soát tương tranh, đồng bộ nhiều máy;
+- kênh truyền thời gian thực đúng nghĩa;
+- nhật ký kiểm toán chống sửa đổi;
+- phiên HttpOnly, xác thực đa yếu tố, chống CSRF, giới hạn tần suất, quản lý bí mật;
+- giám sát, CI/CD và quy trình vận hành sản xuất;
+- dịch vụ tile bản đồ do hệ thống tự kiểm soát.
 
-1. Đăng nhập `Trần Quốc Thuận`, xem Command Center và Incident `INC-0241`.
-2. Mở SOS, xác minh/liên kết, tạo Task và điều phối Team.
-3. Cập nhật Task để quan sát Team, SOS, Incident timeline và Analytics cùng thay đổi.
-4. Thực hiện Relief hoặc Playbook linked mutation.
-5. Chạy từng tick Simulation rồi reset baseline.
-6. Hỏi AI Assistant và kiểm tra evidence/confirmation trước action.
-7. Đăng nhập `Phạm Văn Đam` để chứng minh geographic read/mutation boundary.
-8. Xem `/admin/audit` để giải thích security audit và giới hạn local demo.
+Phiên đăng nhập, người dùng và nhật ký nằm trong bộ nhớ trình duyệt — người dùng có thể sửa bằng DevTools. **Không dùng frontend này làm ranh giới bảo mật thật.**
+
+Ngoài ra, phần khí tượng có giới hạn khoa học phải nêu: bộ dò bão chạy trên lưới 1° nên **mốc đổ bộ là xấp xỉ theo nút lưới**, không phải toạ độ cắt bờ chính xác; GloFAS cho lưu lượng chứ không cho mực nước nên hệ thống **không suy ra cấp báo động I/II/III**.
+
+---
+
+## 16. Hướng phát triển tiếp
+
+1. Backend với phân quyền phía máy chủ và giao dịch bền vững; đẩy toàn bộ ma trận quyền xuống tầng dữ liệu.
+2. Nhà cung cấp định danh, phiên HttpOnly/MFA và nhật ký kiểm toán bất biến.
+3. Truyền sự kiện thời gian thực, idempotency, kiểm soát tương tranh lạc quan, giám sát vận hành.
+4. Hoàn thiện nhóm **Hậu cần & Phục hồi**: cảnh báo hạn dùng vật tư, sinh yêu cầu cứu trợ theo định mức (15 lít nước và 2.100 kcal/người/ngày), danh sách hộ thụ hưởng dùng chung, hỗ trợ hộ dân theo NĐ 20/2021 và biểu mẫu thiệt hại theo TTLT 43/2015.
+5. Dọn nợ test suite và dựng CI/CD, kiểm thử E2E trên trình duyệt, kiểm tra khả năng tiếp cận.
+6. Nguồn tile bản đồ có SLA cho môi trường vận hành thật.
+
+---
+
+## 17. Tài liệu kèm theo
+
+| Tệp | Nội dung |
+| --- | --- |
+| [`docs/05-architecture/ARCHITECTURE.md`](./docs/05-architecture/ARCHITECTURE.md) | Kiến trúc chi tiết |
+| [`docs/03-use-cases/`](./docs/03-use-cases) · [`docs/04-domain-model/`](./docs/04-domain-model) | Use case và mô hình domain từng phân hệ |
+| [`tests/README.md`](./tests/README.md) | Chiến lược kiểm thử |
+| [`THAY-DOI.md`](./THAY-DOI.md) | Nhật ký các đợt cải tiến, kèm số đo trước/sau |
+| [`PHAN-TICH-UX-VA-PHAM-VI.md`](./PHAN-TICH-UX-VA-PHAM-VI.md) | Phân tích trải nghiệm và phạm vi |
+| [`RA-SOAT-DOT-2.md`](./RA-SOAT-DOT-2.md) · [`RA-SOAT-DOT-3.md`](./RA-SOAT-DOT-3.md) | Rà soát có phản biện: phương án ứng phó so với chuẩn Mỹ/Trung/Nhật/Philippines, Hậu cần – Phục hồi, mức tối giản của Trung tâm điều hành, kèm bảng trạng thái triển khai |

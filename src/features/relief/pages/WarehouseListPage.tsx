@@ -20,6 +20,7 @@ import {
   type WarehouseFilters,
 } from "@/application/relief/reliefQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
+import { ReliefSectionTabs } from "../components/ReliefSectionTabs";
 import { Badge, PageSectionHeader, Progress, Input } from "@/components/ui";
 function Select({
   value,
@@ -66,20 +67,12 @@ export function WarehouseListPage({
   return (
     <div className="workspace-content warehouse-page">
       <PageSectionHeader
-        section="Nguồn lực"
+        section="Hậu cần"
         title="Kho vật tư cứu trợ"
         description="Quản lý khả dụng, tồn kho, hàng giữ và hoạt động xuất kho."
         icon={Warehouse}
-        actions={
-          <button
-            className="text-action"
-            onClick={() => navigate("/relief/requests")}
-          >
-            <PackageOpen size={15} />
-            Yêu cầu cứu trợ
-          </button>
-        }
       />
+      <ReliefSectionTabs active="/relief/warehouses" navigate={navigate} />
       <section className="relief-summary">
         <div>
           <Warehouse size={16} />

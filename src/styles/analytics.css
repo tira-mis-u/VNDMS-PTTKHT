@@ -784,40 +784,235 @@
     grid-template-columns: 1fr repeat(3, 65px);
   }
 }
+/* ───────────────────────────────────────────────────────────────
+ * IN BÁO CÁO TÁC NGHIỆP — bản in A4 như một văn bản hành chính thật:
+ * ẩn toàn bộ vỏ ứng dụng, chỉ in phần <article class="operational-report">.
+ * ─────────────────────────────────────────────────────────────── */
+@page {
+  size: A4 portrait;
+  margin: 16mm 15mm 18mm;
+}
+.print-only { display: none; }
+
 @media print {
+  html,
   body {
-    overflow: visible;
-    background: #fff;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11.5pt;
+    color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  .app-header,
-  .app-sidebar,
+
+  /* Toàn bộ vỏ ứng dụng không thuộc văn bản báo cáo */
+  .topbar,
+  .sidebar,
+  .sidebar-backdrop,
+  .mobile-sidebar-top,
+  .live-tracking-quickbar,
+  .ai-drawer,
+  .ai-fab,
+  .alert-popover,
+  .admin-feedback-toast,
   .analytics-page-head,
   .analytics-tabs,
+  .analytics-provenance,
   .no-print,
-  .report-actions {
+  .report-actions,
+  .report-data-warning,
+  .analytics-entity-link {
     display: none !important;
   }
+
+  .app-shell,
   .app-body,
-  .workspace {
-    display: block !important;
-    overflow: visible !important;
-    height: auto !important;
-  }
+  .workspace,
+  .workspace-content,
   .analytics-page {
-    padding: 0;
-    max-width: none;
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    box-shadow: none !important;
   }
+
+  .print-only { display: block !important; }
+
   .operational-report {
-    border: 0;
-    box-shadow: none;
-    padding: 10mm 12mm;
-    max-width: none;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11.5pt;
+    line-height: 1.45;
   }
+
+  /* Quốc hiệu và tiêu ngữ chỉ xuất hiện trên bản in */
+  .report-national-heading {
+    display: grid !important;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 10mm;
+    margin-bottom: 6mm;
+    text-align: center;
+    font-size: 11pt;
+  }
+  .report-national-heading b {
+    display: block;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .report-national-heading i {
+    display: block;
+    margin: 1mm auto 0;
+    width: 60%;
+    border-bottom: 1px solid #000;
+  }
+  .report-national-heading em {
+    display: block;
+    font-style: normal;
+    font-weight: 700;
+  }
+
+  .report-official-head { border-bottom-color: #000; }
+  .report-cover h1 {
+    font-size: 16pt;
+    text-transform: uppercase;
+    text-align: center;
+    margin: 6mm auto 2mm;
+  }
+  .report-subject { font-size: 11.5pt; }
+  .report-document-state b { color: #000; }
+
+  .report-metadata-grid,
+  .report-metadata-grid > div,
+  .report-table,
+  .report-table th,
+  .report-table td {
+    border-color: #000 !important;
+  }
+  .report-cover .report-metadata-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report-metadata-grid > div:nth-child(4n) { border-right: 1px solid #000; }
+  .report-metadata-grid > div:nth-child(2n) { border-right: 0; }
+  .report-metadata-grid > div:nth-last-child(-n + 4) { border-bottom: 1px solid #000; }
+  .report-metadata-grid > div:nth-last-child(-n + 2) { border-bottom: 0; }
+
+  /* Cho phép mục dài tràn sang trang mới thay vì để trống nửa trang; chỉ các
+     khối nhỏ (thẻ chỉ số, hàng bảng, chữ ký) mới cấm cắt ngang. */
   .report-block {
-    break-inside: avoid;
+    break-inside: auto;
+    page-break-inside: auto;
+    margin-bottom: 6mm;
   }
-  .report-cover {
-    margin-top: 0;
+  .report-kpi-grid > div,
+  .report-block > p,
+  .report-timeline li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Khối cơ quan trên màn hình bị lặp với quốc hiệu — tiêu ngữ của bản in */
+  .report-official-head { display: none !important; }
+  .report-block h2 {
+    font-size: 12.5pt;
+    text-transform: uppercase;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .report-cover { margin-top: 0; }
+  .report-table-wrap {
+    overflow: visible !important;
+    border: 0 !important;
+  }
+  .report-table {
+    width: 100% !important;
+    border-collapse: collapse;
+    font-size: 10.5pt;
+  }
+  .report-table thead { display: table-header-group; }
+  .report-table tfoot { display: table-footer-group; }
+  .report-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .report-table th,
+  .report-table td {
+    border: 1px solid #000 !important;
+    padding: 2mm 2.5mm !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .report-table th { font-weight: 700; }
+  .report-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report-kpi-grid > div {
+    border: 1px solid #000 !important;
+    background: #fff !important;
+  }
+  .analytics-status,
+  .metric-basis {
+    border: 1px solid #667085 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .report-audit {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #000 !important;
+    background: #fff !important;
+  }
+
+  /* Khối ký, nơi nhận và chân trang chỉ hiển thị khi in */
+  .report-signature-block {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8mm;
+    margin-top: 8mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .report-signature-block section { font-size: 11pt; }
+  .report-signature-block .recipients b { display: block; font-style: italic; }
+  .report-signature-block .recipients ul {
+    margin: 1mm 0 0;
+    padding-left: 5mm;
+  }
+  .report-signature-block .signer {
+    text-align: center;
+  }
+  .report-signature-block .signer .place-date {
+    font-style: italic;
+    display: block;
+    margin-bottom: 2mm;
+  }
+  .report-signature-block .signer b {
+    display: block;
+    text-transform: uppercase;
+  }
+  .report-signature-block .signer .sign-space {
+    display: block;
+    height: 22mm;
+  }
+  .report-print-footnote {
+    /* Bám theo khối chữ ký, tránh rơi một mình sang trang cuối */
+    break-before: avoid;
+    page-break-before: avoid;
+    margin-top: 5mm;
+    padding-top: 2mm;
+    border-top: 1px solid #000;
+    font-size: 9.5pt;
+    font-style: italic;
+    text-align: center;
   }
 }
 

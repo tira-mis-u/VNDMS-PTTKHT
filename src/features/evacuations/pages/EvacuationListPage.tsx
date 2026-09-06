@@ -25,6 +25,7 @@ import {
   type EvacuationFilters,
 } from "@/application/evacuations/evacuationQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
+import { EvacuationSectionTabs } from "@/components/navigation/GroupedSectionTabs";
 import { Badge, Button, EmptyState, PageSectionHeader, Progress, Input } from "@/components/ui";
 
 function statusTone(operation: EvacuationOperation) {
@@ -109,6 +110,7 @@ export function EvacuationListPage({
         description="Theo dõi hoạt động sơ tán dân cư trong phạm vi phân quyền từ dữ liệu nghiệp vụ chính thức."
         icon={Truck}
       />
+      <EvacuationSectionTabs active="/evacuations" navigate={navigate} />
 
       <section className="evac-summary-grid" aria-label="Tổng quan sơ tán">
         <div className="evac-summary-card">

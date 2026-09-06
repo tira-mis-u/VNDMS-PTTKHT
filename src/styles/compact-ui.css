@@ -400,22 +400,24 @@ html[data-theme="dark"] :is(.breadcrumbs, .analytics-eyebrow, .ai-eyebrow, .simu
   color: #82adf5;
 }
 
-/* Bản đồ tác nghiệp full-width với chiều cao cố định tối ưu theo viewport */
+/* Bản đồ tác nghiệp full-width. Chiều cao phải trừ đủ phần khung phía trên
+   (thanh tiêu đề + tiêu đề trang + khối bộ lọc ≈ 420px); trừ thiếu thì chú
+   giải góc dưới và trục thời gian bị đẩy ra ngoài vùng nhìn thấy. */
 .om-layout {
   width: 100%;
-  height: clamp(580px, calc(100vh - 220px), 780px);
+  height: clamp(430px, calc(100vh - 420px), 760px);
   position: relative;
   display: block;
 }
 .om-map-zone {
   width: 100%;
   height: 100%;
-  min-height: 580px;
+  min-height: 430px;
   position: relative;
 }
 @media (max-width: 980px) {
-  .om-layout { height: clamp(480px, 65vh, 600px); }
-  .om-map-zone { min-height: 480px; }
+  .om-layout { height: clamp(430px, 62vh, 600px); }
+  .om-map-zone { min-height: 430px; }
 }
 
 /* Badges and worklists may scroll, but labels must never overlap columns. */
@@ -2261,4 +2263,115 @@ html[data-theme="dark"] .weather-hover-card .weather-hover-region {
 }
 html[data-theme="dark"] .weather-hover-card .weather-hover-cell-lbl {
   color: #8da4be !important;
+}
+
+/* ================================================================
+   FILTER TOOLBAR BASELINE — nhãn bọc Select phải cao đúng bằng chính
+   control (36px). Trước đây nhãn giữ chiều cao 42px của --control-height
+   nên Select bị canh giữa và nhô lên ~3px so với ô tìm kiếm cùng hàng
+   ("Tất cả vai trò", "Mọi trạng thái"…). Đặt cùng chiều cao + canh đáy
+   để mọi dropdown và search bar nằm đúng một đường ngang.
+   ================================================================ */
+.app-shell .workspace :where(
+  .incident-filters,
+  .task-filters,
+  .team-filters,
+  .sos-filters,
+  .relief-filters,
+  .shelter-filters,
+  .evac-toolbar,
+  .admin-filters,
+  .alerts-toolbar,
+  .om-filter-bar-top,
+  .report-builder
+) {
+  align-items: center !important;
+}
+.app-shell .workspace :where(
+  .incident-filters,
+  .task-filters,
+  .team-filters,
+  .sos-filters,
+  .relief-filters,
+  .shelter-filters,
+  .evac-toolbar,
+  .admin-filters,
+  .alerts-toolbar,
+  .om-filter-bar-top
+) > label:has(.ui-select),
+.app-shell .workspace :where(
+  .incident-filters,
+  .task-filters,
+  .team-filters,
+  .sos-filters,
+  .relief-filters,
+  .shelter-filters,
+  .evac-toolbar,
+  .admin-filters,
+  .alerts-toolbar,
+  .om-filter-bar-top
+) > .filter-select {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding-block: 0 !important;
+  align-items: center !important;
+}
+/* Thanh lọc dạng cột có nhãn chữ phía trên (Phân tích & báo cáo):
+   các control vẫn phải kết thúc trên cùng một đường đáy. */
+.app-shell .workspace .analytics-filters {
+  align-items: flex-end !important;
+}
+.app-shell .workspace .analytics-filters > label {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * Sửa lỗi: mũi tên dropdown xoay kéo theo cả vạch ngăn "|"
+ * Vạch ngăn trước đây là `border-left` vẽ ngay trên chính thẻ <svg>, nên khi
+ * mở danh sách và xoay mũi tên 180° thì vạch ngăn xoay theo, nhảy sang phải.
+ * Cách sửa: vạch ngăn chuyển thành `border-right` của vùng chữ (không xoay),
+ * chỉ còn mũi tên xoay.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.ui-select-trigger > svg {
+  border-left: 0 !important;
+  padding-left: 6px;
+}
+.ui-select-trigger > span {
+  border-right: 1px solid var(--border-subtle, #e4e7ec);
+}
+
+/* Dòng đếm cảnh báo ở Trung tâm điều hành (thay bảng liệt kê 5-của-44). */
+.cc-alert-counter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 12.5px;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+}
+.cc-alert-counter:hover { border-color: #94a3b8; background: #f8fafc; }
+.cc-alert-counter-main { flex: 0 0 auto; }
+.cc-alert-counter-top {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 12px;
+  border-left: 1px solid #e2e8f0;
+  color: #64748b;
+}
+.cc-alert-counter-top.cc-severity-red { color: #b91c1c; font-weight: 600; }
+.cc-alert-counter-top.cc-severity-amber { color: #b45309; font-weight: 600; }
+html[data-theme="dark"] .cc-alert-counter {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
 }

@@ -1,28 +1,19 @@
 import { useCallback, useState } from "react";
-import {
-  CalendarDays,
-  ChevronRight,
-  FlaskConical,
-  RefreshCw,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ChevronRight, FlaskConical, SlidersHorizontal } from "lucide-react";
 import {
   getCommandCenterHeader,
   type CommandCenterEntityRef,
 } from "@/application/command-center/commandCenterQueries";
-import { Button, PageSectionHeader, StatusDot } from "@/components/ui";
+import { PageSectionHeader, StatusDot } from "@/components/ui";
+import { CommandSectionTabs } from "@/components/navigation/GroupedSectionTabs";
+import { ResourceAlertStrip } from "./ResourceAlertStrip";
 import { ActionDialog } from "./ActionDialog";
 import { ActionQueue } from "./ActionQueue";
-import { CoordinationTimeline } from "./CoordinationTimeline";
+import { DutyLog } from "./DutyLog";
 import { DetailDrawer } from "./DetailDrawer";
-import { IncidentOverview } from "./IncidentOverview";
 import { OperationalAlerts } from "./OperationalAlerts";
-import { OperationalMap } from "./OperationalMap";
+import { CommandCenterMap } from "./CommandCenterMap";
 import { QuickActions } from "./QuickActions";
-import { ResourceExceptions } from "./ResourceExceptions";
-import { RecoveryExceptions } from "./RecoveryExceptions";
-import { PlaybookOperations } from "./PlaybookOperations";
-import { LogisticsExceptions } from "./LogisticsExceptions";
 import { SituationSummary } from "./SituationSummary";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 
@@ -36,15 +27,10 @@ export function CommandCenter({
   const scenario = getCommandCenterHeader(store, simulation);
   const [selected, setSelected] = useState<CommandCenterEntityRef | null>(null);
   const [dialogAction, setDialogAction] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const openEntity = useCallback(
     (ref: CommandCenterEntityRef) => setSelected(ref),
     [],
   );
-  const refresh = () => {
-    setRefreshing(true);
-    window.setTimeout(() => setRefreshing(false), 700);
-  };
   /** CTA trong drawer điều hướng tới trang canonical thay cho dialog giả. */
   const handleDrawerAction = useCallback(
     (label: string) => {
@@ -77,7 +63,7 @@ export function CommandCenter({
   return (
     <div className="workspace-content cc-command-center">
       <PageSectionHeader
-        section="Quản lý & điều hành"
+        section="Điều hành"
         title="Trung tâm điều hành"
         description={
           <span className="cc-page-context">
@@ -91,27 +77,8 @@ export function CommandCenter({
         }
         icon={SlidersHorizontal}
         className="cc-page-header"
-        actions={
-          <div className="cc-header-controls">
-            <span className="filter-chip" aria-label="Phạm vi thời gian 24 giờ gần nhất">
-              <CalendarDays size={15} />
-              <span>24 giờ gần nhất</span>
-            </span>
-            <span className="filter-chip" aria-label={`Kịch bản ${scenario.name}`}>
-              <SlidersHorizontal size={15} />
-              <span>{scenario.name}</span>
-            </span>
-            <Button
-              variant="secondary"
-              onClick={refresh}
-              aria-label={refreshing ? "Đang làm mới dữ liệu" : "Làm mới dữ liệu"}
-            >
-              <RefreshCw size={15} className={refreshing ? "spin-once" : ""} />
-              <span>{refreshing ? "Đang làm mới" : "Làm mới"}</span>
-            </Button>
-          </div>
-        }
       />
+      <CommandSectionTabs active="/" navigate={navigate} />
 
       {simulation.tick > 0 && (
         <button
@@ -128,26 +95,26 @@ export function CommandCenter({
           <ChevronRight size={14} />
         </button>
       )}
+      {/*
+        Trung tâm điều hành chỉ giữ những gì thay đổi theo phút VÀ dẫn tới một
+        hành động ngay: hàng đợi việc, tình hình chung, cảnh báo, bản đồ, sổ
+        trực ban. Các bảng "ngoại lệ" của hậu cần, phương án, phục hồi và bảng
+        sự cố thu nhỏ đã được gỡ bỏ — chúng chỉ là bản sao của trang chuyên
+        môn, nhịp thay đổi theo ngày/tuần, và làm màn hình chỉ huy phải cuộn
+        bốn lần mới xem hết.
+      */}
       <div className="cc-layout">
-        <QuickActions onAction={setDialogAction} />
+        <QuickActions onAction={setDialogAction} onNavigate={navigate} />
         <SituationSummary />
-        <OperationalAlerts navigate={navigate} />
+        <ResourceAlertStrip onNavigate={navigate} />
         <ActionQueue
           onOpen={openEntity}
           onQuickAction={setDialogAction}
           onNavigate={navigate}
         />
-        <IncidentOverview onNavigate={navigate} />
-        <OperationalMap onOpen={openEntity} onNavigate={navigate} />
-        <CoordinationTimeline />
-        <ResourceExceptions
-          onOpen={openEntity}
-          onQuickAction={setDialogAction}
-          onNavigate={navigate}
-        />
-        <LogisticsExceptions navigate={navigate} />
-        <PlaybookOperations navigate={navigate} />
-        <RecoveryExceptions navigate={navigate} />
+        <OperationalAlerts navigate={navigate} />
+        <CommandCenterMap onNavigate={navigate} />
+        <DutyLog />
       </div>
       <DetailDrawer
         selected={selected}

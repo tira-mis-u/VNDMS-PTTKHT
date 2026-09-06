@@ -16,6 +16,7 @@ import {
   type ShelterFilters,
 } from "@/application/shelters/shelterQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
+import { EvacuationSectionTabs } from "@/components/navigation/GroupedSectionTabs";
 import { Badge, PageSectionHeader, Progress, Input } from "@/components/ui";
 const tone = (status: string) =>
   status === "Quá tải" || status === "Không thể tiếp cận"
@@ -95,11 +96,12 @@ export function ShelterListPage({
   return (
     <div className="workspace-content shelters-page">
       <PageSectionHeader
-        section="Nguồn lực"
-        title="Quản lý điểm sơ tán"
+        section="Ứng phó"
+        title="Điểm sơ tán"
         description="Điều phối sức chứa, điều kiện tiếp nhận và hoạt động sơ tán dân cư."
         icon={Building2}
       />
+      <EvacuationSectionTabs active="/shelters" navigate={navigate} />
       <section className="shelter-summary">
         <div>
           <Building2 size={16} />

@@ -17,7 +17,9 @@ import {
   isProjectOverdue,
 } from "@/domain/recovery/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, PageSectionHeader, Progress, Input } from "@/components/ui";
+import { RecoverySectionTabs } from "@/components/navigation/GroupedSectionTabs";
+import { RECONSTRUCTION_WORKSPACE_PATH } from "@/app/routes/router";
+import { Badge, PageSectionHeader, Progress, Input } from "@/components/ui";
 function Select({
   value,
   onChange,
@@ -69,12 +71,8 @@ export function RecoveryProjectListPage({
         description="Triển khai từ đánh giá đã xác minh tới mốc tiến độ, nguồn lực và hoàn thành."
         icon={Clock3}
         className="recovery-header"
-        actions={
-          <Button variant="secondary" onClick={() => navigate("/recovery/assessments")}>
-            Đánh giá thiệt hại
-          </Button>
-        }
       />
+      <RecoverySectionTabs active={RECONSTRUCTION_WORKSPACE_PATH} navigate={navigate} />
       <section className="recovery-strip">
         <span
           className={

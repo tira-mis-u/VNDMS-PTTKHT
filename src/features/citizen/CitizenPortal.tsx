@@ -130,7 +130,6 @@ function CitizenLiveMap({
           <div class="weather-hover-card">
             <div class="weather-hover-head">
               <span class="weather-hover-title">${st.stationName}</span>
-              <span class="weather-hover-region">Vùng ${st.region}</span>
             </div>
             <div class="weather-hover-grid">
               <div class="weather-hover-cell">

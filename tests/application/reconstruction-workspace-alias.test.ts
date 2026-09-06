@@ -31,29 +31,32 @@ const account = (username: string) =>
   structuredClone(demoUsers.find((item) => item.username === username)!);
 
 test("Tái thiết là alias điều hướng của canonical Recovery Project list", () => {
+  // Deep-link cũ vẫn sống nguyên vẹn sau khi gộp điều hướng...
   assert.deepEqual(parseRoute(RECONSTRUCTION_WORKSPACE_PATH), {
     name: "recovery-project-list",
   });
   assert.deepEqual(parseRoute("/recovery/projects"), {
     name: "recovery-project-list",
   });
+  // ...nhưng mục sáng trên thanh bên nay là mục đã gộp "Phục hồi & tái thiết"
+  // (thẩm định thiệt hại và dự án tái thiết là hai tab của cùng một hồ sơ).
   assert.equal(
     activeNavigationLabel(parseRoute(RECONSTRUCTION_WORKSPACE_PATH)),
-    "Tái thiết",
+    "Phục hồi & tái thiết",
   );
   assert.equal(
     activeNavigationLabel(parseRoute("/recovery/projects/RP-0241")),
-    "Tái thiết",
+    "Phục hồi & tái thiết",
   );
 });
 
 test("sidebar Tái thiết có deep-link thật và giữ permission Recovery Project hiện hữu", () => {
   const item = navigationGroups
     .flatMap((group) => group.items)
-    .find((entry) => entry.label === "Tái thiết");
+    .find((entry) => entry.label === "Phục hồi & tái thiết");
   assert.ok(item);
-  assert.equal(item.path, RECONSTRUCTION_WORKSPACE_PATH);
-  assert.equal(item.permission, "recovery_project_view");
+  assert.equal(item.path, "/recovery");
+  assert.equal(item.permission, "damage_assessment_view");
   for (const role of [
     "commander",
     "operator",
@@ -65,13 +68,13 @@ test("sidebar Tái thiết có deep-link thật và giữ permission Recovery Pr
     const labels = visibleNavigationGroups(canFor(role)).flatMap((group) =>
       group.items.map((entry) => entry.label),
     );
-    assert.ok(labels.includes("Tái thiết"), role);
+    assert.ok(labels.includes("Phục hồi & tái thiết"), role);
   }
   for (const role of ["warehouse_staff", "citizen"] as const) {
     const labels = visibleNavigationGroups(canFor(role)).flatMap((group) =>
       group.items.map((entry) => entry.label),
     );
-    assert.ok(!labels.includes("Tái thiết"), role);
+    assert.ok(!labels.includes("Phục hồi & tái thiết"), role);
   }
 });
 
@@ -117,7 +120,9 @@ test("authorized canonical view chặn rò Recovery Project ngoài scope và own
 test("cross-link giữ canonical Recovery Project detail làm source of truth", () => {
   for (const file of [
     "src/features/recovery/pages/DamageAssessmentDetailPage.tsx",
-    "src/features/command-center/components/RecoveryExceptions.tsx",
+    // RecoveryExceptions.tsx đã bị xoá trong đợt tinh giản Trung tâm điều hành
+    // (bảng ngoại lệ khôi phục trùng lặp với chính phân hệ Phục hồi).
+    "src/features/recovery/pages/RecoveryProjectListPage.tsx",
     "src/features/analytics/pages/OperationalAnalyticsPage.tsx",
   ])
     assert.match(source(file), /\/recovery\/projects\/\$\{item\.id\}/, file);

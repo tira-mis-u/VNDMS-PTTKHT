@@ -1,19 +1,19 @@
-import { ChevronRight, ExternalLink } from "lucide-react";
-import {
-  alertCategoryLabels,
-  alertSeverityLabels,
-  alertSeverityTones,
-} from "@/domain/alerts/types";
-import {
-  alertDetailPath,
-  summarizeAlerts,
-} from "@/application/alerts/alertQueries";
+import { BellRing, ChevronRight } from "lucide-react";
+import { alertSeverityTones } from "@/domain/alerts/types";
+import { summarizeAlerts } from "@/application/alerts/alertQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, SectionHeader } from "@/components/ui";
 
 /**
- * Bảng cảnh báo tác nghiệp của Command Center — đọc cùng một
- * Authorized Alert View với trang Cảnh báo và header; không có dataset riêng.
+ * DÒNG ĐẾM CẢNH BÁO (thay cho bảng "Cảnh báo tác nghiệp" cũ)
+ * ─────────────────────────────────────────────────────────────────────────
+ * Bảng cũ liệt kê 5 cảnh báo đầu tiên trong tổng số 44 — một lát cắt tuỳ tiện
+ * của trang `/alerts`, và **không dẫn tới hành động nào** ngoài việc bấm sang
+ * chính trang đó. Ở phòng chỉ huy, thứ cần biết chỉ là: còn bao nhiêu chưa
+ * đọc, bao nhiêu phải xác nhận, mức cao nhất đang là gì — rồi mở trang cảnh
+ * báo nếu muốn đọc.
+ *
+ * Khối tự ẩn khi trong phạm vi phân quyền không có cảnh báo nào, thay vì hiện
+ * một bảng rỗng.
  */
 export function OperationalAlerts({
   navigate,
@@ -21,78 +21,32 @@ export function OperationalAlerts({
   navigate: (path: string) => void;
 }) {
   const alerts = useOperationalState().alerts;
+  if (!alerts.length) return null;
+
   const summary = summarizeAlerts(alerts);
-  const top = alerts.slice(0, 5);
+  const highest =
+    alerts.find((alert) => alertSeverityTones[alert.severity] === "red") ??
+    alerts.find((alert) => alertSeverityTones[alert.severity] === "amber") ??
+    alerts[0];
+
   return (
-    <section
-      className="content-section cc-operational-alerts"
-      aria-label="Cảnh báo tác nghiệp"
+    <button
+      type="button"
+      className="cc-alert-counter"
+      onClick={() => navigate("/alerts")}
+      aria-label="Mở trung tâm cảnh báo"
     >
-      <SectionHeader
-        title="Cảnh báo tác nghiệp"
-        description={`${summary.unread} chưa đọc · ${summary.pendingAcknowledgement} cần xác nhận · Tổng hợp từ dữ liệu vận hành`}
-        action="Mở trung tâm thông báo"
-        onAction={() => navigate("/alerts")}
-      />
-      {alerts.length === 0 ? (
-        <p className="cc-alerts-empty">
-          Không có cảnh báo tác nghiệp nào trong phạm vi phân quyền hiện tại.
-        </p>
-      ) : (
-        <>
-          <div className="cc-alert-chips">
-            {summary.byCategory.map((entry) => (
-              <span className="cc-alert-chip" key={entry.category}>
-                {entry.label} <b>{entry.count}</b>
-              </span>
-            ))}
-          </div>
-          <div className="cc-alert-list">
-            {top.map((alert) => (
-              <div className="cc-alert-item" key={alert.key}>
-                <span
-                  className={`cc-severity-line cc-severity-${alertSeverityTones[alert.severity]}`}
-                />
-                <div
-                  className="cc-alert-item-body"
-                  onClick={() => navigate(alertDetailPath(alert))}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ")
-                      navigate(alertDetailPath(alert));
-                  }}
-                >
-                  <div className="cc-alert-item-head">
-                    <Badge tone={alertSeverityTones[alert.severity]}>
-                      {alertSeverityLabels[alert.severity]}
-                    </Badge>
-                    <small>{alertCategoryLabels[alert.category]}</small>
-                    <b>{alert.source.code}</b>
-                    {alert.status === "Chưa đọc" && (
-                      <i className="alert-unread-mark" aria-label="Chưa đọc" />
-                    )}
-                  </div>
-                  <p>{alert.title}</p>
-                  <small>
-                    {alert.detectedAt} · {alert.status}
-                  </small>
-                </div>
-                <div className="cc-alert-item-actions">
-                  <button
-                    title={`Mở ${alert.source.label} ${alert.source.code}`}
-                    aria-label={`Mở nguồn ${alert.source.code}`}
-                    onClick={() => navigate(alert.source.path)}
-                  >
-                    <ExternalLink size={14} />
-                  </button>
-                  <ChevronRight size={15} aria-hidden="true" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-    </section>
+      <BellRing size={15} />
+      <span className="cc-alert-counter-main">
+        <b>{alerts.length}</b> cảnh báo trong phạm vi phụ trách ·{" "}
+        <b>{summary.unread}</b> chưa đọc · <b>{summary.pendingAcknowledgement}</b> cần xác nhận
+      </span>
+      <span
+        className={`cc-alert-counter-top cc-severity-${alertSeverityTones[highest.severity]}`}
+      >
+        Mới nhất: {highest.title}
+      </span>
+      <ChevronRight size={15} />
+    </button>
   );
 }

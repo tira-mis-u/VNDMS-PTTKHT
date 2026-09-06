@@ -15,7 +15,35 @@ export function ActionQueue({
   onNavigate: (path: string) => void;
 }) {
   const store = useOperationalState();
-  const items = getCommandCenterActionQueue(store);
+  const all = getCommandCenterActionQueue(store, (permission) =>
+    store.can(permission as never),
+  );
+  const VISIBLE = 6;
+  const items = all.slice(0, VISIBLE);
+  // Việc bị đẩy khỏi 6 dòng đầu không được phép biến mất: tóm tắt theo loại và
+  // cho bấm thẳng sang phân hệ tương ứng.
+  const restByType = all.slice(VISIBLE).reduce<Record<string, number>>((acc, item) => {
+    acc[item.type] = (acc[item.type] ?? 0) + 1;
+    return acc;
+  }, {});
+  const restLabel: Record<string, string> = {
+    "SOS khẩn cấp": "SOS khẩn cấp",
+    "Đội cứu hộ": "đội cứu hộ",
+    "Nhiệm vụ": "nhiệm vụ quá hạn",
+    "Sự cố": "sự cố",
+    "Yêu cầu cứu trợ": "yêu cầu cứu trợ",
+    "Chuyến hàng": "chuyến hàng",
+    "Đánh giá thiệt hại": "hồ sơ thiệt hại",
+  };
+  const modulePath: Record<string, string> = {
+    "SOS khẩn cấp": "/sos",
+    "Đội cứu hộ": "/teams",
+    "Nhiệm vụ": "/tasks",
+    "Sự cố": "/incidents",
+    "Yêu cầu cứu trợ": "/relief/requests",
+    "Chuyến hàng": "/relief/shipments",
+    "Đánh giá thiệt hại": "/recovery",
+  };
   const open = (item: (typeof items)[number]) =>
     item.path ? onNavigate(item.path) : onOpen(item.ref);
   return (
@@ -23,11 +51,31 @@ export function ActionQueue({
       className="content-section cc-action-queue"
       aria-labelledby="action-queue-title"
     >
+      {/*
+        Bỏ nhãn "Xem toàn bộ hàng đợi": không có trang nào tên như vậy nên nút
+        đó không dẫn đi đâu. Hàng đợi gộp từ nhiều phân hệ (SOS, nhiệm vụ, đội,
+        sự cố, cứu trợ, chuyến hàng, thẩm định thiệt hại) — mỗi dòng đã mở
+        thẳng hồ sơ gốc của nó.
+      */}
       <SectionHeader
         title="Cần xử lý"
-        description="Xếp theo mức độ ưu tiên và thời gian chờ"
-        action="Xem toàn bộ hàng đợi"
+        description={
+          all.length
+            ? `${all.length} việc đang chờ trong phạm vi được phép đọc · xếp theo mức độ khẩn và thời gian chờ`
+            : "Xếp theo mức độ ưu tiên và thời gian chờ"
+        }
       />
+      {items.length === 0 && (
+        <p className="cc-action-empty">
+          Không có việc nào đang chờ xử lý trong phạm vi được phép đọc của tài khoản{" "}
+          <b>{store.currentUser?.displayName ?? "hiện tại"}</b>
+          {store.currentUser?.geographicScope?.name
+            ? ` (${store.currentUser.geographicScope.name})`
+            : ""}
+          . Hàng đợi lấy từ SOS, nhiệm vụ quá hạn, đội mất liên lạc, sự cố chưa gán,
+          yêu cầu cứu trợ trễ hạn, chuyến hàng gặp sự cố và hồ sơ thiệt hại chờ thẩm định.
+        </p>
+      )}
       <div className="cc-action-list">
         {items.map((item, index) => (
           <article className="cc-action-item" key={`${item.type}-${item.id}`}>
@@ -77,6 +125,20 @@ export function ActionQueue({
           </article>
         ))}
       </div>
+      {Object.keys(restByType).length > 0 && (
+        <div className="cc-action-rest">
+          <span>Còn {all.length - items.length} việc khác:</span>
+          {Object.entries(restByType).map(([type, count]) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => onNavigate(modulePath[type] ?? "/")}
+            >
+              {count} {restLabel[type] ?? type.toLowerCase()}
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

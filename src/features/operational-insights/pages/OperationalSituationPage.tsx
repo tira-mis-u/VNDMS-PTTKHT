@@ -2,6 +2,9 @@ import { AlertTriangle, ArrowRight, Clock3, Database, MapPinned, Waves } from "l
 import { PageSectionHeader } from "@/components/ui";
 import { getOperationalSituation, type OperationalInsightsData } from "@/application/operations/operationalInsightsQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
+import { HydrologyPanel } from "../components/HydrologyPanel";
+import { CommandSectionTabs } from "@/components/navigation/GroupedSectionTabs";
+import { SITUATION_WORKSPACE_PATH } from "@/app/routes/router";
 
 export function OperationalSituationPage({ navigate }: { navigate: (path: string) => void }) {
   const store = useOperationalState();
@@ -9,11 +12,12 @@ export function OperationalSituationPage({ navigate }: { navigate: (path: string
   return (
     <main className="workspace-content insights-page">
       <PageSectionHeader
-        section="Quản lý & điều hành"
+        section="Điều hành"
         title="Tình hình tác nghiệp thiên tai"
         description={`Tổng hợp từ hồ sơ nghiệp vụ trong phạm vi được phân quyền. Thời điểm dữ liệu: ${situation.asOf}.`}
         icon={Waves}
       />
+      <CommandSectionTabs active={SITUATION_WORKSPACE_PATH} navigate={navigate} />
       {situation.simulationActive && (
         <div className="insights-notice simulation"><AlertTriangle size={17} /><div><b>Dữ liệu mô phỏng được tách biệt</b><p>{situation.simulationLabel}</p></div></div>
       )}
@@ -44,9 +48,9 @@ export function OperationalSituationPage({ navigate }: { navigate: (path: string
           </ol>
         </section>
       </div>
-      <section className="insights-unavailable" aria-labelledby="observation-title">
-        <Waves size={20} /><div><h2 id="observation-title">Quan trắc và dự báo</h2><p>Chưa có dữ liệu quan trắc hoặc dự báo trong nguồn dữ liệu hiện tại.</p><small>Hệ thống không sử dụng dữ liệu mô phỏng để thay thế quan trắc thực tế.</small></div>
-      </section>
+      {/* Quan trắc thật (mưa ECMWF-IFS + dòng chảy GloFAS) thay cho khối
+          "chưa có dữ liệu" trước đây. */}
+      <HydrologyPanel />
     </main>
   );
 }

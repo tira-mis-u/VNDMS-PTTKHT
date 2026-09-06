@@ -15,6 +15,30 @@ import {
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { DialogBackdrop, Badge, Button, EmptyState, Input, Textarea } from "@/components/ui";
+
+/** Nhãn mốc thời gian tương đối so với "giờ 0" (thời điểm thiên tai tác động). */
+function leadTimeLabel(hours: number): string {
+  if (hours === 0) return "Giờ 0";
+  const abs = Math.abs(hours);
+  const text = abs >= 24 && abs % 24 === 0 ? `${abs / 24} ngày` : `${abs} giờ`;
+  return hours < 0 ? `− ${text} (trước)` : `+ ${text} (sau)`;
+}
+
+function phaseOf(hours: number): "Trước thiên tai" | "Trong thiên tai" | "Sau thiên tai" {
+  if (hours < 0) return "Trước thiên tai";
+  if (hours <= 12) return "Trong thiên tai";
+  return "Sau thiên tai";
+}
+
+const PHASE_ORDER = ["Trước thiên tai", "Trong thiên tai", "Sau thiên tai"] as const;
+
+const PHASE_NOTE: Record<string, string> = {
+  "Trước thiên tai":
+    "Việc phải xong TRƯỚC khi bão vào / nước lên. Mốc giờ đếm ngược tới giờ 0.",
+  "Trong thiên tai": "Việc trong 12 giờ đầu kể từ thời điểm tác động.",
+  "Sau thiên tai": "Khắc phục, đánh giá thiệt hại, kết thúc ứng phó và rút kinh nghiệm.",
+};
+
 export function PlaybookDetailPage({
   playbookId,
   navigate,
@@ -122,9 +146,21 @@ export function PlaybookDetailPage({
                 <p>Thứ tự, bước bắt buộc, tiên quyết và tiêu chí hoàn thành</p>
               </div>
             </div>
+            {PHASE_ORDER.map((phase) => {
+              const phaseSteps = [...playbook.steps]
+                .filter((item) => phaseOf(item.leadTimeHours) === phase)
+                .sort((a, b) => a.leadTimeHours - b.leadTimeHours || a.order - b.order);
+              if (!phaseSteps.length) return null;
+              return (
+                <div key={phase} className="playbook-phase">
+                  <div className="playbook-phase-head">
+                    <h3>
+                      {phase} <span>{phaseSteps.length} bước</span>
+                    </h3>
+                    <p>{PHASE_NOTE[phase]}</p>
+                  </div>
             <div className="playbook-sequence">
-              {[...playbook.steps]
-                .sort((a, b) => a.order - b.order)
+              {phaseSteps
                 .map((step) => (
                   <article key={step.id}>
                     <span className="step-number">{step.order}</span>
@@ -152,6 +188,25 @@ export function PlaybookDetailPage({
                           </dd>
                         </div>
                         <div>
+                          <dt>Mốc thời gian</dt>
+                          <dd>
+                            <b>{leadTimeLabel(step.leadTimeHours)}</b> so với thời điểm
+                            thiên tai tác động
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Cấp độ rủi ro áp dụng</dt>
+                          <dd>
+                            {step.riskLevels.length
+                              ? `Cấp ${step.riskLevels.join(", ")} (QĐ 18/2021/QĐ-TTg)`
+                              : "Mọi cấp độ"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Căn cứ pháp lý</dt>
+                          <dd>{step.legalBasis}</dd>
+                        </div>
+                        <div>
                           <dt>Tiên quyết</dt>
                           <dd>
                             {step.prerequisites.length
@@ -172,6 +227,9 @@ export function PlaybookDetailPage({
                   </article>
                 ))}
             </div>
+                </div>
+              );
+            })}
           </section>
         </main>
         <aside>

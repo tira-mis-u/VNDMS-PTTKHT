@@ -47,7 +47,9 @@
 .cc-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 315px;
-  grid-template-areas: "quick quick" "situation situation" "action timeline" "incidents resources" "map resources" "updated updated";
+  /* Bố cục sau khi tối giản: hàng đợi việc bên trái, cảnh báo bên phải,
+     bản đồ trải rộng, sổ trực ban khép lại phía dưới. */
+  grid-template-areas: "quick quick" "situation situation" "strip strip" "action alerts" "map alerts" "duty duty" "updated updated";
   gap: 18px 22px;
   align-items: start;
 }
@@ -922,7 +924,7 @@
   }
   .cc-layout {
     grid-template-columns: 1fr;
-    grid-template-areas: "quick" "situation" "action" "incidents" "timeline" "resources" "map" "updated";
+    grid-template-areas: "quick" "situation" "strip" "action" "alerts" "map" "duty" "updated";
   }
   .cc-timeline-section,
   .cc-resources {
@@ -1360,4 +1362,285 @@ html[data-theme="dark"] .action-dialog-permission {
   font-size: 12.5px;
   color: #0284c7;
   font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * NHẬT KÝ TRỰC BAN (sổ trực nghiệp vụ của kíp trực)
+ * ───────────────────────────────────────────────────────────── */
+/* Sổ trực ban trải hết chiều ngang: dòng nhập và nhật ký cần chỗ để đọc. */
+.duty-log { grid-column: 1 / -1; }
+.duty-log .cc-panel-header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.duty-handover {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 0 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.duty-handover label {
+  display: grid;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.duty-handover input,
+.duty-handover textarea,
+.duty-compose input {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-raised);
+  color: var(--foreground);
+  font-size: 12.5px;
+  font-family: inherit;
+  resize: vertical;
+}
+.duty-compose {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 10px;
+  flex-wrap: wrap;
+}
+.duty-compose input { flex: 1 1 220px; }
+.duty-kinds {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.duty-kinds button {
+  padding: 6px 10px;
+  border: 0;
+  background: var(--surface-raised);
+  color: var(--muted);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.duty-kinds button.active {
+  background: #175cd3;
+  color: #fff;
+  font-weight: 600;
+}
+.duty-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: #175cd3;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.duty-primary:disabled { opacity: .5; cursor: default; }
+.duty-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.duty-entry {
+  display: grid;
+  grid-template-columns: 88px 1fr auto;
+  gap: 8px;
+  align-items: start;
+  padding: 7px 8px;
+  border-radius: 7px;
+  border-left: 3px solid transparent;
+}
+.duty-entry:hover { background: rgba(16, 24, 40, 0.03); }
+.duty-entry.kind-order { border-left-color: #175cd3; }
+.duty-entry.kind-handover { border-left-color: #7a5af8; background: rgba(122, 90, 248, .06); }
+.duty-entry.kind-note { border-left-color: #d0d5dd; }
+.duty-entry time { color: var(--muted); font-size: 11px; padding-top: 1px; }
+.duty-entry p { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--foreground); }
+.duty-entry small { color: var(--muted); font-size: 11px; }
+.duty-pending { color: #7a4a10 !important; font-size: 11.5px !important; margin-top: 2px !important; }
+.duty-retract {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 5px;
+}
+.duty-retract:hover { color: #b42318; background: rgba(180, 35, 24, .08); }
+.duty-empty { padding: 10px 8px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.duty-note {
+  margin: 0;
+  padding: 8px 12px 12px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+html[data-theme="dark"] .duty-entry:hover { background: rgba(148, 163, 184, .08); }
+html[data-theme="dark"] .duty-pending { color: #fcd9a4 !important; }
+
+
+/* ─────────── Dải cảnh báo nguồn lực (thay bảng "Nguồn lực cần chú ý") ─────────── */
+.cc-resource-strip {
+  grid-area: strip;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.cc-resource-strip-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #b54708;
+  white-space: nowrap;
+}
+.cc-resource-strip-title b {
+  background: #fef0c7;
+  color: #b54708;
+  border-radius: 9px;
+  padding: 0 7px;
+  font-size: 11.5px;
+}
+.cc-resource-strip-items {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.cc-resource-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised, #f9fafb);
+  font-size: 12px;
+  color: var(--foreground);
+  cursor: pointer;
+  max-width: 320px;
+}
+.cc-resource-chip b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc-resource-chip span { color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+.cc-resource-chip.tone-red { border-color: rgba(180, 35, 24, .35); background: rgba(254, 228, 226, .55); }
+.cc-resource-chip.tone-amber { border-color: rgba(181, 71, 8, .3); background: rgba(254, 240, 199, .5); }
+.cc-resource-chip:hover { border-color: #175cd3; }
+.cc-resource-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  background: none;
+  color: #175cd3;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cc-operational-alerts { grid-area: alerts; }
+.duty-log { grid-area: duty; }
+html[data-theme="dark"] .cc-resource-strip { background: var(--surface-card, #111827); }
+
+/* ── Bản đồ nhúng trong Trung tâm điều hành (dùng chính bản đồ tác nghiệp) ── */
+.cc-map-section {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cc-map-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+}
+.cc-map-head b {
+  font-size: 14px;
+  display: block;
+}
+.cc-map-head small {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.cc-map-head button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #175cd3;
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cc-map-head button:hover {
+  background: #eff6ff;
+}
+.cc-map-frame {
+  position: relative;
+  flex: 1 1 auto;
+  height: 420px;
+  min-height: 360px;
+  border-top: 1px solid var(--border);
+  overflow: hidden;
+}
+.cc-map-frame .om-map-zone,
+.cc-map-frame .unified-map-canvas,
+.cc-map-frame .maplibregl-map {
+  height: 100% !important;
+  min-height: 0 !important;
+  border-radius: 0;
+}
+.cc-action-empty {
+  margin: 0;
+  padding: 14px 16px 18px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.cc-action-empty b {
+  color: var(--text);
+}
+.cc-action-rest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px dashed var(--border);
+}
+.cc-action-rest button {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #175cd3;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cc-action-rest button:hover {
+  background: #eff6ff;
 }

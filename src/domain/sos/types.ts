@@ -43,6 +43,10 @@ export interface SosLocation {
 export interface SosRequest {
   id: string;
   code: string;
+  /** Tài khoản đã gửi SOS (mọi vai đều có thể gửi); null với dữ liệu nguồn khác. */
+  ownerUserId: string | null;
+  /** true chỉ khi tọa độ lấy từ thiết bị; false = nhập tay/không có GPS. */
+  gpsCaptured?: boolean;
   receivedAt: string;
   reporter: SosReporter;
   location: SosLocation;
@@ -63,7 +67,6 @@ export interface SosRequest {
   assignedTeamId: string | null;
   linkedTaskId: string | null;
   shelterDestinationId: string | null;
-  linkedEvacuationOperationId: string | null;
   communicationStatus: SosCommunicationStatus;
   lastContactAt: string;
   lastUpdatedAt: string;

@@ -2,17 +2,7 @@ import type { Incident } from "../incidents/types";
 import type { IncidentTask, TaskUpdate } from "../tasks/types";
 import type { RescueTeam } from "../teams/types";
 import type { Shelter } from "../shelters/types";
-import type { EvacuationOperation } from "../evacuations/types";
 import type { SosRequest } from "../sos/types";
-import type {
-  DistributionShipment,
-  InventoryItem,
-  ReliefRequest,
-  StockReservation,
-  Warehouse,
-} from "../relief/types";
-import type { Playbook, PlaybookExecution } from "../playbooks/types";
-import type { DamageAssessment, RecoveryProject } from "../recovery/types";
 import type {
   AlertCategory,
   AlertCondition,
@@ -32,19 +22,7 @@ import {
   taskPriorityRank,
 } from "../tasks/rules";
 import { isSosWaitingTooLong } from "../sos/rules";
-import { isEvacuationDelayed } from "../evacuations/rules";
 import { calculateShelterCapacity } from "../shelters/rules";
-import {
-  availableQuantity,
-  calculateFulfillment,
-  isLowStock,
-  isOutOfStock,
-} from "../relief/rules";
-import {
-  isAssessmentVerificationOverdue,
-  isBudgetRisk,
-  isOperationalDateBefore,
-} from "../recovery/rules";
 
 /**
  * Phần canonical state mà việc suy ra cảnh báo cần đọc.
@@ -56,17 +34,7 @@ export interface AlertDerivationInput {
   taskUpdates: TaskUpdate[];
   teams: RescueTeam[];
   shelters: Shelter[];
-  evacuationOperations: EvacuationOperation[];
   sosRequests: SosRequest[];
-  warehouses: Warehouse[];
-  inventory: InventoryItem[];
-  reliefRequests: ReliefRequest[];
-  reservations: StockReservation[];
-  shipments: DistributionShipment[];
-  playbooks: Playbook[];
-  playbookExecutions: PlaybookExecution[];
-  damageAssessments: DamageAssessment[];
-  recoveryProjects: RecoveryProject[];
 }
 
 /** Đồng hồ demo deterministic, dùng chung với các module canonical khác. */
@@ -99,7 +67,6 @@ interface AlertSeed {
   readPermission: DerivedAlert["readPermission"];
   geographicScope?: string;
   ownerTeamId?: string | null;
-  ownerWarehouseId?: string | null;
   detectedAt: string;
 }
 
@@ -120,7 +87,6 @@ const makeAlert = (seed: AlertSeed): DerivedAlert => ({
   readPermission: seed.readPermission,
   geographicScope: seed.geographicScope,
   ownerTeamId: seed.ownerTeamId ?? null,
-  ownerWarehouseId: seed.ownerWarehouseId ?? null,
   requiresAcknowledgement: seed.severity === "critical",
   detectedAt: seed.detectedAt,
 });
@@ -144,18 +110,7 @@ const OPEN_TASK: ReadonlyArray<IncidentTask["status"]> = [
   "Đã giao",
   "Đã tiếp nhận",
   "Đang thực hiện",
-];
-const ACTIVE_RELIEF: ReadonlyArray<ReliefRequest["status"]> = [
-  "Đã duyệt",
-  "Đã giữ hàng",
-];
-const MOVING_SHIPMENT: ReadonlyArray<DistributionShipment["status"]> = [
-  "Đã xuất kho",
-  "Đang vận chuyển",
-];
-const ACTIVE_RECOVERY: ReadonlyArray<RecoveryProject["status"]> = [
-  "Đã phê duyệt",
-  "Đang thực hiện",
+  "Chờ xác nhận",
 ];
 
 function deriveIncidentAlerts(input: AlertDerivationInput): DerivedAlert[] {
@@ -458,285 +413,6 @@ function deriveShelterAlerts(input: AlertDerivationInput): DerivedAlert[] {
   return alerts;
 }
 
-function deriveEvacuationAlerts(input: AlertDerivationInput): DerivedAlert[] {
-  const alerts: DerivedAlert[] = [];
-  for (const operation of input.evacuationOperations) {
-    if (["Hoàn thành", "Đã hủy"].includes(operation.status)) continue;
-    const base = {
-      category: "evacuation" as const,
-      sourceType: "Evacuation" as const,
-      sourceId: operation.id,
-      sourceCode: operation.code,
-      sourcePath: `/evacuations/${operation.id}`,
-      sourceLabel: "Hoạt động sơ tán",
-      readPermission: "evacuation_view" as const,
-      geographicScope: operation.sourceArea,
-      ownerTeamId: operation.assignedTeamId,
-    };
-    if (isEvacuationDelayed(operation))
-      alerts.push(
-        makeAlert({
-          ...base,
-          condition: "evacuation_blocked_or_paused",
-          severity: "high",
-          title: `Sơ tán ${operation.code} đang ${
-            operation.status === "Tạm dừng" ? "tạm dừng" : "bị chặn tuyến"
-          }`,
-          message: `${operation.code} từ ${operation.sourceArea} đã di dời ${operation.evacuatedPopulation}/${operation.estimatedPopulation} người, tuyến ${operation.route.name} đang “${operation.route.status}”. Cần kích hoạt tuyến thay thế hoặc điều đội hỗ trợ.`,
-          detectedAt: operation.updatedAt,
-        }),
-      );
-    else if (
-      operation.status === "Đang triển khai" &&
-      operation.startTime &&
-      operation.progress < 40 &&
-      minutesBetween(operation.startTime, alertClock) > 60
-    )
-      alerts.push(
-        makeAlert({
-          ...base,
-          condition: "evacuation_slow",
-          severity: "medium",
-          title: `Sơ tán ${operation.code} tiến độ chậm`,
-          message: `Sau ${fmtDuration(minutesBetween(operation.startTime, alertClock))} triển khai chỉ đạt ${operation.progress}% (${operation.evacuatedPopulation}/${operation.estimatedPopulation} người). Dự kiến hoàn thành ${operation.expectedCompletion}.`,
-          detectedAt: operation.startTime,
-        }),
-      );
-  }
-  return alerts;
-}
-
-function deriveReliefAlerts(input: AlertDerivationInput): DerivedAlert[] {
-  const alerts: DerivedAlert[] = [];
-  for (const request of input.reliefRequests) {
-    if (!ACTIVE_RELIEF.includes(request.status)) continue;
-    const shortageLines = calculateFulfillment(
-      request,
-      input.reservations,
-    ).filter((line) => line.shortage > 0);
-    if (shortageLines.length)
-      alerts.push(
-        makeAlert({
-          category: "relief",
-          condition: "relief_request_shortage",
-          severity: request.priority.startsWith("P1") ? "critical" : "high",
-          title: `Yêu cầu cứu trợ ${request.code} thiếu hàng`,
-          message: `${request.destination} cần trước ${request.requiredBy}; thiếu ${shortageLines
-            .map((line) => `${line.shortage} ${line.unit} ${line.name}`)
-            .join(", ")}. Hiện “${request.status}”.`,
-          sourceType: "ReliefRequest",
-          sourceId: request.id,
-          sourceCode: request.code,
-          sourcePath: `/relief/requests/${request.id}`,
-          sourceLabel: "Yêu cầu cứu trợ",
-          readPermission: "relief_view",
-          geographicScope: request.destination,
-          ownerTeamId: request.teamId,
-          detectedAt: request.lastUpdatedAt,
-        }),
-      );
-  }
-  for (const item of input.inventory) {
-    const warehouse = input.warehouses.find(
-      (entry) => entry.id === item.warehouseId,
-    );
-    const base = {
-      category: "relief" as const,
-      sourceType: "Inventory" as const,
-      sourceId: item.id,
-      sourceCode: item.itemCode,
-      sourcePath: `/relief/warehouses/${item.warehouseId}`,
-      sourceLabel: "Tồn kho",
-      readPermission: "warehouse_view" as const,
-      geographicScope:
-        warehouse?.administrativeArea ?? item.warehouseId,
-      ownerWarehouseId: item.warehouseId,
-    };
-    if (isOutOfStock(item))
-      alerts.push(
-        makeAlert({
-          ...base,
-          condition: "inventory_out_of_stock",
-          severity: "high",
-          title: `${warehouse?.code ?? item.warehouseId} đã hết ${item.name}`,
-          message: `Mặt hàng ${item.name} (${item.itemCode}) không còn tồn khả dụng trong khi nhu cầu cứu trợ đang cao. Mức đặt hàng lại: ${item.reorderLevel} ${item.unit}.`,
-          detectedAt: item.lastUpdatedAt,
-        }),
-      );
-    else if (isLowStock(item))
-      alerts.push(
-        makeAlert({
-          ...base,
-          condition: "inventory_low_stock",
-          severity: "medium",
-          title: `${warehouse?.code ?? item.warehouseId} sắp hết ${item.name}`,
-          message: `Tồn khả dụng còn ${availableQuantity(item)} ${item.unit}, dưới mức đặt hàng lại ${item.reorderLevel} ${item.unit}. Cần lập kế hoạch bổ sung.`,
-          detectedAt: item.lastUpdatedAt,
-        }),
-      );
-  }
-  for (const shipment of input.shipments) {
-    const base = {
-      category: "relief" as const,
-      sourceType: "Shipment" as const,
-      sourceId: shipment.id,
-      sourceCode: shipment.code,
-      sourcePath: `/relief/requests/${shipment.reliefRequestId}`,
-      sourceLabel: "Chuyến hàng cứu trợ",
-      readPermission: "shipment_view" as const,
-      geographicScope: shipment.destination,
-      ownerTeamId: shipment.assignedTeamId,
-      ownerWarehouseId: shipment.warehouseId,
-    };
-    if (shipment.status === "Có sự cố")
-      alerts.push(
-        makeAlert({
-          ...base,
-          condition: "shipment_incident",
-          severity: "critical",
-          title: `Chuyến hàng ${shipment.code} gặp sự cố`,
-          message: `${shipment.code} tới ${shipment.destination} đang “Có sự cố” (${shipment.trackingNote || "chưa có ghi chú"}). Hàng gồm ${shipment.items.length} nhóm vật tư; cần phương án thay thế.`,
-          detectedAt: shipment.lastUpdatedAt,
-        }),
-      );
-    else if (
-      MOVING_SHIPMENT.includes(shipment.status) &&
-      parseVietnameseDate(shipment.estimatedArrival).getTime() <
-        alertClock.getTime()
-    )
-      alerts.push(
-        makeAlert({
-          ...base,
-          condition: "shipment_delayed",
-          severity: "high",
-          title: `Chuyến hàng ${shipment.code} quá giờ dự kiến`,
-          message: `Dự kiến tới ${shipment.destination} lúc ${shipment.estimatedArrival} nhưng hiện vẫn “${shipment.status}”. Cần liên hệ đơn vị vận chuyển và cập nhật thời gian đến dự kiến.`,
-          detectedAt: shipment.estimatedArrival,
-        }),
-      );
-  }
-  return alerts;
-}
-
-function derivePlaybookAlerts(input: AlertDerivationInput): DerivedAlert[] {
-  const alerts: DerivedAlert[] = [];
-  for (const execution of input.playbookExecutions) {
-    if (execution.status !== "Đang hoạt động") continue;
-    const playbook = input.playbooks.find(
-      (item) => item.id === execution.playbookId,
-    );
-    if (!playbook) continue;
-    const blockedRequired = execution.stepExecutions.filter(
-      (step) =>
-        step.status === "Bị chặn" &&
-        playbook.steps.find((item) => item.id === step.stepId)?.required,
-    );
-    if (!blockedRequired.length) continue;
-    alerts.push(
-      makeAlert({
-        category: "playbook",
-        condition: "playbook_required_steps_blocked",
-        severity: "high",
-        title: `${blockedRequired.length} bước bắt buộc của ${playbook.code} đang bị chặn`,
-        message: `Quy trình ${playbook.name} tại ${execution.incidentId} có ${blockedRequired
-          .map((step) => playbook.steps.find((item) => item.id === step.stepId)?.name ?? step.stepId)
-          .join("; ")} bị chặn. Gỡ chặn để tránh kéo dài giai đoạn ứng phó.`,
-        sourceType: "PlaybookExecution",
-        sourceId: execution.id,
-        sourceCode: execution.id,
-        sourcePath: `/playbooks/${execution.playbookId}/execute`,
-        sourceLabel: "Quy trình ứng phó",
-        readPermission: "playbook_view",
-        geographicScope: playbook.geographicScope,
-        detectedAt: execution.updatedAt,
-      }),
-    );
-  }
-  return alerts;
-}
-
-function deriveRecoveryAlerts(input: AlertDerivationInput): DerivedAlert[] {
-  const alerts: DerivedAlert[] = [];
-  for (const assessment of input.damageAssessments) {
-    if (!isAssessmentVerificationOverdue(assessment)) continue;
-    const waiting = minutesBetween(assessment.assessedAt, alertClock);
-    alerts.push(
-      makeAlert({
-        category: "recovery",
-        condition: "assessment_verification_stalled",
-        severity: "medium",
-        title: `Đánh giá ${assessment.code} chờ xác minh ${fmtDuration(waiting)}`,
-        message: `Đánh giá thiệt hại tại ${assessment.area} gửi từ ${assessment.assessedAt}, hiện “${assessment.status}”. Việc chậm xác minh làm chậm phê duyệt dự án phục hồi.`,
-        sourceType: "DamageAssessment",
-        sourceId: assessment.id,
-        sourceCode: assessment.code,
-        sourcePath: `/recovery/assessments/${assessment.id}`,
-        sourceLabel: "Đánh giá thiệt hại",
-        readPermission: "damage_assessment_view",
-        geographicScope: assessment.geographicScope,
-        detectedAt: assessment.assessedAt,
-      }),
-    );
-  }
-  for (const project of input.recoveryProjects) {
-    if (!ACTIVE_RECOVERY.includes(project.status)) continue;
-    const base = {
-      category: "recovery" as const,
-      sourceType: "RecoveryProject" as const,
-      sourceId: project.id,
-      sourceCode: project.code,
-      sourcePath: `/recovery/projects/${project.id}`,
-      sourceLabel: "Dự án phục hồi",
-      readPermission: "recovery_project_view" as const,
-      geographicScope: project.geographicScope,
-    };
-    const overdue = project.milestones.filter(
-      (milestone) =>
-        ["Chờ", "Đang thực hiện"].includes(milestone.status) &&
-        isOperationalDateBefore(milestone.dueDate, "21/08/2026"),
-    );
-    if (overdue.length)
-      alerts.push(
-        makeAlert({
-          ...base,
-          condition: "recovery_milestone_overdue",
-          severity: "medium",
-          title: `Dự án ${project.code} có ${overdue.length} mốc quá hạn`,
-          message: `Các mốc ${overdue.map((milestone) => `${milestone.name} (hạn ${milestone.dueDate})`).join("; ")} chưa hoàn thành, trong khi dự án “${project.status}”.`,
-          detectedAt: overdue
-            .map((milestone) => milestone.dueDate)
-            .sort()[0],
-        }),
-      );
-    if (
-      project.approvedBudget > 0 &&
-      project.spentBudget > project.approvedBudget
-    )
-      alerts.push(
-        makeAlert({
-          ...base,
-          condition: "recovery_budget_exceeded",
-          severity: "high",
-          title: `Dự án ${project.code} vượt ngân sách được duyệt`,
-          message: `Đã chi ${project.spentBudget.toLocaleString("vi-VN")} đ trên phê duyệt ${project.approvedBudget.toLocaleString("vi-VN")} đ. Cần rà soát và phê duyệt bổ sung trước khi chi tiếp.`,
-          detectedAt: project.updatedAt,
-        }),
-      );
-    else if (isBudgetRisk(project))
-      alerts.push(
-        makeAlert({
-          ...base,
-          condition: "recovery_budget_risk",
-          severity: "medium",
-          title: `Dự án ${project.code} sắp chạm hạn mức ngân sách`,
-          message: `Đã chi ${project.spentBudget.toLocaleString("vi-VN")} đ / ${project.approvedBudget.toLocaleString("vi-VN")} đ được duyệt trong khi dự án “${project.status}”. Cần theo dõi cam kết chi tiếp theo.`,
-          detectedAt: project.updatedAt,
-        }),
-      );
-  }
-  return alerts;
-}
-
 export function compareAlerts(a: DerivedAlert, b: DerivedAlert) {
   return (
     alertSeverityRank[b.severity] - alertSeverityRank[a.severity] ||
@@ -760,10 +436,6 @@ export function deriveOperationalAlerts(
     ...deriveTaskAlerts(input),
     ...deriveTeamAlerts(input),
     ...deriveShelterAlerts(input),
-    ...deriveEvacuationAlerts(input),
-    ...deriveReliefAlerts(input),
-    ...derivePlaybookAlerts(input),
-    ...deriveRecoveryAlerts(input),
   ];
   const seen = new Set<string>();
   return alerts

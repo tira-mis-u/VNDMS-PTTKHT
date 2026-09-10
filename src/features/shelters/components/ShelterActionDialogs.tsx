@@ -1,23 +1,10 @@
 import { Select as UiSelect } from "@/components/ui/Select";
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import type { Shelter } from "@/domain/shelters/types";
-import type {
-  EvacuationOperation,
-  EvacuationStatus,
-  RouteStatus,
-} from "@/domain/evacuations/types";
-import { getEvacuationTransitions } from "@/domain/evacuations/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { DialogBackdrop, Button, Input, Textarea } from "@/components/ui";
-export type ShelterDialog =
-  | "capacity"
-  | "occupancy"
-  | "resources"
-  | "create-evacuation"
-  | "operation"
-  | "redirect"
-  | null;
+export type ShelterDialog = "capacity" | "occupancy" | "resources" | null;
 function Frame({
   title,
   children,
@@ -56,12 +43,10 @@ function ErrorText({ value }: { value: string }) {
 export function ShelterActionDialogs({
   mode,
   shelter,
-  operation,
   onClose,
 }: {
   mode: ShelterDialog;
   shelter: Shelter;
-  operation?: EvacuationOperation;
   onClose: () => void;
 }) {
   if (!mode) return null;
@@ -69,15 +54,7 @@ export function ShelterActionDialogs({
     return <Capacity shelter={shelter} onClose={onClose} />;
   if (mode === "occupancy")
     return <Occupancy shelter={shelter} onClose={onClose} />;
-  if (mode === "resources")
-    return <Resources shelter={shelter} onClose={onClose} />;
-  if (mode === "create-evacuation")
-    return <CreateEvacuation shelter={shelter} onClose={onClose} />;
-  if (mode === "redirect" && operation)
-    return <Redirect operation={operation} onClose={onClose} />;
-  if (mode === "operation" && operation)
-    return <OperationActions operation={operation} onClose={onClose} />;
-  return null;
+  return <Resources shelter={shelter} onClose={onClose} />;
 }
 function Capacity({
   shelter,
@@ -282,308 +259,6 @@ function Resources({
           onChange={(event) => set("notes", event.target.value)}
         />
       </label>
-      <ErrorText value={error} />
-    </Frame>
-  );
-}
-function CreateEvacuation({
-  shelter,
-  onClose,
-}: {
-  shelter: Shelter;
-  onClose: () => void;
-}) {
-  const { incidents, createEvacuation } = useOperationalState();
-  const open = incidents.filter((item) => item.status !== "Đã đóng");
-  const [incidentId, setIncident] = useState(open[0]?.id ?? "");
-  const incident = open.find((item) => item.id === incidentId);
-  const [sourceArea, setArea] = useState(incident?.affectedArea ?? "");
-  const [population, setPopulation] = useState("100");
-  const [priority, setPriority] = useState<
-    "Khẩn cấp" | "Cao" | "Trung bình" | "Thấp"
-  >("Cao");
-  const [expected, setExpected] = useState("21/08/2026 13:00");
-  const [error, setError] = useState("");
-  const submit = () => {
-    try {
-      if (!incident) throw new Error("Phải chọn sự cố.");
-      createEvacuation({
-        incidentId,
-        sourceArea,
-        sourceCoordinates: incident.location.coordinates,
-        destinationShelterId: shelter.id,
-        estimatedPopulation: Number(population),
-        priority,
-        expectedCompletion: expected,
-      });
-      onClose();
-    } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Không thể tạo hoạt động.",
-      );
-    }
-  };
-  return (
-    <Frame
-      title="Điều phối dân cư đến điểm"
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button onClick={submit}>Tạo hoạt động</Button>
-        </>
-      }
-    >
-      <label className="field field-full">
-        <span>Sự cố</span>
-        <UiSelect
-          value={incidentId}
-          onChange={(event) => {
-            setIncident(event.target.value);
-            const selected = open.find(
-              (item) => item.id === event.target.value,
-            );
-            if (selected) setArea(selected.affectedArea);
-          }}
-        >
-          {open.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.id} — {item.title}
-            </option>
-          ))}
-        </UiSelect>
-      </label>
-      <label className="field field-full">
-        <span>Khu vực nguồn</span>
-        <Input
-          value={sourceArea}
-          onChange={(event) => setArea(event.target.value)}
-        />
-      </label>
-      <label className="field">
-        <span>Dân số dự kiến</span>
-        <Input
-          type="number"
-          value={population}
-          onChange={(event) => setPopulation(event.target.value)}
-        />
-      </label>
-      <label className="field">
-        <span>Ưu tiên</span>
-        <UiSelect
-          value={priority}
-          onChange={(event) =>
-            setPriority(event.target.value as typeof priority)
-          }
-        >
-          <option>Khẩn cấp</option>
-          <option>Cao</option>
-          <option>Trung bình</option>
-          <option>Thấp</option>
-        </UiSelect>
-      </label>
-      <label className="field field-full">
-        <span>Hoàn thành dự kiến</span>
-        <Input
-          value={expected}
-          onChange={(event) => setExpected(event.target.value)}
-        />
-      </label>
-      <ErrorText value={error} />
-    </Frame>
-  );
-}
-function OperationActions({
-  operation,
-  onClose,
-}: {
-  operation: EvacuationOperation;
-  onClose: () => void;
-}) {
-  const {
-    teams,
-    assignEvacuationTeam,
-    transitionEvacuation,
-    updateEvacuationProgress,
-    updateEvacuationRoute,
-  } = useOperationalState();
-  const available = teams.filter(
-    (team) =>
-      !team.currentTask &&
-      !team.currentEvacuationOperation &&
-      team.status === "Sẵn sàng",
-  );
-  const [teamId, setTeam] = useState(
-    operation.assignedTeamId ?? available[0]?.id ?? "",
-  );
-  const [evacuated, setEvacuated] = useState(
-    String(operation.evacuatedPopulation),
-  );
-  const [status, setStatus] = useState<EvacuationStatus>(operation.status);
-  const [routeStatus, setRoute] = useState<RouteStatus>(operation.route.status);
-  const [error, setError] = useState("");
-  const submit = () => {
-    const changes = [
-      teamId !== operation.assignedTeamId,
-      Number(evacuated) !== operation.evacuatedPopulation,
-      routeStatus !== operation.route.status,
-      status !== operation.status,
-    ].filter(Boolean).length;
-    if (changes > 1) {
-      setError(
-        "Mỗi lần lưu chỉ thực hiện một thay đổi nghiệp vụ để bảo đảm thứ tự lifecycle.",
-      );
-      return;
-    }
-    try {
-      if (teamId && teamId !== operation.assignedTeamId)
-        assignEvacuationTeam(operation.id, teamId);
-      else if (Number(evacuated) !== operation.evacuatedPopulation)
-        updateEvacuationProgress(operation.id, Number(evacuated));
-      else if (routeStatus !== operation.route.status)
-        updateEvacuationRoute(operation.id, routeStatus);
-      else if (status !== operation.status)
-        transitionEvacuation(operation.id, status);
-      onClose();
-    } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Không thể cập nhật hoạt động.",
-      );
-    }
-  };
-  return (
-    <Frame
-      title={`Cập nhật ${operation.id}`}
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button onClick={submit}>Lưu hoạt động</Button>
-        </>
-      }
-    >
-      <label className="field">
-        <span>Đội phụ trách</span>
-        <UiSelect
-          value={teamId}
-          onChange={(event) => setTeam(event.target.value)}
-        >
-          <option value="">Chưa gán đội</option>
-          {operation.assignedTeamId && (
-            <option value={operation.assignedTeamId}>
-              {operation.assignedTeamId}
-            </option>
-          )}
-          {available.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.id} — {team.name}
-            </option>
-          ))}
-        </UiSelect>
-      </label>
-      <label className="field">
-        <span>Đã sơ tán</span>
-        <Input
-          type="number"
-          value={evacuated}
-          onChange={(event) => setEvacuated(event.target.value)}
-        />
-      </label>
-      <label className="field">
-        <span>Chuyển trạng thái</span>
-        <UiSelect
-          value={status}
-          onChange={(event) =>
-            setStatus(event.target.value as EvacuationStatus)
-          }
-        >
-          <option>{operation.status}</option>
-          {getEvacuationTransitions(operation.status).map((item) => (
-            <option key={item}>{item}</option>
-          ))}
-        </UiSelect>
-      </label>
-      <label className="field">
-        <span>Trạng thái tuyến</span>
-        <UiSelect
-          value={routeStatus}
-          onChange={(event) => setRoute(event.target.value as RouteStatus)}
-        >
-          <option>Thông suốt</option>
-          <option>Hạn chế</option>
-          <option>Bị chặn</option>
-          <option>Đang dùng tuyến thay thế</option>
-        </UiSelect>
-      </label>
-      <ErrorText value={error} />
-    </Frame>
-  );
-}
-function Redirect({
-  operation,
-  onClose,
-}: {
-  operation: EvacuationOperation;
-  onClose: () => void;
-}) {
-  const { shelters, redirectEvacuation } = useOperationalState();
-  const candidates = useMemo(
-    () =>
-      shelters.filter(
-        (shelter) =>
-          shelter.id !== operation.destinationShelterId &&
-          !["Quá tải", "Tạm đóng", "Không thể tiếp cận"].includes(
-            shelter.status,
-          ),
-      ),
-    [shelters, operation.destinationShelterId],
-  );
-  const [id, setId] = useState(candidates[0]?.id ?? "");
-  const [error, setError] = useState("");
-  const submit = () => {
-    try {
-      redirectEvacuation(operation.id, id);
-      onClose();
-    } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Không thể chuyển hướng.",
-      );
-    }
-  };
-  return (
-    <Frame
-      title="Chuyển hướng điểm tiếp nhận"
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button disabled={!id} onClick={submit}>
-            Xác nhận chuyển hướng
-          </Button>
-        </>
-      }
-    >
-      <label className="field field-full">
-        <span>Điểm sơ tán thay thế</span>
-        <UiSelect value={id} onChange={(event) => setId(event.target.value)}>
-          {candidates.map((shelter) => (
-            <option key={shelter.id} value={shelter.id}>
-              {shelter.id} — {shelter.name}
-            </option>
-          ))}
-        </UiSelect>
-      </label>
-      <p className="form-hint">
-        Sức chứa dự phòng còn lại sẽ được chuyển từ điểm cũ sang điểm mới.
-      </p>
       <ErrorText value={error} />
     </Frame>
   );

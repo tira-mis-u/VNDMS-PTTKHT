@@ -8,6 +8,7 @@ import {
   type AuthorizationResource,
 } from "../../lib/security/authorization";
 import type { OperationalSnapshot } from "../operations/operationalSnapshot";
+import { isPublicAlert } from "../../domain/published-alerts/rules";
 
 function mayRead(
   user: AuthUser | null,
@@ -18,8 +19,21 @@ function mayRead(
     .allowed;
 }
 
-function isRescueRole(user: AuthUser | null) {
-  return user?.role === "rescue_leader" || user?.role === "rescue_member";
+/**
+ * Bản ghi do chính tài khoản tạo (SOS/phản ánh) luôn được nhìn thấy qua
+ * quyền *_own; bản ghi khác cần quyền xem toàn cục.
+ */
+function mayReadOwnOrAll(
+  user: AuthUser | null,
+  allPermission: Permission,
+  ownPermission: Permission,
+  resource: AuthorizationResource,
+) {
+  if (mayRead(user, allPermission, resource)) return true;
+  return (
+    resource.ownerUserId != null &&
+    mayRead(user, ownPermission, resource)
+  );
 }
 
 export function createAuthorizedOperationalView(
@@ -52,13 +66,21 @@ export function createAuthorizedOperationalView(
     user && hasPermission(user.role, "team_view"),
   );
 
-  const shelters = source.shelters.filter((shelter) =>
-    mayRead(user, "shelter_view", {
-      type: "Shelter",
-      id: shelter.id,
-      geographicScope: shelter.administrativeArea,
-    }),
-  );
+  /**
+   * Điểm sơ tán là danh mục tra cứu chung: công dân không có `shelter_view`
+   * nhưng vẫn cần danh sách điểm an toàn (UC tra cứu). Người có quyền vẫn bị
+   * lọc theo phạm vi địa lý như cũ.
+   */
+  const shelters =
+    user && !hasPermission(user.role, "shelter_view")
+      ? source.shelters
+      : source.shelters.filter((shelter) =>
+          mayRead(user, "shelter_view", {
+            type: "Shelter",
+            id: shelter.id,
+            geographicScope: shelter.administrativeArea,
+          }),
+        );
   const shelterIds = new Set(shelters.map((item) => item.id));
   const checksShelterRelations = Boolean(
     user && hasPermission(user.role, "shelter_view"),
@@ -81,204 +103,60 @@ export function createAuthorizedOperationalView(
   });
   const taskIds = new Set(tasks.map((item) => item.id));
 
-  const evacuationOperations = source.evacuationOperations.filter(
-    (operation) => {
+  const sosRequests = source.sosRequests.filter((sos) => {
+    const own = sos.ownerUserId != null && sos.ownerUserId === user?.id;
+    if (!own) {
       if (
-        !incidentIds.has(operation.incidentId) ||
-        !shelterIds.has(operation.destinationShelterId)
+        checksIncidentRelations &&
+        sos.linkedIncidentId &&
+        !incidentIds.has(sos.linkedIncidentId)
       )
         return false;
       if (
         checksTeamRelations &&
-        operation.assignedTeamId &&
-        !teamIds.has(operation.assignedTeamId)
+        sos.assignedTeamId &&
+        !teamIds.has(sos.assignedTeamId)
       )
         return false;
-      return mayRead(user, "evacuation_view", {
-        type: "Evacuation",
-        id: operation.id,
-        geographicScope: operation.sourceArea,
-        assignedTeamId: operation.assignedTeamId,
-        lifecycleStatus: operation.status,
-      });
-    },
-  );
-  const evacuationIds = new Set(evacuationOperations.map((item) => item.id));
-
-  const sosRequests = source.sosRequests.filter((sos) => {
-    if (
-      checksIncidentRelations &&
-      sos.linkedIncidentId &&
-      !incidentIds.has(sos.linkedIncidentId)
-    )
-      return false;
-    if (
-      checksTeamRelations &&
-      sos.assignedTeamId &&
-      !teamIds.has(sos.assignedTeamId)
-    )
-      return false;
-    if (
-      checksShelterRelations &&
-      sos.shelterDestinationId &&
-      !shelterIds.has(sos.shelterDestinationId)
-    )
-      return false;
-    return mayRead(user, "sos_view", {
+      if (
+        checksShelterRelations &&
+        sos.shelterDestinationId &&
+        !shelterIds.has(sos.shelterDestinationId)
+      )
+        return false;
+    }
+    return mayReadOwnOrAll(user, "sos_view", "sos_view_own", {
       type: "SOS",
       id: sos.id,
-      geographicScope: sos.location.administrativeArea,
+      geographicScope: own ? undefined : sos.location.administrativeArea,
       assignedTeamId: sos.assignedTeamId,
+      ownerUserId: sos.ownerUserId,
       lifecycleStatus: sos.status,
     });
   });
   const sosIds = new Set(sosRequests.map((item) => item.id));
 
-  const warehouses = source.warehouses.filter((warehouse) =>
-    mayRead(user, "warehouse_view", {
-      type: "Warehouse",
-      id: warehouse.id,
-      geographicScope: warehouse.administrativeArea,
-      warehouseId: warehouse.id,
-      lifecycleStatus: warehouse.status,
-    }),
-  );
-  const warehouseIds = new Set(warehouses.map((item) => item.id));
-  const checksEvacuationRelations = Boolean(
-    user && hasPermission(user.role, "evacuation_view"),
-  );
-
-  const reliefRequests = source.reliefRequests.filter((request) => {
-    if (
-      checksIncidentRelations &&
-      request.incidentId &&
-      !incidentIds.has(request.incidentId)
-    )
-      return false;
-    if (
-      checksShelterRelations &&
-      request.shelterId &&
-      !shelterIds.has(request.shelterId)
-    )
-      return false;
-    if (
-      checksEvacuationRelations &&
-      request.evacuationOperationId &&
-      !evacuationIds.has(request.evacuationOperationId)
-    )
-      return false;
-    if (checksTeamRelations && request.teamId && !teamIds.has(request.teamId))
-      return false;
-    if (user?.role === "warehouse_staff") {
-      const related =
-        request.assignedWarehouseIds.includes(user.warehouseId ?? "") ||
-        source.reservations.some(
-          (item) =>
-            item.reliefRequestId === request.id &&
-            item.warehouseId === user.warehouseId,
-        ) ||
-        source.shipments.some(
-          (item) =>
-            item.reliefRequestId === request.id &&
-            item.warehouseId === user.warehouseId,
-        );
-      if (!related) return false;
-    }
-    if (isRescueRole(user)) {
-      const related =
-        request.teamId === user?.teamId ||
-        source.shipments.some(
-          (item) =>
-            item.reliefRequestId === request.id &&
-            item.assignedTeamId === user?.teamId,
-        );
-      if (!related) return false;
-    }
-    return mayRead(user, "relief_view", {
-      type: "ReliefRequest",
-      id: request.id,
-      geographicScope: request.destination,
-      assignedTeamId: request.teamId,
-      warehouseIds: request.assignedWarehouseIds,
-      lifecycleStatus: request.status,
+  const citizenReports = source.citizenReports.filter((report) => {
+    const own = report.ownerUserId === user?.id;
+    return mayReadOwnOrAll(user, "report_view", "report_view_own", {
+      type: "CitizenReport",
+      id: report.id,
+      geographicScope: own ? undefined : report.location.administrativeArea,
+      ownerUserId: report.ownerUserId,
+      lifecycleStatus: report.status,
     });
   });
-  const reliefRequestIds = new Set(reliefRequests.map((item) => item.id));
+  const reportIds = new Set(citizenReports.map((item) => item.id));
 
-  const reservations = source.reservations.filter(
-    (reservation) =>
-      reliefRequestIds.has(reservation.reliefRequestId) &&
-      warehouseIds.has(reservation.warehouseId),
+  const managesPublishedAlerts = Boolean(
+    user && hasPermission(user.role, "published_alert_manage"),
   );
-  const shipments = source.shipments.filter((shipment) => {
-    if (
-      !reliefRequestIds.has(shipment.reliefRequestId) ||
-      !warehouseIds.has(shipment.warehouseId)
-    )
-      return false;
-    if (isRescueRole(user) && shipment.assignedTeamId !== user?.teamId)
-      return false;
-    return mayRead(user, "shipment_view", {
-      type: "Shipment",
-      id: shipment.id,
-      geographicScope: shipment.destination,
-      assignedTeamId: shipment.assignedTeamId,
-      warehouseId: shipment.warehouseId,
-      lifecycleStatus: shipment.status,
-    });
+  const publishedAlerts = source.publishedAlerts.filter((alert) => {
+    if (!user || !hasPermission(user.role, "published_alert_view")) return false;
+    // Người dân/đơn vị chỉ thấy bản đã công bố; cán bộ thấy cả nháp & thu hồi.
+    return managesPublishedAlerts || isPublicAlert(alert);
   });
-  const shipmentIds = new Set(shipments.map((item) => item.id));
-
-  const playbooks = source.playbooks.filter((playbook) =>
-    mayRead(user, "playbook_view", {
-      type: "Playbook",
-      id: playbook.id,
-      geographicScope: playbook.geographicScope,
-      lifecycleStatus: playbook.status,
-    }),
-  );
-  const playbookIds = new Set(playbooks.map((item) => item.id));
-  const playbookExecutions = source.playbookExecutions.filter(
-    (execution) =>
-      playbookIds.has(execution.playbookId) &&
-      incidentIds.has(execution.incidentId),
-  );
-  const executionIds = new Set(playbookExecutions.map((item) => item.id));
-
-  const damageAssessments = source.damageAssessments.filter(
-    (assessment) =>
-      incidentIds.has(assessment.incidentId) &&
-      mayRead(user, "damage_assessment_view", {
-        type: "DamageAssessment",
-        id: assessment.id,
-        geographicScope: assessment.geographicScope,
-        lifecycleStatus: assessment.status,
-      }),
-  );
-  const assessmentIds = new Set(damageAssessments.map((item) => item.id));
-
-  const recoveryProjects = source.recoveryProjects.filter((project) => {
-    if (!incidentIds.has(project.incidentId)) return false;
-    if (project.assessmentIds.some((id) => !assessmentIds.has(id)))
-      return false;
-    if (
-      isRescueRole(user) &&
-      project.assignedTeamIds.length &&
-      !project.assignedTeamIds.includes(user?.teamId ?? "")
-    )
-      return false;
-    return mayRead(user, "recovery_project_view", {
-      type: "RecoveryProject",
-      id: project.id,
-      geographicScope: project.geographicScope,
-      assignedTeamId:
-        project.assignedTeamIds.length === 1
-          ? project.assignedTeamIds[0]
-          : null,
-      lifecycleStatus: project.status,
-    });
-  });
-  const recoveryProjectIds = new Set(recoveryProjects.map((item) => item.id));
+  const publishedAlertIds = new Set(publishedAlerts.map((item) => item.id));
 
   return {
     metadata: source.metadata,
@@ -289,48 +167,24 @@ export function createAuthorizedOperationalView(
       (update) =>
         taskIds.has(update.taskId) && incidentIds.has(update.incidentId),
     ),
+    taskReviews: source.taskReviews.filter((review) =>
+      taskIds.has(review.taskId),
+    ),
     teams,
     teamEvents: source.teamEvents.filter((event) => teamIds.has(event.teamId)),
     shelters,
     shelterEvents: source.shelterEvents.filter((event) =>
       shelterIds.has(event.shelterId),
     ),
-    evacuationOperations,
-    evacuationEvents: source.evacuationEvents.filter((event) =>
-      evacuationIds.has(event.operationId),
-    ),
     sosRequests,
     sosEvents: source.sosEvents.filter((event) => sosIds.has(event.sosId)),
-    warehouses,
-    inventory: source.inventory.filter((item) =>
-      warehouseIds.has(item.warehouseId),
+    citizenReports,
+    citizenReportEvents: source.citizenReportEvents.filter((event) =>
+      reportIds.has(event.reportId),
     ),
-    reliefRequests,
-    reservations,
-    shipments,
-    reliefEvents: source.reliefEvents.filter((event) =>
-      event.entityType === "request"
-        ? reliefRequestIds.has(event.entityId)
-        : event.entityType === "warehouse"
-          ? warehouseIds.has(event.entityId)
-          : shipmentIds.has(event.entityId),
-    ),
-    playbooks,
-    playbookExecutions,
-    playbookEvents: source.playbookEvents.filter(
-      (event) =>
-        playbookIds.has(event.playbookId) &&
-        (!event.executionId || executionIds.has(event.executionId)) &&
-        (!event.incidentId || incidentIds.has(event.incidentId)),
-    ),
-    damageAssessments,
-    recoveryProjects,
-    recoveryEvents: source.recoveryEvents.filter(
-      (event) =>
-        incidentIds.has(event.incidentId) &&
-        (event.entityType === "assessment"
-          ? assessmentIds.has(event.entityId)
-          : recoveryProjectIds.has(event.entityId)),
+    publishedAlerts,
+    publishedAlertEvents: source.publishedAlertEvents.filter((event) =>
+      publishedAlertIds.has(event.alertId),
     ),
     alertInteractions: source.alertInteractions,
     alertEvents: source.alertEvents,

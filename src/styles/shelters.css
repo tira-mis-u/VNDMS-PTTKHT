@@ -420,21 +420,12 @@
   background: #175cd3;
   color: #fff;
 }
-.line-key {
-  width: 22px;
-  height: 0;
-  border-top: 3px solid;
+.shelter-key.exception,
+.shelter-key.incident {
+  background: #d92d20;
 }
-.line-key.current {
-  border-color: #175cd3;
-}
-.line-key.blocked {
-  border-color: #d92d20;
-  border-top-style: dashed;
-}
-.line-key.alternative {
-  border-color: #079455;
-  border-top-style: dashed;
+.shelter-key.team {
+  background: #7f56d9;
 }
 .shelter-contact {
   padding: 12px 14px;

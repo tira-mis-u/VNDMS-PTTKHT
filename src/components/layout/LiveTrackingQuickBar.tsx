@@ -49,7 +49,7 @@ export function LiveTrackingQuickBar() {
         type:
           currentUser.role === "citizen"
             ? "citizen"
-            : currentUser.teamId
+            : currentUser.role === "rescue_unit"
             ? "team"
             : "personnel",
         role: currentUser.role,
@@ -78,10 +78,10 @@ export function LiveTrackingQuickBar() {
               pos.coords.heading || undefined
             );
           },
-          () => {
-            // Fallback vị trí mặc định nếu chưa bật quyền
-            const fallback: [number, number] = [105.852, 21.052];
-            sendBeacon(fallback);
+          (err) => {
+            // KHÔNG phát tọa độ mặc định: không có GPS thì không có vị trí nào được gửi.
+            console.warn("[LiveBeacon] Không lấy được vị trí:", err.message);
+            flashMessage("Chưa lấy được vị trí GPS — hãy cấp quyền định vị để phát tín hiệu.");
           },
           { enableHighAccuracy: true, timeout: 8000 }
         );
@@ -172,7 +172,7 @@ export function LiveTrackingQuickBar() {
           type:
             currentUser.role === "citizen"
               ? "citizen"
-              : currentUser.teamId
+              : currentUser.role === "rescue_unit"
               ? "team"
               : "personnel",
           role: currentUser.role,
@@ -210,6 +210,7 @@ export function LiveTrackingQuickBar() {
           disabledCount: 0,
           severity: "Đe dọa tính mạng",
           communicationStatus: "Kết nối",
+          gpsCaptured: true,
         });
 
         // Ghi nhật ký bảo mật hệ thống: tài khoản nào đã bật cảnh báo 1 chạm
@@ -223,7 +224,7 @@ export function LiveTrackingQuickBar() {
         // Tự động bật luôn chế độ phát live beacon để cứu hộ dễ tìm
         setIsBeaconActive(true);
         setSosSentSuccess(true);
-        flashMessage(" ĐÃ PHÁT TÍN HIỆU CẢNH BÁO 1 CHẠM! Đội cứu hộ và Trung tâm chỉ huy đã nhận vị trí.");
+        flashMessage(`Đã tạo SOS ${sosId} với vị trí GPS của thiết bị và bật phát định vị. Yêu cầu đang chờ cán bộ tiếp nhận.`);
         setTimeout(() => setSosSentSuccess(false), 8000);
       } catch (err) {
         flashMessage("Lỗi khi gửi cảnh báo 1 chạm: " + (err instanceof Error ? err.message : "Thất bại"));
@@ -233,21 +234,29 @@ export function LiveTrackingQuickBar() {
       }
     };
 
+    // Không bao giờ dùng tọa độ mặc định: SOS 1 chạm chỉ gửi khi có vị trí thật
+    // từ thiết bị (hiện tại hoặc vị trí GPS gần nhất đã lấy được trong phiên).
+    const noGps = () => {
+      if (lastCoords) {
+        executeSosPush(lastCoords);
+        return;
+      }
+      setSosBusy(false);
+      setLocating(false);
+      flashMessage(
+        "Không lấy được vị trí GPS nên chưa gửi SOS. Hãy cấp quyền định vị rồi bấm lại, hoặc gửi SOS kèm địa chỉ trong biểu mẫu SOS.",
+      );
+    };
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           executeSosPush([pos.coords.longitude, pos.coords.latitude]);
         },
-        () => {
-          // Nếu không lấy được GPS ngay lập tức, dùng vị trí trước đó hoặc mặc định
-          const fallback = lastCoords || [105.852, 21.052];
-          executeSosPush(fallback as [number, number]);
-        },
+        noGps,
         { enableHighAccuracy: true, timeout: 5000 }
       );
     } else {
-      const fallback = lastCoords || [105.852, 21.052];
-      executeSosPush(fallback as [number, number]);
+      noGps();
     }
   };
 

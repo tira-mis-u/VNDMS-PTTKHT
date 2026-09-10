@@ -64,8 +64,6 @@ export function openShelter(shelter: Shelter, timestamp: string): Shelter {
   };
 }
 export function closeShelter(shelter: Shelter, timestamp: string): Shelter {
-  if (shelter.activeEvacuationOperationIds.length)
-    throw new Error("Không thể đóng điểm khi còn hoạt động sơ tán đang mở.");
   return {
     ...shelter,
     status: "Tạm đóng",

@@ -6,13 +6,12 @@ Trung tâm thông báo tác nghiệp của VNDMS. Mọi cảnh báo được **s
 
 | Actor | Quyền liên quan | Ghi chú |
 |---|---|---|
-| Chỉ huy (commander) | `alert_view`, `alert_acknowledge` | Toàn quốc |
-| Điều hành viên (operator) | `alert_view`, `alert_acknowledge` | Toàn quốc |
+| Quản trị hệ thống (admin) | `alert_view` | Toàn quốc, chỉ xem |
+| Cán bộ PCTT (disaster_officer) | `alert_view`, `alert_acknowledge`, `published_alert_manage` | Toàn quốc |
 | Cán bộ địa phương (local_officer) | `alert_view`, `alert_acknowledge` | Chỉ trong phạm vi địa lý |
-| Đội trưởng cứu hộ (rescue_leader) | `alert_view`, `alert_acknowledge` | Chỉ resource đội mình được phép thấy |
+| Đơn vị cứu hộ (rescue_unit) | `alert_view`, `alert_acknowledge` | Mọi đội |
 | Đội viên cứu hộ (rescue_member) | `alert_view` | Chỉ xem/đánh dấu đọc |
-| Nhân viên kho (warehouse_staff) | `alert_view`, `alert_acknowledge` | Chỉ alert thuộc kho được phân công |
-| Nhân viên cứu trợ (relief_worker) | `alert_view` | Chỉ xem |
+| Công dân (citizen) | `published_alert_view` | Chỉ cảnh báo đã công bố |
 | Ngườii dân (citizen) | — | Không thấy alert tác nghiệp |
 
 ## 2. Quy tắc sinh cảnh báo (derivation rules)
@@ -26,11 +25,6 @@ Một điều kiện nghiệp vụ đang đúng ⇒ đúng một alert với key
 | Task | Quá hạn; ưu tiên cao chưa giao đội; đang thực hiện nhưng đình trệ (>3h không cập nhật, tiến độ <50%) | high / medium |
 | Team | Mất liên lạc; không khả dụng khi đang có sự cố Khẩn cấp | high / medium |
 | Shelter | Quá tải; gần đầy (≥85% cam kết); không thể tiếp cận | critical / high / medium |
-| Evacuation | Tạm dừng hoặc tuyến bị chặn khi đang triển khai; triển khai chậm | high / medium |
-| Relief | Yêu cầu đã duyệt/giữ hàng còn thiếu; kho hết hàng; tồn dưới mức đặt lại | critical/high / high / medium |
-| Shipment | Quá giờ dự kiến; có sự cố | high / critical |
-| Playbook | Execution đang hoạt động có bước bắt buộc bị chặn | high |
-| Recovery | Assessment chờ xác minh >24h; milestone quá hạn; ngân sách vượt/sắp vượt (≥85%) | medium / medium / high |
 
 Alert `critical` luôn yêu cầu xác nhận (`requiresAcknowledgement`).
 
@@ -57,14 +51,13 @@ Alert `critical` luôn yêu cầu xác nhận (`requiresAcknowledgement`).
 
 ### 3.4 Mở entity nguồn
 
-Mọi alert giữ `source.path` tới route canonical hiện hữu (ví dụ `/sos/SOS-0242`, `/relief/requests/REQ-0241`, `/playbooks/PB-FLOOD-001/execute`). Alert không tự có hành động nghiệp vụ riêng — xử lý diễn ra ở module chuyên trách; khi xử lý xong, alert hết hiệu lực.
+Mọi alert giữ `source.path` tới route canonical hiện hữu (ví dụ `/sos/SOS-YAGI-01`, `/tasks/TSK-YAGI-02`). Alert không tự có hành động nghiệp vụ riêng — xử lý diễn ra ở module chuyên trách; khi xử lý xong, alert hết hiệu lực.
 
 ## 4. Tích hợp
 
 - **Command Center**: panel “Cảnh báo tác nghiệp” đọc đúng collection `store.alerts` (chips theo nhóm + 5 alert ưu tiên), không dataset riêng.
-- **Grounded AI**: intent `alert_overview` (“Có cảnh báo nào nghiêm trọng?”) trả FACT với evidence = OperationalAlert + entity nguồn; actions rỗng — AI không tự xác nhận/giải quyết alert.
+- **Cảnh báo công bố** (`PublishedAlert`): thực thể riêng do cán bộ PCTT soạn nháp → công bố → thu hồi, hiển thị ở khối "Cảnh báo công bố" trên trang Cảnh báo và ở Cổng công dân (chỉ bản "Đã công bố").
 - **Analytics**: `getAlertAnalytics` (severity/category/unresolved/ack rate) trên Authorized Alert View.
-- **Simulation**: tick lan truyền cập nhật canonical state → alert xuất hiện/biến mất tự nhiên (ví dụ TH-01 gần đầy ở tick 13); reset → baseline deterministic.
 
 ## 5. Ràng buộc nghiệp vụ
 

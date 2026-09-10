@@ -175,9 +175,7 @@ export function dispatchableTeams(
 ) {
   return context.teams.filter(
     (team) =>
-      team.status === "Sẵn sàng" &&
-      !team.currentTask &&
-      !team.currentEvacuationOperation,
+      team.status === "Sẵn sàng" && !team.currentTask,
   );
 }
 
@@ -362,9 +360,9 @@ export function buildDispatchTeamPlan(
   const team = context.teams.find((item) => item.id === input.teamId);
   if (!team)
     return invalid("Phải chọn đội trong phạm vi truy cập hiện tại.");
-  if (team.status !== "Sẵn sàng" || team.currentTask || team.currentEvacuationOperation)
+  if (team.status !== "Sẵn sàng" || team.currentTask)
     return invalid(
-      `Đội ${team.id} hiện không sẵn sàng (${team.status}${team.currentTask ? `, đang nhiệm vụ ${team.currentTask}` : ""}${team.currentEvacuationOperation ? `, đang sơ tán ${team.currentEvacuationOperation}` : ""}).`,
+      `Đội ${team.id} hiện không sẵn sàng (${team.status}${team.currentTask ? `, đang nhiệm vụ ${team.currentTask}` : ""}).`,
     );
   return valid(
     {
@@ -507,7 +505,7 @@ export function buildSosTriagePlan(
   }
   const team = context.teams.find((item) => item.id === input.teamId);
   if (!team) return invalid("Phải chọn đội cứu hộ để điều đội.");
-  if (team.status !== "Sẵn sàng" || team.currentTask || team.currentEvacuationOperation)
+  if (team.status !== "Sẵn sàng" || team.currentTask)
     return invalid(`Đội ${team.id} hiện không sẵn sàng điều đội.`);
   if (sos.verificationStatus !== "Đã xác minh")
     return invalid(

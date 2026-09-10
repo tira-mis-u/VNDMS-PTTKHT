@@ -9,6 +9,7 @@ import type {
 import type {
   IncidentTask,
   TaskPriority,
+  TaskReview,
   TaskStatus,
   TaskUpdate,
 } from "@/domain/tasks/types";
@@ -24,14 +25,7 @@ import type { NewTaskInput } from "@/application/tasks/taskUseCases";
 import type { TeamProfileInput } from "@/application/teams/teamUseCases";
 import type { Permission } from "@/lib/permissions/permissions";
 import type { Shelter, ShelterEvent } from "@/domain/shelters/types";
-import type {
-  EvacuationEvent,
-  EvacuationOperation,
-  EvacuationStatus,
-  RouteStatus,
-} from "@/domain/evacuations/types";
 import type { ShelterResourceInput } from "@/application/shelters/shelterUseCases";
-import type { NewEvacuationInput } from "@/application/evacuations/evacuationUseCases";
 import type {
   SosEvent,
   SosLocation,
@@ -39,41 +33,16 @@ import type {
   SosRequest,
 } from "@/domain/sos/types";
 import type {
-  DistributionShipment,
-  InventoryItem,
-  ReliefEvent,
-  ReliefRequest,
-  ReliefRequestStatus,
-  ShipmentStatus,
-  StockReservation,
-  Warehouse,
-  WarehouseStatus,
-} from "@/domain/relief/types";
+  CitizenReport,
+  CitizenReportEvent,
+  CitizenReportStatus,
+} from "@/domain/reports/types";
+import type { NewCitizenReportInput } from "@/application/reports/reportUseCases";
 import type {
-  DamageAssessment,
-  DamageItem,
-  RecoveryEvidence,
-  RecoveryEvent,
-  RecoveryMilestone,
-  RecoveryProject,
-} from "@/domain/recovery/types";
-import type {
-  NewDamageAssessmentInput,
-  NewRecoveryProjectInput,
-} from "@/application/recovery/recoveryUseCases";
-import type {
-  Playbook,
-  PlaybookExecution,
-  PlaybookStep,
-  PlaybookStepExecution,
-  PlaybookTimelineEvent,
-} from "@/domain/playbooks/types";
-import type { NewPlaybookInput } from "@/application/playbooks/playbookUseCases";
-import type { NewReliefRequestInput } from "@/application/relief/reliefUseCases";
-import type {
-  SimulationSpeed,
-  SimulationState,
-} from "@/domain/simulation/types";
+  PublishedAlert,
+  PublishedAlertEvent,
+} from "@/domain/published-alerts/types";
+import type { PublishedAlertDraftInput } from "@/application/published-alerts/publishedAlertUseCases";
 import type {
   AuthUser,
   GeographicScope,
@@ -93,33 +62,23 @@ export interface OperationalStore {
   events: IncidentEvent[];
   tasks: IncidentTask[];
   taskUpdates: TaskUpdate[];
+  taskReviews: TaskReview[];
   teams: RescueTeam[];
   teamEvents: TeamEvent[];
   shelters: Shelter[];
   shelterEvents: ShelterEvent[];
-  evacuationOperations: EvacuationOperation[];
-  evacuationEvents: EvacuationEvent[];
   sosRequests: SosRequest[];
   sosEvents: SosEvent[];
-  warehouses: Warehouse[];
-  inventory: InventoryItem[];
-  reliefRequests: ReliefRequest[];
-  reservations: StockReservation[];
-  shipments: DistributionShipment[];
-  reliefEvents: ReliefEvent[];
-  playbooks: Playbook[];
-  playbookExecutions: PlaybookExecution[];
-  playbookEvents: PlaybookTimelineEvent[];
-  damageAssessments: DamageAssessment[];
-  recoveryProjects: RecoveryProject[];
-  recoveryEvents: RecoveryEvent[];
+  citizenReports: CitizenReport[];
+  citizenReportEvents: CitizenReportEvent[];
+  publishedAlerts: PublishedAlert[];
+  publishedAlertEvents: PublishedAlertEvent[];
   /** Read receipt/acknowledgement tối thiểu của alert (canonical snapshot). */
   alertInteractions: AlertInteraction[];
   /** Authorized Alert View — suy ra từ canonical state đã qua lọc quyền. */
   alerts: OperationalAlert[];
   /** Timeline của các alert đang hiển thị với người dùng hiện tại. */
   alertEvents: AlertEvent[];
-  simulation: SimulationState;
   session: Session | null;
   currentUser: AuthUser | null;
   users: AuthUser[];
@@ -194,12 +153,6 @@ export interface OperationalStore {
     shelterId: string,
     input: ShelterResourceInput,
   ) => void;
-  createEvacuation: (input: NewEvacuationInput) => string;
-  transitionEvacuation: (operationId: string, status: EvacuationStatus) => void;
-  assignEvacuationTeam: (operationId: string, teamId: string) => void;
-  updateEvacuationProgress: (operationId: string, evacuated: number) => void;
-  updateEvacuationRoute: (operationId: string, status: RouteStatus) => void;
-  redirectEvacuation: (operationId: string, shelterId: string) => void;
   verifySos: (sosId: string) => void;
   rejectSos: (sosId: string) => void;
   linkSosToIncident: (sosId: string, incidentId: string) => void;
@@ -209,192 +162,29 @@ export interface OperationalStore {
   updateSosLocation: (sosId: string, location: SosLocation) => void;
   addSosUpdate: (sosId: string, message: string) => void;
   markSosNoContact: (sosId: string) => void;
-  routeSosToShelter: (sosId: string, shelterId: string) => string;
   createSos: (
     input: import("@/application/sos/sosUseCases").NewSosInput,
   ) => string;
   resolveSos: (sosId: string, summary: string) => void;
   closeSos: (sosId: string) => void;
   cancelSos: (sosId: string) => void;
-  createReliefRequest: (input: NewReliefRequestInput) => string;
-  transitionReliefRequest: (
-    requestId: string,
-    status: ReliefRequestStatus,
-  ) => void;
-  approveReliefRequest: (
-    requestId: string,
-    approved: Record<string, number>,
-  ) => void;
-  reserveReliefStock: (
-    requestId: string,
-    warehouseId: string,
-    allocations: Array<{ itemCode: string; quantity: number }>,
-  ) => string;
-  dispatchReliefReservation: (
-    reservationId: string,
-    teamId?: string | null,
-  ) => string;
-  updateShipmentStatus: (
-    shipmentId: string,
-    status: ShipmentStatus,
-    note?: string,
-  ) => void;
-  confirmShipmentReceipt: (
-    shipmentId: string,
-    receiver: string,
-    role: string,
+  /** Đơn vị cứu hộ báo xong — nhiệm vụ chuyển "Chờ xác nhận", KHÔNG tự đóng. */
+  reportTaskDone: (taskId: string, note: string) => void;
+  /** Cán bộ chấp nhận (→ Hoàn thành) hoặc từ chối (→ Đang thực hiện) kết quả. */
+  reviewTaskResult: (taskId: string, accepted: boolean, note: string) => void;
+  /** Phân công lại đội cho nhiệm vụ, bắt buộc có lý do; ghi lịch sử. */
+  reassignTask: (taskId: string, teamId: string, reason: string) => void;
+  createCitizenReport: (input: NewCitizenReportInput) => string;
+  reviewCitizenReport: (
+    reportId: string,
+    decision: Exclude<CitizenReportStatus, "Mới">,
     note: string,
+    duplicateOfId?: string | null,
   ) => void;
-  adjustWarehouseInventory: (itemId: string, quantityOnHand: number) => void;
-  setWarehouseStatus: (warehouseId: string, status: WarehouseStatus) => void;
-  createPlaybook: (input: NewPlaybookInput) => string;
-  updatePlaybook: (
-    playbookId: string,
-    changes: Partial<
-      Pick<
-        Playbook,
-        | "name"
-        | "description"
-        | "disasterType"
-        | "triggerConditions"
-        | "severityThreshold"
-        | "geographicScope"
-        | "owner"
-        | "estimatedDuration"
-      >
-    >,
-  ) => void;
-  publishPlaybook: (playbookId: string) => void;
-  archivePlaybook: (playbookId: string) => void;
-  addPlaybookStep: (
-    playbookId: string,
-    step: Omit<
-      PlaybookStep,
-      | "playbookId"
-      | "order"
-      | "status"
-      | "startedAt"
-      | "completedAt"
-      | "completedBy"
-    >,
-  ) => void;
-  reorderPlaybookSteps: (playbookId: string, stepIds: string[]) => void;
-  activatePlaybook: (playbookId: string, incidentId: string) => string;
-  pausePlaybookExecution: (executionId: string) => void;
-  resumePlaybookExecution: (executionId: string) => void;
-  cancelPlaybookExecution: (executionId: string) => void;
-  completePlaybookExecution: (executionId: string) => void;
-  startPlaybookStep: (executionId: string, stepId: string) => void;
-  completePlaybookStep: (executionId: string, stepId: string) => void;
-  skipPlaybookStep: (executionId: string, stepId: string) => void;
-  assignPlaybookStepOwner: (
-    executionId: string,
-    stepId: string,
-    owner: string,
-  ) => void;
-  createTaskFromPlaybookStep: (executionId: string, stepId: string) => string;
-  createRecoveryProjectFromPlaybook: (executionId: string) => string;
-  updatePlaybookStepEvidence: (
-    executionId: string,
-    stepId: string,
-    changes: Partial<
-      Pick<
-        PlaybookStepExecution,
-        | "notes"
-        | "verificationNote"
-        | "linkedTaskIds"
-        | "linkedTeamIds"
-        | "linkedShelterIds"
-        | "linkedEvacuationIds"
-        | "linkedSosIds"
-        | "linkedReliefRequestIds"
-      >
-    >,
-  ) => void;
-  createDamageAssessment: (input: NewDamageAssessmentInput) => string;
-  updateDamageAssessment: (
-    id: string,
-    changes: Partial<
-      Omit<
-        DamageAssessment,
-        | "id"
-        | "code"
-        | "incidentId"
-        | "status"
-        | "verification"
-        | "verifiedAt"
-        | "createdAt"
-        | "updatedAt"
-      >
-    >,
-  ) => void;
-  submitDamageAssessment: (id: string) => void;
-  reviewDamageAssessment: (id: string) => void;
-  verifyDamageAssessment: (
-    id: string,
-    evidenceIds: string[],
-    note: string,
-  ) => void;
-  rejectDamageAssessment: (id: string, reason: string) => void;
-  addDamageItem: (assessmentId: string, item: DamageItem) => void;
-  attachDamageEvidence: (
-    assessmentId: string,
-    evidence: RecoveryEvidence,
-  ) => void;
-  createDamageRevision: (assessmentId: string) => string;
-  createRecoveryProject: (input: NewRecoveryProjectInput) => string;
-  updateRecoveryProject: (
-    id: string,
-    changes: Partial<
-      Pick<
-        RecoveryProject,
-        | "name"
-        | "category"
-        | "priority"
-        | "owner"
-        | "geographicScope"
-        | "estimatedBudget"
-        | "targetDate"
-        | "notes"
-        | "assessmentIds"
-        | "assignedTeamIds"
-        | "relatedReliefRequestIds"
-      >
-    >,
-  ) => void;
-  approveRecoveryProject: (id: string, budget: number) => void;
-  rejectRecoveryProject: (id: string, reason: string) => void;
-  startRecoveryProject: (id: string) => void;
-  pauseRecoveryProject: (id: string) => void;
-  resumeRecoveryProject: (id: string) => void;
-  cancelRecoveryProject: (id: string) => void;
-  updateRecoveryBudget: (
-    id: string,
-    spent: number,
-    overrideNote?: string | null,
-  ) => void;
-  verifyRecoveryCompletion: (
-    id: string,
-    note: string,
-    evidence: string[],
-  ) => void;
-  completeRecoveryProject: (id: string) => void;
-  addRecoveryMilestone: (
-    projectId: string,
-    milestone: Omit<
-      RecoveryMilestone,
-      "projectId" | "order" | "status" | "progress" | "completedAt"
-    >,
-  ) => void;
-  startRecoveryMilestone: (projectId: string, milestoneId: string) => void;
-  completeRecoveryMilestone: (projectId: string, milestoneId: string) => void;
-  skipRecoveryMilestone: (projectId: string, milestoneId: string) => void;
-  createTaskFromRecoveryProject: (projectId: string) => string;
-  playSimulation: () => void;
-  pauseSimulation: () => void;
-  stepSimulation: () => void;
-  resetSimulation: () => void;
-  setSimulationSpeed: (speed: SimulationSpeed) => void;
+  draftPublishedAlert: (input: PublishedAlertDraftInput) => string;
+  updatePublishedAlert: (alertId: string, input: PublishedAlertDraftInput) => void;
+  publishAlert: (alertId: string) => void;
+  withdrawPublishedAlert: (alertId: string, reason: string) => void;
   addEvent: (incidentId: string, message: string, actor?: string) => void;
   closeIncident: (id: string) => void;
   markAlertRead: (alertKey: string) => void;

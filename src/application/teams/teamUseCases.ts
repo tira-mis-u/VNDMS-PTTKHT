@@ -62,93 +62,8 @@ export function assertTeamDispatchable(
     throw new Error(
       `Đội ${team.id} đang thực hiện nhiệm vụ ${team.currentTask}.`,
     );
-  if (team.currentEvacuationOperation)
-    throw new Error(
-      `Đội ${team.id} đang thực hiện hoạt động sơ tán ${team.currentEvacuationOperation}.`,
-    );
-  if (team.currentReliefShipment)
-    throw new Error(
-      `Đội ${team.id} đang vận chuyển chuyến hàng ${team.currentReliefShipment}.`,
-    );
 }
 
-export function assignTeamToReliefShipment(
-  team: RescueTeam,
-  shipmentId: string,
-  incidentId: string | null,
-  timestamp: string,
-): RescueTeam {
-  assertTeamDispatchable(team);
-  return {
-    ...team,
-    currentReliefShipment: shipmentId,
-    currentIncident: incidentId,
-    status: "Đang điều động",
-    availability: "Đang bận",
-    personnel: personnelForStatus(team, "Đang điều động"),
-    lastOperationalUpdate: timestamp,
-    updatedAt: timestamp,
-  };
-}
-export function releaseTeamFromReliefShipment(
-  team: RescueTeam,
-  timestamp: string,
-): RescueTeam {
-  const status: TeamStatus =
-    team.communicationStatus === "Mất liên lạc" ? "Mất liên lạc" : "Sẵn sàng";
-  return {
-    ...team,
-    currentReliefShipment: null,
-    currentIncident: null,
-    status,
-    availability: availabilityForStatus(status),
-    personnel: personnelForStatus(team, status),
-    lastOperationalUpdate: timestamp,
-    updatedAt: timestamp,
-  };
-}
-
-export function assignTeamToEvacuation(
-  team: RescueTeam,
-  operationId: string,
-  incidentId: string,
-  timestamp: string,
-): RescueTeam {
-  assertTeamDispatchable(team);
-  return {
-    ...team,
-    currentEvacuationOperation: operationId,
-    currentIncident: incidentId,
-    status: "Đang điều động",
-    availability: "Đang bận",
-    personnel: personnelForStatus(team, "Đang điều động"),
-    lastOperationalUpdate: timestamp,
-    updatedAt: timestamp,
-  };
-}
-
-export function releaseTeamFromEvacuation(
-  team: RescueTeam,
-  timestamp: string,
-): RescueTeam {
-  const status: TeamStatus = team.currentTask
-    ? team.status === "Đang thực hiện"
-      ? "Đang thực hiện"
-      : "Đang điều động"
-    : team.communicationStatus === "Mất liên lạc"
-      ? "Mất liên lạc"
-      : "Sẵn sàng";
-  return {
-    ...team,
-    currentEvacuationOperation: null,
-    currentIncident: team.currentTask ? team.currentIncident : null,
-    status,
-    availability: availabilityForStatus(status),
-    personnel: personnelForStatus(team, status),
-    lastOperationalUpdate: timestamp,
-    updatedAt: timestamp,
-  };
-}
 
 export function changeTeamStatus(
   team: RescueTeam,
@@ -159,9 +74,7 @@ export function changeTeamStatus(
     throw new Error(`Không thể chuyển đội từ ${team.status} sang ${status}.`);
   if (
     status === "Sẵn sàng" &&
-    (team.currentTask ||
-      team.currentEvacuationOperation ||
-      team.currentReliefShipment)
+    team.currentTask
   )
     throw new Error(
       "Không thể chuyển đội về Sẵn sàng khi còn phân công đang mở.",

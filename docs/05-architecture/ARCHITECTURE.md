@@ -23,13 +23,13 @@ Infrastructure cung cấp adapter cho dữ liệu và GIS; lớp presentation/st
 
 ## Trạng thái liên kết
 
-`OperationalProvider` là canonical store duy nhất cho Incident, Task, Team, Shelter/Evacuation, SOS, Relief, Playbook, Recovery và Simulation. Provider công bố command đã được phân quyền, phối hợp use case và publish authorized canonical view. Cơ chế React aggregate state nằm trong `useAtomicOperationalState`; resource graph phân quyền, timeline writer và security/session mechanics được tách theo trách nhiệm nhưng không tạo Context hoặc state owner thứ hai. Repository chỉ chịu trách nhiệm cấp bản sao trạng thái khởi tạo, tránh mutation ngược vào fixture.
+`OperationalProvider` là canonical store duy nhất cho Incident, Task, Team, Shelter, SOS, TaskReview, CitizenReport và PublishedAlert. Provider công bố command đã được phân quyền, phối hợp use case và publish authorized canonical view. Cơ chế React aggregate state nằm trong `useAtomicOperationalState`; resource graph phân quyền, timeline writer và security/session mechanics được tách theo trách nhiệm nhưng không tạo Context hoặc state owner thứ hai. Repository chỉ chịu trách nhiệm cấp bản sao trạng thái khởi tạo, tránh mutation ngược vào fixture.
 
 Mọi operational command được công bố đều đi qua `OperationalMutationBoundary`. Boundary clone snapshot và Simulation control vào draft, cho nested command dùng chung draft, commit đúng một lần khi thành công, hoặc bỏ toàn bộ draft rồi ném lại lỗi khi bất kỳ bước nào thất bại. Đây là atomicity cục bộ, xác định cho in-memory application state; không tương đương transaction của cơ sở dữ liệu production.
 
 Command Center không còn operational seed/read model riêng. Các presentation components gọi pure queries tại `src/application/command-center/commandCenterQueries.ts`; mọi metric, action queue, timeline, drawer, map và exception đều đọc canonical collections đã được provider cấp. Metadata tên/phạm vi kịch bản có thể tĩnh, nhưng operational entities không được sao chép.
 
-Raw operational state chỉ tồn tại bên trong provider. Trước khi publish qua `OperationalStateContext`, provider gọi `createAuthorizedOperationalView()` tại application query boundary. Do đó toàn bộ presentation, Analytics và AI grounding chỉ nhìn thấy collection đã được lọc theo authenticated user.
+Raw operational state chỉ tồn tại bên trong provider. Trước khi publish qua `OperationalStateContext`, provider gọi `createAuthorizedOperationalView()` tại application query boundary. Do đó toàn bộ presentation và Analytics chỉ nhìn thấy collection đã được lọc theo authenticated user.
 
 ## Routing
 
@@ -41,7 +41,7 @@ Raw operational state chỉ tồn tại bên trong provider. Trước khi publis
 
 ## Phân quyền
 
-Read boundary dùng một authorized operational view tại application layer; collection và entity detail ngoài scope không được trả về presentation. Mutation boundary dùng cùng permission matrix và `authorizeResources()` để kiểm tra permission, geographic scope, team/warehouse ownership và toàn bộ resource liên quan trước khi thay đổi state. Security audit nhận resource type/ID thay vì generic permission boundary.
+Read boundary dùng một authorized operational view tại application layer; collection và entity detail ngoài scope không được trả về presentation. Mutation boundary dùng cùng permission matrix và `authorizeResources()` để kiểm tra permission, geographic scope, quyền sở hữu bản ghi (`ownerUserId`) và toàn bộ resource liên quan trước khi thay đổi state. Security audit nhận resource type/ID thay vì generic permission boundary.
 
 Đây vẫn là enforcement frontend/local-demo, không phải security boundary chống malicious browser client. Authentication, authorization và audit phía server, HttpOnly session, persistence và tamper-proof audit vẫn bắt buộc trước production.
 
@@ -49,7 +49,7 @@ Read boundary dùng một authorized operational view tại application layer; c
 
 ### Đã triển khai cục bộ
 
-- Workflow liên kết Incident, Task, Team, Shelter/Evacuation, SOS, Relief, Playbook và Recovery trên canonical state.
+- Workflow liên kết Incident, Task, Team, Shelter, SOS, Phản ánh và Cảnh báo công bố trên canonical state.
 - Lifecycle rules, validation use cases, Incident closure invariant, permission assertion và timeline/field updates.
 - Scenario deterministic, adapter in-memory, bản đồ MapLibre và History API.
 

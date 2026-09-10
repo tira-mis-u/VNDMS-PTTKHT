@@ -12,7 +12,11 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { getValidTransitions, isTaskOverdue } from "@/domain/tasks/rules";
+import {
+  getValidTransitions,
+  isTaskOverdue,
+  TASK_LIFECYCLE,
+} from "@/domain/tasks/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
@@ -20,6 +24,7 @@ import {
   TaskActionDialogs,
   type TaskDialog,
 } from "../components/TaskActionDialogs";
+import type { TaskStatus } from "@/domain/tasks/types";
 const TaskDetailMap = lazy(() => import("../components/TaskDetailMap"));
 const priorityTone = (p: string) =>
   p === "Khẩn cấp"
@@ -44,7 +49,7 @@ export function TaskDetailPage({
   id: string;
   navigate: (path: string) => void;
 }) {
-  const { tasks, incidents, teams, taskUpdates, events, transitionTask, can } =
+  const { tasks, incidents, teams, taskUpdates, taskReviews, events, transitionTask, can } =
     useOperationalState();
   const task = tasks.find((t) => t.id === id);
   const [dialog, setDialog] = useState<TaskDialog>(null);
@@ -70,7 +75,20 @@ export function TaskDetailPage({
   const team = teams.find((t) => t.id === task.teamId);
   const overdue = isTaskOverdue(task);
   const transitions = getValidTransitions(task.status);
-  const primary = transitions.find((s) => s !== "Đã hủy");
+  // Hành động chính theo vai: đơn vị báo xong (Chờ xác nhận); cán bộ xác nhận (Hoàn thành).
+  const primary: TaskStatus | undefined =
+    task.status === "Đang thực hiện"
+      ? can("task_report_done") && task.teamId
+        ? "Chờ xác nhận"
+        : undefined
+      : task.status === "Chờ xác nhận"
+        ? can("task_review")
+          ? "Hoàn thành"
+          : undefined
+        : transitions.find((s) => s !== "Đã hủy");
+  const reviews = taskReviews.filter((r) => r.taskId === task.id);
+  const pendingReview = reviews.find((r) => r.decision === "Chờ xác nhận");
+  const assignmentHistory = task.assignmentHistory ?? [];
   const incidentEvents = events
     .filter(
       (e) => e.incidentId === task.incidentId && e.message.includes(task.id),
@@ -79,6 +97,8 @@ export function TaskDetailPage({
   const doPrimary = () => {
     if (!primary) return;
     if (primary === "Đã giao") setDialog("assign");
+    else if (primary === "Chờ xác nhận") setDialog("report-done");
+    else if (primary === "Hoàn thành") setDialog("review");
     else transitionTask(task.id, primary);
   };
   return (
@@ -112,27 +132,26 @@ export function TaskDetailPage({
               <MapPinned size={15} />
               Xem trên bản đồ
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                navigate(`/ai-assistant?context=Task&id=${task.id}`)
-              }
-            >
-              <ShieldCheck size={15} />
-              Trợ lý AI
-            </Button>
             {primary &&
               can(
                 primary === "Đã tiếp nhận"
                   ? "task_accept"
                   : primary === "Đang thực hiện"
                     ? "task_start"
-                    : primary === "Hoàn thành"
-                      ? "task_complete"
-                      : "task_assign",
+                    : primary === "Chờ xác nhận"
+                      ? "task_report_done"
+                      : primary === "Hoàn thành"
+                        ? "task_review"
+                        : "task_assign",
               ) && (
                 <Button onClick={doPrimary}>
-                  {primary === "Đã giao" ? "Điều phối đội" : primary}
+                  {primary === "Đã giao"
+                    ? "Điều phối đội"
+                    : primary === "Chờ xác nhận"
+                      ? "Báo hoàn thành"
+                      : primary === "Hoàn thành"
+                        ? "Xác nhận kết quả"
+                        : primary}
                 </Button>
               )}
             <Button variant="secondary" onClick={() => setDialog("progress")}>
@@ -152,14 +171,16 @@ export function TaskDetailPage({
               </Button>
               {more && (
                 <div className="incident-more-menu">
-                  <button
-                    onClick={() => {
-                      setDialog("assign");
-                      setMore(false);
-                    }}
-                  >
-                    Điều phối đội khác
-                  </button>
+                  {can("task_assign") && (
+                    <button
+                      onClick={() => {
+                        setDialog("assign");
+                        setMore(false);
+                      }}
+                    >
+                      {task.teamId ? "Phân công lại (có lý do)" : "Điều phối đội"}
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setDialog("transition");
@@ -353,20 +374,42 @@ export function TaskDetailPage({
                   </Badge>
                   <small>Đội trưởng: {task.teamLeader || task.assignee}</small>
                 </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setDialog("assign")}
-                >
-                  Thay đổi
-                </Button>
+                {can("task_assign") && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setDialog("assign")}
+                  >
+                    Phân công lại
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="unassigned-team">
                 <span>Nhiệm vụ chưa được giao cho đội.</span>
-                <Button size="sm" onClick={() => setDialog("assign")}>
-                  Điều phối đội
-                </Button>
+                {can("task_assign") && (
+                  <Button size="sm" onClick={() => setDialog("assign")}>
+                    Điều phối đội
+                  </Button>
+                )}
+              </div>
+            )}
+            {assignmentHistory.length > 0 && (
+              <div className="detail-timeline">
+                {[...assignmentHistory].reverse().map((record, index) => (
+                  <div key={`${record.at}-${index}`}>
+                    <span />
+                    <div>
+                      <b>
+                        {record.fromTeamId ? `${record.fromTeamId} → ` : ""}
+                        {record.toTeamId}
+                      </b>
+                      <small>
+                        {record.at} · {record.actor} · {record.reason}
+                      </small>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </section>
@@ -399,13 +442,53 @@ export function TaskDetailPage({
                   </p>
                 </div>
               </div>
+            ) : task.status === "Chờ xác nhận" ? (
+              <div className="task-result pending">
+                <Navigation size={20} />
+                <div>
+                  <b>Đơn vị đã báo hoàn thành — chờ cán bộ xác nhận</b>
+                  <p>
+                    {pendingReview
+                      ? `${pendingReview.reportedBy} (${pendingReview.reportedAt}): ${pendingReview.reportNote}`
+                      : "Chưa có nội dung báo cáo."}
+                  </p>
+                  {can("task_review") && (
+                    <Button size="sm" onClick={() => setDialog("review")}>
+                      Xác nhận kết quả
+                    </Button>
+                  )}
+                </div>
+              </div>
             ) : (
               <div className="task-result pending">
                 <Navigation size={20} />
                 <div>
                   <b>Đang chờ kết quả cuối cùng</b>
-                  <p>Kết quả được ghi nhận khi đội hoàn tất nhiệm vụ.</p>
+                  <p>
+                    Đơn vị báo hoàn thành → cán bộ phòng chống thiên tai xác nhận →
+                    nhiệm vụ mới được tính Hoàn thành.
+                  </p>
                 </div>
+              </div>
+            )}
+            {reviews.length > 0 && (
+              <div className="detail-timeline">
+                {reviews.map((review) => (
+                  <div key={review.id}>
+                    <span />
+                    <div>
+                      <b>
+                        {review.decision === "Chờ xác nhận"
+                          ? "Báo cáo kết quả đang chờ xác nhận"
+                          : `Kết quả ${review.decision.toLowerCase()} bởi ${review.reviewedBy}`}
+                      </b>
+                      <small>
+                        {review.reportedAt} · {review.reportedBy}: {review.reportNote}
+                        {review.reviewNote ? ` — ${review.reviewedAt}: ${review.reviewNote}` : ""}
+                      </small>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </section>
@@ -454,20 +537,8 @@ export function TaskDetailPage({
           </div>
           <div className="task-state-machine">
             <span>Vòng đời nhiệm vụ</span>
-            {[
-              "Chờ giao",
-              "Đã giao",
-              "Đã tiếp nhận",
-              "Đang thực hiện",
-              "Hoàn thành",
-            ].map((state, index) => {
-              const current = [
-                "Chờ giao",
-                "Đã giao",
-                "Đã tiếp nhận",
-                "Đang thực hiện",
-                "Hoàn thành",
-              ].indexOf(task.status);
+            {TASK_LIFECYCLE.map((state, index) => {
+              const current = TASK_LIFECYCLE.indexOf(task.status);
               return (
                 <div key={state}>
                   <i

@@ -19,7 +19,9 @@ function files(directory: string, extension: string): string[] {
 test("mọi lựa chọn giao diện dùng Select chung có hỗ trợ bàn phím", () => {
   const tsx = files("src", ".tsx").map((file) => readFileSync(file, "utf8"));
   assert.equal(tsx.some((source) => /<select\b/.test(source)), false);
-  assert.equal(tsx.reduce((sum, source) => sum + (source.match(/<UiSelect\b/g)?.length ?? 0), 0), 83);
+  // V2: 83 → 64 sau khi xóa thật 6 nhóm module (Cứu trợ/Kho, Playbook, Phục hồi, Mô phỏng,
+  // Trợ lý AI, Sơ tán) và thêm Phản ánh/Cảnh báo công bố dùng UiSelect chung.
+  assert.equal(tsx.reduce((sum, source) => sum + (source.match(/<UiSelect\b/g)?.length ?? 0), 0), 64);
   const source = readFileSync("src/components/ui/Select.tsx", "utf8");
   for (const contract of [
     'role="combobox"',

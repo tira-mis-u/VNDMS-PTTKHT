@@ -35,18 +35,10 @@ export function filterAndSortTeams(
           team.region.startsWith(filters.region)) &&
         (filters.assignment === "Tất cả phân công" ||
           (filters.assignment === "Đang có nhiệm vụ"
-            ? Boolean(
-                team.currentTask ||
-                team.currentEvacuationOperation ||
-                team.currentReliefShipment,
-              )
+            ? Boolean(team.currentTask)
             : filters.assignment === "Chưa có nhiệm vụ"
-              ? !team.currentTask &&
-                !team.currentEvacuationOperation &&
-                !team.currentReliefShipment
-              : team.currentTask === filters.assignment ||
-                team.currentEvacuationOperation === filters.assignment ||
-                team.currentReliefShipment === filters.assignment)),
+              ? !team.currentTask
+              : team.currentTask === filters.assignment)),
     )
     .sort((a, b) =>
       filters.sort === "Mã đội A–Z"

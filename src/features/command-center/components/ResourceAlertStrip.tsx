@@ -1,6 +1,5 @@
 import { ChevronRight, TriangleAlert } from "lucide-react";
 import { getCommandCenterResourceExceptions } from "@/application/command-center/commandCenterQueries";
-import { evacuationDetailPath } from "@/application/evacuations/evacuationQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 
 /**
@@ -19,11 +18,7 @@ export function ResourceAlertStrip({ onNavigate }: { onNavigate: (path: string) 
   const go = (item: (typeof items)[number]) => {
     if (item.kind === "sos") onNavigate(`/sos/${item.id}`);
     else if (item.kind === "shelter") onNavigate("/shelters");
-    else if (item.kind === "evacuation") {
-      const operation = store.evacuationOperations.find((entry) => entry.id === item.id);
-      if (operation) onNavigate(evacuationDetailPath(operation));
-    } else if (item.kind === "team") onNavigate(`/teams/${item.id}`);
-    else onNavigate(`/relief/warehouses/${item.id}`);
+    else onNavigate(`/teams/${item.id}`);
   };
 
   return (

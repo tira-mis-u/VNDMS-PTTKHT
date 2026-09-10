@@ -1,10 +1,8 @@
 import type { OperationalAlert } from "../../domain/alerts/types";
-import type { SimulationState } from "../../domain/simulation/types";
 import type { OperationalSnapshot } from "./operationalSnapshot";
 
 export type OperationalInsightsData = OperationalSnapshot & {
   alerts: OperationalAlert[];
-  simulation: SimulationState;
 };
 
 export interface ProvenanceRef {
@@ -28,7 +26,8 @@ export interface SituationArea {
   area: string;
   activeIncidents: number;
   urgentSos: number;
-  evacuations: number;
+  /** Phản ánh của người dân đang chờ cán bộ đánh giá trong khu vực. */
+  pendingReports: number;
   incidentPath: string;
 }
 
@@ -42,8 +41,6 @@ export interface OperationalSituation {
   metrics: SituationMetric[];
   areas: SituationArea[];
   events: SituationEvent[];
-  simulationActive: boolean;
-  simulationLabel: string | null;
 }
 
 const openSos = new Set([
@@ -53,15 +50,6 @@ const openSos = new Set([
   "Đã điều phối",
   "Đang cứu hộ",
   "Không liên lạc được",
-]);
-const activeEvacuation = new Set(["Đã phê duyệt", "Đang triển khai", "Tạm dừng"]);
-const activeRelief = new Set([
-  "Mới tạo",
-  "Chờ phê duyệt",
-  "Đã phê duyệt",
-  "Đang phân bổ",
-  "Đã phân bổ",
-  "Đang vận chuyển",
 ]);
 const validTime = (value: string | null | undefined) =>
   Boolean(value && Number.isFinite(parseOperationalTimestamp(value)));
@@ -90,16 +78,14 @@ export function getOperationalSituation(data: OperationalInsightsData): Operatio
   const urgentSos = data.sosRequests.filter(
     (item) => openSos.has(item.status) && item.priority === "P1 — Khẩn cấp",
   );
-  const activeEvacuations = data.evacuationOperations.filter((item) =>
-    activeEvacuation.has(item.status),
-  );
+  const pendingReports = data.citizenReports.filter((item) => item.status === "Mới");
+  const awaitingReview = data.tasks.filter((item) => item.status === "Chờ xác nhận");
   const deployedTeams = data.teams.filter((item) =>
     ["Đang điều động", "Đang thực hiện"].includes(item.status),
   );
   const overloadedShelters = data.shelters.filter((item) =>
     item.status === "Quá tải" || item.currentOccupancy > item.capacity,
   );
-  const pendingRelief = data.reliefRequests.filter((item) => activeRelief.has(item.status));
   const unacknowledgedAlerts = data.alerts.filter(
     (item) => item.requiresAcknowledgement && !item.acknowledgedAt,
   );
@@ -108,10 +94,10 @@ export function getOperationalSituation(data: OperationalInsightsData): Operatio
     metric("incidents", "Sự cố đang xử lý", activeIncidents.length, "Sự cố chưa đóng trong phạm vi được phân quyền", "/incidents", "Hồ sơ sự cố", data.metadata.asOf),
     metric("alerts", "Cảnh báo chờ xác nhận", unacknowledgedAlerts.length, "Cảnh báo yêu cầu xác nhận nhưng chưa được xác nhận", "/alerts", "Cảnh báo tác nghiệp dẫn xuất", data.metadata.asOf),
     metric("sos", "SOS khẩn cấp cần xử lý", urgentSos.length, "Yêu cầu P1 còn trong vòng đời xử lý", "/sos", "Hồ sơ SOS", data.metadata.asOf),
-    metric("evacuations", "Hoạt động sơ tán", activeEvacuations.length, "Hoạt động đã phê duyệt, đang triển khai hoặc tạm dừng", "/evacuations", "Hồ sơ sơ tán", data.metadata.asOf),
+    metric("reports", "Phản ánh chờ đánh giá", pendingReports.length, "Phản ánh của người dân chưa được cán bộ đánh giá", "/reports", "Hồ sơ phản ánh", data.metadata.asOf),
     metric("teams", "Đội đang điều động", deployedTeams.length, "Đội đang điều động hoặc thực hiện nhiệm vụ", "/teams", "Hồ sơ đội cứu hộ", data.metadata.asOf),
     metric("shelters", "Điểm sơ tán quá tải", overloadedShelters.length, "Trạng thái quá tải hoặc số người vượt sức chứa", "/shelters", "Hồ sơ điểm sơ tán", data.metadata.asOf),
-    metric("relief", "Yêu cầu cứu trợ cần xử lý", pendingRelief.length, "Yêu cầu chưa hoàn tất hoặc chưa bị hủy", "/relief", "Hồ sơ cứu trợ", data.metadata.asOf),
+    metric("task-review", "Nhiệm vụ chờ xác nhận", awaitingReview.length, "Đơn vị đã báo xong, chờ cán bộ xác nhận kết quả", "/tasks", "Hồ sơ nhiệm vụ", data.metadata.asOf),
   ];
 
   const areaMap = new Map<string, SituationArea>();
@@ -120,42 +106,37 @@ export function getOperationalSituation(data: OperationalInsightsData): Operatio
       area: incident.location.name,
       activeIncidents: (areaMap.get(incident.location.name)?.activeIncidents ?? 0) + 1,
       urgentSos: 0,
-      evacuations: 0,
+      pendingReports: 0,
       incidentPath: `/incidents/${incident.id}`,
     });
   }
   for (const sos of urgentSos) {
     const area = sos.location.administrativeArea;
-    const current = areaMap.get(area) ?? { area, activeIncidents: 0, urgentSos: 0, evacuations: 0, incidentPath: "/sos" };
+    const current = areaMap.get(area) ?? { area, activeIncidents: 0, urgentSos: 0, pendingReports: 0, incidentPath: "/sos" };
     current.urgentSos += 1;
     areaMap.set(area, current);
   }
-  for (const operation of activeEvacuations) {
-    const area = operation.sourceArea;
-    const current = areaMap.get(area) ?? { area, activeIncidents: 0, urgentSos: 0, evacuations: 0, incidentPath: `/evacuations/${operation.id}` };
-    current.evacuations += 1;
+  for (const report of pendingReports) {
+    const area = report.location.administrativeArea;
+    const current = areaMap.get(area) ?? { area, activeIncidents: 0, urgentSos: 0, pendingReports: 0, incidentPath: "/reports" };
+    current.pendingReports += 1;
     areaMap.set(area, current);
   }
 
   const events: SituationEvent[] = [
     ...data.events.map((event) => ({ entityId: event.incidentId, entityType: "Sự cố", path: `/incidents/${event.incidentId}`, timestamp: resolveEventTimestamp(event.timestamp, data.incidents.find((item) => item.id === event.incidentId)?.createdAt), message: event.message, source: event.source ?? "Dòng thời gian sự cố" })),
     ...data.sosEvents.map((event) => ({ entityId: event.sosId, entityType: "SOS", path: `/sos/${event.sosId}`, timestamp: event.timestamp, message: event.message, source: event.source })),
-    ...data.evacuationEvents.map((event) => ({ entityId: event.operationId, entityType: "Sơ tán", path: `/evacuations/${event.operationId}`, timestamp: event.timestamp, message: event.message, source: event.source })),
+    ...data.citizenReportEvents.map((event) => ({ entityId: event.reportId, entityType: "Phản ánh", path: "/reports", timestamp: event.timestamp, message: event.message, source: event.actor })),
   ]
     .filter((event) => validTime(event.timestamp))
     .sort((a, b) => parseOperationalTimestamp(b.timestamp) - parseOperationalTimestamp(a.timestamp))
     .slice(0, 12);
 
-  const simulationActive = data.simulation.status !== "Sẵn sàng" || data.simulation.tick > 0;
   return {
     asOf: data.metadata.asOf,
     metrics,
     areas: [...areaMap.values()].sort((a, b) => b.activeIncidents - a.activeIncidents || a.area.localeCompare(b.area, "vi")),
     events,
-    simulationActive,
-    simulationLabel: simulationActive
-      ? `Dữ liệu mô phỏng đang hoạt động ở bước ${data.simulation.tick}; không phải dữ liệu quan trắc thực tế.`
-      : null,
   };
 }
 
@@ -227,7 +208,7 @@ export function getOperationalHistory(
   return { rows, invalidRecords, asOf: data.metadata.asOf };
 }
 
-export type TrendMetric = "incidents" | "alerts" | "sos" | "tasks" | "evacuations" | "relief" | "events";
+export type TrendMetric = "incidents" | "alerts" | "sos" | "tasks" | "reports" | "events";
 export interface OperationalTrendPoint {
   period: string;
   value: number;
@@ -265,12 +246,11 @@ function metricSources(data: OperationalInsightsData, metric: TrendMetric): Prov
   if (metric === "alerts") return data.alerts.map((item) => ({ entityId: item.key, entityType: "Cảnh báo", path: `/alerts/${encodeURIComponent(item.key)}`, timestamp: item.detectedAt }));
   if (metric === "sos") return data.sosRequests.map((item) => ({ entityId: item.id, entityType: "SOS", path: `/sos/${item.id}`, timestamp: item.receivedAt }));
   if (metric === "tasks") return data.tasks.map((item) => ({ entityId: item.id, entityType: "Nhiệm vụ", path: `/tasks/${item.id}`, timestamp: item.createdAt }));
-  if (metric === "evacuations") return data.evacuationOperations.map((item) => ({ entityId: item.id, entityType: "Sơ tán", path: `/evacuations/${item.id}`, timestamp: item.startTime ?? item.updatedAt }));
-  if (metric === "relief") return data.reliefRequests.map((item) => ({ entityId: item.id, entityType: "Cứu trợ", path: `/relief/requests/${item.id}`, timestamp: item.createdAt }));
+  if (metric === "reports") return data.citizenReports.map((item) => ({ entityId: item.id, entityType: "Phản ánh", path: "/reports", timestamp: item.createdAt }));
   return [
     ...data.events.map((item) => ({ entityId: item.incidentId, entityType: "Sự cố", path: `/incidents/${item.incidentId}`, timestamp: resolveEventTimestamp(item.timestamp, data.incidents.find((incident) => incident.id === item.incidentId)?.createdAt) })),
     ...data.taskUpdates.map((item) => ({ entityId: item.taskId, entityType: "Nhiệm vụ", path: `/tasks/${item.taskId}`, timestamp: item.timestamp })),
     ...data.sosEvents.map((item) => ({ entityId: item.sosId, entityType: "SOS", path: `/sos/${item.sosId}`, timestamp: item.timestamp })),
-    ...data.evacuationEvents.map((item) => ({ entityId: item.operationId, entityType: "Sơ tán", path: `/evacuations/${item.operationId}`, timestamp: item.timestamp })),
+    ...data.citizenReportEvents.map((item) => ({ entityId: item.reportId, entityType: "Phản ánh", path: "/reports", timestamp: item.timestamp })),
   ];
 }

@@ -15,6 +15,10 @@ export interface AuthUser {
   role: Role;
   geographicScope: GeographicScope;
   active: boolean;
+  /**
+   * Quan hệ đội/kho cũ (trước V2) chỉ còn là dữ liệu lịch sử; KHÔNG được
+   * dùng để cấp hoặc thu hẹp quyền. Xem `lib/security/authorization.ts`.
+   */
   teamId?: string;
   warehouseId?: string;
   organization?: string;
@@ -59,6 +63,7 @@ export type AuditAction =
   | "USER_DEACTIVATED"
   | "USER_ROLE_CHANGED"
   | "USER_SCOPE_CHANGED"
+  | "ROLE_MODEL_MIGRATED"
   | "PANIC_ALERT_TRIGGERED"
   | "LIVE_BEACON_TOGGLED";
 export interface RegisterInput {

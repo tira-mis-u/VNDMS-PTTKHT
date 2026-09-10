@@ -1,3 +1,8 @@
+/*
+ * V2 (4 vai): username thật; permission cũ (recovery_project_approve, simulation_control)
+ * và route /simulation đã xóa → dùng sos_dispatch (công dân bị từ chối) và user_manage
+ * (admin được phép); thêm kiểm tra route /simulation trả not-found.
+ */
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -30,7 +35,7 @@ test("audit adapter lưu login success, failed và logout theo thứ tự", asyn
   const storage = new MemoryStorage();
   const auth = new LocalAuthenticationAdapter(storage, now, () => "token");
   const audit = new LocalAuditAdapter(storage);
-  const success = await loginUser(auth, "Trần Quốc Thuận", "VNDMS@2026", now);
+  const success = await loginUser(auth, "thuantq", "VNDMS@2026", now);
   audit.append(success.audit);
   const failed = await loginUser(auth, "unknown", "bad", now);
   audit.append(failed.audit);
@@ -42,19 +47,15 @@ test("audit adapter lưu login success, failed và logout theo thứ tự", asyn
   assert.ok(audit.load().every((item) => item.timestamp && item.result));
 });
 test("permission denied có actor, scope, permission và reason", () => {
-  const local = demoUsers.find((item) => item.username === "Phạm Văn Đam")!;
-  const decision = authorize(
-    local,
-    "recovery_project_approve",
-    "Hoàn Kiếm, Hà Nội",
-  );
+  const local = demoUsers.find((item) => item.username === "phamdam")!;
+  const decision = authorize(local, "sos_dispatch", "Hoàn Kiếm, Hà Nội");
   const event = createSecurityAudit({
     actorId: local.id,
     actorName: local.displayName,
     role: local.role,
     action: "PERMISSION_DENIED",
-    resourceType: "RecoveryProject",
-    resourceId: "RP-0241",
+    resourceType: "SosRequest",
+    resourceId: "SOS-YAGI-04",
     timestamp: now().toISOString(),
     geographicScope: local.geographicScope.name,
     result: "DENIED",
@@ -62,22 +63,20 @@ test("permission denied có actor, scope, permission và reason", () => {
     permission: decision.permission,
   });
   assert.equal(event.actorId, local.id);
-  assert.equal(event.permission, "recovery_project_approve");
+  assert.equal(event.permission, "sos_dispatch");
   assert.equal(event.result, "DENIED");
   assert.ok(event.reason);
 });
 test("sensitive mutation authorization audit có attribution", () => {
-  const commander = demoUsers.find(
-    (item) => item.username === "Trần Quốc Thuận",
-  )!;
-  const decision = authorize(commander, "simulation_control");
+  const commander = demoUsers.find((item) => item.username === "thuantq")!;
+  const decision = authorize(commander, "user_manage");
   const event = createSecurityAudit({
     actorId: commander.id,
     actorName: commander.displayName,
     role: commander.role,
     action: "MUTATION_AUTHORIZED",
     resourceType: "PermissionBoundary",
-    resourceId: "red-river-flood-hanoi",
+    resourceId: "USR-WHS-001",
     timestamp: now().toISOString(),
     geographicScope: commander.geographicScope.name,
     result: decision.allowed ? "SUCCESS" : "DENIED",
@@ -93,5 +92,9 @@ test("router nhận login, protected application và admin routes", () => {
   assert.equal(parseRoute("/command").name, "command-center");
   assert.equal(parseRoute("/admin/users").name, "admin-users");
   assert.equal(parseRoute("/admin/audit").name, "admin-audit");
-  assert.equal(parseRoute("/simulation").name, "simulation");
+  // Module Mô phỏng đã xóa thật: route không còn tồn tại.
+  assert.equal(parseRoute("/simulation").name, "not-found");
+  assert.equal(parseRoute("/relief/requests").name, "not-found");
+  assert.equal(parseRoute("/recovery").name, "not-found");
+  assert.equal(parseRoute("/reports").name, "report-list");
 });

@@ -6,7 +6,6 @@ import type { Incident } from "@/domain/incidents/types";
 import type { IncidentTask } from "@/domain/tasks/types";
 import type { RescueTeam } from "@/domain/teams/types";
 import type { Shelter } from "@/domain/shelters/types";
-import type { EvacuationOperation } from "@/domain/evacuations/types";
 import { useDualMapEngine, MapEngineBadge } from "@/infrastructure/gis/useDualMapEngine";
 
 const KIND_COLORS: Record<string, string> = {
@@ -23,7 +22,6 @@ export default function SosOperationalMap({
   task,
   team,
   shelter,
-  evacuation,
   navigate,
 }: {
   sos: SosRequest;
@@ -31,7 +29,6 @@ export default function SosOperationalMap({
   task?: IncidentTask;
   team?: RescueTeam;
   shelter?: Shelter;
-  evacuation?: EvacuationOperation;
   navigate: (path: string) => void;
 }) {
   const container = useRef<HTMLDivElement>(null);
@@ -42,9 +39,8 @@ export default function SosOperationalMap({
     seaLabelPrefix: "sos",
   });
 
-  // Google Maps: markers & polylines
+  // Google Maps: markers
   const gmarkersRef = useRef<google.maps.Marker[]>([]);
-  const gpolylinesRef = useRef<google.maps.Polyline[]>([]);
 
   useEffect(() => {
     if (!ready) return;
@@ -52,9 +48,7 @@ export default function SosOperationalMap({
     if (engine === "google" && gmapRef.current && window.google?.maps) {
       const map = gmapRef.current;
       gmarkersRef.current.forEach((m) => m.setMap(null));
-      gpolylinesRef.current.forEach((p) => p.setMap(null));
       gmarkersRef.current = [];
-      gpolylinesRef.current = [];
 
       const addGMarker = (coords: [number, number], kind: string, title: string, onClick?: () => void) => {
         const m = new google.maps.Marker({
@@ -72,23 +66,6 @@ export default function SosOperationalMap({
       if (task) addGMarker(task.coordinates, "task", task.id, () => navigate(`/tasks/${task.id}`));
       if (team) addGMarker(team.coordinates, "team", team.id, () => navigate(`/teams/${team.id}`));
       if (shelter) addGMarker(shelter.coordinates, "shelter", shelter.id, () => navigate(`/shelters/${shelter.id}`));
-
-      if (evacuation) {
-        const path = evacuation.route.coordinates.map(([lng, lat]) => ({ lat, lng }));
-        const polyline = new google.maps.Polyline({
-          path, map,
-          strokeColor: evacuation.route.status === "Bị chặn" ? "#d92d20" : "#175cd3",
-          strokeWeight: 4,
-          strokeOpacity: 0.9,
-        });
-        gpolylinesRef.current.push(polyline);
-
-        if (evacuation.route.alternativeCoordinates.length) {
-          const altPath = evacuation.route.alternativeCoordinates.map(([lng, lat]) => ({ lat, lng }));
-          const altLine = new google.maps.Polyline({ path: altPath, map, strokeColor: "#079455", strokeWeight: 3, strokeOpacity: 0.8 });
-          gpolylinesRef.current.push(altLine);
-        }
-      }
     } else if (engine === "maplibre" && mlMapRef.current) {
       const map = mlMapRef.current;
 
@@ -111,32 +88,8 @@ export default function SosOperationalMap({
       if (task) addMLMarker(task.coordinates, "task", task.id, () => { if (taskId) navigate(`/tasks/${taskId}`); });
       if (team) addMLMarker(team.coordinates, "team", team.id, () => { if (teamId) navigate(`/teams/${teamId}`); });
       if (shelter) addMLMarker(shelter.coordinates, "shelter", shelter.id, () => { if (shelterId) navigate(`/shelters/${shelterId}`); });
-
-      if (evacuation) {
-        if (!map.getSource("sos-evac-route")) {
-          map.addSource("sos-evac-route", {
-            type: "geojson",
-            data: { type: "Feature", geometry: { type: "LineString", coordinates: evacuation.route.coordinates }, properties: {} },
-          });
-          map.addLayer({
-            id: "sos-evac-route", type: "line", source: "sos-evac-route",
-            paint: {
-              "line-color": evacuation.route.status === "Bị chặn" ? "#d92d20" : "#175cd3",
-              "line-width": 4,
-              "line-dasharray": evacuation.route.status === "Bị chặn" ? [2, 1] : [1, 0],
-            },
-          });
-        }
-        if (evacuation.route.alternativeCoordinates.length && !map.getSource("sos-alt-route")) {
-          map.addSource("sos-alt-route", {
-            type: "geojson",
-            data: { type: "Feature", geometry: { type: "LineString", coordinates: evacuation.route.alternativeCoordinates }, properties: {} },
-          });
-          map.addLayer({ id: "sos-alt-route", type: "line", source: "sos-alt-route", paint: { "line-color": "#079455", "line-width": 3, "line-dasharray": [2, 2] } });
-        }
-      }
     }
-  }, [ready, engine, sos, incident, task, team, shelter, evacuation, navigate]);
+  }, [ready, engine, sos, incident, task, team, shelter, navigate]);
 
   return (
     <div className="sos-operational-map" style={{ position: "relative" }}>
@@ -161,8 +114,6 @@ export default function SosOperationalMap({
         <span><i className="sos-key" />SOS</span>
         <span><i className="team-key" />Đội cứu hộ</span>
         <span><i className="shelter-key-dot" />Điểm sơ tán</span>
-        <span><i className="blocked-key" />Tuyến bị chặn</span>
-        <span><i className="alternative-key" />Tuyến thay thế</span>
       </div>
       <div className="map-attribution">© OpenFreeMap · © OpenStreetMap</div>
     </div>

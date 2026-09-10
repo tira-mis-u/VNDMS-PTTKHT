@@ -1,0 +1,181 @@
+/*
+ * shared-detail.css — các rule dùng chung (breadcrumbs, back-link, filter-select,
+ * section-heading, detail-*, map-*, form-hint, linked-request-list) được
+ * chuyển NGUYÊN VĂN từ relief.css khi gỡ module Cứu trợ/Kho/Chuyến hàng (V2).
+ * Nạp ở đúng vị trí cũ của relief.css để giữ thứ tự cascade.
+ */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #728094;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.breadcrumbs b {
+  color: #344054;
+}
+
+.text-action {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #d6dce5;
+  background: #fff;
+  color: #254b75;
+  border-radius: 6px;
+  padding: 8px 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.filter-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-select svg {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+}
+
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: none;
+  color: #49627c;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.detail-section {
+  background: #fff;
+  border: 1px solid #dfe4eb;
+  border-radius: 7px;
+  padding: 16px;
+}
+
+.detail-section > h2,
+.section-heading h2 {
+  font-size: 18px;
+  color: #253248;
+  margin: 0;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 13px;
+}
+
+.section-heading p {
+  margin: 4px 0 0;
+  color: #667085;
+  font-size: 14.5px;
+}
+
+.linked-request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.linked-request-list button {
+  border: 1px solid #e1e6ed;
+  border-radius: 6px;
+  padding: 11px;
+  background: #fff;
+}
+
+.linked-request-list button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+}
+
+.linked-request-list button > span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.linked-request-list small {
+  font-size: 14.5px;
+  color: #667085;
+  margin-top: 3px;
+}
+
+.map-section {
+  padding-bottom: 12px;
+}
+
+.map-marker {
+  display: grid;
+  place-items: center;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px #34405466;
+  color: #fff;
+}
+
+.detail-timeline {
+  margin-top: 12px;
+}
+
+.detail-timeline > div {
+  display: flex;
+  gap: 9px;
+  padding-bottom: 13px;
+}
+
+.detail-timeline > div > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #5881a6;
+  margin-top: 4px;
+  box-shadow: 0 0 0 3px #edf3f8;
+}
+
+.detail-timeline > div > div {
+  display: flex;
+  flex-direction: column;
+  font-size: 14.5px;
+}
+
+.detail-timeline small {
+  color: #667085;
+  margin-top: 3px;
+}
+
+.form-hint {
+  font-size: 14.5px;
+  color: #667085;
+  margin-top: 4px;
+}
+
+.linked-request-list button {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+.detail-actions {
+    width: 100%;
+    overflow: auto;
+  }
+}

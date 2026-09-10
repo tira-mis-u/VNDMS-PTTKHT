@@ -36,12 +36,12 @@ Transition được kiểm tra trong `transitionTask()` tại data/service layer
 
 | Vai trò       | Quyền nhiệm vụ                                                |
 | ------------- | ------------------------------------------------------------- |
-| Commander     | xem, tạo, giao, tiếp nhận, bắt đầu, cập nhật, hoàn thành, hủy |
-| Operator      | xem, tạo, giao, điều phối, cập nhật                           |
-| Local Officer | xem, tạo và cập nhật trong phạm vi                            |
-| Rescue Leader | xem, tiếp nhận, bắt đầu, cập nhật, hoàn thành                 |
-| Rescue Member | xem và cập nhật hiện trường                                   |
-| Citizen       | không có quyền truy cập nghiệp vụ                             |
+| `admin`            | xem                                                                          |
+| `disaster_officer` | xem, tạo, giao, phân công lại (có lý do), cập nhật, xác nhận/từ chối kết quả, hủy |
+| `rescue_unit`      | xem, tiếp nhận, bắt đầu, cập nhật hiện trường, báo xong (→ Chờ xác nhận)     |
+| `citizen`          | không có quyền truy cập nghiệp vụ                                            |
+
+Vòng đời V2: Đang thực hiện → **Chờ xác nhận** (đơn vị báo xong, tạo `TaskReview` kèm ghi chú) → Hoàn thành (cán bộ chấp nhận) hoặc quay lại Đang thực hiện (từ chối, bắt buộc lý do). Phân công lại lưu `assignmentHistory`.
 
 Mọi mutation gọi `assertPermission()` qua lớp permission tập trung trong `OperationalContext`, không chỉ dựa trên trạng thái hiển thị button. Khi có backend, cùng policy phải được enforce lại tại API/server.
 

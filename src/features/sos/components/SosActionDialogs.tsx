@@ -2,7 +2,6 @@ import { Select as UiSelect } from "@/components/ui/Select";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import type { SosPriority, SosRequest } from "@/domain/sos/types";
-import { calculateShelterCapacity } from "@/domain/shelters/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { DialogBackdrop, Button, Input, Textarea } from "@/components/ui";
 export type SosDialog =
@@ -14,7 +13,6 @@ export type SosDialog =
   | "location"
   | "update"
   | "no-contact"
-  | "shelter"
   | "resolve"
   | "close"
   | "cancel"
@@ -165,8 +163,6 @@ export function SosActionDialogs({
         submit={(value) => run(() => actions.resolveSos(sos.id, value))}
       />
     );
-  if (mode === "shelter")
-    return <ShelterRoute sos={sos} error={error} run={run} onClose={onClose} />;
   return null;
 }
 function Confirm({
@@ -275,9 +271,7 @@ function TaskCreate({
   const { teams, createRescueTaskFromSos } = useOperationalState();
   const eligible = teams.filter(
     (team) =>
-      team.status === "Sẵn sàng" &&
-      !team.currentTask &&
-      !team.currentEvacuationOperation,
+      team.status === "Sẵn sàng" && !team.currentTask,
   );
   const [id, setId] = useState(eligible[0]?.id ?? "");
   return (
@@ -503,72 +497,6 @@ function TextAction({
           placeholder="Nhập thông tin tác nghiệp đã được xác nhận…"
         />
       </label>
-      <ErrorText value={error} />
-    </Frame>
-  );
-}
-function ShelterRoute({
-  sos,
-  error,
-  run,
-  onClose,
-}: {
-  sos: SosRequest;
-  error: string;
-  run: (action: () => unknown) => void;
-  onClose: () => void;
-}) {
-  const { shelters, routeSosToShelter } = useOperationalState();
-  const eligible = shelters.filter(
-    (shelter) =>
-      !["Quá tải", "Tạm đóng", "Không thể tiếp cận"].includes(shelter.status) &&
-      calculateShelterCapacity(shelter).availableCapacity >= sos.peopleAtRisk,
-  );
-  const [id, setId] = useState(eligible[0]?.id ?? "");
-  return (
-    <Frame
-      title="Chuyển đến điểm sơ tán"
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button
-            disabled={!id}
-            onClick={() => run(() => routeSosToShelter(sos.id, id))}
-          >
-            Tạo hoạt động sơ tán
-          </Button>
-        </>
-      }
-    >
-      <div className="eligible-shelter-list">
-        {eligible.map((shelter) => {
-          const capacity = calculateShelterCapacity(shelter);
-          return (
-            <label
-              key={shelter.id}
-              className={id === shelter.id ? "selected" : ""}
-            >
-              <Input
-                type="radio"
-                checked={id === shelter.id}
-                onChange={() => setId(shelter.id)}
-              />
-              <span>
-                <b>
-                  {shelter.id} · {shelter.name}
-                </b>
-                <small>
-                  {shelter.administrativeArea} · {shelter.medicalCapability}
-                </small>
-              </span>
-              <i>{capacity.availableCapacity} chỗ</i>
-            </label>
-          );
-        })}
-      </div>
       <ErrorText value={error} />
     </Frame>
   );

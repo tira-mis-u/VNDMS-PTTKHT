@@ -1,6 +1,8 @@
 import type {
   IncidentTask,
+  TaskAssignmentRecord,
   TaskPriority,
+  TaskReview,
   TaskStatus,
 } from "../../domain/tasks/types";
 import { getValidTransitions } from "../../domain/tasks/rules";
@@ -111,4 +113,119 @@ export function releaseTaskAssignment(
     status: "Chờ giao",
     updatedAt: timestamp,
   };
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ * V2 — Đơn vị báo xong KHÔNG tự đóng; cán bộ xác nhận; phân công lại có lý do.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+/** Đơn vị cứu hộ báo đã hoàn thành: nhiệm vụ chuyển "Chờ xác nhận". */
+export function reportTaskDoneEntity(
+  task: IncidentTask,
+  timestamp: string,
+): IncidentTask {
+  if (task.status !== "Đang thực hiện")
+    throw new Error("Chỉ nhiệm vụ đang thực hiện mới có thể báo hoàn thành.");
+  if (!task.teamId)
+    throw new Error("Nhiệm vụ chưa có đội phụ trách nên không thể báo xong.");
+  return {
+    ...task,
+    status: "Chờ xác nhận",
+    progress: Math.max(task.progress, 90),
+    updatedAt: timestamp,
+  };
+}
+
+export function createTaskReview(
+  id: string,
+  task: IncidentTask,
+  reportedBy: string,
+  note: string,
+  timestamp: string,
+): TaskReview {
+  if (!note.trim()) throw new Error("Phải ghi tóm tắt kết quả khi báo hoàn thành.");
+  return {
+    id,
+    taskId: task.id,
+    incidentId: task.incidentId,
+    reportedBy,
+    reportedAt: timestamp,
+    reportNote: note.trim(),
+    decision: "Chờ xác nhận",
+    reviewedBy: null,
+    reviewedAt: null,
+    reviewNote: null,
+  };
+}
+
+/** Cán bộ chấp nhận (→ Hoàn thành, progress 100) hoặc từ chối (→ Đang thực hiện). */
+export function reviewTaskResultEntity(
+  task: IncidentTask,
+  accepted: boolean,
+  timestamp: string,
+): IncidentTask {
+  if (task.status !== "Chờ xác nhận")
+    throw new Error("Nhiệm vụ chưa ở trạng thái chờ xác nhận.");
+  return accepted
+    ? transitionTaskEntity(task, "Hoàn thành", timestamp)
+    : { ...task, status: "Đang thực hiện", updatedAt: timestamp };
+}
+
+export function decideTaskReview(
+  review: TaskReview,
+  accepted: boolean,
+  note: string,
+  reviewer: string,
+  timestamp: string,
+): TaskReview {
+  if (review.decision !== "Chờ xác nhận")
+    throw new Error("Báo cáo kết quả này đã được xử lý.");
+  if (!accepted && !note.trim())
+    throw new Error("Phải ghi lý do khi từ chối kết quả.");
+  return {
+    ...review,
+    decision: accepted ? "Chấp nhận" : "Từ chối",
+    reviewedBy: reviewer,
+    reviewedAt: timestamp,
+    reviewNote: note.trim() || null,
+  };
+}
+
+/** Phân công lại: bắt buộc lý do, ghi lịch sử (from → to). */
+export function reassignTaskEntity(
+  task: IncidentTask,
+  assignment: TaskAssignmentInput,
+  reason: string,
+  actor: string,
+  timestamp: string,
+): IncidentTask {
+  if (!reason.trim()) throw new Error("Phải ghi lý do phân công lại.");
+  if (task.teamId === assignment.teamId)
+    throw new Error("Đội được chọn đang là đội phụ trách nhiệm vụ này.");
+  if (["Hoàn thành", "Đã hủy"].includes(task.status))
+    throw new Error("Không thể phân công lại nhiệm vụ đã kết thúc.");
+  const assigned = assignTaskToTeam(task, assignment, timestamp);
+  const record: TaskAssignmentRecord = {
+    at: timestamp,
+    fromTeamId: task.teamId || null,
+    toTeamId: assignment.teamId,
+    actor,
+    reason: reason.trim(),
+  };
+  return {
+    ...assigned,
+    // Đội mới phải tiếp nhận lại; kết quả đang chờ xác nhận (nếu có) không còn giá trị.
+    status: "Đã giao",
+    assignmentHistory: [...(task.assignmentHistory ?? []), record],
+  };
+}
+
+/** Bản ghi phân công đầu tiên khi giao nhiệm vụ (để lịch sử đầy đủ). */
+export function initialAssignmentRecord(
+  teamId: string,
+  actor: string,
+  timestamp: string,
+  reason = "Phân công ban đầu",
+): TaskAssignmentRecord {
+  return { at: timestamp, fromTeamId: null, toTeamId: teamId, actor, reason };
 }

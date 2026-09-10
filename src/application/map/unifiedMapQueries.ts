@@ -15,11 +15,7 @@ export type UnifiedMapKind =
   | "sos"
   | "task"
   | "team"
-  | "shelter"
-  | "evacuation"
-  | "relief"
-  | "warehouse"
-  | "recovery";
+  | "shelter";
 
 export type UnifiedMapSeverity = "Khẩn cấp" | "Cao" | "Trung bình" | "Thấp";
 
@@ -38,16 +34,6 @@ export interface UnifiedMapPoint {
   coordinates: [number, number];
   /** Route canonical tới trang chi tiết. */
   detailPath: string;
-}
-
-export interface UnifiedMapRouteLine {
-  id: string;
-  /** Operation mẹ — click tuyến mở drawer của operation. */
-  operationId: string;
-  name: string;
-  status: string;
-  blocked: boolean;
-  points: [number, number][];
 }
 
 export interface UnifiedMapDetail {
@@ -70,10 +56,6 @@ export const UNIFIED_MAP_LAYER_CONFIG: {
   { key: "task", label: "Nhiệm vụ", color: "#7f56d9" },
   { key: "team", label: "Đội cứu hộ", color: "#1570ef" },
   { key: "shelter", label: "Điểm sơ tán", color: "#079455" },
-  { key: "evacuation", label: "Hoạt động sơ tán", color: "#0e7490" },
-  { key: "relief", label: "Yêu cầu cứu trợ", color: "#b54708" },
-  { key: "warehouse", label: "Kho vật tư", color: "#6941c6" },
-  { key: "recovery", label: "Dự án phục hồi", color: "#475467" },
 ];
 
 const KIND_LABEL: Record<UnifiedMapKind, string> = Object.fromEntries(
@@ -101,8 +83,8 @@ function severityTone(
 
 /**
  * Thu thập toàn bộ point từ Authorized Operational View. Entity đã đóng/hủy
- * được giữ lại chỉ khi còn cần dấu vết (Shelter/Recovery luôn hiển thị —
- * lifecycle của chúng không ẩn khỏi bản đồ tác nghiệp).
+ * được giữ lại chỉ khi còn cần dấu vết (Shelter luôn hiển thị — lifecycle
+ * của nó không ẩn khỏi bản đồ tác nghiệp).
  */
 export function getUnifiedMapPoints(
   source: OperationalSnapshot,
@@ -201,106 +183,7 @@ export function getUnifiedMapPoints(
     });
   }
 
-  for (const operation of source.evacuationOperations) {
-    if (CLOSED(operation.status) || operation.status === "Hoàn thành")
-      continue;
-    const severity = (operation.priority as UnifiedMapSeverity) ?? null;
-    points.push({
-      kind: "evacuation",
-      kindLabel: KIND_LABEL.evacuation,
-      id: operation.id,
-      code: operation.id,
-      title: `Sơ tán từ ${operation.sourceArea}`,
-      area: operation.sourceArea,
-      status: operation.status,
-      severity,
-      tone: severityTone(severity),
-      coordinates: operation.sourceCoordinates,
-      detailPath: `/evacuations/${operation.id}`,
-    });
-  }
-
-  for (const request of source.reliefRequests) {
-    if (CLOSED(request.status)) continue;
-    const severity = sosSev(request.priority);
-    points.push({
-      kind: "relief",
-      kindLabel: KIND_LABEL.relief,
-      id: request.id,
-      code: request.id,
-      title: request.destination,
-      area: request.destination,
-      status: request.status,
-      severity,
-      tone: severityTone(severity),
-      coordinates: request.destinationCoordinates,
-      detailPath: `/relief/requests/${request.id}`,
-    });
-  }
-
-  for (const warehouse of source.warehouses) {
-    points.push({
-      kind: "warehouse",
-      kindLabel: KIND_LABEL.warehouse,
-      id: warehouse.id,
-      code: warehouse.id,
-      title: warehouse.name,
-      area: warehouse.administrativeArea,
-      status: warehouse.status,
-      severity: null,
-      tone:
-        warehouse.status === "Tạm đóng"
-          ? "red"
-          : warehouse.status === "Hạn chế"
-            ? "amber"
-            : "neutral",
-      coordinates: warehouse.coordinates,
-      detailPath: `/relief/warehouses/${warehouse.id}`,
-    });
-  }
-
-  for (const project of source.recoveryProjects) {
-    if (CLOSED(project.status) || project.status === "Hoàn thành") continue;
-    const severity = (project.priority as UnifiedMapSeverity) ?? null;
-    points.push({
-      kind: "recovery",
-      kindLabel: KIND_LABEL.recovery,
-      id: project.id,
-      code: project.id,
-      title: project.name,
-      area: project.location.name,
-      status: project.status,
-      severity,
-      tone: "neutral",
-      coordinates: project.location.coordinates,
-      detailPath: `/recovery/projects/${project.id}`,
-    });
-  }
-
   return points;
-}
-
-/** Tuyến sơ tán canonical (EvacuationRoute) — nét đứt khi tuyến bị chặn. */
-export function getUnifiedMapRoutes(
-  source: OperationalSnapshot,
-): UnifiedMapRouteLine[] {
-  return source.evacuationOperations
-    .filter(
-      (operation) =>
-        !CLOSED(operation.status) &&
-        operation.status !== "Hoàn thành" &&
-        operation.route.coordinates.length > 1,
-    )
-    .map((operation) => ({
-      id: `route-${operation.id}`,
-      operationId: operation.id,
-      name: operation.route.name,
-      status: operation.route.status,
-      blocked:
-        operation.route.status === "Bị chặn" ||
-        operation.route.status === "Hạn chế",
-      points: operation.route.coordinates,
-    }));
 }
 
 export type UnifiedMapLayers = Record<UnifiedMapKind, boolean>;
@@ -346,21 +229,6 @@ export function filterUnifiedMapPoints(
 }
 
 /** Route của một operation chỉ xuất hiện khi layer evacuation đang bật. */
-export function visibleUnifiedMapRoutes(
-  routes: UnifiedMapRouteLine[],
-  points: UnifiedMapPoint[],
-) {
-  const visibleOperations = new Set(
-    points.filter((p) => p.kind === "evacuation").map((p) => p.id),
-  );
-  return routes.filter((route) => visibleOperations.has(route.operationId));
-}
-
-const formatBudget = (value: number) =>
-  value >= 1_000_000_000
-    ? `${(value / 1_000_000_000).toLocaleString("vi-VN")} tỷ ₫`
-    : `${value.toLocaleString("vi-VN")} ₫`;
-
 /**
  * Dữ liệu drawer — đọc lại entity canonical trong authorized view;
  * trả về undefined nếu entity không còn trong phạm vi được phép đọc.
@@ -459,77 +327,7 @@ export function findUnifiedMapDetail(
       detailPath: `/shelters/${item.id}`,
     };
   }
-  if (ref.kind === "evacuation") {
-    const item = source.evacuationOperations.find((x) => x.id === ref.id);
-    if (!item) return undefined;
-    return {
-      ...base,
-      title: `Sơ tán từ ${item.sourceArea}`,
-      subtitle: `Tuyến: ${item.route.name}`,
-      statusBadge: { label: item.status, tone: "blue" },
-      rows: [
-        { label: "Ưu tiên", value: item.priority },
-        {
-          label: "Đã sơ tán",
-          value: `${item.evacuatedPopulation}/${item.estimatedPopulation} người`,
-        },
-        { label: "Tuyến", value: item.route.status },
-      ],
-      detailPath: `/evacuations/${item.id}`,
-    };
-  }
-  if (ref.kind === "relief") {
-    const item = source.reliefRequests.find((x) => x.id === ref.id);
-    if (!item) return undefined;
-    return {
-      ...base,
-      title: `Yêu cầu ${item.code}`,
-      subtitle: `Đích: ${item.destination}`,
-      statusBadge: { label: item.status, tone: "amber" },
-      rows: [
-        { label: "Ưu tiên", value: item.priority },
-        { label: "Nguồn yêu cầu", value: item.origin },
-        {
-          label: "Số danh mục hàng",
-          value: `${item.items.length} mặt hàng`,
-        },
-      ],
-      detailPath: `/relief/requests/${item.id}`,
-    };
-  }
-  if (ref.kind === "warehouse") {
-    const item = source.warehouses.find((x) => x.id === ref.id);
-    if (!item) return undefined;
-    return {
-      ...base,
-      title: item.name,
-      subtitle: item.address,
-      statusBadge: { label: item.status, tone: "neutral" },
-      rows: [
-        { label: "Loại kho", value: item.type },
-        {
-          label: "Công suất dùng",
-          value: `${item.currentUtilization}/${item.capacity}`,
-        },
-        { label: "Phụ trách", value: item.responsibleOfficer.name },
-      ],
-      detailPath: `/relief/warehouses/${item.id}`,
-    };
-  }
-  const item = source.recoveryProjects.find((x) => x.id === ref.id);
-  if (!item) return undefined;
-  return {
-    ...base,
-    title: item.name,
-    subtitle: item.location.name,
-    statusBadge: { label: item.status, tone: "neutral" },
-    rows: [
-      { label: "Ưu tiên", value: item.priority },
-      { label: "Chủ trì", value: item.owner },
-      { label: "Ngân sách dự kiến", value: formatBudget(item.estimatedBudget) },
-    ],
-    detailPath: `/recovery/projects/${item.id}`,
-  };
+  return undefined;
 }
 
 /** Nhãn cập nhật dữ liệu cho header (nguồn: canonical event mới nhất). */
@@ -539,8 +337,6 @@ export function getUnifiedMapDataStamp(source: OperationalSnapshot) {
     source.sosEvents[0]?.timestamp,
     source.teamEvents[0]?.timestamp,
     source.shelterEvents[0]?.timestamp,
-    source.evacuationEvents[0]?.timestamp,
-    source.reliefEvents[0]?.timestamp,
   ].filter((value): value is string => Boolean(value));
   return stamps.sort().reverse()[0] ?? null;
 }

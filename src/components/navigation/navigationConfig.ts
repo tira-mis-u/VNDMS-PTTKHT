@@ -3,18 +3,15 @@ import {
   BarChart3,
   Bell,
   Building2,
-  CalendarCheck,
-  ClipboardCheck,
   FileClock,
   Home,
   LifeBuoy,
   ListTodo,
   LockKeyhole,
   MapPinned,
-  PackageOpen,
+  MessageSquareWarning,
   Radio,
   Siren,
-  Truck,
   UserRound,
 } from "lucide-react";
 import type { UserRole } from "@/domain/shared/auth";
@@ -59,26 +56,10 @@ export const navigationGroups: NavGroup[] = [
       { label: "SOS", icon: Radio, path: "/sos", permission: "sos_view" },
       { label: "Nhiệm vụ", icon: ListTodo, badge: "9", path: "/tasks", permission: "task_view" },
       { label: "Đội cứu hộ", icon: LifeBuoy, path: "/teams", permission: "team_view" },
-      // "Điểm sơ tán" là tab của Sơ tán: lập lệnh sơ tán luôn phải xem sức
-      // chứa còn trống của điểm đến. Route /shelters vẫn giữ cho cổng công dân.
-      { label: "Sơ tán", icon: Truck, path: "/evacuations", permission: "evacuation_view" },
-      { label: "Phương án ứng phó", icon: CalendarCheck, path: "/playbooks", permission: "playbook_view" },
-    ],
-  },
-  {
-    label: "Hậu cần",
-    items: [
-      // Một chuỗi cung ứng duy nhất: yêu cầu → giữ hàng ở kho → xuất chuyến →
-      // ký nhận. Ba mục cũ trở thành ba tab trong cùng một trang.
-      { label: "Cứu trợ", icon: PackageOpen, path: "/relief/requests", permission: "relief_view" },
-    ],
-  },
-  {
-    label: "Phục hồi",
-    items: [
-      // Thẩm định thiệt hại và dự án tái thiết là hai chặng của cùng một hồ sơ
-      // khắc phục hậu quả ⇒ một mục, hai tab.
-      { label: "Phục hồi & tái thiết", icon: ClipboardCheck, path: "/recovery", permission: "damage_assessment_view" },
+      // Phản ánh của người dân: cán bộ đánh giá Hợp lệ / Không hợp lệ / Trùng.
+      { label: "Phản ánh", icon: MessageSquareWarning, path: "/reports", permission: "report_view" },
+      // Điểm sơ tán là danh mục tra cứu dùng chung (phân hệ Sơ tán đã gỡ ở V2).
+      { label: "Điểm sơ tán", icon: Building2, path: "/shelters", permission: "shelter_view" },
     ],
   },
   {
@@ -95,8 +76,8 @@ export const citizenNavigationGroups: NavGroup[] = [
     label: "Cổng thông tin công dân",
     items: [
       { label: "Trang chủ & Bản đồ", icon: Home, path: "/", permission: "sos_create" },
-      { label: "Điểm sơ tán an toàn", icon: Building2, path: "/shelters", permission: "sos_create" },
-      { label: "Cảnh báo thiên tai", icon: Bell, path: "/alerts", permission: "sos_create" },
+      { label: "Điểm sơ tán an toàn", icon: Building2, path: "/shelters", permission: "published_alert_view" },
+      { label: "Cảnh báo thiên tai", icon: Bell, path: "/alerts", permission: "published_alert_view" },
       { label: "Hồ sơ & Địa bàn", icon: UserRound, path: "/profile", permission: "sos_create" },
     ],
   },
@@ -136,19 +117,11 @@ export function firstAccessibleNavPath(can: NavigationPermissionCheck) {
   return "/";
 }
 /**
- * Trang đích sau đăng nhập theo vai trò.
- *
- * Chỉ lấy "mục đầu tiên được phép" là chưa đủ: thủ kho không có quyền
- * `view` nên rơi vào /alerts — một danh sách cảnh báo mà họ chỉ được đọc,
- * trong khi công việc thật của họ (giữ hàng, xuất kho, chuyến hàng) nằm ở
- * phân hệ Cứu trợ. Bảng dưới đây gán đúng "bàn làm việc" cho từng vai trò và
- * vẫn kiểm tra quyền trước khi dùng; không thỏa thì quay về quy tắc cũ.
+ * Trang đích sau đăng nhập theo vai trò (V2). Đơn vị cứu hộ vào thẳng
+ * Nhiệm vụ — nơi họ tiếp nhận/báo cáo; các vai khác theo thứ tự sidebar.
  */
 const roleLandingPath: Partial<Record<UserRole, { path: string; permission: Permission }>> = {
-  warehouse_staff: { path: "/relief/requests", permission: "relief_view" },
-  relief_worker: { path: "/relief/requests", permission: "relief_view" },
-  rescue_member: { path: "/tasks", permission: "task_view" },
-  rescue_leader: { path: "/", permission: "view" },
+  rescue_unit: { path: "/tasks", permission: "task_view" },
 };
 export function landingPathForRole(
   can: NavigationPermissionCheck,

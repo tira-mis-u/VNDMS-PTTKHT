@@ -1,17 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+/*
+ * V2 (4 vai): các test relief/recovery/playbook đã bị gỡ cùng module nghiệp vụ;
+ * thay bằng test cho Phản ánh (citizenReports), nhiệm vụ "Chờ xác nhận" và
+ * SOS "Đã xử lý" (chờ duyệt đóng) KHÔNG được tính là kết thúc trong báo cáo.
+ */
 import {
   buildOperationalReport,
+  getCitizenReportAnalytics,
   getIncidentAnalytics,
   getOperationalSummary,
-  getRecoveryAnalytics,
-  getReliefAnalytics,
   getShelterAnalytics,
   getSosAnalytics,
   getTaskAnalytics,
   getTeamAnalytics,
   type AnalyticsData,
 } from "../../src/application/analytics/analyticsQueries";
+import type { CitizenReport } from "../../src/domain/reports/types";
 import {
   initialEvents,
   initialIncidents,
@@ -19,23 +24,44 @@ import {
   initialTaskUpdates,
   initialTeams,
 } from "../../src/data/scenarios/red-river-flood/operationalSeed";
-import {
-  initialEvacuationOperations,
-  initialShelters,
-} from "../../src/data/scenarios/red-river-flood/shelterEvacuationSeed";
+import { initialShelters } from "../../src/data/scenarios/red-river-flood/shelterSeed";
 import { initialSosRequests } from "../../src/data/scenarios/red-river-flood/sosSeed";
-import {
-  initialInventory,
-  initialReliefRequests,
-  initialReservations,
-  initialShipments,
-  initialWarehouses,
-} from "../../src/data/scenarios/red-river-flood/reliefSeed";
-import { initialPlaybookExecutions } from "../../src/data/scenarios/red-river-flood/playbookSeed";
-import {
-  initialDamageAssessments,
-  initialRecoveryProjects,
-} from "../../src/data/scenarios/red-river-flood/recoverySeed";
+const sampleReports: CitizenReport[] = [
+  {
+    id: "RPT-0001",
+    code: "RPT-0001",
+    ownerUserId: "USR-CTZ-001",
+    reporterName: "Trần Thái Tuấn",
+    contact: "0900000000",
+    category: "Ngập lụt",
+    description: "Ngập 40cm tại ngõ 124 Âu Cơ",
+    location: { address: "Ngõ 124 Âu Cơ", administrativeArea: "Tây Hồ, Hà Nội", coordinates: null },
+    status: "Mới",
+    reviewNote: null,
+    reviewedBy: null,
+    reviewedAt: null,
+    duplicateOfId: null,
+    createdAt: "21/08/2026 09:45",
+    updatedAt: "21/08/2026 09:45",
+  },
+  {
+    id: "RPT-0002",
+    code: "RPT-0002",
+    ownerUserId: "USR-LOC-001",
+    reporterName: "Phạm Đàm",
+    contact: "0900000001",
+    category: "Sạt lở",
+    description: "Sạt taluy đường ven đê",
+    location: { address: "Đê Hữu Hồng", administrativeArea: "Tây Hồ, Hà Nội", coordinates: [105.82, 21.07] },
+    status: "Hợp lệ",
+    reviewNote: "Đã tạo sự cố",
+    reviewedBy: "Nguyễn Trung",
+    reviewedAt: "21/08/2026 10:15",
+    duplicateOfId: null,
+    createdAt: "21/08/2026 09:55",
+    updatedAt: "21/08/2026 10:15",
+  },
+];
 const data: AnalyticsData = {
   metadata: { asOf: "21/08/2026 10:45", source: "Nguồn kiểm thử" },
   incidents: initialIncidents,
@@ -44,16 +70,9 @@ const data: AnalyticsData = {
   taskUpdates: initialTaskUpdates,
   teams: initialTeams,
   shelters: initialShelters,
-  evacuationOperations: initialEvacuationOperations,
   sosRequests: initialSosRequests,
-  warehouses: initialWarehouses,
-  inventory: initialInventory,
-  reliefRequests: initialReliefRequests,
-  reservations: initialReservations,
-  shipments: initialShipments,
-  playbookExecutions: initialPlaybookExecutions,
-  damageAssessments: initialDamageAssessments,
-  recoveryProjects: initialRecoveryProjects,
+  taskReviews: [],
+  citizenReports: sampleReports,
 };
 const filter = {
   referenceTime: "21/08/2026 10:45",
@@ -66,9 +85,7 @@ test("tổng hợp tác nghiệp dùng các canonical collection", () => {
     3,
   );
   assert.equal(
-    result.metrics.find(
-      (item) => item.label === "Kế hoạch ứng phó đang thực hiện",
-    )?.value,
+    result.metrics.find((item) => item.label === "Phản ánh chờ đánh giá")?.value,
     1,
   );
   assert.ok(result.exceptions.some((item) => item.path === "/tasks/TSK-0242"));
@@ -136,23 +153,43 @@ test("SOS metrics chỉ ra unassigned và vulnerable cases", () => {
     result.rows.some((item) => item.id === "SOS-0243" && item.bottleneck),
   );
 });
-test("relief shortage tính từ approved trừ reservations canonical", () => {
-  const result = getReliefAnalytics(data, filter);
-  assert.equal(result.shortStockRequests, 2);
-  assert.equal(result.failedShipments, 1);
-  assert.equal(
-    result.requestRows.find((item) => item.id === "REQ-0241")?.shortage,
-    280,
-  );
-  assert.equal(result.lowStockItems, 3);
+test("phản ánh: đếm chờ đánh giá / hợp lệ và thời gian đánh giá dẫn xuất", () => {
+  const result = getCitizenReportAnalytics(data, filter);
+  assert.equal(result.total, 2);
+  assert.equal(result.pending, 1);
+  assert.equal(result.valid, 1);
+  assert.equal(result.averageReviewMinutes, 20);
+  assert.equal(result.rows[0].id, "RPT-0001");
+  assert.equal(result.rows[0].waitingMinutes, 60);
 });
-test("recovery analytics tổng hợp damage, project và budget", () => {
-  const result = getRecoveryAnalytics(data, filter);
-  assert.equal(result.estimatedDamage, 60100000000);
-  assert.equal(result.verifiedDamage, 31400000000);
-  assert.equal(result.averageProjectProgress, 10);
-  assert.equal(result.budgetUtilization, 34);
-  assert.equal(result.projectsRequiringAttention, 1);
+test("SOS 'Đã xử lý' (chờ duyệt đóng) và nhiệm vụ 'Chờ xác nhận' không được tính là kết thúc", () => {
+  const sos = structuredClone(initialSosRequests).map((item) =>
+    ({ ...item, status: "Đã xử lý" as const, resolutionSummary: "Đã hỗ trợ", closedAt: null }),
+  );
+  const tasks = structuredClone(initialTasks).map((item) =>
+    item.status === "Hoàn thành"
+      ? { ...item, status: "Chờ xác nhận" as const, progress: 90, completedAt: null }
+      : item,
+  );
+  const pending: AnalyticsData = { ...data, sosRequests: sos, tasks };
+  const sosResult = getSosAnalytics(pending, filter);
+  assert.equal(sosResult.rescueChainCompleted, 0);
+  assert.ok(sosResult.byStatus.every((row) => row.label !== "Đã đóng"));
+  const taskResult = getTaskAnalytics(pending, filter);
+  assert.equal(taskResult.completionRate, 0);
+  assert.ok(taskResult.awaitingReviewCount > 0);
+  // Nhiệm vụ chờ xác nhận vẫn là nhiệm vụ mở của sự cố.
+  assert.equal(
+    taskResult.byIncident.reduce((sum, item) => sum + item.open, 0),
+    tasks.filter((item) => item.status !== "Đã hủy").length,
+  );
+  const report = buildOperationalReport(
+    pending,
+    "Báo cáo tình hình tác chiến",
+    filter,
+    { id: "USR-OPS-001", displayName: "Cán bộ" },
+  );
+  assert.ok(report.pendingConfirmation.length > 0);
 });
 test("report builder tạo đủ nội dung và audit metadata", () => {
   const report = buildOperationalReport(
@@ -170,5 +207,5 @@ test("report builder tạo đủ nội dung và audit metadata", () => {
   assert.equal(report.audit.generatedById, "USR-CMD-001");
   assert.equal(report.audit.generatedBy, "Người lập từ registry");
   assert.equal(report.audit.generatedAt, data.metadata.asOf);
-  assert.equal(report.recoveryStatus.length, 3);
+  assert.ok(Array.isArray(report.pendingConfirmation));
 });

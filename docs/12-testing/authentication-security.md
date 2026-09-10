@@ -6,13 +6,13 @@ Valid/invalid login, inactive account, 8-hour session, refresh restoration, expi
 
 ## Authorization
 
-Role permission, missing permission, national/local geographic scope, warehouse/team ownership, unauthenticated/inactive denial và admin user mutations.
+Role permission 4 vai, missing permission, national/local geographic scope, quyền sở hữu bản ghi `ownerUserId` (`*_own`), unauthenticated/inactive denial và admin user mutations. `tests/infrastructure/role-model-migration.test.ts`: migration V2 có version, idempotent, backup/rollback, ngoại lệ tài khoản ngoài bảng, không tạo tài khoản mới.
 
 P0 hardening bổ sung:
 
-- `p0-read-authorization.test.ts`: collection/detail/related-record filtering cho Local Officer, global roles, Rescue, Warehouse và Citizen.
+- `p0-read-authorization.test.ts`: collection/detail/related-record filtering cho global roles, rescue_unit và citizen (citizen chỉ thấy SOS/phản ánh của mình, vẫn tra cứu điểm sơ tán).
 - `p0-resource-mutation-authorization.test.ts`: geographic/ownership denial, multi-resource decisions và static scan mọi provider call site có resource context.
-- `p0-canonical-command-center.test.ts`: canonical mutation, Simulation propagation, reset và không còn Command Center dataset thứ hai.
+- `p0-canonical-command-center.test.ts`: canonical mutation và không còn Command Center dataset thứ hai.
 
 ## Audit/integration
 

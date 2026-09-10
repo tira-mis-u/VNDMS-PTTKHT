@@ -422,80 +422,6 @@
   70% { box-shadow: 0 0 0 8px rgba(249, 115, 22, 0); }
   100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
 }
-
-/* ─────────────── ECMWF Hover Tooltip Popup ─────────────── */
-.ecmwf-hover-popup {
-  pointer-events: none !important;
-  z-index: 60 !important;
-}
-.ecmwf-hover-popup .maplibregl-popup-content {
-  padding: 0 !important;
-  border-radius: 10px !important;
-  overflow: hidden !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
-  border: 1.5px solid #2563eb !important;
-  background: #0f172a !important;
-  color: #f8fafc !important;
-  pointer-events: none !important;
-}
-.ecmwf-hover-popup .maplibregl-popup-tip {
-  border-top-color: #0f172a !important;
-  border-bottom-color: #0f172a !important;
-}
-
-.weather-hover-card {
-  padding: 11px 13px;
-  background: #0f172a;
-  color: #f8fafc;
-  font-family: inherit;
-  font-size: 12.5px;
-  min-width: 225px;
-  line-height: 1.4;
-  user-select: none;
-}
-.weather-hover-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 7px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #334155;
-}
-.weather-hover-title {
-  font-size: 14.5px;
-  font-weight: 750;
-  color: #ffffff !important;
-}
-.weather-hover-region {
-  font-size: 10.5px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 700;
-  background: #1e293b;
-  color: #38bdf8 !important;
-  border: 1px solid #0284c7;
-}
-.weather-hover-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-}
-.weather-hover-cell {
-  background: #1e293b;
-  padding: 5px 7px;
-  border-radius: 5px;
-  border: 1px solid #334155;
-}
-.weather-hover-cell-lbl {
-  font-size: 10.5px;
-  color: #94a3b8 !important;
-  display: block;
-}
-.weather-hover-cell-val {
-  font-size: 13px;
-  font-weight: 750;
-  display: block;
-}
 .cc-layer-control {
   position: absolute;
   z-index: 3;
@@ -909,7 +835,7 @@
     padding: 1px 11px;
   }
   .cc-incident-head,
-  .cc-incident-row {
+.cc-incident-row {
     grid-template-columns: minmax(190px, 1fr) 95px 70px 90px 16px;
   }
 }
@@ -927,7 +853,7 @@
     grid-template-areas: "quick" "situation" "strip" "action" "alerts" "map" "duty" "updated";
   }
   .cc-timeline-section,
-  .cc-resources {
+.cc-resources {
     width: 100%;
   }
 }
@@ -1040,7 +966,7 @@
     grid-row: 1;
   }
   .cc-incident-row > span:nth-child(3),
-  .cc-incident-row > span:nth-child(4) {
+.cc-incident-row > span:nth-child(4) {
     display: none;
   }
   .cc-incident-identity b {
@@ -1489,7 +1415,6 @@ html[data-theme="dark"] .action-dialog-permission {
 }
 html[data-theme="dark"] .duty-entry:hover { background: rgba(148, 163, 184, .08); }
 html[data-theme="dark"] .duty-pending { color: #fcd9a4 !important; }
-
 
 /* ─────────── Dải cảnh báo nguồn lực (thay bảng "Nguồn lực cần chú ý") ─────────── */
 .cc-resource-strip {

@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { LEGACY_ROLE_MAP } from "@/domain/shared/auth";
 import type { AuthUser, GeographicScope } from "@/domain/auth/types";
 
 function normalizeSupabaseUrl(rawUrl?: string): string {
@@ -68,7 +69,8 @@ export function toAuthUser(row: SupabaseProfileRow): AuthUser {
     id: row.id,
     username: row.username,
     displayName: row.display_name,
-    role: row.role as AuthUser["role"],
+    // Hồ sơ lưu vai cũ (trước V2) được ánh xạ sang mô hình 4 vai khi đọc.
+    role: (LEGACY_ROLE_MAP[row.role] ?? row.role) as AuthUser["role"],
     geographicScope: {
       level: row.scope_level as GeographicScope["level"],
       name: row.scope_name,

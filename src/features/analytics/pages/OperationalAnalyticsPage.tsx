@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import {
   getOperationalSummary,
-  getRecoveryAnalytics,
   getSosAnalytics,
   getTaskAnalytics,
   type AnalyticsData,
@@ -44,10 +43,6 @@ export function OperationalAnalyticsPage({
   );
   const tasks = useMemo(() => getTaskAnalytics(data, filter), [data, filter]);
   const sos = useMemo(() => getSosAnalytics(data, filter), [data, filter]);
-  const recovery = useMemo(
-    () => getRecoveryAnalytics(data, filter),
-    [data, filter],
-  );
   const alertAnalytics = useMemo(
     () => getAlertAnalytics(store.alerts),
     [store.alerts],
@@ -231,32 +226,35 @@ export function OperationalAnalyticsPage({
           </div>
         </Section>
         <Section
-          title="Phục hồi cần chú ý"
-          description="Tiến độ, ngân sách và mốc công việc từ dữ liệu phục hồi."
+          title="Kết quả chờ cán bộ xác nhận"
+          description="Đơn vị cứu hộ báo xong không tự đóng nhiệm vụ; cán bộ phải chấp nhận hoặc từ chối kết quả."
         >
           <div className="analytics-project-list">
-            {recovery.projectRows.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => navigate(`/recovery/projects/${item.id}`)}
-              >
-                <div>
-                  <b>
-                    {item.code} · {item.name}
-                  </b>
-                  <span>
-                    {item.progress}% tiến độ · {item.budgetUtilization}% ngân
-                    sách
-                  </span>
-                </div>
-                <div className="mini-progress">
-                  <span style={{ width: `${item.progress}%` }} />
-                </div>
-                {item.delayedMilestones > 0 && (
-                  <em>{item.delayedMilestones} mốc quá hạn</em>
-                )}
-              </button>
-            ))}
+            {store.tasks
+              .filter((item) => item.status === "Chờ xác nhận")
+              .map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(`/tasks/${item.id}`)}
+                >
+                  <div>
+                    <b>
+                      {item.id} · {item.title}
+                    </b>
+                    <span>
+                      {item.progress}% tiến độ · đội {item.teamId ?? "—"}
+                    </span>
+                  </div>
+                  <div className="mini-progress">
+                    <span style={{ width: `${item.progress}%` }} />
+                  </div>
+                  {(item.assignmentHistory?.length ?? 0) > 1 && (
+                    <em>
+                      {(item.assignmentHistory?.length ?? 1) - 1} lần phân công lại
+                    </em>
+                  )}
+                </button>
+              ))}
           </div>
         </Section>
       </div>

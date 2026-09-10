@@ -1,3 +1,7 @@
+/*
+ * V2 (4 vai): quy tắc cảnh báo cho các nguồn evacuation/relief/playbook/recovery đã xóa cùng
+ * module. Bộ key kỳ vọng và số lượng cập nhật theo kịch bản Yagi 2024 với 5 nguồn canonical.
+ */
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -19,32 +23,26 @@ const derive = () => deriveOperationalAlerts(load());
 
 test("derive cảnh báo baseline deterministic từ canonical seed", () => {
   const alerts = derive();
-  assert.equal(alerts.length, 21);
+  assert.equal(alerts.length, 25);
   const keys = alerts.map((alert) => alert.key);
   assert.equal(new Set(keys).size, keys.length, "không được có key trùng");
   for (const expected of [
-    "shelter:Shelter:TH-03:shelter_overloaded",
-    "incident:Incident:INC-0241:incident_critical_active",
-    "sos:SOS:SOS-0242:sos_p1_verified_unassigned",
-    "task:Task:TSK-0242:task_overdue",
-    "task:Task:TSK-0242:task_high_priority_unassigned",
-    "team:Team:CH-04:team_communication_lost",
-    "team:Team:CN-01:team_unavailable_during_response",
-    "shelter:Shelter:TH-02:shelter_near_capacity",
-    "shelter:Shelter:TH-04:shelter_inaccessible",
-    "evacuation:Evacuation:EVAC-002:evacuation_blocked_or_paused",
-    "relief:ReliefRequest:REQ-0241:relief_request_shortage",
-    "relief:Inventory:INV-0103:inventory_out_of_stock",
-    "relief:Inventory:INV-0303:inventory_low_stock",
-    "relief:Shipment:SHP-0242:shipment_delayed",
-    "relief:Shipment:SHP-0243:shipment_incident",
-    "playbook:PlaybookExecution:PBX-0241:playbook_required_steps_blocked",
-    "incident:Incident:INC-0238:incident_high_early_stage",
-    "incident:Incident:INC-0234:incident_no_team",
-    "recovery:DamageAssessment:DA-0242:assessment_verification_stalled",
-    "recovery:RecoveryProject:RP-0241:recovery_budget_risk",
+    "shelter:Shelter:SHELTER-HN-03:shelter_overloaded",
+    "incident:Incident:INC-YAGI-01:incident_critical_active",
+    "sos:SOS:SOS-YAGI-04:sos_waiting_too_long",
+    "task:Task:TSK-YAGI-02:task_overdue",
+    "task:Task:TSK-YAGI-02:task_high_priority_unassigned",
+    "team:Team:CH-QN-01:team_communication_lost",
+    "shelter:Shelter:SHELTER-HN-01:shelter_near_capacity",
+    "shelter:Shelter:SHELTER-HN-PHUDIEN:shelter_inaccessible",
+    "incident:Incident:INC-YAGI-04:incident_high_early_stage",
+    "incident:Incident:INC-YAGI-05:incident_no_team",
+    "task:Task:TSK-YAGI-06:task_stalled",
   ])
     assert.ok(keys.includes(expected), `thiếu alert ${expected}`);
+  // Không còn nguồn của module đã xóa.
+  for (const prefix of ["evacuation:", "relief:", "playbook:", "recovery:"])
+    assert.ok(!keys.some((key) => key.startsWith(prefix)), `còn alert nguồn ${prefix}`);
 });
 
 test("derive hai lần cho kết quả hoàn toàn giống nhau", () => {
@@ -53,11 +51,11 @@ test("derive hai lần cho kết quả hoàn toàn giống nhau", () => {
 
 test("mỗi alert chỉ reference entity nguồn, không sao chép entity", () => {
   const alert = derive().find(
-    (item) => item.condition === "sos_p1_verified_unassigned",
+    (item) => item.condition === "sos_waiting_too_long",
   )!;
   assert.equal(alert.source.type, "SOS");
-  assert.equal(alert.source.id, "SOS-0242");
-  assert.equal(alert.source.path, "/sos/SOS-0242");
+  assert.equal(alert.source.id, "SOS-YAGI-04");
+  assert.equal(alert.source.path, "/sos/SOS-YAGI-04");
   assert.equal(alert.readPermission, "sos_view");
   assert.equal((alert as Record<string, unknown>).sosRequests, undefined);
 });
@@ -65,18 +63,16 @@ test("mỗi alert chỉ reference entity nguồn, không sao chép entity", () =
 test("severity mapping và cờ yêu cầu xác nhận", () => {
   const alerts = derive();
   const critical = alerts.filter((item) => item.severity === "critical");
-  assert.equal(critical.length, 5);
+  assert.equal(critical.length, 8);
   for (const alert of critical)
     assert.equal(alert.requiresAcknowledgement, true);
   const nearCapacity = alerts.find(
-    (item) => item.key === "shelter:Shelter:TH-02:shelter_near_capacity",
+    (item) => item.key === "shelter:Shelter:SHELTER-HN-01:shelter_near_capacity",
   )!;
   assert.equal(nearCapacity.severity, "high");
   assert.equal(nearCapacity.requiresAcknowledgement, false);
   const stalled = alerts.find(
-    (item) =>
-      item.key ===
-      "recovery:DamageAssessment:DA-0242:assessment_verification_stalled",
+    (item) => item.key === "task:Task:TSK-YAGI-06:task_stalled",
   )!;
   assert.equal(stalled.severity, "medium");
 });
@@ -97,28 +93,28 @@ test("điều kiện không còn đúng thì alert biến mất (không stale)",
   const assigned = {
     ...snapshot,
     sosRequests: snapshot.sosRequests.map((item) =>
-      item.id === "SOS-0242" ? { ...item, assignedTeamId: "CH-05" } : item,
+      item.id === "SOS-YAGI-04" ? { ...item, status: "Đang cứu hộ" as const, assignedTeamId: "CH-LC-01" } : item,
     ),
   };
   assert.ok(
     !deriveOperationalAlerts(assigned).some(
-      (item) => item.key === "sos:SOS:SOS-0242:sos_p1_verified_unassigned",
+      (item) => item.key === "sos:SOS:SOS-YAGI-04:sos_waiting_too_long",
     ),
   );
   const fixedShelter = {
     ...snapshot,
     shelters: snapshot.shelters.map((item) =>
-      item.id === "TH-03"
-        ? { ...item, currentOccupancy: 120, status: "Đang tiếp nhận" as const }
+      item.id === "SHELTER-HN-03"
+        ? { ...item, currentOccupancy: 10, status: "Đang tiếp nhận" as const }
         : item,
     ),
   };
   const keys = deriveOperationalAlerts(fixedShelter).map((item) => item.key);
-  assert.ok(!keys.includes("shelter:Shelter:TH-03:shelter_overloaded"));
+  assert.ok(!keys.includes("shelter:Shelter:SHELTER-HN-03:shelter_overloaded"));
   const completedTask = {
     ...snapshot,
     tasks: snapshot.tasks.map((item) =>
-      item.id === "TSK-0242"
+      item.id === "TSK-YAGI-02"
         ? { ...item, status: "Hoàn thành" as const }
         : item,
     ),
@@ -126,29 +122,36 @@ test("điều kiện không còn đúng thì alert biến mất (không stale)",
   const after = deriveOperationalAlerts(completedTask).map(
     (item) => item.key,
   );
-  assert.ok(!after.includes("task:Task:TSK-0242:task_overdue"));
-  assert.ok(!after.includes("task:Task:TSK-0242:task_high_priority_unassigned"));
+  assert.ok(!after.includes("task:Task:TSK-YAGI-02:task_overdue"));
+  assert.ok(!after.includes("task:Task:TSK-YAGI-02:task_high_priority_unassigned"));
 });
 
-test("ngoại lệ simulation-like thay đổi severity thì alert đổi theo", () => {
+test("trạng thái nguồn thay đổi thì severity/alert đổi theo (không stale)", () => {
   const snapshot = load();
   const resolvedIncident = {
     ...snapshot,
     incidents: snapshot.incidents.map((item) =>
-      item.id === "INC-0241" ? { ...item, status: "Đã kiểm soát" as const } : item,
+      item.id === "INC-YAGI-01" ? { ...item, status: "Đã kiểm soát" as const } : item,
     ),
   };
   const alerts = deriveOperationalAlerts(resolvedIncident);
   assert.ok(
     !alerts.some(
-      (item) => item.key === "incident:Incident:INC-0241:incident_critical_active",
+      (item) => item.key === "incident:Incident:INC-YAGI-01:incident_critical_active",
     ),
   );
-  // Không còn sự cố Khẩn cấp đang xử lý → CN-01 không còn bị gắn cờ.
+  // Đội mất liên lạc khôi phục liên lạc → cảnh báo đội biến mất.
+  const restored = {
+    ...snapshot,
+    teams: snapshot.teams.map((item) =>
+      item.id === "CH-QN-01"
+        ? { ...item, status: "Sẵn sàng" as const, communicationStatus: "Kết nối" as const }
+        : item,
+    ),
+  };
   assert.ok(
-    !alerts.some(
-      (item) =>
-        item.key === "team:Team:CN-01:team_unavailable_during_response",
+    !deriveOperationalAlerts(restored).some(
+      (item) => item.key === "team:Team:CH-QN-01:team_communication_lost",
     ),
   );
 });

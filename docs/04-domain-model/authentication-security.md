@@ -2,7 +2,7 @@
 
 ## AuthUser
 
-User gồm ID, display name, username, role, `GeographicScope`, active state và optional teamId/warehouseId. Demo seed có Commander, Operator, Local Officer, Rescue Leader, Rescue Member, Warehouse Staff, Relief Worker và Citizen.
+User gồm ID, display name, username, role, `GeographicScope`, active state. `teamId`/`warehouseId` chỉ còn là dữ liệu lịch sử, không cấp quyền. Demo seed có đúng 7 tài khoản: 1 `admin`, 1 `disaster_officer`, 1 `rescue_unit`, 4 `citizen`.
 
 ## Session
 
@@ -18,4 +18,4 @@ Audit gồm actor ID/name, role, action, resource type/ID, timestamp, geographic
 
 ## Roles
 
-`UserRole` được mở rộng bằng `warehouse_staff` và `relief_worker`. Permission matrix hiện hữu được mở rộng, không tạo hệ thống quyền thứ hai. `user_manage` và `audit_view` dành cho quản trị; `simulation_control` tiếp tục được đánh giá qua authenticated user.
+`UserRole` V2 = `admin | disaster_officer | rescue_unit | citizen`; vai cũ được ánh xạ qua `LEGACY_ROLE_MAP` khi migration (`ROLE_MODEL_VERSION = 2`, có backup và rollback). Một permission matrix duy nhất; `user_manage` và `audit_view` dành cho `admin`, quyền nghiệp vụ (xác minh/điều phối/xác nhận kết quả/công bố) dành cho `disaster_officer`.

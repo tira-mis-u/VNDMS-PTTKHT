@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Map as MapLibreMap, Marker, Popup, NavigationControl, type GeoJSONSource } from "maplibre-gl";
+import { Map as MapLibreMap, Marker, NavigationControl, type GeoJSONSource } from "maplibre-gl";
 import {
   AlertCircle,
   AlertTriangle,
@@ -8,6 +8,7 @@ import {
   HelpCircle,
   Info,
   LifeBuoy,
+  MessageSquareWarning,
   LocateFixed,
   MapPin,
   Package,
@@ -33,6 +34,11 @@ import {
 } from "@/infrastructure/weather/ecmwfWeatherService";
 import { pushLiveLocationPing } from "@/infrastructure/redis/redisClient";
 import type { SosSeverity } from "@/domain/sos/types";
+import type { CitizenReportCategory } from "@/domain/reports/types";
+import { citizenReportCategories } from "@/domain/reports/types";
+
+/** Nguồn tọa độ của người dân — không bao giờ là tọa độ mặc định. */
+type CitizenLocationSource = "gps" | "map" | null;
 
 /* ─────────────── Citizen Interactive Map Component (Google Maps + Fallback) ─────────────── */
 function CitizenLiveMap({
@@ -58,6 +64,7 @@ function CitizenLiveMap({
   // Initialize MapLibre map — dùng thẳng không qua Google Maps (không có AIzaSy key)
   useEffect(() => {
     if (!containerRef.current || mlMapRef.current) return;
+    // Tâm nhìn bản đồ ban đầu (chỉ để hiển thị); KHÔNG dùng làm vị trí người dân.
     const initialCenter = userLocation || [105.852, 21.052];
 
     const map = new MapLibreMap({
@@ -73,13 +80,6 @@ function CitizenLiveMap({
     });
 
     map.addControl(new NavigationControl({ showCompass: true }), "top-right");
-
-    const czWeatherPopup = new Popup({
-      closeButton: false,
-      closeOnClick: false,
-      offset: 12,
-      className: "ecmwf-hover-popup",
-    });
 
     map.on("load", () => {
       // Thêm source/layer GeoJSON rỗng — sẽ được cập nhật khi weatherList load
@@ -104,58 +104,6 @@ function CitizenLiveMap({
           "circle-color": "#2563eb",
           "circle-opacity": 0.001,
         },
-      });
-
-      map.on("mousemove", "cz-weather-hitbox", (e) => {
-        const feat = e.features?.[0];
-        const stationId = feat?.properties?.stationId;
-        if (!stationId) return;
-
-        const st = weatherListRef.current.find((s) => s.stationId === stationId);
-        if (!st) return;
-
-        map.getCanvas().style.cursor = "pointer";
-
-        const currentRisk = st.dailySummary?.[0]?.floodRiskLevel || "Bình thường";
-        const riskColor =
-          currentRisk === "Đặc biệt nghiêm trọng"
-            ? "#ef4444"
-            : currentRisk === "Nguy cơ cao"
-            ? "#f97316"
-            : currentRisk === "Cảnh báo"
-            ? "#eab308"
-            : "#22c55e";
-
-        czWeatherPopup.setLngLat(e.lngLat).setHTML(`
-          <div class="weather-hover-card">
-            <div class="weather-hover-head">
-              <span class="weather-hover-title">${st.stationName}</span>
-            </div>
-            <div class="weather-hover-grid">
-              <div class="weather-hover-cell">
-                <span class="weather-hover-cell-lbl">Nhiệt độ</span>
-                <span class="weather-hover-cell-val" style="color:#f87171;">${st.current.temperature.toFixed(1)}°C</span>
-              </div>
-              <div class="weather-hover-cell">
-                <span class="weather-hover-cell-lbl">Lượng mưa</span>
-                <span class="weather-hover-cell-val" style="color:#38bdf8;">${st.current.rain.toFixed(1)} mm/h</span>
-              </div>
-              <div class="weather-hover-cell">
-                <span class="weather-hover-cell-lbl">Gió & giật</span>
-                <span class="weather-hover-cell-val" style="color:#e2e8f0;">${st.current.windSpeed.toFixed(0)} (${st.current.windGusts.toFixed(0)}) km/h</span>
-              </div>
-              <div class="weather-hover-cell">
-                <span class="weather-hover-cell-lbl">Nguy cơ lũ</span>
-                <span class="weather-hover-cell-val" style="color:${riskColor};">${currentRisk}</span>
-              </div>
-            </div>
-          </div>
-        `).addTo(map);
-      });
-
-      map.on("mouseleave", "cz-weather-hitbox", () => {
-        map.getCanvas().style.cursor = "";
-        czWeatherPopup.remove();
       });
 
       applyVietnameseMapLabels(map);
@@ -317,25 +265,28 @@ function CitizenLiveMap({
 /* ─────────────── Main Citizen Portal ─────────────── */
 export function CitizenPortal() {
   const store = useOperationalState();
-  const [gpsLocation, setGpsLocation] = useState<[number, number] | null>([105.852, 21.052]);
+  // Vị trí chỉ được đặt khi lấy từ GPS thiết bị hoặc người dân tự chạm lên bản đồ.
+  const [gpsLocation, setGpsLocation] = useState<[number, number] | null>(null);
+  const [locationSource, setLocationSource] = useState<CitizenLocationSource>(null);
   const [locating, setLocating] = useState(false);
   const [sosModalOpen, setSosModalOpen] = useState(false);
-  const [createdSosId, setCreatedSosId] = useState<string | null>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [createdSosId, setCreatedSosId] = useState<{ id: string; source: CitizenLocationSource } | null>(null);
+  const [createdReportId, setCreatedReportId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const user = store.currentUser!;
   const userScope = user.geographicScope.name || "Hà Nội";
 
-  // Filter SOS of current citizen
-  const mySosList = store.sosRequests.filter(
-    (sos) =>
-      sos.reporter.name === user.displayName ||
-      sos.reporter.contact === user.phone ||
-      sos.reporter.name.toLowerCase().includes(user.displayName.toLowerCase()),
-  );
+  // SOS của chính tài khoản đang đăng nhập (theo ownerUserId, không suy đoán theo tên/SĐT)
+  const mySosList = store.sosRequests.filter((sos) => sos.ownerUserId === user.id);
+  const myReports = store.citizenReports.filter((report) => report.ownerUserId === user.id);
 
   const openShelters = store.shelters.filter((s) => s.status === "Sẵn sàng" || s.status === "Đang tiếp nhận");
-  const activeAlerts = store.alerts.slice(0, 4);
+  // Công dân xem cảnh báo do cán bộ CÔNG BỐ (không phải cảnh báo tác nghiệp nội bộ)
+  const activeAlerts = store.publishedAlerts
+    .filter((alert) => alert.status === "Đã công bố")
+    .slice(0, 4);
 
   const [weatherList, setWeatherList] = useState<StationForecast[]>([]);
   useEffect(() => {
@@ -359,24 +310,25 @@ export function CitizenPortal() {
       (pos) => {
         const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
         setGpsLocation(coords);
+        setLocationSource("gps");
         setLocating(false);
-        setFeedback(`Đã xác định vị trí GPS thực tế: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
+        setFeedback(`Đã lấy vị trí GPS từ thiết bị: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
         setTimeout(() => setFeedback(null), 5000);
       },
       (err) => {
         setLocating(false);
-        setFeedback(`Không thể lấy vị trí GPS: ${err.message}. Đang dùng vị trí mặc định tại ${userScope}.`);
-        setTimeout(() => setFeedback(null), 5000);
+        setFeedback(`Không lấy được vị trí GPS (${err.message}). Bạn có thể chạm lên bản đồ để đánh dấu vị trí của mình.`);
+        setTimeout(() => setFeedback(null), 6000);
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   };
 
-  // 1-Click SOS with Realtime GPS Location
+  // SOS 1 chạm: CHỈ gửi khi có vị trí thật (GPS thiết bị hoặc điểm người dân đã chạm trên bản đồ)
   const handleOneClickSos = () => {
     setLocating(true);
 
-    const emitSos = (coords: [number, number], addrDetail: string) => {
+    const emitSos = (coords: [number, number], addrDetail: string, source: CitizenLocationSource) => {
       try {
         const id = store.createSos({
           reporter: {
@@ -401,6 +353,7 @@ export function CitizenPortal() {
           disabledCount: 0,
           severity: "Đe dọa tính mạng",
           communicationStatus: "Kết nối",
+          gpsCaptured: source === "gps",
         });
 
         // Đồng bộ tọa độ khẩn cấp vào Redis cho toàn hệ thống
@@ -417,32 +370,45 @@ export function CitizenPortal() {
         });
 
         setLocating(false);
-        setCreatedSosId(id);
+        setCreatedSosId({ id, source });
         setGpsLocation(coords);
+        setLocationSource(source);
       } catch (err) {
         setLocating(false);
         setFeedback(err instanceof Error ? err.message : "Không thể gửi tín hiệu SOS.");
       }
     };
 
+    // Không có GPS: dùng điểm người dân đã chạm trên bản đồ (nếu có); nếu không, mở
+    // biểu mẫu để nhập địa chỉ và chọn vị trí — KHÔNG gửi tọa độ mặc định.
+    const noGps = () => {
+      if (gpsLocation && locationSource === "map") {
+        emitSos(
+          gpsLocation,
+          `Vị trí người dân đánh dấu trên bản đồ: ${gpsLocation[1].toFixed(5)}, ${gpsLocation[0].toFixed(5)} (${userScope})`,
+          "map",
+        );
+        return;
+      }
+      setLocating(false);
+      setFeedback(
+        "Không lấy được vị trí GPS nên chưa gửi SOS. Hãy cấp quyền định vị, hoặc chạm lên bản đồ để đánh dấu vị trí rồi gửi qua biểu mẫu chi tiết.",
+      );
+      setSosModalOpen(true);
+    };
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-          const address = `Vị trí GPS thực tế: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)} (${userScope})`;
-          emitSos(coords, address);
+          const address = `Vị trí GPS thiết bị: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)} (${userScope})`;
+          emitSos(coords, address, "gps");
         },
-        () => {
-          // Fallback location if denied
-          const fallbackCoords: [number, number] = gpsLocation || [105.852, 21.052];
-          const address = `${userScope} (Tọa độ ước tính: ${fallbackCoords[1]}, ${fallbackCoords[0]})`;
-          emitSos(fallbackCoords, address);
-        },
+        noGps,
         { enableHighAccuracy: true, timeout: 8000 },
       );
     } else {
-      const fallbackCoords: [number, number] = gpsLocation || [105.852, 21.052];
-      emitSos(fallbackCoords, `${userScope} (Tọa độ: ${fallbackCoords[1]}, ${fallbackCoords[0]})`);
+      noGps();
     }
   };
 
@@ -490,9 +456,14 @@ export function CitizenPortal() {
         <div className="admin-feedback-toast" style={{ backgroundColor: "#fef2f2", borderColor: "#fecaca", color: "#991b1b" }}>
           <AlertCircle size={20} color="#dc2626" />
           <div style={{ flex: 1 }}>
-            <b style={{ fontSize: "14.5px" }}>ĐÃ PHÁT TÍN HIỆU ĐỊNH VỊ SOS THÀNH CÔNG! MÃ SOS: #{createdSosId}</b>
+            <b style={{ fontSize: "14.5px" }}>ĐÃ GHI NHẬN YÊU CẦU SOS #{createdSosId.id} — TRẠNG THÁI: MỚI TIẾP NHẬN</b>
             <p style={{ margin: "3px 0 0", fontSize: "13px", lineHeight: "1.4" }}>
-              Ban chỉ huy PCTT và các Đội cứu hộ tại khu vực <b>{userScope}</b> đã nhận được tọa độ GPS thực tế của bạn trên bản đồ tác chiến theo thời gian thực và đang tiến hành điều phối khẩn cấp.
+              {createdSosId.source === "gps"
+                ? "Yêu cầu kèm tọa độ GPS từ thiết bị của bạn."
+                : createdSosId.source === "map"
+                  ? "Yêu cầu kèm vị trí bạn đã đánh dấu trên bản đồ (không phải GPS thiết bị)."
+                  : "Yêu cầu chưa có tọa độ GPS; cán bộ sẽ xác định theo địa chỉ bạn cung cấp."}{" "}
+              Cán bộ phòng chống thiên tai tại <b>{userScope}</b> sẽ xác minh và điều phối; theo dõi tiến trình tại mục “Yêu cầu cứu hộ SOS của tôi”.
             </p>
           </div>
           <button onClick={() => setCreatedSosId(null)}>
@@ -538,8 +509,8 @@ export function CitizenPortal() {
             <AlertTriangle size={24} />
           </div>
           <div className="citizen-stat-info">
-            <b>{store.alerts.length}</b>
-            <span>Cảnh báo thời tiết đang phát</span>
+            <b>{store.publishedAlerts.filter((alert) => alert.status === "Đã công bố").length}</b>
+            <span>Cảnh báo thiên tai đang công bố</span>
           </div>
         </div>
 
@@ -611,6 +582,11 @@ export function CitizenPortal() {
             </Button>
             <small style={{ color: "#64748b", display: "inline-flex", alignItems: "center", gap: "3px" }}>
               <MapPin size={13} /> {userScope}
+              {locationSource === "gps"
+                ? " · GPS thiết bị"
+                : locationSource === "map"
+                  ? " · vị trí tự đánh dấu"
+                  : " · chưa có vị trí (chạm bản đồ để đánh dấu)"}
             </small>
           </div>
         </div>
@@ -637,6 +613,14 @@ export function CitizenPortal() {
               location: sos.location,
               status: sos.status,
             }))}
+            onPickLocation={(coords) => {
+              setGpsLocation(coords);
+              setLocationSource("map");
+              setFeedback(
+                `Đã đánh dấu vị trí trên bản đồ: ${coords[1].toFixed(5)}, ${coords[0].toFixed(5)} (không phải GPS thiết bị).`,
+              );
+              setTimeout(() => setFeedback(null), 5000);
+            }}
           />
           <div className="citizen-map-legend">
             <span><span className="legend-dot red"></span> Vị trí SOS của bạn</span>
@@ -657,12 +641,12 @@ export function CitizenPortal() {
                 <AlertTriangle size={18} color="#d97706" />
                 Cảnh báo thiên tai trong khu vực
               </h2>
-              <small>{activeAlerts.length} thông báo mới</small>
+              <small>{activeAlerts.length} bản tin đang công bố</small>
             </div>
             <div className="citizen-alert-list">
               {activeAlerts.map((alert) => (
                 <div
-                  key={alert.key}
+                  key={alert.id}
                   className={`citizen-alert-item ${
                     alert.severity === "critical"
                       ? "critical"
@@ -674,9 +658,10 @@ export function CitizenPortal() {
                   <ShieldAlert size={22} style={{ flexShrink: 0, marginTop: "2px" }} />
                   <div>
                     <h4>{alert.title}</h4>
-                    <p>{alert.message}</p>
+                    <p>{alert.content}</p>
                     <small>
-                      Khu vực: <b>{alert.geographicScope ?? "Toàn quốc"}</b> · Phát hiện: {alert.detectedAt}
+                      Khu vực: <b>{alert.areaName}</b> · Công bố: {alert.publishedAt ?? alert.updatedAt}
+                      {alert.revision > 1 ? ` · bản cập nhật ${alert.revision}` : ""}
                     </small>
                   </div>
                 </div>
@@ -719,6 +704,7 @@ export function CitizenPortal() {
                   <div className="citizen-sos-meta">
                     <span>
                       <MapPin size={13} /> {sos.location.address}
+                      {sos.gpsCaptured ? " · GPS thiết bị" : " · không có GPS thiết bị"}
                     </span>
                     <span>
                       <Users size={13} /> {sos.peopleAtRisk} người ({sos.elderlyCount} người già, {sos.childrenCount} trẻ nhỏ)
@@ -737,6 +723,82 @@ export function CitizenPortal() {
                   <b style={{ display: "block", color: "#334155" }}>Bạn chưa có yêu cầu cứu hộ nào.</b>
                   <span style={{ fontSize: "13px" }}>
                     Khi xảy ra ngập sâu, cô lập hoặc tình huống nguy hiểm, hãy nhấn nút "GỬI ĐỊNH VỊ SOS 1 CHẠM".
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* My Citizen Reports (Phản ánh) */}
+          <div className="citizen-section-card">
+            <div className="citizen-card-header">
+              <h2>
+                <MessageSquareWarning size={18} color="#d97706" />
+                Phản ánh hiện trường của tôi ({myReports.length})
+              </h2>
+              <Button
+                variant="secondary"
+                onClick={() => setReportModalOpen(true)}
+                style={{ fontSize: "12.5px", height: "30px" }}
+              >
+                + Gửi phản ánh
+              </Button>
+            </div>
+            {createdReportId && (
+              <div className="admin-feedback-toast" style={{ margin: "10px 16px 0" }}>
+                <Info size={16} />
+                <span>
+                  Đã ghi nhận phản ánh <b>{createdReportId}</b> (trạng thái Mới). Cán bộ sẽ đánh giá
+                  Hợp lệ / Không hợp lệ / Trùng và bạn sẽ thấy kết quả tại đây.
+                </span>
+                <button onClick={() => setCreatedReportId(null)}>
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            <div className="citizen-my-sos-list">
+              {myReports.map((report) => (
+                <div key={report.id} className="citizen-sos-card">
+                  <div className="citizen-sos-head">
+                    <div>
+                      <b>Mã phản ánh: {report.code}</b> · <small style={{ color: "#64748b" }}>{report.createdAt}</small>
+                    </div>
+                    <Badge
+                      tone={
+                        report.status === "Hợp lệ"
+                          ? "green"
+                          : report.status === "Mới"
+                            ? "blue"
+                            : report.status === "Trùng"
+                              ? "amber"
+                              : "neutral"
+                      }
+                    >
+                      {report.status}
+                    </Badge>
+                  </div>
+                  <p className="citizen-sos-desc">
+                    <b>{report.category}:</b> {report.description}
+                  </p>
+                  <div className="citizen-sos-meta">
+                    <span>
+                      <MapPin size={13} /> {report.location.address}
+                      {report.location.coordinates ? " · có tọa độ" : " · không có tọa độ"}
+                    </span>
+                    {report.reviewNote && (
+                      <span>
+                        <Info size={13} /> {report.reviewNote}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {!myReports.length && (
+                <div style={{ textAlign: "center", padding: "28px", color: "#64748b" }}>
+                  <b style={{ display: "block", color: "#334155" }}>Bạn chưa gửi phản ánh nào.</b>
+                  <span style={{ fontSize: "13px" }}>
+                    Dùng phản ánh cho thông tin hiện trường chưa khẩn cấp (ngập, sạt lở, cây đổ, mất điện…).
+                    Trường hợp nguy hiểm tính mạng hãy gửi SOS.
                   </span>
                 </div>
               )}
@@ -857,11 +919,24 @@ export function CitizenPortal() {
       {/* Advanced SOS Form Modal */}
       {sosModalOpen && (
         <SosCreationModal
-          defaultLocation={gpsLocation || [105.852, 21.052]}
+          location={gpsLocation}
+          locationSource={locationSource}
+          onRequestGps={handleRequestLiveLocation}
           onClose={() => setSosModalOpen(false)}
           onSuccess={(id) => {
             setSosModalOpen(false);
-            setCreatedSosId(id);
+            setCreatedSosId({ id, source: locationSource });
+          }}
+        />
+      )}
+      {reportModalOpen && (
+        <CitizenReportModal
+          location={gpsLocation}
+          locationSource={locationSource}
+          onClose={() => setReportModalOpen(false)}
+          onSuccess={(id) => {
+            setReportModalOpen(false);
+            setCreatedReportId(id);
           }}
         />
       )}
@@ -870,11 +945,15 @@ export function CitizenPortal() {
 }
 
 function SosCreationModal({
-  defaultLocation,
+  location,
+  locationSource,
+  onRequestGps,
   onClose,
   onSuccess,
 }: {
-  defaultLocation: [number, number];
+  location: [number, number] | null;
+  locationSource: CitizenLocationSource;
+  onRequestGps: () => void;
   onClose: () => void;
   onSuccess: (id: string) => void;
 }) {
@@ -902,6 +981,12 @@ function SosCreationModal({
       setError("Vui lòng điền đầy đủ các thông tin có dấu *");
       return;
     }
+    if (!location) {
+      setError(
+        "Chưa có vị trí. Hãy bấm “Lấy vị trí GPS” hoặc đóng biểu mẫu và chạm lên bản đồ để đánh dấu vị trí — hệ thống không gửi tọa độ mặc định.",
+      );
+      return;
+    }
     setError("");
     setBusy(true);
 
@@ -916,7 +1001,7 @@ function SosCreationModal({
           name: address.trim(),
           address: address.trim(),
           administrativeArea: user.geographicScope.name || "Hà Nội",
-          coordinates: defaultLocation,
+          coordinates: location,
           accessCondition: "Tiếp cận bình thường",
           floodDepth: "Chưa đo",
         },
@@ -929,6 +1014,7 @@ function SosCreationModal({
         disabledCount: 0,
         severity,
         communicationStatus: "Kết nối",
+        gpsCaptured: locationSource === "gps",
       });
       setBusy(false);
       onSuccess(id);
@@ -1042,6 +1128,22 @@ function SosCreationModal({
             </label>
           </div>
 
+          <div className="field">
+            <span className="label-text">Vị trí gửi kèm</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <Badge tone={location ? (locationSource === "gps" ? "green" : "amber") : "red"}>
+                {location
+                  ? locationSource === "gps"
+                    ? `GPS thiết bị · ${location[1].toFixed(5)}, ${location[0].toFixed(5)}`
+                    : `Đánh dấu trên bản đồ · ${location[1].toFixed(5)}, ${location[0].toFixed(5)}`
+                  : "Chưa có vị trí"}
+              </Badge>
+              <Button type="button" variant="secondary" onClick={onRequestGps} style={{ height: "30px", fontSize: "12.5px" }}>
+                <LocateFixed size={14} /> Lấy vị trí GPS
+              </Button>
+            </div>
+          </div>
+
           <label className="field">
             <span className="label-text">Mức độ nguy cấp</span>
             <UiSelect
@@ -1079,6 +1181,131 @@ function SosCreationModal({
             >
               <Send size={16} />
               {busy ? "Đang phát tín hiệu SOS…" : "Xác nhận gửi SOS cứu nạn"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </>
+  );
+}
+
+function CitizenReportModal({
+  location,
+  locationSource,
+  onClose,
+  onSuccess,
+}: {
+  location: [number, number] | null;
+  locationSource: CitizenLocationSource;
+  onClose: () => void;
+  onSuccess: (id: string) => void;
+}) {
+  const store = useOperationalState();
+  const user = store.currentUser!;
+  const [category, setCategory] = useState<CitizenReportCategory>("Ngập lụt");
+  const [address, setAddress] = useState(user.geographicScope.name || "");
+  const [contact, setContact] = useState(user.phone || "");
+  const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    try {
+      const id = store.createCitizenReport({
+        reporterName: user.displayName,
+        contact: contact.trim() || "Chưa cập nhật",
+        category,
+        description,
+        location: {
+          address,
+          administrativeArea: user.geographicScope.name || "Hà Nội",
+          // null khi không có GPS/không đánh dấu — không dùng tọa độ mặc định
+          coordinates: location,
+        },
+      });
+      onSuccess(id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể gửi phản ánh.");
+    }
+  };
+
+  return (
+    <>
+      <DialogBackdrop onClick={onClose} />
+      <div className="citizen-sos-modal" role="dialog" aria-modal="true">
+        <header className="citizen-sos-modal-header">
+          <h3>
+            <MessageSquareWarning size={20} />
+            GỬI PHẢN ÁNH HIỆN TRƯỜNG
+          </h3>
+          <button onClick={onClose} type="button" aria-label="Đóng">
+            <X size={18} />
+          </button>
+        </header>
+        <form onSubmit={submit} className="citizen-sos-modal-body">
+          {error && (
+            <div className="login-error" role="alert">
+              <AlertCircle size={15} />
+              <span>{error}</span>
+            </div>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <label className="field">
+              <span className="label-text">Loại sự việc</span>
+              <UiSelect
+                value={category}
+                onChange={(e) => setCategory(e.target.value as CitizenReportCategory)}
+              >
+                {citizenReportCategories.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </UiSelect>
+            </label>
+            <label className="field">
+              <span className="label-text">Số điện thoại liên hệ</span>
+              <Input type="tel" value={contact} onChange={(e) => setContact(e.target.value)} />
+            </label>
+          </div>
+          <label className="field">
+            <span className="label-text">
+              Địa chỉ / vị trí sự việc <b className="req">*</b>
+            </span>
+            <Input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="VD: Ngã tư Âu Cơ – Lạc Long Quân, Tây Hồ, Hà Nội"
+              required
+            />
+          </label>
+          <div className="field">
+            <span className="label-text">Tọa độ kèm theo</span>
+            <Badge tone={location ? (locationSource === "gps" ? "green" : "amber") : "neutral"}>
+              {location
+                ? `${locationSource === "gps" ? "GPS thiết bị" : "Đánh dấu trên bản đồ"} · ${location[1].toFixed(5)}, ${location[0].toFixed(5)}`
+                : "Không có tọa độ — cán bộ sẽ xác định theo địa chỉ"}
+            </Badge>
+          </div>
+          <label className="field">
+            <span className="label-text">
+              Mô tả sự việc <b className="req">*</b>
+            </span>
+            <Textarea
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="VD: Đường ngập khoảng 40cm, xe máy không qua được; cây xà cừ đổ chắn nửa lòng đường…"
+              required
+            />
+          </label>
+          <div className="citizen-sos-modal-footer">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Hủy
+            </Button>
+            <Button type="submit" disabled={!description.trim() || !address.trim()}>
+              <Send size={16} />
+              Gửi phản ánh
             </Button>
           </div>
         </form>

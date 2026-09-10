@@ -13,12 +13,28 @@ export interface AuthorizationResource {
   id: string;
   geographicScope?: string;
   ownerId?: string;
+  /** Tài khoản đã tạo bản ghi (SOS/phản ánh) — dùng cho quyền *_own. */
+  ownerUserId?: string | null;
   assignedTeamId?: string | null;
   assignedTeamIds?: string[];
-  warehouseId?: string | null;
-  warehouseIds?: string[];
   lifecycleStatus?: string;
 }
+
+/** Quyền chỉ hợp lệ trên bản ghi do chính tài khoản tạo. */
+const OWN_ONLY_PERMISSIONS: readonly Permission[] = [
+  "sos_view_own",
+  "report_view_own",
+];
+
+/** Quyền của đơn vị cứu hộ chỉ hợp lệ trên nhiệm vụ/SOS đã được giao cho một đội. */
+const RESCUE_ASSIGNED_ONLY_PERMISSIONS: readonly Permission[] = [
+  "task_accept",
+  "task_start",
+  "task_update",
+  "task_report_done",
+  "update_progress",
+  "sos_update_field",
+];
 
 export interface ResourceAuthorizationRequest {
   permission: Permission;
@@ -42,31 +58,33 @@ export function isWithinGeographicScope(
   return resource.includes(userScope);
 }
 
-function ownershipReason(user: AuthUser, resource: AuthorizationResource) {
+/**
+ * Quy tắc sở hữu V2. `teamId`/`warehouseId` cũ trên tài khoản KHÔNG còn được
+ * dùng: đơn vị cứu hộ (rescue_unit) đại diện cho toàn bộ lực lượng cứu hộ và
+ * chỉ bị giới hạn bởi việc bản ghi đã được giao cho một đội hay chưa.
+ */
+function ownershipReason(
+  user: AuthUser,
+  permission: Permission,
+  resource: AuthorizationResource,
+) {
+  if (OWN_ONLY_PERMISSIONS.includes(permission)) {
+    if (resource.ownerUserId === undefined) return null;
+    if (resource.ownerUserId !== user.id)
+      return "Chỉ được xem bản ghi do chính tài khoản này gửi.";
+  }
   if (
-    (user.role === "rescue_leader" || user.role === "rescue_member") &&
-    user.teamId
+    user.role === "rescue_unit" &&
+    RESCUE_ASSIGNED_ONLY_PERMISSIONS.includes(permission) &&
+    (resource.type === "Task" || resource.type === "SOS")
   ) {
-    const teamOwners = resource.assignedTeamIds?.length
+    const assigned = resource.assignedTeamIds?.length
       ? resource.assignedTeamIds
       : resource.assignedTeamId
         ? [resource.assignedTeamId]
-        : resource.ownerId
-          ? [resource.ownerId]
-          : [];
-    if (teamOwners.length && !teamOwners.includes(user.teamId))
-      return "Thao tác chỉ được phép đối với đội được phân công.";
-  }
-  if (user.role === "warehouse_staff" && user.warehouseId) {
-    const warehouseOwners = resource.warehouseIds?.length
-      ? resource.warehouseIds
-      : resource.warehouseId
-        ? [resource.warehouseId]
-        : resource.ownerId
-          ? [resource.ownerId]
-          : [];
-    if (warehouseOwners.length && !warehouseOwners.includes(user.warehouseId))
-      return "Thao tác chỉ được phép đối với kho được phân công.";
+        : [];
+    if (!assigned.length)
+      return "Đơn vị cứu hộ chỉ thao tác trên nhiệm vụ/SOS đã được cán bộ phân công.";
   }
   return null;
 }
@@ -118,7 +136,7 @@ export function authorizeResources(
         allowed: false,
         reason: `Tài nguyên ${resource.id} nằm ngoài phạm vi địa lý được phân công.`,
       };
-    const reason = ownershipReason(user, resource);
+    const reason = ownershipReason(user, request.permission, resource);
     if (reason)
       return {
         ...base,
@@ -154,6 +172,8 @@ export function authorize(
               id: ownerId ?? resourceScope ?? "unknown",
               geographicScope: resourceScope,
               ownerId,
+              // Quyền *_own (V2) so khớp ownerUserId với tài khoản hiện tại.
+              ownerUserId: ownerId,
             },
           ]
         : [],

@@ -1,3 +1,8 @@
+/*
+ * V2 (4 vai): test "phản ánh canonical Simulation" gỡ cùng module Mô phỏng; thay bằng
+ * test Command Center phản ánh SOS mới tạo qua use case canonical và reset về baseline.
+ * Kịch bản mặc định là Yagi 2024 (INC-YAGI-*).
+ */
 import assert from "node:assert/strict";
 import test from "node:test";
 import { existsSync, readFileSync } from "node:fs";
@@ -6,27 +11,13 @@ import {
   getCommandCenterResourceExceptions,
   getSituationSummary,
 } from "../../src/application/command-center/commandCenterQueries";
-import {
-  applyNextSimulationTick,
-  resetSimulationState,
-} from "../../src/application/simulation/simulationUseCases";
+import { createSosRequest } from "../../src/application/sos/sosUseCases";
 import { inMemoryOperationalRepository } from "../../src/infrastructure/persistence/inMemoryOperationalRepository";
-
-function runTo(tick: number) {
-  let simulation = resetSimulationState();
-  let snapshot = inMemoryOperationalRepository.load();
-  for (let index = 0; index < tick; index++) {
-    const result = applyNextSimulationTick(simulation, snapshot);
-    simulation = result.simulation;
-    snapshot = result.snapshot;
-  }
-  return { simulation, snapshot };
-}
 
 test("Command Center query thay đổi ngay theo canonical mutation", () => {
   const snapshot = inMemoryOperationalRepository.load();
   const before = getSituationSummary(snapshot);
-  const incident = snapshot.incidents.find((item) => item.id === "INC-0238")!;
+  const incident = snapshot.incidents.find((item) => item.id === "INC-YAGI-01")!;
   incident.status = "Đã đóng";
   const after = getSituationSummary(snapshot);
   assert.equal(
@@ -35,27 +26,42 @@ test("Command Center query thay đổi ngay theo canonical mutation", () => {
   );
 });
 
-test("Command Center phản ánh canonical Simulation và reset baseline", () => {
+test("Command Center phản ánh SOS canonical mới và reset baseline", () => {
   const baseline = inMemoryOperationalRepository.load();
   const baselineQueue = getCommandCenterActionQueue(baseline);
-  const { snapshot } = runTo(13);
-  assert.ok(snapshot.sosRequests.some((item) => item.id === "SOS-SIM-001"));
-  assert.ok(
-    getCommandCenterActionQueue(snapshot).some(
-      (item) => item.id === "SOS-SIM-001",
-    ),
+  const snapshot = inMemoryOperationalRepository.load();
+  const template = snapshot.sosRequests[0];
+  const created = createSosRequest(
+    "SOS-TEST-001",
+    {
+      reporter: template.reporter,
+      location: template.location,
+      description: "SOS kiểm thử canonical",
+      peopleAtRisk: 3,
+      injuredCount: 0,
+      missingCount: 0,
+      childrenCount: 0,
+      elderlyCount: 0,
+      disabledCount: 0,
+      severity: "Khẩn cấp",
+      communicationStatus: template.communicationStatus,
+    },
+    snapshot.metadata.asOf,
+    "USR-CTZ-001",
   );
-  assert.notDeepEqual(
-    getCommandCenterResourceExceptions(snapshot),
-    getCommandCenterResourceExceptions(baseline),
+  snapshot.sosRequests = [created, ...snapshot.sosRequests];
+  assert.ok(snapshot.sosRequests.some((item) => item.id === "SOS-TEST-001"));
+  assert.ok(
+    getCommandCenterActionQueue(snapshot).some((item) => item.id === "SOS-TEST-001"),
   );
   assert.notDeepEqual(getCommandCenterActionQueue(snapshot), baselineQueue);
   const reset = inMemoryOperationalRepository.load();
   assert.deepEqual(getCommandCenterActionQueue(reset), baselineQueue);
-  assert.equal(
-    reset.sosRequests.some((item) => item.id.startsWith("SOS-SIM")),
-    false,
+  assert.deepEqual(
+    getCommandCenterResourceExceptions(reset),
+    getCommandCenterResourceExceptions(baseline),
   );
+  assert.equal(reset.sosRequests.some((item) => item.id.startsWith("SOS-TEST")), false);
 });
 
 test("không còn Command Center operational dataset thứ hai", () => {

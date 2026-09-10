@@ -13,12 +13,11 @@ Files:
 - verification;
 - Incident mapping/link;
 - Task mapping + Team assignment contracts;
-- Shelter capacity + Evacuation input;
 - resolution/closure;
 - location re-triage;
 - queue sorting;
 - RBAC and Local Officer geographic scope.
 
-Complete pure regression suite (Team + Shelter/Evacuation + SOS): 34 pass, 0 fail on 21/08/2026.
+Suite V2: `tests/application/sos-management.test.ts` 10 pass (09/09/2026).
 
 Browser verification checklist: `/sos`, `/sos/SOS-0241`, search/filter/default ordering, verify/link/create Incident, create Task/dispatch, Task start/completion reflection, Shelter routing, MapLibre markers, timeline, back/forward, desktop/tablet/mobile. Browser automation runner remains future work; tile network is required for map visual verification.

@@ -2,32 +2,19 @@ import type { Incident, IncidentEvent } from "@/domain/incidents/types";
 import type { IncidentTask, TaskUpdate } from "@/domain/tasks/types";
 import type { RescueTeam } from "@/domain/teams/types";
 import type { Shelter } from "@/domain/shelters/types";
-import type { EvacuationOperation } from "@/domain/evacuations/types";
 import type { SosRequest } from "@/domain/sos/types";
-import type {
-  DistributionShipment,
-  InventoryItem,
-  ReliefRequest,
-  StockReservation,
-  Warehouse,
-} from "@/domain/relief/types";
-import type { PlaybookExecution } from "@/domain/playbooks/types";
-import type {
-  DamageAssessment,
-  RecoveryProject,
-} from "@/domain/recovery/types";
+import type { TaskReview } from "@/domain/tasks/types";
+import type { CitizenReport } from "@/domain/reports/types";
 import type {
   AnalyticsPeriod,
+  CitizenReportAnalytics,
   DistributionRow,
-  EvacuationAnalytics,
   IncidentAnalytics,
   IncidentTiming,
   OperationalException,
   OperationalReport,
   OperationalReportType,
   OperationalSummary,
-  RecoveryAnalytics,
-  ReliefAnalytics,
   ShelterAnalytics,
   SosAnalytics,
   TaskAnalytics,
@@ -42,16 +29,9 @@ export interface AnalyticsData {
   taskUpdates: TaskUpdate[];
   teams: RescueTeam[];
   shelters: Shelter[];
-  evacuationOperations: EvacuationOperation[];
   sosRequests: SosRequest[];
-  warehouses: Warehouse[];
-  inventory: InventoryItem[];
-  reliefRequests: ReliefRequest[];
-  reservations: StockReservation[];
-  shipments: DistributionShipment[];
-  playbookExecutions: PlaybookExecution[];
-  damageAssessments: DamageAssessment[];
-  recoveryProjects: RecoveryProject[];
+  taskReviews: TaskReview[];
+  citizenReports: CitizenReport[];
 }
 export interface ReportActor {
   id: string;
@@ -147,12 +127,13 @@ const isOpenTask = (task: IncidentTask) =>
   !["Hoàn thành", "Đã hủy"].includes(task.status);
 const isOpenIncident = (incident: Incident) =>
   !["Đã đóng", "Đã kiểm soát"].includes(incident.status);
+/**
+ * SOS chỉ được coi là kết thúc khi cán bộ đã đóng/từ chối/hủy. Trạng thái
+ * "Đã xử lý" là đơn vị báo xong nhưng CHƯA được duyệt đóng ⇒ vẫn tính mở.
+ */
 const isOpenSos = (status: string) =>
-  !["Đã xử lý", "Đã đóng", "Từ chối", "Hủy"].includes(status);
-const isOpenRelief = (status: string) =>
-  !["Đã giao", "Đã xác nhận", "Đã đóng", "Từ chối", "Hủy"].includes(status);
-const isActiveProject = (status: string) =>
-  ["Đã phê duyệt", "Đang thực hiện", "Tạm dừng"].includes(status);
+  !["Đã đóng", "Từ chối", "Hủy"].includes(status);
+const isClosedSos = (status: string) => status === "Đã đóng";
 const eventEpoch = (event: IncidentEvent, incident: Incident) =>
   parseOperationalDate(event.timestamp, incident.createdAt);
 function incidentEventTime(
@@ -225,18 +206,20 @@ export function getIncidentAnalytics(
 ): IncidentAnalytics {
   const incidents = filteredIncidents(data, filter);
   const ids = new Set(incidents.map((item) => item.id));
-  const evacuations = data.evacuationOperations.filter((item) =>
-    ids.has(item.incidentId),
+  const linkedSos = data.sosRequests.filter(
+    (item) => item.linkedIncidentId && ids.has(item.linkedIncidentId),
   );
   const timings = getIncidentTimings(data, filter);
   const affectedPopulation = incidents.reduce(
     (sum, item) => sum + item.affectedPopulation,
     0,
   );
-  const evacuatedPopulation = evacuations.reduce(
-    (sum, item) => sum + item.evacuatedPopulation,
-    0,
-  );
+  const rescuedPopulation = linkedSos
+    .filter((item) => isClosedSos(item.status))
+    .reduce((sum, item) => sum + item.peopleAtRisk, 0);
+  const pendingPopulation = linkedSos
+    .filter((item) => isOpenSos(item.status))
+    .reduce((sum, item) => sum + item.peopleAtRisk, 0);
   return {
     bySeverity: distribution(incidents.map((item) => item.severity)),
     byStatus: distribution(incidents.map((item) => item.status)),
@@ -259,8 +242,8 @@ export function getIncidentAnalytics(
     ),
     overdueCount: timings.filter((item) => item.overdue).length,
     affectedPopulation,
-    evacuatedPopulation,
-    remainingPopulation: Math.max(0, affectedPopulation - evacuatedPopulation),
+    rescuedPopulation,
+    pendingPopulation,
   };
 }
 
@@ -338,6 +321,17 @@ export function getTaskAnalytics(
     ),
     byIncident,
     dispatchToStartMinutes: average(startDelays),
+    awaitingReviewCount: tasks.filter((item) => item.status === "Chờ xác nhận")
+      .length,
+    rejectedReviewCount: data.taskReviews.filter(
+      (review) =>
+        review.decision === "Từ chối" &&
+        tasks.some((task) => task.id === review.taskId),
+    ).length,
+    reassignmentCount: tasks.reduce(
+      (sum, task) => sum + Math.max(0, (task.assignmentHistory?.length ?? 0) - 1),
+      0,
+    ),
   };
 }
 
@@ -349,29 +343,8 @@ export function getTeamAnalytics(
   const tasks = data.tasks.filter(
     (item) => ids.has(item.incidentId) && isOpenTask(item),
   );
-  const activeEvacs = data.evacuationOperations.filter(
-    (item) =>
-      ids.has(item.incidentId) &&
-      ["Đang triển khai", "Tạm dừng"].includes(item.status),
-  );
-  const reliefTeamIds = new Set(
-    data.shipments
-      .filter((item) =>
-        ["Chuẩn bị", "Đã xuất kho", "Đang vận chuyển", "Có sự cố"].includes(
-          item.status,
-        ),
-      )
-      .map((item) => item.assignedTeamId)
-      .filter(Boolean),
-  );
   const deployed = data.teams.filter((team) =>
-    Boolean(
-      team.currentTask ||
-      team.currentIncident ||
-      team.currentEvacuationOperation ||
-      team.currentReliefShipment ||
-      reliefTeamIds.has(team.id),
-    ),
+    Boolean(team.currentTask || team.currentIncident),
   );
   const available = data.teams.filter(
     (team) =>
@@ -397,16 +370,11 @@ export function getTeamAnalytics(
         (team) =>
           team.capabilities.includes(capability) && deployed.includes(team),
       ).length,
-      demand:
-        tasks.filter((task) =>
-          normalize(`${task.type} ${task.description}`).includes(
-            normalize(capability.split(" ")[0]),
-          ),
-        ).length +
-        activeEvacs.filter(
-          (operation) =>
-            capability.includes("Sơ tán") && operation.assignedTeamId === null,
-        ).length,
+      demand: tasks.filter((task) =>
+        normalize(`${task.type} ${task.description}`).includes(
+          normalize(capability.split(" ")[0]),
+        ),
+      ).length,
     }))
     .filter((item) => item.available + item.deployed + item.demand > 0)
     .sort(
@@ -428,11 +396,7 @@ export function getTeamAnalytics(
         name: team.name,
         activeTasks: tasks.filter((task) => task.teamId === team.id).length,
         incidentId: team.currentIncident,
-        assignment:
-          team.currentTask ??
-          team.currentEvacuationOperation ??
-          team.currentReliefShipment ??
-          "Chưa phân công",
+        assignment: team.currentTask ?? "Chưa phân công",
       }))
       .sort((a, b) => b.activeTasks - a.activeTasks),
     capability: capabilities,
@@ -478,64 +442,6 @@ export function getShelterAnalytics(
         status: item.status,
       }))
       .sort((a, b) => b.utilization - a.utilization),
-  };
-}
-
-export function getEvacuationAnalytics(
-  data: AnalyticsData,
-  filter: AnalyticsPeriod = {},
-): EvacuationAnalytics {
-  const ids = incidentIds(data, filter);
-  const rows = data.evacuationOperations.filter((item) =>
-    ids.has(item.incidentId),
-  );
-  const evacuated = rows.reduce(
-    (sum, item) => sum + item.evacuatedPopulation,
-    0,
-  );
-  const population = rows.reduce(
-    (sum, item) => sum + item.estimatedPopulation,
-    0,
-  );
-  const completed = rows.filter((item) => item.status === "Hoàn thành").length;
-  return {
-    total: rows.length,
-    active: rows.filter((item) =>
-      ["Đang triển khai", "Tạm dừng"].includes(item.status),
-    ).length,
-    evacuated,
-    remaining: Math.max(0, population - evacuated),
-    completionRate: rows.length
-      ? Math.round((completed / rows.length) * 100)
-      : 0,
-    averageProgress: rows.length
-      ? Math.round(
-          rows.reduce((sum, item) => sum + item.progress, 0) / rows.length,
-        )
-      : 0,
-    blockedRoutes: rows.filter((item) =>
-      ["Bị chặn", "Hạn chế"].includes(item.route.status),
-    ).length,
-    rows: rows
-      .map((item) => ({
-        id: item.id,
-        code: item.code,
-        incidentId: item.incidentId,
-        shelterId: item.destinationShelterId,
-        status: item.status,
-        progress: item.progress,
-        evacuated: item.evacuatedPopulation,
-        remaining: Math.max(
-          0,
-          item.estimatedPopulation - item.evacuatedPopulation,
-        ),
-        routeStatus: item.route.status,
-      }))
-      .sort(
-        (a, b) =>
-          Number(b.routeStatus === "Bị chặn") -
-            Number(a.routeStatus === "Bị chặn") || a.progress - b.progress,
-      ),
   };
 }
 
@@ -631,207 +537,51 @@ export function getSosAnalytics(
   };
 }
 
-function shortageForRequest(
-  request: ReliefRequest,
-  reservations: StockReservation[],
-) {
-  return request.items.reduce((total, item) => {
-    const allocated = reservations
-      .filter(
-        (res) =>
-          res.reliefRequestId === request.id && res.status !== "Đã giải phóng",
-      )
-      .flatMap((res) => res.items)
-      .filter((line) => line.itemCode === item.itemCode)
-      .reduce((sum, line) => sum + line.quantity, 0);
-    return total + Math.max(0, item.quantityApproved - allocated);
-  }, 0);
-}
-export function getReliefAnalytics(
+export function getCitizenReportAnalytics(
   data: AnalyticsData,
   filter: AnalyticsPeriod = {},
-): ReliefAnalytics {
-  const ids = incidentIds(data, filter);
+): CitizenReportAnalytics {
   const now = reference(data, filter);
-  const requests = data.reliefRequests.filter(
+  const rows = data.citizenReports.filter(
     (item) =>
-      (!filter.incidentId || item.incidentId === filter.incidentId) &&
-      (!item.incidentId || ids.has(item.incidentId)) &&
-      inScope(item.destination, filter.geographicScope) &&
+      inScope(item.location.administrativeArea, filter.geographicScope) &&
       inPeriod(item.createdAt, filter),
   );
-  const rows = requests.map((item) => ({
-    id: item.id,
-    code: item.code,
-    status: item.status,
-    priority: item.priority,
-    shortage: shortageForRequest(item, data.reservations),
-    overdue:
-      isOpenRelief(item.status) && parseOperationalDate(item.requiredBy) < now,
-  }));
-  const inventory = data.inventory.filter((item) =>
-    data.warehouses.some(
-      (warehouse) =>
-        warehouse.id === item.warehouseId &&
-        inScope(warehouse.administrativeArea, filter.geographicScope),
-    ),
-  );
-  const availableStock = inventory.reduce(
-    (sum, item) =>
-      sum + Math.max(0, item.quantityOnHand - item.quantityReserved),
-    0,
-  );
-  const reservedStock = inventory.reduce(
-    (sum, item) => sum + item.quantityReserved,
-    0,
-  );
-  const relevantShipments = data.shipments.filter((item) =>
-    requests.some((request) => request.id === item.reliefRequestId),
-  );
-  const delivered = relevantShipments.filter((item) =>
-    ["Đã giao", "Hoàn tất"].includes(item.status),
-  ).length;
+  const reviewTimes = rows
+    .filter((item) => item.reviewedAt)
+    .map((item) =>
+      minutes(
+        parseOperationalDate(item.createdAt),
+        parseOperationalDate(item.reviewedAt ?? ""),
+      ),
+    );
   return {
-    byStatus: distribution(requests.map((item) => item.status)),
-    byPriority: distribution(requests.map((item) => item.priority)),
-    pendingApprovals: requests.filter((item) =>
-      ["Đã gửi", "Đang thẩm định"].includes(item.status),
-    ).length,
-    shortStockRequests: rows.filter((item) => item.shortage > 0).length,
-    overdueDeliveries: rows.filter((item) => item.overdue).length,
-    warehouseAvailability: data.warehouses.filter(
-      (item) =>
-        item.status === "Hoạt động" &&
-        inScope(item.administrativeArea, filter.geographicScope),
-    ).length,
-    reservedStock,
-    availableStock,
-    distributionProgress: relevantShipments.length
-      ? Math.round((delivered / relevantShipments.length) * 100)
-      : 0,
-    failedShipments: relevantShipments.filter(
-      (item) => item.status === "Có sự cố",
-    ).length,
-    lowStockItems: inventory.filter(
-      (item) =>
-        item.quantityOnHand - item.quantityReserved <= item.reorderLevel,
-    ).length,
-    requestRows: rows.sort(
-      (a, b) =>
-        Number(b.overdue) - Number(a.overdue) || b.shortage - a.shortage,
-    ),
-    warehouseRows: data.warehouses
-      .filter((item) =>
-        inScope(item.administrativeArea, filter.geographicScope),
-      )
+    total: rows.length,
+    pending: rows.filter((item) => item.status === "Mới").length,
+    valid: rows.filter((item) => item.status === "Hợp lệ").length,
+    invalid: rows.filter((item) => item.status === "Không hợp lệ").length,
+    duplicate: rows.filter((item) => item.status === "Trùng").length,
+    byCategory: distribution(rows.map((item) => item.category)),
+    byStatus: distribution(rows.map((item) => item.status)),
+    averageReviewMinutes: average(reviewTimes),
+    rows: rows
       .map((item) => ({
         id: item.id,
         code: item.code,
-        name: item.name,
+        category: item.category,
         status: item.status,
-        utilization: item.currentUtilization,
-        lowStock: inventory.filter(
-          (stock) =>
-            stock.warehouseId === item.id &&
-            stock.quantityOnHand - stock.quantityReserved <= stock.reorderLevel,
-        ).length,
+        area: item.location.administrativeArea,
+        createdAt: item.createdAt,
+        waitingMinutes:
+          item.status === "Mới"
+            ? minutes(parseOperationalDate(item.createdAt), now)
+            : null,
       }))
-      .sort((a, b) => b.lowStock - a.lowStock || b.utilization - a.utilization),
-  };
-}
-
-export function getRecoveryAnalytics(
-  data: AnalyticsData,
-  filter: AnalyticsPeriod = {},
-): RecoveryAnalytics {
-  const ids = incidentIds(data, filter);
-  const now = reference(data, filter);
-  const assessments = data.damageAssessments.filter(
-    (item) =>
-      ids.has(item.incidentId) &&
-      inScope(item.geographicScope, filter.geographicScope) &&
-      inPeriod(item.createdAt, filter),
-  );
-  const projects = data.recoveryProjects.filter(
-    (item) =>
-      ids.has(item.incidentId) &&
-      inScope(item.geographicScope, filter.geographicScope) &&
-      inPeriod(item.createdAt, filter),
-  );
-  const damageByCategory = [
-    ...new Set(
-      assessments.flatMap((item) => item.items.map((row) => row.category)),
-    ),
-  ]
-    .map((category) => ({
-      category,
-      value: assessments
-        .flatMap((item) => item.items)
-        .filter((item) => item.category === category)
-        .reduce((sum, item) => sum + item.estimatedCost, 0),
-    }))
-    .sort((a, b) => b.value - a.value);
-  const projectRows = projects.map((project) => {
-    const delayedMilestones = project.milestones.filter(
-      (item) =>
-        !["Hoàn thành", "Bỏ qua"].includes(item.status) &&
-        parseOperationalDate(item.dueDate, undefined, true) < now,
-    ).length;
-    return {
-      id: project.id,
-      code: project.code,
-      name: project.name,
-      status: project.status,
-      progress: project.progress,
-      budgetUtilization: project.approvedBudget
-        ? Math.round((project.spentBudget / project.approvedBudget) * 100)
-        : 0,
-      delayedMilestones,
-    };
-  });
-  const totalBudget = projects.reduce(
-    (sum, item) => sum + item.approvedBudget,
-    0,
-  );
-  const spent = projects.reduce((sum, item) => sum + item.spentBudget, 0);
-  return {
-    assessmentByStatus: distribution(assessments.map((item) => item.status)),
-    damageByCategory,
-    estimatedDamage: assessments.reduce(
-      (sum, item) => sum + item.estimatedLoss,
-      0,
-    ),
-    verifiedDamage: assessments
-      .filter((item) => item.status === "Đã xác minh")
-      .reduce((sum, item) => sum + item.estimatedLoss, 0),
-    unverifiedDamage: assessments
-      .filter((item) => item.status !== "Đã xác minh")
-      .reduce((sum, item) => sum + item.estimatedLoss, 0),
-    projectByStatus: distribution(projects.map((item) => item.status)),
-    averageProjectProgress: projects.length
-      ? Math.round(
-          projects.reduce((sum, item) => sum + item.progress, 0) /
-            projects.length,
-        )
-      : 0,
-    budgetUtilization: totalBudget
-      ? Math.round((spent / totalBudget) * 100)
-      : 0,
-    delayedMilestones: projectRows.reduce(
-      (sum, item) => sum + item.delayedMilestones,
-      0,
-    ),
-    projectsRequiringAttention: projectRows.filter(
-      (item) =>
-        item.delayedMilestones > 0 ||
-        item.budgetUtilization >= 85 ||
-        item.status === "Tạm dừng",
-    ).length,
-    projectRows: projectRows.sort(
-      (a, b) =>
-        b.delayedMilestones - a.delayedMilestones ||
-        b.budgetUtilization - a.budgetUtilization,
-    ),
+      .sort(
+        (a, b) =>
+          Number(b.status === "Mới") - Number(a.status === "Mới") ||
+          (b.waitingMinutes ?? 0) - (a.waitingMinutes ?? 0),
+      ),
   };
 }
 
@@ -843,8 +593,7 @@ export function getOperationalExceptions(
   const tasks = getTaskAnalytics(data, filter);
   const shelters = getShelterAnalytics(data, filter);
   const sos = getSosAnalytics(data, filter);
-  const relief = getReliefAnalytics(data, filter);
-  const recovery = getRecoveryAnalytics(data, filter);
+  const reports = getCitizenReportAnalytics(data, filter);
   const result: OperationalException[] = [];
   incidents.timings
     .filter((item) => item.overdue)
@@ -903,37 +652,17 @@ export function getOperationalExceptions(
         path: `/sos/${item.id}`,
       }),
     );
-  relief.requestRows
-    .filter((item) => item.shortage > 0 || item.overdue)
+  reports.rows
+    .filter((item) => (item.waitingMinutes ?? 0) > 120)
     .forEach((item) =>
       result.push({
-        severity: item.priority.startsWith("P1") ? "Khẩn cấp" : "Cao",
-        module: "Cứu trợ",
+        severity: "Trung bình",
+        module: "Phản ánh",
         entityId: item.id,
         entityCode: item.code,
-        title: `Yêu cầu ${item.code}`,
-        reason: [
-          item.shortage ? `Thiếu ${item.shortage} đơn vị` : null,
-          item.overdue ? "Quá hạn giao" : null,
-        ]
-          .filter(Boolean)
-          .join(" · "),
-        path: `/relief/requests/${item.id}`,
-      }),
-    );
-  recovery.projectRows
-    .filter((item) => item.delayedMilestones || item.budgetUtilization >= 85)
-    .forEach((item) =>
-      result.push({
-        severity: item.delayedMilestones ? "Cao" : "Trung bình",
-        module: "Phục hồi",
-        entityId: item.id,
-        entityCode: item.code,
-        title: item.name,
-        reason: item.delayedMilestones
-          ? `${item.delayedMilestones} mốc quá hạn`
-          : `Đã sử dụng ${item.budgetUtilization}% ngân sách`,
-        path: `/recovery/projects/${item.id}`,
+        title: `${item.category} · ${item.area}`,
+        reason: `Chờ đánh giá ${item.waitingMinutes} phút`,
+        path: "/reports",
       }),
     );
   return result
@@ -958,7 +687,7 @@ export function getOperationalSummary(
       inScope(item.location.administrativeArea, filter.geographicScope),
   );
   const shelters = getShelterAnalytics(data, filter);
-  const relief = getReliefAnalytics(data, filter);
+  const reports = getCitizenReportAnalytics(data, filter);
   return {
     metrics: [
       {
@@ -1000,27 +729,22 @@ export function getOperationalSummary(
         description: `${shelters.overloaded} điểm quá tải`,
       },
       {
-        label: "Yêu cầu cứu trợ áp lực",
-        value: relief.shortStockRequests + relief.overdueDeliveries,
-        basis: "Dẫn xuất",
-        description: `${relief.shortStockRequests} thiếu hàng · ${relief.overdueDeliveries} quá hạn`,
+        label: "Nhiệm vụ chờ xác nhận",
+        value: tasks.filter((item) => item.status === "Chờ xác nhận").length,
+        basis: "Ghi nhận",
+        description: "Đơn vị đã báo xong, chờ cán bộ xác nhận",
       },
       {
-        label: "Kế hoạch ứng phó đang thực hiện",
-        value: data.playbookExecutions.filter(
-          (item) =>
-            ids.has(item.incidentId) && item.status === "Đang hoạt động",
-        ).length,
+        label: "SOS chờ duyệt đóng",
+        value: sos.filter((item) => item.status === "Đã xử lý").length,
         basis: "Ghi nhận",
-        description: "Đợt thực hiện đang hoạt động",
+        description: "Đã xử lý nhưng chưa được cán bộ đóng",
       },
       {
-        label: "Dự án phục hồi",
-        value: data.recoveryProjects.filter(
-          (item) => ids.has(item.incidentId) && isActiveProject(item.status),
-        ).length,
+        label: "Phản ánh chờ đánh giá",
+        value: reports.pending,
         basis: "Ghi nhận",
-        description: "Đã duyệt, đang làm hoặc tạm dừng",
+        description: `${reports.valid} hợp lệ · ${reports.duplicate} trùng`,
       },
     ],
     exceptions: getOperationalExceptions(data, filter),
@@ -1032,8 +756,7 @@ export function collectInvalidReportTimestamps(data: AnalyticsData) {
     ...data.incidents.map((item) => ({ entityId: item.id, field: "Thời điểm tạo sự cố", value: item.createdAt })),
     ...data.tasks.map((item) => ({ entityId: item.id, field: "Thời điểm tạo nhiệm vụ", value: item.createdAt })),
     ...data.sosRequests.map((item) => ({ entityId: item.id, field: "Thời điểm tiếp nhận SOS", value: item.receivedAt })),
-    ...data.evacuationOperations.map((item) => ({ entityId: item.id, field: "Thời điểm cập nhật sơ tán", value: item.updatedAt })),
-    ...data.reliefRequests.map((item) => ({ entityId: item.id, field: "Thời điểm tạo yêu cầu cứu trợ", value: item.createdAt })),
+    ...data.citizenReports.map((item) => ({ entityId: item.id, field: "Thời điểm tạo phản ánh", value: item.createdAt })),
     ...data.events.map((item) => ({ entityId: item.incidentId, field: "Dấu thời gian diễn biến sự cố", value: item.timestamp })),
   ];
   return candidates.filter((item) => {
@@ -1055,10 +778,8 @@ export function buildOperationalReport(
   const task = getTaskAnalytics(data, filter);
   const team = getTeamAnalytics(data, filter);
   const shelter = getShelterAnalytics(data, filter);
-  const evacuation = getEvacuationAnalytics(data, filter);
   const sos = getSosAnalytics(data, filter);
-  const relief = getReliefAnalytics(data, filter);
-  const recovery = getRecoveryAnalytics(data, filter);
+  const reports = getCitizenReportAnalytics(data, filter);
   const exceptions = getOperationalExceptions(data, filter);
   const completedTasks = data.tasks.filter(
     (item) =>
@@ -1068,6 +789,14 @@ export function buildOperationalReport(
   const outstandingTasks = data.tasks.filter(
     (item) =>
       isOpenTask(item) && incidentIds(data, filter).has(item.incidentId),
+  );
+  const awaitingReview = outstandingTasks.filter(
+    (item) => item.status === "Chờ xác nhận",
+  );
+  const sosAwaitingClose = data.sosRequests.filter(
+    (item) =>
+      item.status === "Đã xử lý" &&
+      inScope(item.location.administrativeArea, filter.geographicScope),
   );
   const asOf = filter.referenceTime ?? data.metadata.asOf;
   const period =
@@ -1086,8 +815,8 @@ export function buildOperationalReport(
       `${incident.overdueCount} sự cố vượt ngưỡng xử lý 120 phút.`,
       `${sos.unassigned} SOS đang mở chưa được phân công.`,
       `${shelter.overloaded} điểm sơ tán vượt sức chứa.`,
-      `${relief.shortStockRequests} yêu cầu cứu trợ còn thiếu hàng.`,
-      `${recovery.projectsRequiringAttention} dự án phục hồi cần chú ý.`,
+      `${awaitingReview.length} nhiệm vụ đã báo xong chờ cán bộ xác nhận.`,
+      `${reports.pending} phản ánh của người dân chưa được đánh giá.`,
     ],
     responseStatistics: [
       {
@@ -1109,20 +838,22 @@ export function buildOperationalReport(
         basis: "Dẫn xuất",
       },
       {
-        label: "Dân số đã sơ tán",
-        value: evacuation.evacuated.toLocaleString("vi-VN"),
+        label: "SOS đã đóng / tổng",
+        value: `${sos.rows.filter((item) => item.status === "Đã đóng").length}/${sos.rows.length}`,
         basis: "Ghi nhận",
       },
       {
-        label: "Tiến độ sơ tán trung bình",
-        value: `${evacuation.averageProgress}%`,
+        label: "Thời gian xử lý SOS trung bình",
+        value:
+          sos.averageResolutionMinutes === null
+            ? "Chưa đủ dữ liệu"
+            : `${sos.averageResolutionMinutes} phút`,
         basis: "Dẫn xuất",
       },
     ],
     resourceUtilization: [
       `${team.deployed}/${team.total} đội đang triển khai (${team.utilizationRate}%).`,
       `${shelter.occupancy.toLocaleString("vi-VN")}/${shelter.capacity.toLocaleString("vi-VN")} chỗ đang sử dụng.`,
-      `${relief.availableStock.toLocaleString("vi-VN")} đơn vị tồn khả dụng; ${relief.reservedStock.toLocaleString("vi-VN")} đơn vị đang giữ.`,
     ],
     majorExceptions: exceptions,
     completedActions: completedTasks
@@ -1131,11 +862,14 @@ export function buildOperationalReport(
     outstandingActions: outstandingTasks
       .map((item) => `${item.id} — ${item.title} (${item.status})`)
       .slice(0, 12),
-    recoveryStatus: [
-      `${recovery.verifiedDamage.toLocaleString("vi-VN")} ₫ thiệt hại đã xác minh.`,
-      `${recovery.projectRows.length} dự án; tiến độ trung bình ${recovery.averageProjectProgress}%.`,
-      `Mức sử dụng ngân sách đã duyệt ${recovery.budgetUtilization}%.`,
-    ],
+    pendingConfirmation: [
+      ...awaitingReview.map(
+        (item) => `${item.id} — ${item.title} (đơn vị đã báo xong, chờ xác nhận)`,
+      ),
+      ...sosAwaitingClose.map(
+        (item) => `${item.code} — SOS đã xử lý, chờ cán bộ duyệt đóng`,
+      ),
+    ].slice(0, 12),
     audit: {
       generatedAt: asOf,
       generatedById: actor.id,

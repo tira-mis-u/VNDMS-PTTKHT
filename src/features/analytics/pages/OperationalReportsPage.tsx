@@ -22,9 +22,8 @@ const types: OperationalReportType[] = [
   "Báo cáo tình hình tác chiến",
   "Báo cáo sự cố",
   "Báo cáo cứu hộ",
-  "Báo cáo sơ tán",
-  "Báo cáo cứu trợ",
-  "Báo cáo phục hồi",
+  "Báo cáo SOS",
+  "Báo cáo phản ánh",
 ];
 
 /** "ngày 05 tháng 09 năm 2026" — dùng cho quốc hiệu và khối ký của bản in. */
@@ -298,9 +297,13 @@ export function OperationalReportsPage({
           </div>
         </ReportSection>
 
-        <ReportSection number="06" title="Tình trạng phục hồi">
+        <ReportSection number="06" title="Kết quả chờ xác nhận">
           <ul className="report-recovery-list">
-            {report.recoveryStatus.map((item) => <li key={item}>{item}</li>)}
+            {report.pendingConfirmation.length ? (
+              report.pendingConfirmation.map((item) => <li key={item}>{item}</li>)
+            ) : (
+              <li>Không có kết quả nào đang chờ cán bộ xác nhận.</li>
+            )}
           </ul>
         </ReportSection>
 

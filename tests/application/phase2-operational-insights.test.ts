@@ -1,3 +1,8 @@
+/*
+ * V2 (4 vai): bỏ `simulation` khỏi OperationalInsightsData (module Mô phỏng đã xóa);
+ * user() tra theo username thật; Local Officer cũ (phamdam) nay là công dân →
+ * so sánh authorized view dùng admin vs cán bộ PCTT và công dân (không có sự cố).
+ */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -10,13 +15,16 @@ import { navigationGroups } from "../../src/components/navigation/navigationConf
 import { authorize } from "../../src/lib/security/authorization";
 import { demoUsers } from "../../src/infrastructure/auth/demoUsers";
 import { inMemoryOperationalRepository } from "../../src/infrastructure/persistence/inMemoryOperationalRepository";
-import { resetSimulationState } from "../../src/application/simulation/simulationUseCases";
 
-const user = (name: string) => structuredClone(demoUsers.find((item) => item.username === name)!);
+const user = (name: string) => {
+  const found = demoUsers.find((item) => item.username === name);
+  if (!found) throw new Error(`demo user ${name} không tồn tại`);
+  return structuredClone(found);
+};
 const loadFor = (name: string): OperationalInsightsData => {
   const actor = user(name);
   const snapshot = createAuthorizedOperationalView(actor, inMemoryOperationalRepository.load());
-  return { ...snapshot, alerts: deriveAuthorizedAlerts(actor, snapshot), simulation: resetSimulationState() };
+  return { ...snapshot, alerts: deriveAuthorizedAlerts(actor, snapshot) };
 };
 
 test("route Phân quyền là alias thật, active đúng và yêu cầu user_manage", () => {
@@ -26,10 +34,10 @@ test("route Phân quyền là alias thật, active đúng và yêu cầu user_ma
   const item = navigationGroups.flatMap((group) => group.items).find((entry) => entry.label === "Phân quyền")!;
   assert.equal(item.path, PERMISSIONS_WORKSPACE_PATH);
   assert.equal(item.permission, "user_manage");
-  assert.equal(authorize(user("Trần Quốc Thuận"), "user_manage").allowed, true);
-  assert.equal(authorize(user("Nguyễn Quốc Trung"), "user_manage").allowed, false);
-  assert.equal(authorize(user("Phạm Văn Đam"), "user_manage").allowed, false);
-  const citizen = { ...user("Trần Quốc Thuận"), id: "USR-CITIZEN-TEST", role: "citizen" as const };
+  assert.equal(authorize(user("thuantq"), "user_manage").allowed, true);
+  assert.equal(authorize(user("nguyentrung"), "user_manage").allowed, false);
+  assert.equal(authorize(user("phamdam"), "user_manage").allowed, false);
+  const citizen = { ...user("thuantq"), id: "USR-CITIZEN-TEST", role: "citizen" as const };
   assert.equal(authorize(citizen, "user_manage").allowed, false);
   const app = readFileSync("src/app/App.tsx", "utf8");
   assert.match(app, /route\.name === "admin-permissions"[\s\S]*return "user_manage"/);
@@ -37,20 +45,23 @@ test("route Phân quyền là alias thật, active đúng và yêu cầu user_ma
 });
 
 test("Tình hình tác nghiệp chỉ composition dữ liệu authorized và có nguồn", () => {
-  const commander = getOperationalSituation(loadFor("Trần Quốc Thuận"));
-  const local = getOperationalSituation(loadFor("Phạm Văn Đam"));
+  const commander = getOperationalSituation(loadFor("thuantq"));
+  const local = getOperationalSituation(loadFor("phamdam"));
   assert.ok(commander.metrics.length >= 7);
   assert.ok(commander.metrics.every((item) => item.path.startsWith("/") && item.source && item.asOf));
   assert.ok(local.metrics.find((item) => item.id === "incidents")!.value <= commander.metrics.find((item) => item.id === "incidents")!.value);
-  assert.ok(local.events.every((event) => loadFor("Phạm Văn Đam").incidents.some((incident) => incident.id === event.entityId) || event.entityType !== "Sự cố"));
-  const empty = getOperationalSituation({ ...loadFor("Trần Quốc Thuận"), incidents: [], events: [], alerts: [], sosRequests: [], sosEvents: [], evacuationOperations: [], evacuationEvents: [], teams: [], shelters: [], reliefRequests: [] });
+  assert.ok(local.events.every((event) => loadFor("phamdam").incidents.some((incident) => incident.id === event.entityId) || event.entityType !== "Sự cố"));
+  const empty = getOperationalSituation({ ...loadFor("thuantq"), incidents: [], events: [], alerts: [], sosRequests: [], sosEvents: [], teams: [], shelters: [], tasks: [], citizenReports: [], publishedAlerts: [], taskReviews: [] });
   assert.ok(empty.metrics.every((item) => item.value === 0));
 });
 
 test("Lịch sử chỉ lấy sự cố đã đóng, sắp sự kiện tăng dần và link canonical", () => {
-  const data = loadFor("Trần Quốc Thuận");
+  // Kịch bản Yagi mặc định chưa có sự cố "Đã đóng" (baseline test này vốn đỏ);
+  // đóng một sự cố ngay trong dữ liệu kiểm thử để lịch sử có bản ghi thật.
+  const source = loadFor("thuantq");
+  const data = { ...source, incidents: source.incidents.map((item, index) => (index ? item : { ...item, status: "Đã đóng" as const, closedAt: source.metadata.asOf })) };
   const history = getOperationalHistory(data);
-  assert.ok(history.rows.length > 0);
+  assert.equal(history.rows.length, 1);
   assert.ok(history.rows.every((row) => row.status === "Đã đóng" && row.path === `/incidents/${row.id}`));
   for (const row of history.rows)
     assert.deepEqual(row.events.map((event) => event.timestamp), [...row.events].map((event) => event.timestamp).sort());
@@ -59,7 +70,7 @@ test("Lịch sử chỉ lấy sự cố đã đóng, sắp sự kiện tăng d�
 });
 
 test("Xu hướng nhóm từ timestamp canonical và không tạo so sánh khi chỉ có một kỳ", () => {
-  const data = loadFor("Trần Quốc Thuận");
+  const data = loadFor("thuantq");
   const result = getOperationalTrend(data, "incidents");
   assert.ok(result.points.every((point) => point.value === point.sources.length));
   assert.ok(result.points.flatMap((point) => point.sources).every((source) => source.path.startsWith("/")));
@@ -68,7 +79,7 @@ test("Xu hướng nhóm từ timestamp canonical và không tạo so sánh khi c
 });
 
 test("report dùng actor truyền vào, asOf canonical và công khai timestamp lỗi", () => {
-  const data = loadFor("Trần Quốc Thuận") as AnalyticsData;
+  const data = loadFor("thuantq") as AnalyticsData;
   const invalid = { ...data, incidents: data.incidents.map((item, index) => index ? item : { ...item, createdAt: "ngày không hợp lệ" }) };
   assert.ok(collectInvalidReportTimestamps(invalid).some((item) => item.value === "ngày không hợp lệ"));
   const report = buildOperationalReport(invalid, "Báo cáo sự cố", { referenceTime: invalid.metadata.asOf }, { id: "USR-CMD-001", displayName: "Người lập kiểm thử" });

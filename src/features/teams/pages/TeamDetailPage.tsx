@@ -46,9 +46,6 @@ export function TeamDetailPage({
     tasks,
     incidents,
     teamEvents,
-    evacuationOperations,
-    shelters,
-    shipments,
     can,
   } = useOperationalState();
   const team = teams.find((item) => item.id === id);
@@ -71,23 +68,12 @@ export function TeamDetailPage({
       </div>
     );
   const task = tasks.find((item) => item.id === team.currentTask);
-  const reliefShipment = shipments.find(
-    (item) => item.id === team.currentReliefShipment,
-  );
-  const evacuation = evacuationOperations.find(
-    (item) => item.id === team.currentEvacuationOperation,
-  );
-  const evacuationShelter = shelters.find(
-    (item) => item.id === evacuation?.destinationShelterId,
-  );
   const incident = incidents.find(
     (item) => item.id === (team.currentIncident ?? task?.incidentId),
   );
   const canDispatch =
     can("team_assign") &&
     !team.currentTask &&
-    !team.currentEvacuationOperation &&
-    !team.currentReliefShipment &&
     !["Mất liên lạc", "Không khả dụng", "Tạm nghỉ"].includes(team.status);
   return (
     <div className="workspace-content team-detail-page">
@@ -120,15 +106,6 @@ export function TeamDetailPage({
             >
               <MapPinned size={15} />
               Xem trên bản đồ
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                navigate(`/ai-assistant?context=Team&id=${team.id}`)
-              }
-            >
-              <ShieldCheck size={15} />
-              Trợ lý AI
             </Button>
             <Button
               variant="secondary"
@@ -264,84 +241,6 @@ export function TeamDetailPage({
                       Gỡ phân công
                     </Button>
                   )}
-              </div>
-            ) : evacuation ? (
-              <div className="team-current-operation">
-                <div className="operation-main">
-                  <span>
-                    <Badge
-                      tone={
-                        evacuation.priority === "Khẩn cấp" ? "red" : "amber"
-                      }
-                    >
-                      {evacuation.priority}
-                    </Badge>
-                    <small>{evacuation.id}</small>
-                  </span>
-                  <button
-                    onClick={() =>
-                      navigate(`/shelters/${evacuation.destinationShelterId}`)
-                    }
-                  >
-                    Sơ tán {evacuation.sourceArea}
-                    <ChevronRight size={14} />
-                  </button>
-                  <p>
-                    <MapPin size={12} />
-                    {evacuationShelter?.name}
-                  </p>
-                </div>
-                <div className="operation-progress">
-                  <span>
-                    <b>{evacuation.progress}%</b>
-                    {evacuation.status}
-                  </span>
-                  <Progress value={evacuation.progress} tone="blue" />
-                  <small>
-                    {evacuation.evacuatedPopulation}/
-                    {evacuation.estimatedPopulation} người
-                  </small>
-                </div>
-              </div>
-            ) : reliefShipment ? (
-              <div className="team-current-operation">
-                <div className="operation-main">
-                  <span>
-                    <Badge
-                      tone={
-                        reliefShipment.status === "Có sự cố" ? "red" : "blue"
-                      }
-                    >
-                      {reliefShipment.status}
-                    </Badge>
-                    <small>{reliefShipment.id}</small>
-                  </span>
-                  <button
-                    onClick={() =>
-                      navigate(
-                        `/relief/requests/${reliefShipment.reliefRequestId}`,
-                      )
-                    }
-                  >
-                    Vận chuyển cứu trợ tới {reliefShipment.destination}
-                    <ChevronRight size={14} />
-                  </button>
-                  <p>
-                    <MapPin size={12} />
-                    {reliefShipment.items
-                      .map(
-                        (item) => `${item.quantity} ${item.unit} ${item.name}`,
-                      )
-                      .join(" · ")}
-                  </p>
-                </div>
-                <div className="operation-progress">
-                  <span>
-                    <b>Hậu cần</b>
-                    {reliefShipment.transportMethod}
-                  </span>
-                  <small>Dự kiến đến {reliefShipment.estimatedArrival}</small>
-                </div>
               </div>
             ) : (
               <div className="team-no-assignment">
@@ -556,10 +455,6 @@ export function TeamDetailPage({
             <Context label="Liên lạc" value={team.contact} />
             <Context label="Năng lực chính" value={team.capability} />
             <Context label="Nhiệm vụ" value={team.currentTask ?? "Chưa có"} />
-            <Context
-              label="Hoạt động sơ tán"
-              value={team.currentEvacuationOperation ?? "Chưa có"}
-            />
             <Context label="Sự cố" value={team.currentIncident ?? "Chưa có"} />
             <Context
               label="Cập nhật tác chiến"

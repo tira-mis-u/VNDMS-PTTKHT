@@ -1,3 +1,12 @@
+/*
+ * V2 (4 vai) — tích hợp cảnh báo liên module.
+ *  - Gỡ test Simulation và Trợ lý AI (module đã xóa thật); control state boundary rỗng.
+ *  - Actor ack là Cán bộ PCTT (nguyentrung) — admin V2 không có alert_acknowledge.
+ *  - Test geography dùng cán bộ thu hẹp scope tỉnh Lào Cai; test role dùng công dân
+ *    (minhtri) và admin; rescue_unit chỉ huy toàn lực lượng nên ack được alert mọi đội.
+ *  - Kịch bản Yagi 2024: alert bắt buộc xác nhận TSK-YAGI-02 task_high_priority_unassigned
+ *    (hết hiệu lực khi nhiệm vụ được giao đội).
+ */
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -18,13 +27,6 @@ import {
   type AtomicMutationState,
 } from "../../src/application/operations/operationalMutationBoundary";
 import type { OperationalSnapshot } from "../../src/application/operations/operationalSnapshot";
-import type { SimulationState } from "../../src/domain/simulation/types";
-import {
-  applyNextSimulationTick,
-  resetSimulationState,
-} from "../../src/application/simulation/simulationUseCases";
-import { groundOperationalQuestion } from "../../src/application/ai/aiGrounding";
-import type { AiGroundingSnapshot } from "../../src/domain/ai/types";
 import { createAuthorizedOperationalView } from "../../src/application/authorization/authorizedOperationalView";
 import { authorizeResources } from "../../src/lib/security/authorization";
 import { activeNavigationLabel, parseRoute } from "../../src/app/routes/router";
@@ -32,12 +34,21 @@ import { demoUsers } from "../../src/infrastructure/auth/demoUsers";
 import { inMemoryOperationalRepository } from "../../src/infrastructure/persistence/inMemoryOperationalRepository";
 
 const source = () => inMemoryOperationalRepository.load();
-const user = (username: string) =>
-  structuredClone(demoUsers.find((item) => item.username === username)!);
-const NOW = "21/08/2026 10:45";
+type Control = Record<string, never>;
+const user = (username: string) => {
+  const found = demoUsers.find((item) => item.username === username);
+  if (!found) throw new Error(`demo user ${username} không tồn tại`);
+  return structuredClone(found);
+};
+const laoCaiOfficer = () => ({
+  ...user("nguyentrung"),
+  geographicScope: { level: "province" as const, name: "Lào Cai", code: "LC" },
+});
+const NOW = "10/09/2024 14:45";
+const KEY = "task:Task:TSK-YAGI-02:task_high_priority_unassigned";
 
-function alertsFor(username: string) {
-  const account = user(username);
+function alertsFor(username: string | ReturnType<typeof user>) {
+  const account = typeof username === "string" ? user(username) : username;
   return deriveAuthorizedAlerts(
     account,
     createAuthorizedOperationalView(account, source()),
@@ -45,13 +56,10 @@ function alertsFor(username: string) {
 }
 
 function harness() {
-  const boundary = new OperationalMutationBoundary<
-    OperationalSnapshot,
-    SimulationState
-  >();
-  let state: AtomicMutationState<OperationalSnapshot, SimulationState> = {
+  const boundary = new OperationalMutationBoundary<OperationalSnapshot, Control>();
+  let state: AtomicMutationState<OperationalSnapshot, Control> = {
     snapshot: inMemoryOperationalRepository.load(),
-    control: resetSimulationState(),
+    control: {},
   };
   let commits = 0;
   const execute = <T>(operation: () => T): T =>
@@ -69,11 +77,11 @@ function harness() {
 /** Mô phỏng đúng provider command acknowledgeAlert trên state canonical. */
 function acknowledgeCommand(
   h: ReturnType<typeof harness>,
-  username: string,
+  username: string | ReturnType<typeof user>,
   alertKey: string,
 ) {
   h.execute(() => {
-    const account = user(username);
+    const account = typeof username === "string" ? user(username) : username;
     const alert = deriveOperationalAlerts(
       h.boundary.readSnapshot(),
     ).find((item) => item.key === alertKey);
@@ -110,11 +118,11 @@ function acknowledgeCommand(
 
 function readCommand(
   h: ReturnType<typeof harness>,
-  username: string,
+  username: string | ReturnType<typeof user>,
   alertKey: string,
 ) {
   h.execute(() => {
-    const account = user(username);
+    const account = typeof username === "string" ? user(username) : username;
     const alert = deriveOperationalAlerts(h.boundary.readSnapshot()).find(
       (item) => item.key === alertKey,
     );
@@ -138,29 +146,31 @@ function readCommand(
 
 test("ack xác nhận alert commit một lần, có attribution và tự lọc stale", () => {
   const h = harness();
-  const key = "sos:SOS:SOS-0242:sos_p1_verified_unassigned";
-  acknowledgeCommand(h, "Trần Quốc Thuận", key);
+  const key = KEY;
+  acknowledgeCommand(h, "nguyentrung", key);
   assert.equal(h.commits(), 1);
   const snapshot = h.state().snapshot;
   const interaction = snapshot.alertInteractions.find(
     (item) => item.alertKey === key,
   )!;
-  assert.equal(interaction.acknowledgement?.actor, "Trần Quốc Thuận");
+  assert.equal(interaction.acknowledgement?.actor, "Nguyễn Quốc Trung");
   assert.equal(snapshot.alertEvents.length, 1);
-  assert.ok(snapshot.alertEvents[0].message.includes("Trần Quốc Thuận"));
+  assert.ok(snapshot.alertEvents[0].message.includes("Nguyễn Quốc Trung"));
   // resolve lại theo state committed
   const resolved = resolveAlertState(
     deriveOperationalAlerts(snapshot).find((item) => item.key === key)!,
     interaction,
-    "USR-CMD-001",
+    "USR-OPS-001",
   );
   assert.equal(resolved.status, "Đã xác nhận");
   // entity được xử lý → alert hết hiệu lực dù receipt vẫn nằm trong snapshot
   h.execute(() =>
     h.boundary.updateSnapshot((snapshot) => ({
       ...snapshot,
-      sosRequests: snapshot.sosRequests.map((item) =>
-        item.id === "SOS-0242" ? { ...item, assignedTeamId: "CH-05" } : item,
+      tasks: snapshot.tasks.map((item) =>
+        item.id === "TSK-YAGI-02"
+          ? { ...item, status: "Đã giao" as const, teamId: "CH-LC-01" }
+          : item,
       ),
     })),
   );
@@ -173,13 +183,13 @@ test("ack xác nhận alert commit một lần, có attribution và tự lọc s
 
 test("acknowledge thất bại giữa chừng rollback toàn bộ draft", () => {
   const h = harness();
-  const key = "sos:SOS:SOS-0242:sos_p1_verified_unassigned";
-  readCommand(h, "Trần Quốc Thuận", key);
+  const key = KEY;
+  readCommand(h, "nguyentrung", key);
   const committedInteractions = h.state().snapshot.alertInteractions.length;
   const committedEvents = h.state().snapshot.alertEvents.length;
   assert.throws(() =>
     h.execute(() => {
-      const account = user("Trần Quốc Thuận");
+      const account = user("nguyentrung");
       const alert = deriveOperationalAlerts(h.boundary.readSnapshot()).find(
         (item) => item.key === key,
       )!;
@@ -207,62 +217,37 @@ test("acknowledge thất bại giữa chừng rollback toàn bộ draft", () => 
 
 test("authorization tại mutation boundary: geography, ownership, role", () => {
   const h = harness();
-  // Local Officer không được ack alert ngoài Tây Hồ
+  // Cán bộ scope Lào Cai không được ack alert ngoài địa bàn (Hà Nội)
   assert.throws(
-    () => acknowledgeCommand(h, "Phạm Văn Đam", "shelter:Shelter:TH-03:shelter_overloaded"),
+    () => acknowledgeCommand(h, laoCaiOfficer(), "shelter:Shelter:SHELTER-HN-03:shelter_overloaded"),
     /ngoài phạm vi địa lý/,
   );
-  assert.equal(
-    h.state().snapshot.alertInteractions.length,
-    0,
-    "không được ghi gì khi bị từ chối",
-  );
-  // Rescue leader (CH-05) không được ack alert thuộc đội CH-04
+  assert.equal(h.state().snapshot.alertInteractions.length, 0, "không được ghi gì khi bị từ chối");
+  // Công dân (đội viên cũ) không có alert_view → bị chặn ở bước đọc nguồn
+  assert.throws(() => acknowledgeCommand(h, "minhtri", KEY), /không được cấp quyền/);
+  // Admin V2 đọc được alert nhưng không có alert_acknowledge
   assert.throws(
-    () =>
-      acknowledgeCommand(
-        h,
-        "Phạm Trung Hiếu",
-        "team:Team:CH-04:team_communication_lost",
-      ),
-    /đội được phân công/,
-  );
-  // Rescue member có alert_view nhưng không có alert_acknowledge
-  assert.throws(
-    () =>
-      acknowledgeCommand(
-        h,
-        "Lê Nguyễn Minh Trí",
-        "sos:SOS:SOS-0242:sos_p1_verified_unassigned",
-      ),
+    () => acknowledgeCommand(h, "thuantq", KEY),
     /không được cấp quyền alert_acknowledge/,
   );
-  // Local Officer được ack alert trong Tây Hồ
-  acknowledgeCommand(
-    h,
-    "Phạm Văn Đam",
-    "sos:SOS:SOS-0242:sos_p1_verified_unassigned",
-  );
-  const interaction = h.state().snapshot.alertInteractions[0];
-  assert.equal(interaction.acknowledgement?.actor, "Phạm Văn Đam");
+  // Đơn vị cứu hộ chỉ huy toàn lực lượng → ack được alert nhiệm vụ của bất kỳ đội nào
+  acknowledgeCommand(h, "phamhieu", "task:Task:TSK-YAGI-03:task_overdue");
+  assert.equal(h.state().snapshot.alertInteractions[0].acknowledgement?.actor, "Phạm Trung Hiếu");
+  // Cán bộ scope Lào Cai được ack alert trong Lào Cai
+  acknowledgeCommand(h, laoCaiOfficer(), "incident:Incident:INC-YAGI-01:incident_critical_active");
+  assert.equal(h.state().snapshot.alertInteractions.length, 2);
 });
 
 test("alert mà entity vượt scope thì không lộ qua derive từ authorized view", () => {
-  const officerAlerts = alertsFor("Phạm Văn Đam");
-  const staffAlerts = alertsFor("Nguyễn Nam Anh");
-  assert.ok(
-    officerAlerts.every((item) =>
-      (item.geographicScope ?? "").includes("Tây Hồ"),
-    ),
-  );
-  assert.deepEqual(
-    staffAlerts.map((item) => item.ownerWarehouseId),
-    ["KHO-01"],
-  );
+  const officerAlerts = alertsFor(laoCaiOfficer());
+  assert.ok(officerAlerts.length > 0);
+  assert.ok(officerAlerts.every((item) => (item.geographicScope ?? "").includes("Lào Cai")));
+  // Thủ kho cũ nay là công dân: không còn alert kho, cũng không có alert nào khác.
+  assert.deepEqual(alertsFor("namanh"), []);
 });
 
 test("Command Center và trang Cảnh báo dùng chung một alert collection", () => {
-  const account = user("Nguyễn Quốc Trung");
+  const account = user("nguyentrung");
   const view = createAuthorizedOperationalView(account, source());
   const pageAlerts = deriveAuthorizedAlerts(account, view);
   // panel Command Center đọc store.alerts — cùng phép derive này
@@ -271,120 +256,28 @@ test("Command Center và trang Cảnh báo dùng chung một alert collection", 
   assert.ok(pageAlerts.length > 0);
 });
 
-test("AI đọc alert qua Authorized Alert View, không tự xác nhận", () => {
-  const account = user("Trần Quốc Thuận");
-  const snapshot: AiGroundingSnapshot = {
-    ...(() => {
-      const s = source();
-      return {
-        incidents: s.incidents,
-        tasks: s.tasks,
-        teams: s.teams,
-        shelters: s.shelters,
-        evacuationOperations: s.evacuationOperations,
-        sosRequests: s.sosRequests,
-        warehouses: s.warehouses,
-        inventory: s.inventory,
-        reliefRequests: s.reliefRequests,
-        reservations: s.reservations,
-        playbooks: s.playbooks,
-        playbookExecutions: s.playbookExecutions,
-        damageAssessments: s.damageAssessments,
-        recoveryProjects: s.recoveryProjects,
-        simulation: resetSimulationState(),
-      };
-    })(),
-  };
-  const response = groundOperationalQuestion({
-    question: "Có cảnh báo tác nghiệp nào nghiêm trọng đang cần xử lý?",
-    user: account,
-    snapshot,
-    alerts: alertsFor("Trần Quốc Thuận"),
-  });
-  assert.equal(response.intent, "alert_overview");
-  assert.ok(response.statements.some((item) => item.classification === "FACT"));
-  assert.ok(
-    response.evidence.some((item) => item.entityType === "OperationalAlert"),
-  );
-  assert.ok(
-    response.statements.every(
-      (item) => item.classification !== "RECOMMENDATION" || true,
-    ),
-  );
-  assert.equal(response.actions.length, 0, "AI không được tự xử lý alert");
-  // officer chỉ nhận evidence trong scope Tây Hồ
-  const officerResponse = groundOperationalQuestion({
-    question: "Có cảnh báo tác nghiệp nào?",
-    user: user("Phạm Văn Đam"),
-    snapshot,
-    alerts: alertsFor("Phạm Văn Đam"),
-  });
-  const officerText = officerResponse.statements
-    .map((item) => item.text)
-    .join(" ");
-  assert.ok(!officerText.includes("SHP-0243"));
-  assert.ok(!officerText.includes("TH-03"));
-});
-
-test("simulation tick tạo/giải phóng alert deterministic, không duplicate", () => {
-  let simulation = resetSimulationState();
-  let snapshot = source();
-  const step = () => {
-    const result = applyNextSimulationTick(simulation, snapshot);
-    simulation = result.simulation;
-    snapshot = result.snapshot;
-  };
-  const initialKeys = deriveOperationalAlerts(snapshot).map((item) => item.key);
-  for (let index = 0; index < 13; index++) step();
-  const after13 = deriveOperationalAlerts(snapshot);
-  const keys13 = after13.map((item) => item.key);
-  assert.ok(
-    keys13.includes("shelter:Shelter:TH-01:shelter_near_capacity"),
-    "simulation làm TH-01 gần đầy thì alert phải xuất hiện",
-  );
-  assert.equal(new Set(keys13).size, keys13.length);
-  for (let index = 0; index < 7; index++) step();
-  const keys20 = deriveOperationalAlerts(snapshot).map((item) => item.key);
-  assert.ok(
-    !keys20.includes("incident:Incident:INC-0241:incident_critical_active"),
-    "alert của điều kiện đã qua phải hết hiệu lực",
-  );
-  // reset khôi phục baseline
-  const reset = source();
-  assert.deepEqual(
-    deriveOperationalAlerts(reset).map((item) => item.key),
-    initialKeys,
-  );
-  assert.equal(reset.alertInteractions.length, 0);
-  assert.equal(reset.alertEvents.length, 0);
-});
-
 test("analytics aggregation theo dõi alert sau khi acknowledge", () => {
   const h = harness();
-  acknowledgeCommand(h, "Trần Quốc Thuận", "sos:SOS:SOS-0242:sos_p1_verified_unassigned");
-  const account = user("Trần Quốc Thuận");
+  // Ack một alert bắt buộc xác nhận (critical) để tỷ lệ xác nhận thay đổi.
+  const critical = "shelter:Shelter:SHELTER-HN-03:shelter_overloaded";
+  acknowledgeCommand(h, "nguyentrung", critical);
+  const account = user("nguyentrung");
   const alerts = deriveAuthorizedAlerts(
     account,
     createAuthorizedOperationalView(account, h.state().snapshot),
   );
   const analytics = getAlertAnalytics(alerts);
-  assert.equal(analytics.acknowledgementRate, 20);
-  assert.ok(
-    alerts.find(
-      (item) => item.key === "sos:SOS:SOS-0242:sos_p1_verified_unassigned",
-    )?.status === "Đã xác nhận",
-  );
+  const required = alerts.filter((item) => item.requiresAcknowledgement).length;
+  assert.equal(analytics.acknowledgementRate, Math.round((1 / required) * 100));
+  assert.ok(alerts.find((item) => item.key === critical)?.status === "Đã xác nhận");
 });
 
 test("routes /alerts và /alerts/:key hoạt động với History router", () => {
   assert.deepEqual(parseRoute("/alerts"), { name: "alert-list" });
   const encoded =
     "/alerts/" +
-    encodeURIComponent("sos:SOS:SOS-0242:sos_p1_verified_unassigned");
+    encodeURIComponent(KEY);
   const detail = parseRoute(encoded);
-  assert.deepEqual(detail, {
-    name: "alert-detail",
-    id: "sos:SOS:SOS-0242:sos_p1_verified_unassigned",
-  });
+  assert.deepEqual(detail, { name: "alert-detail", id: KEY });
   assert.equal(activeNavigationLabel(detail), "Cảnh báo");
 });

@@ -2,7 +2,7 @@
 
 ## Đăng nhập
 
-Người dùng nhập họ tên đầy đủ làm username và mật khẩu. Sáu tài khoản demo là Trần Quốc Thuận, Nguyễn Quốc Trung, Phạm Văn Đam, Phạm Trung Hiếu, Lê Nguyễn Minh Trí và Nguyễn Nam Anh; mật khẩu dùng chung `VNDMS@2026`. `loginUser` gọi `AuthenticationGateway`; local adapter băm SHA-256 mật khẩu để đối chiếu demo credential, kiểm tra active và tạo phiên 8 giờ. Thành công hoặc thất bại đều tạo security audit.
+Người dùng nhập tên đăng nhập và mật khẩu. Bảy tài khoản demo: `thuantq` (admin), `nguyentrung` (disaster_officer), `phamhieu` (rescue_unit), `phamdam`, `minhtri`, `namanh`, `trantuan` (citizen); mật khẩu dùng chung `VNDMS@2026`. Không có tài khoản seed nào khác. `loginUser` gọi `AuthenticationGateway`; local adapter băm SHA-256 mật khẩu để đối chiếu demo credential, kiểm tra active và tạo phiên 8 giờ. Thành công hoặc thất bại đều tạo security audit.
 
 ## Khôi phục và kết thúc phiên
 
@@ -10,11 +10,11 @@ Khi tải lại trang, adapter kiểm tra cấu trúc session, user tồn tại/
 
 ## Phân quyền
 
-Mỗi route và mutation cần permission từ matrix hiện hữu. Quyết định gồm allowed, reason, permission, user scope và resource scope. Local Officer bị giới hạn địa bàn; Rescue Leader/Member theo team; Warehouse Staff theo kho; Citizen không vào ứng dụng tác nghiệp.
+Mỗi route và mutation cần permission từ matrix hiện hữu. Quyết định gồm allowed, reason, permission, user scope và resource scope. Phạm vi địa lý áp cho mọi vai không phải national; quyền `*_own` (SOS, phản ánh) kiểm `ownerUserId`; `citizen` chỉ vào Cổng công dân. Admin không mặc định có quyền nghiệp vụ (xác minh/điều phối/xác nhận kết quả/công bố).
 
 ## Quản trị tối thiểu
 
-Commander tìm/lọc user, xem permission hiệu lực, audit gần đây, activate/deactivate, đổi role và geographic scope. Không thể tự vô hiệu hóa tài khoản đang đăng nhập.
+`admin` tìm/lọc user, xem permission hiệu lực, audit gần đây, activate/deactivate, đổi role và geographic scope. Không thể tự vô hiệu hóa tài khoản đang đăng nhập.
 
 ## Audit
 

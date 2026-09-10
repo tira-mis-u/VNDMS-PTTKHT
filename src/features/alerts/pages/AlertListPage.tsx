@@ -28,6 +28,7 @@ import {
 } from "@/application/alerts/alertQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button, EmptyState, PageSectionHeader, Input } from "@/components/ui";
+import { PublishedAlertSection } from "../components/PublishedAlertSection";
 
 
 function AlertSelect({
@@ -61,6 +62,8 @@ export function AlertListPage({
 }) {
   const store = useOperationalState();
   const alerts = store.alerts;
+  // Công dân không có quyền cảnh báo tác nghiệp → trang chỉ hiển thị bản tin công bố.
+  const operationalView = store.can("alert_view");
   const [error, setError] = useState("");
   const run = (action: () => unknown) => {
     try {
@@ -92,6 +95,18 @@ export function AlertListPage({
     alert.requiresAcknowledgement &&
     !alert.acknowledgedAt &&
     store.can("alert_acknowledge", alert.geographicScope);
+  if (!operationalView)
+    return (
+      <div className="workspace-content alerts-page">
+        <PageSectionHeader
+          section="Cổng thông tin công dân"
+          title="Cảnh báo thiên tai đã công bố"
+          description="Bản tin do cán bộ phòng chống thiên tai công bố cho người dân trên địa bàn. Bản tin cập nhật sẽ hiển thị số bản mới."
+          icon={BellRing}
+        />
+        <PublishedAlertSection compact />
+      </div>
+    );
   return (
     <div className="workspace-content alerts-page">
       <PageSectionHeader
@@ -318,6 +333,8 @@ export function AlertListPage({
           </div>
         )}
       </section>
+
+      <PublishedAlertSection />
     </div>
   );
 }

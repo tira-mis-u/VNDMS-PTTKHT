@@ -45,7 +45,7 @@ export function TeamListPage({
 }: {
   navigate: (path: string) => void;
 }) {
-  const { teams, tasks, evacuationOperations } = useOperationalState();
+  const { teams, tasks } = useOperationalState();
   const [tab, setTab] = useState<TeamListFilters["tab"]>("Tất cả");
   const [search, setSearch] = useState("");
   const [status, setStatus] =
@@ -171,7 +171,6 @@ export function TeamListPage({
               "Đang có nhiệm vụ",
               "Chưa có nhiệm vụ",
               ...tasks.map((task) => task.id),
-              ...evacuationOperations.map((operation) => operation.id),
             ]}
           />
           <label className="filter-select team-sort">
@@ -229,8 +228,8 @@ export function TeamListPage({
                 <small>{team.capabilities.length} năng lực</small>
               </span>
               <span className="team-current-task">
-                {team.currentTask || team.currentEvacuationOperation ? (
-                  <b>{team.currentTask ?? team.currentEvacuationOperation}</b>
+                {team.currentTask ? (
+                  <b>{team.currentTask}</b>
                 ) : (
                   <span>Chưa có</span>
                 )}

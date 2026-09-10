@@ -16,9 +16,7 @@ import {
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
-import { getIncidentRecoverySummary } from "@/application/recovery/recoveryQueries";
 import { operationalMapFocusPath } from "@/app/routes/router";
-import { executionSummary } from "@/application/playbooks/playbookQueries";
 import {
   IncidentActionDialogs,
   type IncidentDialog,
@@ -45,15 +43,7 @@ export function IncidentDetailPage({
     events,
     tasks,
     teams,
-    shelters,
-    evacuationOperations,
     sosRequests,
-    reliefRequests,
-    reservations,
-    playbooks,
-    playbookExecutions,
-    damageAssessments,
-    recoveryProjects,
     can,
   } = useOperationalState();
   const incident = incidents.find((item) => item.id === id);
@@ -66,44 +56,9 @@ export function IncidentDetailPage({
         .sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
     [events, id],
   );
-  const recoverySummary = getIncidentRecoverySummary(
-    id,
-    damageAssessments,
-    recoveryProjects,
-  );
-  const incidentAssessments = damageAssessments.filter(
-    (item) => item.incidentId === id,
-  );
-  const incidentRecoveryProjects = recoveryProjects.filter(
-    (item) => item.incidentId === id,
-  );
-  const playbookExecution = playbookExecutions.find(
-    (item) =>
-      item.incidentId === id &&
-      ["Đang hoạt động", "Tạm dừng"].includes(item.status),
-  );
-  const incidentPlaybook = playbooks.find(
-    (item) => item.id === playbookExecution?.playbookId,
-  );
-  const playbookSummary =
-    incidentPlaybook && playbookExecution
-      ? executionSummary(incidentPlaybook, playbookExecution)
-      : null;
-  const incidentRelief = reliefRequests.filter(
-    (item) =>
-      item.incidentId === id &&
-      !["Đã đóng", "Từ chối", "Hủy"].includes(item.status),
-  );
   const incidentTasks = tasks.filter((item) => item.incidentId === id);
   const incidentSos = sosRequests.filter(
     (item) => item.linkedIncidentId === id,
-  );
-  const incidentEvacuations = evacuationOperations.filter(
-    (item) => item.incidentId === id,
-  );
-  const evacuatedPopulation = incidentEvacuations.reduce(
-    (sum, item) => sum + item.evacuatedPopulation,
-    0,
   );
   const team = teams.find((item) => item.id === incident?.assignedTeamId);
   if (!incident)
@@ -156,15 +111,6 @@ export function IncidentDetailPage({
             >
               <MapPinned size={15} />
               Xem trên bản đồ
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                navigate(`/ai-assistant?context=Incident&id=${incident.id}`)
-              }
-            >
-              <ShieldCheck size={15} />
-              Trợ lý AI
             </Button>
             {can("dispatch") && (
               <Button variant="secondary" onClick={() => setDialog("dispatch")}>
@@ -230,15 +176,6 @@ export function IncidentDetailPage({
           <button onClick={() => jump("tong-quan")} className="active">
             Tổng quan
           </button>
-          <button onClick={() => jump("phuc-hoi")}>
-            Thiệt hại & khôi phục{" "}
-            <span>
-              {incidentAssessments.length + incidentRecoveryProjects.length}
-            </span>
-          </button>
-          <button onClick={() => jump("quy-trinh")}>
-            Quy trình tác chiến {playbookExecution && <span>1</span>}
-          </button>
           <button onClick={() => jump("dien-bien")}>
             Diễn biến <span>{incidentEvents.length}</span>
           </button>
@@ -247,12 +184,6 @@ export function IncidentDetailPage({
           </button>
           <button onClick={() => jump("sos")}>
             SOS <span>{incidentSos.length}</span>
-          </button>
-          <button onClick={() => jump("so-tan")}>
-            Sơ tán <span>{incidentEvacuations.length}</span>
-          </button>
-          <button onClick={() => jump("cuu-tro")}>
-            Cứu trợ <span>{incidentRelief.length}</span>
           </button>
           <button onClick={() => jump("doi-cuu-ho")}>Đội xử lý</button>
           <button onClick={() => jump("ban-do")}>Khu vực ảnh hưởng</button>
@@ -292,146 +223,6 @@ export function IncidentDetailPage({
                 />
               </div>
             </div>
-          </section>
-          <section id="phuc-hoi" className="incident-detail-section">
-            <SectionHeader
-              title="Đánh giá thiệt hại và phục hồi"
-              description="Đánh giá đã xác minh và dự án phục hồi liên kết với sự cố"
-            />
-            <div className="incident-recovery-summary">
-              <div>
-                <span>Đánh giá</span>
-                <b>{recoverySummary.assessmentCount}</b>
-                <small>
-                  {recoverySummary.pendingVerification} chờ xác minh
-                </small>
-              </div>
-              <div>
-                <span>Thiệt hại ước tính</span>
-                <b>
-                  {new Intl.NumberFormat("vi-VN", {
-                    maximumFractionDigits: 1,
-                  }).format(recoverySummary.estimatedLoss / 1e9)}{" "}
-                  tỷ ₫
-                </b>
-                <small>Tổng hợp từ các đánh giá</small>
-              </div>
-              <div>
-                <span>Dự án khôi phục</span>
-                <b>{recoverySummary.projectCount}</b>
-                <small>{recoverySummary.progress}% tiến độ trung bình</small>
-              </div>
-            </div>
-            <div className="incident-recovery-lists">
-              <div>
-                <h3>Đánh giá thiệt hại</h3>
-                {incidentAssessments.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => navigate(`/recovery/assessments/${item.id}`)}
-                  >
-                    <span>
-                      <b>
-                        {item.code} · {item.area}
-                      </b>
-                      <small>
-                        {item.assessmentType} ·{" "}
-                        {item.estimatedLoss.toLocaleString("vi-VN")} ₫
-                      </small>
-                    </span>
-                    <Badge
-                      tone={item.status === "Đã xác minh" ? "green" : "amber"}
-                    >
-                      {item.status}
-                    </Badge>
-                    <ChevronRight size={13} />
-                  </button>
-                ))}
-              </div>
-              <div>
-                <h3>Dự án khôi phục</h3>
-                {incidentRecoveryProjects.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => navigate(`/recovery/projects/${item.id}`)}
-                  >
-                    <span>
-                      <b>
-                        {item.code} · {item.name}
-                      </b>
-                      <small>
-                        {item.owner} · {item.progress}%
-                      </small>
-                    </span>
-                    <Badge
-                      tone={item.status === "Hoàn thành" ? "green" : "blue"}
-                    >
-                      {item.status}
-                    </Badge>
-                    <ChevronRight size={13} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-          <section id="quy-trinh" className="incident-detail-section">
-            <SectionHeader
-              title="Quy trình tác chiến"
-              description="Đợt thực hiện phương án điều phối trong bối cảnh của sự cố"
-            />
-            {incidentPlaybook && playbookExecution && playbookSummary ? (
-              <div className="incident-playbook-card">
-                <span className="incident-playbook-icon">
-                  <ShieldCheck size={18} />
-                </span>
-                <div>
-                  <span>
-                    <b>
-                      {incidentPlaybook.code} · {incidentPlaybook.name}
-                    </b>
-                    <Badge
-                      tone={
-                        playbookExecution.status === "Đang hoạt động"
-                          ? "green"
-                          : "amber"
-                      }
-                    >
-                      {playbookExecution.status}
-                    </Badge>
-                  </span>
-                  <p>
-                    Bước hiện tại:{" "}
-                    <b>{playbookSummary.current?.name ?? "Chưa xác định"}</b> ·
-                    Tiếp theo: {playbookSummary.next?.name ?? "Chưa có"}
-                  </p>
-                  <Progress value={playbookSummary.progress} tone="blue" />
-                  <small>
-                    {playbookSummary.progress}% hoàn thành ·{" "}
-                    {playbookSummary.blocked.length} bước bị chặn
-                  </small>
-                </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() =>
-                    navigate(`/playbooks/${incidentPlaybook.id}/execute`)
-                  }
-                >
-                  Mở đợt thực hiện
-                  <ChevronRight size={13} />
-                </Button>
-              </div>
-            ) : (
-              <div className="section-empty">
-                Chưa có phương án điều phối đang thực hiện cho sự cố này.{" "}
-                <button
-                  className="entity-link"
-                  onClick={() => navigate("/playbooks")}
-                >
-                  Chọn phương án điều phối
-                </button>
-              </div>
-            )}
           </section>
           <section id="dien-bien" className="incident-detail-section">
             <SectionHeader
@@ -565,158 +356,6 @@ export function IncidentDetailPage({
                   </Badge>
                 </article>
               ))}
-            </div>
-          </section>
-          <section id="so-tan" className="incident-detail-section">
-            <SectionHeader
-              title="Sơ tán dân cư"
-              description={`${incidentEvacuations.filter((item) => !["Hoàn thành", "Đã hủy"].includes(item.status)).length} hoạt động đang mở`}
-            />
-            <div className="incident-impact-grid">
-              <Impact
-                label="Dân số ảnh hưởng"
-                value={incident.affectedPopulation.toLocaleString("vi-VN")}
-              />
-              <Impact
-                label="Đã sơ tán"
-                value={evacuatedPopulation.toLocaleString("vi-VN")}
-              />
-              <Impact
-                label="Còn cần bố trí"
-                value={Math.max(
-                  0,
-                  incident.affectedPopulation - evacuatedPopulation,
-                ).toLocaleString("vi-VN")}
-              />
-            </div>
-            <div className="incident-task-list">
-              {incidentEvacuations.map((operation) => {
-                const shelter = shelters.find(
-                  (item) => item.id === operation.destinationShelterId,
-                );
-                return (
-                  <article key={operation.id}>
-                    <div className="task-main">
-                      <span>
-                        <Badge
-                          tone={
-                            operation.priority === "Khẩn cấp" ? "red" : "amber"
-                          }
-                        >
-                          {operation.priority}
-                        </Badge>
-                        <small>{operation.id}</small>
-                      </span>
-                      <b>{operation.sourceArea}</b>
-                      <p>
-                        {operation.evacuatedPopulation}/
-                        {operation.estimatedPopulation} người ·{" "}
-                        {operation.route.status}
-                      </p>
-                    </div>
-                    <div className="task-assignee">
-                      <small>Điểm tiếp nhận</small>
-                      <button
-                        className="entity-link"
-                        onClick={() =>
-                          navigate(
-                            `/shelters/${operation.destinationShelterId}`,
-                          )
-                        }
-                      >
-                        {operation.destinationShelterId}
-                        <ChevronRight size={13} />
-                      </button>
-                      <span>{shelter?.name}</span>
-                    </div>
-                    <Badge
-                      tone={
-                        operation.status === "Tạm dừng"
-                          ? "amber"
-                          : operation.status === "Hoàn thành"
-                            ? "green"
-                            : "blue"
-                      }
-                    >
-                      {operation.status}
-                    </Badge>
-                  </article>
-                );
-              })}
-              {!incidentEvacuations.length && (
-                <p className="section-empty">Chưa có hoạt động sơ tán.</p>
-              )}
-            </div>
-          </section>
-          <section id="cuu-tro" className="incident-detail-section">
-            <SectionHeader
-              title="Yêu cầu cứu trợ đang hoạt động"
-              description={`${incidentRelief.length} nhu cầu hậu cần cần theo dõi`}
-            />
-            <div className="incident-task-list">
-              {incidentRelief.map((request) => {
-                const allocated = reservations
-                  .filter(
-                    (item) =>
-                      item.reliefRequestId === request.id &&
-                      item.status !== "Đã giải phóng",
-                  )
-                  .flatMap((item) => item.items)
-                  .reduce((sum, item) => sum + item.quantity, 0);
-                const approved = request.items.reduce(
-                  (sum, item) => sum + item.quantityApproved,
-                  0,
-                );
-                return (
-                  <article key={request.id}>
-                    <div className="task-main">
-                      <span>
-                        <Badge
-                          tone={
-                            request.priority.startsWith("P1")
-                              ? "red"
-                              : request.priority.startsWith("P2")
-                                ? "amber"
-                                : "blue"
-                          }
-                        >
-                          {request.priority}
-                        </Badge>
-                        <small>{request.code}</small>
-                      </span>
-                      <button
-                        className="entity-link"
-                        onClick={() =>
-                          navigate(`/relief/requests/${request.id}`)
-                        }
-                      >
-                        {request.destination}
-                        <ChevronRight size={13} />
-                      </button>
-                      <p>
-                        {request.items.length} loại vật tư · phân bổ {allocated}
-                        /{approved}
-                      </p>
-                    </div>
-                    <div className="task-assignee">
-                      <small>Kho cung ứng</small>
-                      <b>
-                        {request.assignedWarehouseIds.join(", ") ||
-                          "Chưa chọn kho"}
-                      </b>
-                      <span>{request.shipmentIds.length} chuyến hàng</span>
-                    </div>
-                    <Badge tone={allocated < approved ? "amber" : "blue"}>
-                      {allocated < approved ? "Thiếu hàng" : request.status}
-                    </Badge>
-                  </article>
-                );
-              })}
-              {!incidentRelief.length && (
-                <p className="section-empty">
-                  Không có yêu cầu cứu trợ đang mở.
-                </p>
-              )}
             </div>
           </section>
           <section id="doi-cuu-ho" className="incident-detail-section">

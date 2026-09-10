@@ -656,7 +656,8 @@ button {
 
 /* One consistent native-select treatment preserves platform keyboard behavior. */
 
-/* Header, profile menu and visual identity */
+/* Header,
+profile menu and visual identity */
 .topbar {
   grid-template-columns: minmax(360px, 1fr) auto minmax(360px, 1fr);
   height: 76px;
@@ -941,125 +942,6 @@ button {
 .cc-panel-header > button:hover {
   background: #eff5ff;
 }
-.cc-playbook-list {
-  padding: 16px 18px 18px;
-}
-.cc-playbook-list > button {
-  min-height: 142px;
-  grid-template-columns: 46px minmax(0, 1fr) 20px;
-  gap: 14px;
-  padding: 17px;
-  border-radius: 9px;
-  border-color: #dce3eb;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.035);
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
-}
-.cc-playbook-list > button:hover {
-  border-color: #b9c9db;
-  box-shadow: 0 5px 16px rgba(16, 24, 40, 0.08);
-  transform: translateY(-1px);
-}
-.cc-playbook-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
-}
-.cc-playbook-icon svg {
-  width: 21px;
-  height: 21px;
-}
-.cc-playbook-copy {
-  gap: 8px;
-}
-.cc-playbook-copy > span > b {
-  font-size: 17.5px;
-  line-height: 1.45;
-  color: #253248;
-}
-.cc-playbook-current,
-.cc-playbook-next {
-  display: flex;
-  gap: 7px;
-  align-items: baseline;
-  font-size: var(--font-size-meta);
-  line-height: 1.45;
-}
-.cc-playbook-current > span,
-.cc-playbook-next > span {
-  flex: none;
-  color: #475467;
-  font-size: 13.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.035em;
-}
-.cc-playbook-progress {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
-  gap: 11px;
-  align-items: center;
-}
-.cc-playbook-progress .progress-track {
-  height: 7px;
-  margin: 0;
-}
-.cc-playbook-progress > b {
-  color: #175cd3;
-  font-size: 17px;
-  text-align: right;
-}
-.cc-playbook-copy strong {
-  padding: 7px 9px;
-  border-radius: 6px;
-  background: #fef3f2;
-  font-size: 14.5px;
-  line-height: 1.4;
-}
-.recovery-exception-list {
-  gap: 12px;
-  padding: 16px 18px 18px;
-}
-.recovery-exception-list button {
-  min-height: 92px;
-  gap: 12px;
-  padding: 15px;
-  border-radius: 9px;
-  border-color: #dce3eb;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
-}
-.recovery-exception-list button:hover {
-  border-color: #c1cedc;
-  box-shadow: 0 4px 13px rgba(16, 24, 40, 0.07);
-  transform: translateY(-1px);
-}
-.recovery-exception-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
-  flex: none;
-}
-.recovery-exception-icon svg {
-  width: 20px;
-  height: 20px;
-}
-.recovery-exception-list button > span:nth-child(2) {
-  gap: 5px;
-}
-.recovery-exception-list button > span:nth-child(2) b {
-  color: #253248;
-  font-size: 17px;
-  line-height: 1.4;
-}
-.recovery-exception-list small {
-  font-size: 14.5px;
-  line-height: 1.45;
-}
 .progress-track {
   height: 6px;
 }
@@ -1256,15 +1138,6 @@ html[data-theme="dark"] .profile-security-note {
   border-color: #2b425f;
   color: #a9c7ea;
 }
-html[data-theme="dark"] .cc-playbook-list > button,
-html[data-theme="dark"] .recovery-exception-list button {
-  background: #171f2a;
-  border-color: #344151;
-}
-html[data-theme="dark"] .cc-playbook-copy > span > b,
-html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
-  color: #e6ebf2;
-}
 
 @media (max-width: 1180px) {
   .topbar {
@@ -1302,9 +1175,6 @@ html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
     border-right: 0;
     border-bottom: 1px solid #e6eaf0;
   }
-  .recovery-exception-list {
-    grid-template-columns: 1fr;
-  }
 }
 @media (max-width: 640px) {
   :root {
@@ -1324,7 +1194,7 @@ html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
     margin-bottom: 20px;
   }
   .page-header h1,
-  .admin-page-header h1 {
+.admin-page-header h1 {
     font-size: 29.5px;
   }
   .page-header p {
@@ -1335,7 +1205,7 @@ html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
     padding: 15px 16px;
   }
   .section-heading h2,
-  .cc-panel-header > div > span {
+.cc-panel-header > div > span {
     font-size: 19px;
   }
   .section-heading p {
@@ -1377,29 +1247,8 @@ html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
     width: 18px;
     height: 18px;
   }
-  .cc-playbook-list,
-  .recovery-exception-list {
-    padding: 12px;
-  }
-  .cc-playbook-list > button {
-    grid-template-columns: 40px minmax(0, 1fr);
-    padding: 14px;
-  }
-  .cc-playbook-list > button > svg {
-    display: none;
-  }
-  .cc-playbook-copy > span {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .cc-playbook-current,
-  .cc-playbook-next {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 2px;
-  }
   .profile-avatar-panel,
-  .profile-details {
+.profile-details {
     padding: 26px 20px;
   }
   .profile-details dl > div {
@@ -1531,7 +1380,8 @@ html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
   font-size: 13.5px;
 }
 
-/* Larger, calmer login form */
+/* Larger,
+calmer login form */
 .login-page {
   grid-template-columns: minmax(390px, 42%) 1fr;
 }
@@ -1714,7 +1564,8 @@ html[data-theme="dark"] .recovery-exception-list button > span:nth-child(2) b {
 
 /* Final select normalization after feature-level shorthand declarations */
 
-/* Session panel, profile and theme hardening */
+/* Session panel,
+profile and theme hardening */
 :root {
   --surface-app: #f7f8fa;
   --surface-shell: #f3f6fa;
@@ -2169,154 +2020,6 @@ html[data-theme="dark"] .demo-account-hint code {
   background: var(--surface-hover);
   color: var(--text-secondary);
 }
-
-/* Cross-module dark-mode surface sweep */
-html[data-theme="dark"]
-  :where(
-    .analytics-filters,
-    .analytics-metric,
-    .analytics-section,
-    .analytics-project-list button,
-    .report-builder,
-    .operational-report,
-    .admin-summary,
-    .admin-content,
-    .admin-user-drawer,
-    .cc-header-controls > button:not(.btn),
-    .cc-quick-actions,
-    .cc-situation,
-    .cc-incident-row,
-    .detail-drawer,
-    .action-dialog,
-    .incident-worklist,
-    .incident-list-row,
-    .incident-form-dialog,
-    .dispatch-team-list > button,
-    .confirm-dialog,
-    .incident-detail-header,
-    .incident-more-menu,
-    .incident-detail-section,
-    .incident-context-panel,
-    .playbook-status-strip,
-    .playbook-row,
-    .playbook-detail-header,
-    .execution-header,
-    .execution-context-bar,
-    .execution-sequence,
-    .step-detail-panel,
-    .execution-step,
-    .linked-records button,
-    .cc-playbook-list > button,
-    .recovery-strip,
-    .assessment-row,
-    .project-row,
-    .assessment-detail-header,
-    .project-detail-header,
-    .recovery-related-list button,
-    .project-basis button,
-    .project-overview-strip,
-    .project-resource-columns > div > button,
-    .recovery-exception-list button,
-    .incident-recovery-lists button,
-    .relief-summary,
-    .relief-worklist,
-    .relief-row,
-    .warehouse-row,
-    .relief-detail-header,
-    .warehouse-detail-header,
-    .detail-section,
-    .reservation-list article,
-    .shipment-list article,
-    .shipment-list.compact button,
-    .warehouse-request-list button,
-    .warehouse-overview,
-    .logistics-exception-list button,
-    .situation-band,
-    .content-section,
-    .side-section,
-    .placeholder-page,
-    .shelter-summary,
-    .shelter-worklist,
-    .shelter-row,
-    .shelter-detail-header,
-    .simulation-denied,
-    .simulation-controls,
-    .simulation-controls button,
-    .simulation-stage,
-    .simulation-stage span,
-    .simulation-stage b,
-    .simulation-panel,
-    .sos-queue-summary,
-    .sos-worklist,
-    .sos-row,
-    .sos-detail-header,
-    .sos-link-grid > button,
-    .task-worklist,
-    .task-list-row,
-    .task-detail-header,
-    .team-operational-summary,
-    .team-worklist,
-    .team-list-row,
-    .team-detail-header,
-    .profile-hero,
-    .profile-information
-  ) {
-  background: var(--surface-card);
-  border-color: var(--border);
-  color: var(--text-primary);
-  box-shadow: none;
-}
-html[data-theme="dark"]
-  :where(
-    .incident-list-head,
-    .task-list-head,
-    .team-list-head,
-    .cc-incident-head,
-    .team-member-head,
-    .relief-list-head,
-    .shelter-list-head,
-    .sos-list-head,
-    .assessment-list-head,
-    .project-list-head,
-    .admin-table th,
-    .data-table th,
-    .simulation-log-table th
-  ) {
-  background: var(--surface-muted);
-  border-color: var(--border);
-  color: var(--text-secondary);
-}
-html[data-theme="dark"]
-  :where(
-    .admin-table td,
-    .data-table td,
-    .simulation-log-table td,
-    .section-heading,
-    .cc-panel-header,
-    .detail-section > header,
-    .profile-information > header,
-    .profile-information-grid > div
-  ) {
-  border-color: var(--border);
-}
-html[data-theme="dark"]
-  :where(
-    .admin-table tbody tr:hover,
-    .data-table tbody tr:hover,
-    .incident-list-row:hover,
-    .task-list-row:hover,
-    .team-list-row:hover,
-    .shelter-row:hover,
-    .sos-row:hover,
-    .relief-row:hover,
-    .warehouse-row:hover,
-    .assessment-row:hover,
-    .project-row:hover,
-    .execution-step:hover,
-    .execution-step.selected
-  ) {
-  background: var(--surface-hover);
-}
 html[data-theme="dark"] .btn-secondary,
 html[data-theme="dark"] .analytics-secondary,
 html[data-theme="dark"] .admin-page-header > button,
@@ -2328,7 +2031,6 @@ html[data-theme="dark"] .deactivate {
 }
 html[data-theme="dark"] .badge-red,
 html[data-theme="dark"] .account-state.inactive,
-html[data-theme="dark"] .audit-result.failed,
 html[data-theme="dark"] .audit-result.denied {
   background: var(--danger-surface);
   border-color: #71343b;
@@ -2362,9 +2064,7 @@ html[data-theme="dark"] .account-popover {
   border-color: var(--control-border);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
 }
-html[data-theme="dark"] .map-loading,
-html[data-theme="dark"] .simulation-map-notice,
-html[data-theme="dark"] .simulation-map-legend {
+html[data-theme="dark"] .map-loading {
   background: var(--surface-raised);
   border-color: var(--control-border);
   color: var(--text-secondary);
@@ -2416,7 +2116,7 @@ html[data-theme="dark"] .simulation-map-legend {
     padding-inline: 20px;
   }
   .profile-information-grid > div:nth-child(odd),
-  .profile-information-grid > div:nth-child(even) {
+.profile-information-grid > div:nth-child(even) {
     padding-inline: 0;
     border-left: 0;
   }
@@ -2442,26 +2142,6 @@ html[data-theme="dark"] .workspace .text-action {
   background: transparent;
   color: #9fc2ff;
 }
-html[data-theme="dark"]
-  :where(
-    .relief-table-head,
-    .playbook-table-head,
-    .assessment-table-head,
-    .project-table-head
-  ) {
-  background: var(--surface-muted);
-  border-color: var(--border);
-  color: var(--text-secondary);
-}
-html[data-theme="dark"] .simulation-thresholds > div {
-  background: var(--surface-muted);
-  border-color: #536173;
-  color: var(--text-secondary);
-}
-html[data-theme="dark"] .simulation-thresholds > div.exceeded {
-  background: var(--danger-surface);
-  border-color: #d65c54;
-}
 html[data-theme="dark"] .map-attribution {
   background: rgba(23, 33, 45, 0.88);
   color: var(--text-muted);
@@ -2481,8 +2161,7 @@ html:not([data-theme="dark"]) .cc-action-meta > span,
 html:not([data-theme="dark"]) .cc-timeline-event > div > span,
 html:not([data-theme="dark"]) .sos-immediate-grid span,
 html:not([data-theme="dark"]) .sos-contact span,
-html:not([data-theme="dark"]) .sos-location-note span,
-html:not([data-theme="dark"]) .simulation-stage > div > div > b {
+html:not([data-theme="dark"]) .sos-location-note span {
   color: #5d6879;
 }
 html:not([data-theme="dark"]) .cc-action-rank {
@@ -2526,19 +2205,6 @@ html[data-theme="dark"]
   .app-shell
   .app-body
   .workspace
-  :where(
-    .badge-red,
-    .priority-block.p1,
-    .audit-result.denied,
-    .audit-result.failed,
-    .account-state.inactive
-  ) {
-  color: #ff9b94;
-}
-html[data-theme="dark"]
-  .app-shell
-  .app-body
-  .workspace
   :where(.badge-green, .audit-result.success, .account-state.active) {
   color: #75e0a7;
 }
@@ -2557,17 +2223,6 @@ html[data-theme="dark"] .app-shell .app-body .workspace :where(time, li) {
 }
 html[data-theme="dark"] .app-shell .app-body .workspace .btn-primary {
   color: #fff;
-}
-html[data-theme="dark"]
-  .app-shell
-  .app-body
-  .workspace
-  :where(.overdue, .overdue > b, .shortage > b) {
-  color: #ff9b94;
-}
-html[data-theme="dark"] .incident-recovery-summary > div {
-  background: var(--surface-raised);
-  border-color: var(--border);
 }
 html[data-theme="dark"] .priority-block.p1 {
   background: #4a201f;
@@ -2588,26 +2243,6 @@ html[data-theme="dark"] .metric-basis.derived {
 html[data-theme="dark"] .analytics-section-count {
   background: #4a201f;
   color: #ff9b94;
-}
-html[data-theme="dark"] .simulation-banner {
-  background: #332c18;
-  border-color: #6f5b20;
-}
-html[data-theme="dark"] .simulation-banner > b {
-  color: #ffe69c;
-}
-html[data-theme="dark"] .simulation-banner > span {
-  color: #d8c98e;
-}
-html[data-theme="dark"] .simulation-status {
-  background: #253140;
-  color: #d3dce8;
-}
-html[data-theme="dark"] .simulation-page .primary {
-  color: #fff;
-}
-html[data-theme="dark"] .simulation-page em {
-  color: #aebbc9;
 }
 html[data-theme="dark"] .user-identity > span {
   background: #23334a;
@@ -2651,57 +2286,20 @@ html:not([data-theme="dark"])
 html[data-theme="dark"] .login-context > span {
   color: #9fc2ff;
 }
-html[data-theme="dark"]
-  .app-shell
-  .app-body
-  .workspace
-  :where(.shelter-row, .sos-row, .relief-row, .playbook-row, .assessment-row)
-  :where(b, strong, span, small) {
-  color: #c5d0dd;
-}
-html[data-theme="dark"]
-  .app-shell
-  .app-body
-  .workspace
-  :where(.shelter-row, .sos-row, .relief-row, .playbook-row, .assessment-row)
-  :where(b, strong) {
-  color: #f0f4fa;
-}
 html[data-theme="dark"] .analytics-status.neutral {
   background: #253140;
   color: #c5d0dd;
 }
-html[data-theme="dark"]
-  .app-shell
-  .app-body
-  .workspace
-  .simulation-page
-  .primary {
-  color: #fff;
-}
 html[data-theme="dark"] .app-shell .workspace .shelter-row,
-html[data-theme="dark"] .app-shell .workspace .sos-row,
-html[data-theme="dark"] .app-shell .workspace .relief-row,
-html[data-theme="dark"] .app-shell .workspace .playbook-row,
-html[data-theme="dark"] .app-shell .workspace .assessment-row {
+html[data-theme="dark"] .app-shell .workspace .sos-row {
   background: #17212d;
 }
 html[data-theme="dark"] .app-shell .workspace .shelter-row *,
-html[data-theme="dark"] .app-shell .workspace .sos-row *,
-html[data-theme="dark"] .app-shell .workspace .relief-row *,
-html[data-theme="dark"] .app-shell .workspace .playbook-row *,
-html[data-theme="dark"] .app-shell .workspace .assessment-row * {
+html[data-theme="dark"] .app-shell .workspace .sos-row * {
   color: #c5d0dd;
 }
 html[data-theme="dark"] .app-shell .workspace .shelter-row :where(b, strong),
-html[data-theme="dark"] .app-shell .workspace .sos-row :where(b, strong),
-html[data-theme="dark"] .app-shell .workspace .relief-row :where(b, strong),
-html[data-theme="dark"] .app-shell .workspace .playbook-row :where(b, strong),
-html[data-theme="dark"]
-  .app-shell
-  .workspace
-  .assessment-row
-  :where(b, strong) {
+html[data-theme="dark"] .app-shell .workspace .sos-row :where(b, strong) {
   color: #f0f4fa;
 }
 
@@ -2735,11 +2333,6 @@ html[data-theme="dark"] .report-types button.active {
   background: #172b45;
   border-color: #315b88;
   color: #9fc2ff;
-}
-html[data-theme="dark"] .ai-execution-result {
-  background: var(--success-surface);
-  border-color: #286246;
-  color: #75e0a7;
 }
 html[data-theme="dark"] .login-page {
   background: var(--surface-app);
@@ -2789,82 +2382,12 @@ html[data-theme="dark"] .task-state-machine i {
 html[data-theme="dark"] .incident-form-dialog > footer {
   background: #1c2734;
 }
-html[data-theme="dark"] .cc-playbook-copy strong {
-  background: var(--danger-surface);
-  color: #ffb4ab;
-}
-html[data-theme="dark"] .playbook-row:hover {
-  background: #1b2531;
-}
-html[data-theme="dark"] .active-execution-link,
-html[data-theme="dark"] .playbook-warning {
-  background: #172b45;
-  border-color: #315b88;
-  color: #9fc2ff;
-}
-html[data-theme="dark"] .execution-error,
-html[data-theme="dark"] .criteria-blocked {
-  background: var(--danger-surface);
-  border-color: #71343b;
-  color: #ff9b91;
-}
-html[data-theme="dark"] .execution-step.selected {
-  background: #1b2531;
-}
-html[data-theme="dark"] .step-owner,
-html[data-theme="dark"] .step-notes {
-  background: #1c2633;
-}
-html[data-theme="dark"] .damage-impact-grid > div {
-  background: #1a2330;
-}
-html[data-theme="dark"] .verification-record {
-  background: var(--success-surface);
-  border-color: #286246;
-  color: #75e0a7;
-}
-html[data-theme="dark"] .verification-record.rejected,
-html[data-theme="dark"] .completion-block {
-  background: var(--danger-surface);
-  border-color: #71343b;
-  color: #ff9b91;
-}
-html[data-theme="dark"] .warehouse-table-head,
-html[data-theme="dark"] .relief-table-head,
-html[data-theme="dark"] .project-table-head,
-html[data-theme="dark"] .fulfillment-table > div:first-child,
-html[data-theme="dark"] .inventory-table > div:first-child,
-html[data-theme="dark"] .damage-item-table > div:first-child,
 html[data-theme="dark"] .shelter-facility-table > div:first-child {
   background: #141b24;
   color: var(--text-muted);
 }
-html[data-theme="dark"] .relief-page .text-action,
 html[data-theme="dark"] .text-action {
   border-color: #3a4859;
-}
-html[data-theme="dark"] .shortage-callout,
-html[data-theme="dark"] .relief-confirm {
-  background: var(--warning-surface);
-  border-color: #6a4b21;
-  color: #f7c66a;
-}
-html[data-theme="dark"] .shipment-list article.has-incident {
-  background: rgba(240, 68, 56, 0.08);
-  border-color: #71343b;
-}
-html[data-theme="dark"] .justification {
-  background: #1c2633;
-}
-html[data-theme="dark"] .allocation-editor .unavailable {
-  background: #1c2633;
-  color: var(--text-muted);
-}
-html[data-theme="dark"] .dispatch-summary {
-  background: var(--surface-muted);
-}
-html[data-theme="dark"] .inventory-alert {
-  background: rgba(247, 144, 9, 0.09);
 }
 html[data-theme="dark"] .btn-secondary:hover {
   background: var(--surface-hover);
@@ -2891,25 +2414,16 @@ html[data-theme="dark"] .shelter-readiness-grid > div > span {
   background: #232e3c;
   color: #9aa7b8;
 }
-html[data-theme="dark"] .simulation-kind.model {
-  background: #232e3c;
-  color: #c3cedb;
-}
 html[data-theme="dark"] .sos-link-grid > button > span {
   background: #232e3c;
   color: #9fc2ff;
-}
-html[data-theme="dark"] .sos-evacuation-strip {
-  background: var(--surface-muted);
-  color: var(--text-muted);
 }
 html[data-theme="dark"] .sos-confirm.danger {
   background: var(--danger-surface);
   border-color: #71343b;
   color: #ff9b91;
 }
-html[data-theme="dark"] .eligible-team-list label.selected,
-html[data-theme="dark"] .eligible-shelter-list label.selected {
+html[data-theme="dark"] .eligible-team-list label.selected {
   background: #172b45;
   border-color: #315b88;
 }
@@ -2935,58 +2449,33 @@ html[data-theme="dark"] .team-form-error {
   color: #ff9b91;
 }
 
-/* Dark-mode parity pass 2 — chip/icon cận trắng, nền chờ của bản đồ,
-   track tiến trình và các tint trạng thái còn sót sau pass 1. */
+/* Dark-mode parity pass 2 — chip/icon cận trắng,
+nền chờ của bản đồ,
+track tiến trình và các tint trạng thái còn sót sau pass 1. */
 html[data-theme="dark"] .avatar,
 html[data-theme="dark"] .drawer-avatar,
 html[data-theme="dark"] .login-card > header > span,
-html[data-theme="dark"] .ai-welcome-icon,
-html[data-theme="dark"] .ai-assistant-mark,
 html[data-theme="dark"] .placeholder-page > span,
 html[data-theme="dark"] .action-dialog header > span,
 html[data-theme="dark"] .team-emblem,
 html[data-theme="dark"] .priority-block,
 html[data-theme="dark"] .field-update-icon,
-html[data-theme="dark"] .readiness-indicator,
-html[data-theme="dark"] .propagation-tick,
-html[data-theme="dark"] .simulation-kind.mutation {
+html[data-theme="dark"] .readiness-indicator {
   background: #1b2b45;
   color: #9fc2ff;
 }
-html[data-theme="dark"] .playbook-emblem,
-html[data-theme="dark"] .step-number,
-html[data-theme="dark"] .cc-playbook-icon,
-html[data-theme="dark"] .incident-playbook-icon,
-html[data-theme="dark"] .recovery-emblem,
-html[data-theme="dark"] .evidence-icon,
-html[data-theme="dark"] .recovery-exception-icon.assessment,
-html[data-theme="dark"] .warehouse-icon,
-html[data-theme="dark"] .entity-icon {
-  background: #232e3c;
-  color: #9fb4c8;
-}
-html[data-theme="dark"] .execution-step-copy > span small,
-html[data-theme="dark"] .milestone-sequence article > div > span small,
-html[data-theme="dark"] .step-detail-panel li > span {
-  background: #232e3c;
-  color: #c3cedb;
-}
 html[data-theme="dark"] .analytics-bar-track,
 html[data-theme="dark"] .mini-progress,
-html[data-theme="dark"] .table-progress,
-html[data-theme="dark"] .simulation-progress {
+html[data-theme="dark"] .table-progress {
   background: #2a3544;
 }
 html[data-theme="dark"] .map-shell,
 html[data-theme="dark"] .cc-map-shell,
 html[data-theme="dark"] .incident-detail-map,
-html[data-theme="dark"] .recovery-map,
-html[data-theme="dark"] .relief-map,
 html[data-theme="dark"] .shelter-operational-map,
 html[data-theme="dark"] .sos-operational-map,
 html[data-theme="dark"] .task-detail-map,
-html[data-theme="dark"] .team-operational-map,
-html[data-theme="dark"] .relief-map-fallback {
+html[data-theme="dark"] .team-operational-map {
   background: #121b25;
   color: var(--text-muted);
 }
@@ -3000,28 +2489,10 @@ html[data-theme="dark"] .profile-message {
   background: #172b45;
   color: #9fc2ff;
 }
-html[data-theme="dark"] .simulation-status.green,
-html[data-theme="dark"] .status-sẵn-sàng,
-html[data-theme="dark"] .simulation-stage .complete span,
-html[data-theme="dark"] .milestone-state.hoàn-thành,
-html[data-theme="dark"] .execution-step.status-hoàn-thành .execution-step-state,
-html[data-theme="dark"] .criteria-ok {
+html[data-theme="dark"] .status-sẵn-sàng {
   background: var(--success-surface);
   border-color: #286246;
   color: #75e0a7;
-}
-html[data-theme="dark"] .simulation-status.blue,
-html[data-theme="dark"] .milestone-state.đang-thực-hiện,
-html[data-theme="dark"] .execution-step.status-đang-thực-hiện .execution-step-state {
-  background: #172b45;
-  border-color: #315b88;
-  color: #9fc2ff;
-}
-html[data-theme="dark"] .exception-icon.danger,
-html[data-theme="dark"] .execution-step.status-bị-chặn .execution-step-state {
-  background: var(--danger-surface);
-  border-color: #71343b;
-  color: #ff9b91;
 }
 
 /* Situation band warning chip trong dark mode */
@@ -3045,12 +2516,19 @@ html[data-theme="dark"] .cc-situation-icon {
 
 /* ============================================================
    ĐỢT 2026-08-22b — HỆ THỐNG CONTROL / BUTTON / HEADER / SIDEBAR
-   Chuẩn hóa: control cao 40px, chữ form 14.5px, select có chevron
-   tùy chế, button secondary/ghost nhìn "có design", icon header
-   + sidebar to rõ, badge chuông không che icon.
+   Chuẩn hóa: control cao 40px,
+chữ form 14.5px,
+select có chevron
+   tùy chế,
+button secondary/ghost nhìn "có design",
+icon header
+   + sidebar to rõ,
+badge chuông không che icon.
    ============================================================ */
 
-/* ---- Sidebar: nhãn 1 dòng, icon to vừa, không xuống dòng ---- */
+/* ---- Sidebar: nhãn 1 dòng,
+icon to vừa,
+không xuống dòng ---- */
 .nav-item {
   white-space: nowrap;
   text-align: left;
@@ -3065,7 +2543,8 @@ html[data-theme="dark"] .cc-situation-icon {
   margin-left: auto;
 }
 
-/* ---- Header: nút icon to ra, badge ra ngoài mép ---- */
+/* ---- Header: nút icon to ra,
+badge ra ngoài mép ---- */
 .topbar-actions {
   gap: 6px;
 }
@@ -3208,7 +2687,8 @@ html[data-theme="dark"] .btn-danger:hover {
   resize: vertical;
 }
 
-/* Các wrapper lọc đã tự vẽ khung: dẹp khung bên trong, đồng bộ 40px */
+/* Các wrapper lọc đã tự vẽ khung: dẹp khung bên trong,
+đồng bộ 40px */
 .incident-search,
 .input-with-icon,
 .filter-select,
@@ -3586,53 +3066,3 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
 }
 /* Cảnh báo khẩn luôn hiện nhãn dù ở mức zoom nào */
 .om-live-marker.panic-sos .om-live-name { display: inline-block; }
-
-/* ── Phương án ứng phó: nhóm bước theo giai đoạn quanh "giờ 0" ───────────── */
-.playbook-phase + .playbook-phase {
-  margin-top: 18px;
-}
-.playbook-phase-head {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 0 0 8px;
-  padding: 8px 12px;
-  border-left: 4px solid #2f6fd0;
-  border-radius: 8px;
-  background: #f1f5f9;
-}
-.playbook-phase-head h3 {
-  margin: 0;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #0f172a;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.playbook-phase-head h3 span {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #475569;
-  background: #fff;
-  border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  padding: 1px 8px;
-}
-.playbook-phase-head p {
-  margin: 0;
-  font-size: 11.5px;
-  color: #64748b;
-}
-.playbook-phase:first-child .playbook-phase-head {
-  border-left-color: #ea580c;
-  background: #fff7ed;
-}
-.playbook-phase:first-child .playbook-phase-head h3 { color: #7c2d12; }
-html[data-theme="dark"] .playbook-phase-head {
-  background: #1e293b;
-}
-html[data-theme="dark"] .playbook-phase-head h3 { color: #e2e8f0; }
-html[data-theme="dark"] .playbook-phase:first-child .playbook-phase-head {
-  background: #431407;
-}

@@ -17,15 +17,8 @@ export const redis: Redis | null = isRedisConfigured
     })
   : null;
 
-export type LiveDeviceRole =
-  | "commander"
-  | "rescue_leader"
-  | "rescue_member"
-  | "operator"
-  | "local_officer"
-  | "warehouse_staff"
-  | "relief_worker"
-  | "citizen";
+/** Vai trò thiết bị phát định vị = 4 vai V2 (nguồn duy nhất: domain/shared/auth). */
+export type LiveDeviceRole = import("../../domain/shared/auth").UserRole;
 
 export interface LiveLocationPing {
   id: string;

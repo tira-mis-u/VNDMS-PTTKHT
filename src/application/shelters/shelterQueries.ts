@@ -1,4 +1,4 @@
-import type { EvacuationOperation } from "../../domain/evacuations/types";
+import type { SosRequest } from "../../domain/sos/types";
 import {
   calculateShelterCapacity,
   shelterOperationalRank,
@@ -13,24 +13,34 @@ export interface ShelterFilters {
   occupancy: string;
   accessibility: string;
   medical: string;
-  evacuation: string;
+  /** SOS đang được điều phối tới điểm (canonical SosRequest.shelterDestinationId). */
+  routedSos: string;
   availability: string;
   sort: "Ưu tiên vận hành" | "Sức chứa khả dụng" | "Tên A–Z";
 }
+const OPEN_SOS_EXCLUDED = ["Đã đóng", "Từ chối", "Hủy"];
+
+/** SOS còn mở đang được điều phối tới điểm sơ tán. */
+export function routedSosForShelter(sosRequests: SosRequest[], shelterId: string) {
+  return sosRequests.filter(
+    (item) =>
+      item.shelterDestinationId === shelterId &&
+      !OPEN_SOS_EXCLUDED.includes(item.status),
+  );
+}
+
 export function filterAndSortShelters(
   shelters: Shelter[],
-  operations: EvacuationOperation[],
+  sosRequests: SosRequest[],
   filters: ShelterFilters,
 ) {
+  const hasRouted = (shelterId: string) =>
+    routedSosForShelter(sosRequests, shelterId).length > 0;
   return shelters
     .filter((shelter) => {
       const q = filters.search.trim().toLowerCase();
       const capacity = calculateShelterCapacity(shelter);
-      const active = operations.some(
-        (operation) =>
-          operation.destinationShelterId === shelter.id &&
-          !["Hoàn thành", "Đã hủy"].includes(operation.status),
-      );
+      const active = hasRouted(shelter.id);
       return (
         (!q ||
           `${shelter.id} ${shelter.name} ${shelter.address} ${shelter.responsibleOfficer.name}`
@@ -57,8 +67,8 @@ export function filterAndSortShelters(
           shelter.accessibility === filters.accessibility) &&
         (filters.medical === "Tất cả năng lực y tế" ||
           shelter.medicalCapability === filters.medical) &&
-        (filters.evacuation === "Tất cả hoạt động" ||
-          (filters.evacuation === "Có hoạt động" ? active : !active)) &&
+        (filters.routedSos === "Tất cả SOS điều phối" ||
+          (filters.routedSos === "Có SOS điều phối" ? active : !active)) &&
         (filters.availability === "Tất cả khả dụng" ||
           (filters.availability === "Còn chỗ"
             ? capacity.availableCapacity > 0
@@ -73,23 +83,6 @@ export function filterAndSortShelters(
             calculateShelterCapacity(a).availableCapacity
           : shelterOperationalRank[a.status] -
               shelterOperationalRank[b.status] ||
-            Number(
-              Boolean(
-                operations.some(
-                  (op) =>
-                    op.destinationShelterId === b.id &&
-                    !["Hoàn thành", "Đã hủy"].includes(op.status),
-                ),
-              ),
-            ) -
-              Number(
-                Boolean(
-                  operations.some(
-                    (op) =>
-                      op.destinationShelterId === a.id &&
-                      !["Hoàn thành", "Đã hủy"].includes(op.status),
-                  ),
-                ),
-              ),
+            Number(hasRouted(b.id)) - Number(hasRouted(a.id)),
     );
 }

@@ -13,10 +13,11 @@ import {
 import { calculateShelterCapacity } from "@/domain/shelters/rules";
 import {
   filterAndSortShelters,
+  routedSosForShelter,
   type ShelterFilters,
 } from "@/application/shelters/shelterQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { EvacuationSectionTabs } from "@/components/navigation/GroupedSectionTabs";
+import { ShelterSectionTabs } from "@/components/navigation/GroupedSectionTabs";
 import { Badge, PageSectionHeader, Progress, Input } from "@/components/ui";
 const tone = (status: string) =>
   status === "Quá tải" || status === "Không thể tiếp cận"
@@ -56,7 +57,7 @@ export function ShelterListPage({
 }: {
   navigate: (path: string) => void;
 }) {
-  const { shelters, evacuationOperations } = useOperationalState();
+  const { shelters, sosRequests } = useOperationalState();
   const [filters, setFilters] = useState<ShelterFilters>({
     search: "",
     status: "Tất cả trạng thái",
@@ -66,7 +67,7 @@ export function ShelterListPage({
     occupancy: "Tất cả mức sử dụng",
     accessibility: "Tất cả khả năng tiếp cận",
     medical: "Tất cả năng lực y tế",
-    evacuation: "Tất cả hoạt động",
+    routedSos: "Tất cả SOS điều phối",
     availability: "Tất cả khả dụng",
     sort: "Ưu tiên vận hành",
   });
@@ -75,11 +76,11 @@ export function ShelterListPage({
     value: ShelterFilters[K],
   ) => setFilters((current) => ({ ...current, [key]: value }));
   const rows = useMemo(
-    () => filterAndSortShelters(shelters, evacuationOperations, filters),
-    [shelters, evacuationOperations, filters],
+    () => filterAndSortShelters(shelters, sosRequests, filters),
+    [shelters, sosRequests, filters],
   );
-  const active = evacuationOperations.filter(
-    (operation) => !["Hoàn thành", "Đã hủy"].includes(operation.status),
+  const active = shelters.filter(
+    (shelter) => routedSosForShelter(sosRequests, shelter.id).length > 0,
   ).length;
   const exceptions = shelters.filter((shelter) =>
     ["Quá tải", "Gần đầy", "Không thể tiếp cận"].includes(shelter.status),
@@ -98,10 +99,10 @@ export function ShelterListPage({
       <PageSectionHeader
         section="Ứng phó"
         title="Điểm sơ tán"
-        description="Điều phối sức chứa, điều kiện tiếp nhận và hoạt động sơ tán dân cư."
+        description="Danh mục điểm sơ tán: sức chứa, điều kiện tiếp nhận và SOS đang được điều phối tới điểm."
         icon={Building2}
       />
-      <EvacuationSectionTabs active="/shelters" navigate={navigate} />
+      <ShelterSectionTabs active="/shelters" navigate={navigate} />
       <section className="shelter-summary">
         <div>
           <Building2 size={16} />
@@ -118,7 +119,7 @@ export function ShelterListPage({
         <div>
           <ChevronRight size={16} />
           <span>
-            <b>{active}</b> hoạt động đang mở
+            <b>{active}</b> điểm đang nhận SOS
           </span>
         </div>
         <div className={exceptions ? "danger" : ""}>
@@ -202,9 +203,9 @@ export function ShelterListPage({
             ]}
           />
           <Select
-            value={filters.evacuation}
-            onChange={(value) => patch("evacuation", value)}
-            options={["Tất cả hoạt động", "Có hoạt động", "Không có hoạt động"]}
+            value={filters.routedSos}
+            onChange={(value) => patch("routedSos", value)}
+            options={["Tất cả SOS điều phối", "Có SOS điều phối", "Không có SOS"]}
           />
           <Select
             value={filters.availability}
@@ -240,16 +241,12 @@ export function ShelterListPage({
             <span>Khả dụng</span>
             <span>Điều kiện</span>
             <span>Phụ trách</span>
-            <span>Hoạt động</span>
+            <span>SOS điều phối</span>
             <span />
           </div>
           {rows.map((shelter) => {
             const capacity = calculateShelterCapacity(shelter);
-            const operations = evacuationOperations.filter(
-              (operation) =>
-                operation.destinationShelterId === shelter.id &&
-                !["Hoàn thành", "Đã hủy"].includes(operation.status),
-            );
+            const routed = routedSosForShelter(sosRequests, shelter.id);
             return (
               <button
                 className="shelter-row"
@@ -301,11 +298,12 @@ export function ShelterListPage({
                   <small>{shelter.responsibleOfficer.phone}</small>
                 </span>
                 <span className="shelter-operation">
-                  {operations[0] ? (
+                  {routed[0] ? (
                     <>
-                      <b>{operations[0].id}</b>
+                      <b>{routed[0].code}</b>
                       <small>
-                        {operations[0].status} · {operations[0].progress}%
+                        {routed[0].status}
+                        {routed.length > 1 ? ` · +${routed.length - 1} SOS` : ""}
                       </small>
                     </>
                   ) : (

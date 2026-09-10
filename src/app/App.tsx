@@ -76,64 +76,9 @@ const SosDetailPage = lazy(() =>
     default: module.SosDetailPage,
   })),
 );
-const ReliefRequestListPage = lazy(() =>
-  import("@/features/relief").then((module) => ({
-    default: module.ReliefRequestListPage,
-  })),
-);
-const ReliefRequestDetailPage = lazy(() =>
-  import("@/features/relief").then((module) => ({
-    default: module.ReliefRequestDetailPage,
-  })),
-);
-const WarehouseListPage = lazy(() =>
-  import("@/features/relief").then((module) => ({
-    default: module.WarehouseListPage,
-  })),
-);
-const ShipmentListPage = lazy(() =>
-  import("@/features/relief").then((module) => ({
-    default: module.ShipmentListPage,
-  })),
-);
-const WarehouseDetailPage = lazy(() =>
-  import("@/features/relief").then((module) => ({
-    default: module.WarehouseDetailPage,
-  })),
-);
-const PlaybookListPage = lazy(() =>
-  import("@/features/playbooks").then((module) => ({
-    default: module.PlaybookListPage,
-  })),
-);
-const PlaybookDetailPage = lazy(() =>
-  import("@/features/playbooks").then((module) => ({
-    default: module.PlaybookDetailPage,
-  })),
-);
-const PlaybookExecutionPage = lazy(() =>
-  import("@/features/playbooks").then((module) => ({
-    default: module.PlaybookExecutionPage,
-  })),
-);
-const DamageAssessmentListPage = lazy(() =>
-  import("@/features/recovery").then((module) => ({
-    default: module.DamageAssessmentListPage,
-  })),
-);
-const DamageAssessmentDetailPage = lazy(() =>
-  import("@/features/recovery").then((module) => ({
-    default: module.DamageAssessmentDetailPage,
-  })),
-);
-const RecoveryProjectListPage = lazy(() =>
-  import("@/features/recovery").then((module) => ({
-    default: module.RecoveryProjectListPage,
-  })),
-);
-const RecoveryProjectDetailPage = lazy(() =>
-  import("@/features/recovery").then((module) => ({
-    default: module.RecoveryProjectDetailPage,
+const CitizenReportListPage = lazy(() =>
+  import("@/features/reports").then((module) => ({
+    default: module.CitizenReportListPage,
   })),
 );
 const OperationalAnalyticsPage = lazy(() =>
@@ -156,16 +101,6 @@ const OperationalReportsPage = lazy(() =>
     default: module.OperationalReportsPage,
   })),
 );
-const EvacuationListPage = lazy(() =>
-  import("@/features/evacuations").then((module) => ({
-    default: module.EvacuationListPage,
-  })),
-);
-const EvacuationDetailPage = lazy(() =>
-  import("@/features/evacuations").then((module) => ({
-    default: module.EvacuationDetailPage,
-  })),
-);
 const AlertListPage = lazy(() =>
   import("@/features/alerts").then((module) => ({
     default: module.AlertListPage,
@@ -174,16 +109,6 @@ const AlertListPage = lazy(() =>
 const AlertDetailPage = lazy(() =>
   import("@/features/alerts").then((module) => ({
     default: module.AlertDetailPage,
-  })),
-);
-const SimulationPage = lazy(() =>
-  import("@/features/simulation").then((module) => ({
-    default: module.SimulationPage,
-  })),
-);
-const AiAssistantPage = lazy(() =>
-  import("@/features/ai-assistant").then((module) => ({
-    default: module.AiAssistantPage,
   })),
 );
 const OperationalSituationPage = lazy(() =>
@@ -236,18 +161,12 @@ function requiredPermission(route: AppRoute): Permission {
     return "view";
   if (route.name.startsWith("task")) return "task_view";
   if (route.name.startsWith("team")) return "team_view";
-  if (route.name.startsWith("shelter")) return "shelter_view";
-  if (route.name.startsWith("evacuation")) return "evacuation_view";
+  // Điểm sơ tán là danh mục tra cứu chung cho mọi vai (kể cả công dân).
+  if (route.name.startsWith("shelter")) return "published_alert_view";
   if (route.name.startsWith("sos")) return "sos_view";
-  if (route.name.startsWith("relief")) return "relief_view";
-  if (route.name.startsWith("warehouse")) return "warehouse_view";
-  if (route.name === "shipment-list") return "shipment_view";
-  if (route.name.startsWith("playbook")) return "playbook_view";
-  if (route.name.startsWith("assessment")) return "damage_assessment_view";
-  if (route.name.startsWith("recovery-project")) return "recovery_project_view";
-  if (route.name.startsWith("alert")) return "alert_view";
-  if (route.name === "simulation") return "simulation_view";
-  if (route.name === "ai-assistant") return "ai_assistant_use";
+  if (route.name.startsWith("report")) return "report_view";
+  // Trang Cảnh báo: công dân xem cảnh báo công bố; nội bộ xem thêm cảnh báo tác nghiệp.
+  if (route.name.startsWith("alert")) return "published_alert_view";
   if (route.name === "admin-users" || route.name === "admin-permissions" || route.name === "system-configuration-blocked") return "user_manage";
   if (route.name === "admin-audit") return "audit_view";
   return "view";
@@ -327,48 +246,12 @@ export default function App() {
     content = <ShelterListPage navigate={navigate} />;
   else if (route.name === "shelter-detail")
     content = <ShelterDetailPage id={route.id} navigate={navigate} />;
-  else if (route.name === "evacuation-list")
-    content = <EvacuationListPage navigate={navigate} />;
-  else if (route.name === "evacuation-detail")
-    content = <EvacuationDetailPage id={route.id} navigate={navigate} />;
   else if (route.name === "sos-list")
     content = <SosListPage navigate={navigate} />;
   else if (route.name === "sos-detail")
     content = <SosDetailPage id={route.id} navigate={navigate} />;
-  else if (route.name === "relief-request-list")
-    content = <ReliefRequestListPage navigate={navigate} />;
-  else if (route.name === "relief-request-detail")
-    content = (
-      <ReliefRequestDetailPage requestId={route.id} navigate={navigate} />
-    );
-  else if (route.name === "warehouse-list")
-    content = <WarehouseListPage navigate={navigate} />;
-  else if (route.name === "shipment-list")
-    content = <ShipmentListPage navigate={navigate} />;
-  else if (route.name === "warehouse-detail")
-    content = (
-      <WarehouseDetailPage warehouseId={route.id} navigate={navigate} />
-    );
-  else if (route.name === "playbook-list")
-    content = <PlaybookListPage navigate={navigate} />;
-  else if (route.name === "playbook-detail")
-    content = <PlaybookDetailPage playbookId={route.id} navigate={navigate} />;
-  else if (route.name === "playbook-execution")
-    content = (
-      <PlaybookExecutionPage playbookId={route.id} navigate={navigate} />
-    );
-  else if (route.name === "assessment-list")
-    content = <DamageAssessmentListPage navigate={navigate} />;
-  else if (route.name === "assessment-detail")
-    content = (
-      <DamageAssessmentDetailPage assessmentId={route.id} navigate={navigate} />
-    );
-  else if (route.name === "recovery-project-list")
-    content = <RecoveryProjectListPage navigate={navigate} />;
-  else if (route.name === "recovery-project-detail")
-    content = (
-      <RecoveryProjectDetailPage projectId={route.id} navigate={navigate} />
-    );
+  else if (route.name === "report-list")
+    content = <CitizenReportListPage navigate={navigate} />;
   else if (route.name === "analytics-operations")
     content = <OperationalAnalyticsPage navigate={navigate} />;
   else if (route.name === "analytics-incidents")
@@ -381,10 +264,6 @@ export default function App() {
     content = <AlertListPage navigate={navigate} />;
   else if (route.name === "alert-detail")
     content = <AlertDetailPage alertKey={route.id} navigate={navigate} />;
-  else if (route.name === "simulation")
-    content = <SimulationPage navigate={navigate} />;
-  else if (route.name === "ai-assistant")
-    content = <AiAssistantPage navigate={navigate} />;
   else if (route.name === "admin-users")
     content = <UserManagementPage navigate={navigate} />;
   else if (route.name === "admin-permissions")

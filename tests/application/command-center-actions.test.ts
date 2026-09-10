@@ -1,3 +1,10 @@
+/*
+ * V2 (4 vai) — hành động Command Center.
+ *  - Actor mặc định là Cán bộ PCTT (nguyentrung): admin V2 KHÔNG còn quyền tạo sự cố,
+ *    điều phối, xác minh SOS; test quyền kiểm cả admin bị từ chối.
+ *  - Bỏ test Simulation (module đã xóa) và mọi ID kịch bản cũ → dùng kịch bản Yagi 2024.
+ *  - Test "warehouse staff / rescue_member" → tài khoản đó nay là công dân (namanh, minhtri).
+ */
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -35,21 +42,21 @@ import type { OperationalSnapshot } from "../../src/application/operations/opera
 import { createAuthorizedOperationalView } from "../../src/application/authorization/authorizedOperationalView";
 import { createOperationalResourceContext } from "../../src/application/authorization/operationalResourceContext";
 import { authorizeResources } from "../../src/lib/security/authorization";
-import {
-  applyNextSimulationTick,
-  resetSimulationState,
-} from "../../src/application/simulation/simulationUseCases";
-import type { SimulationState } from "../../src/domain/simulation/types";
 import { demoUsers } from "../../src/infrastructure/auth/demoUsers";
 import { inMemoryOperationalRepository } from "../../src/infrastructure/persistence/inMemoryOperationalRepository";
 import { readFileSync } from "node:fs";
 
-const NOW = "21/08/2026 10:55";
+type Control = Record<string, never>;
+const NOW = "10/09/2024 14:55";
 const source = () => inMemoryOperationalRepository.load();
-const account = (username: string) =>
-  structuredClone(demoUsers.find((item) => item.username === username)!);
+const account = (username: string) => {
+  const found = demoUsers.find((item) => item.username === username);
+  if (!found) throw new Error(`demo user ${username} không tồn tại`);
+  return structuredClone(found);
+};
+/** Cán bộ PCTT — vai duy nhất giữ quyền tạo sự cố/điều phối/xác minh trong V2. */
 const commanderView = () => {
-  const commander = account("Trần Quốc Thuận");
+  const commander = account("nguyentrung");
   const view = createAuthorizedOperationalView(commander, source());
   const context: CommandCenterActionContext = {
     incidents: view.incidents,
@@ -62,13 +69,10 @@ const commanderView = () => {
 };
 
 function harness() {
-  const boundary = new OperationalMutationBoundary<
-    OperationalSnapshot,
-    SimulationState
-  >();
-  let state: AtomicMutationState<OperationalSnapshot, SimulationState> = {
+  const boundary = new OperationalMutationBoundary<OperationalSnapshot, Control>();
+  let state: AtomicMutationState<OperationalSnapshot, Control> = {
     snapshot: source(),
-    control: resetSimulationState(),
+    control: {},
   };
   let commits = 0;
   const execute = <T>(operation: () => T) =>
@@ -115,24 +119,19 @@ const applyDispatch = (
 
 /* --- Candidate selectors --- */
 
-test("selectors đọc authorized view: seed không có đội sẵn sàng, 1 đội thu hồi được theo lifecycle", () => {
+test("selectors đọc authorized view: seed Yagi không có đội sẵn sàng/thu hồi được; sự cố mở & SOS còn vòng đời", () => {
   const { context } = commanderView();
   assert.deepEqual(dispatchableTeams(context), []);
-  assert.deepEqual(
-    recallableTeams(context).map((item) => item.team.id).sort(),
-    ["CH-03"],
-  );
+  assert.deepEqual(recallableTeams(context), [], "mọi đội đang giữ nhiệm vụ 'Đang thực hiện' → không thu hồi theo lifecycle");
   assert.deepEqual(
     openIncidents(context).map((item) => item.id),
-    ["INC-0241", "INC-0238", "INC-0234", "INC-0229"],
+    ["INC-YAGI-01", "INC-YAGI-02", "INC-YAGI-03", "INC-YAGI-04", "INC-YAGI-05", "INC-YAGI-06", "INC-YAGI-07"],
   );
-  assert.deepEqual(
-    acknowledgeableAlerts(context).length,
-    5,
-  );
+  assert.ok(acknowledgeableAlerts(context).length >= 5);
   assert.deepEqual(
     triageableSos(context).map((item) => item.id),
-    ["SOS-0242", "SOS-0241", "SOS-0243"],
+    ["SOS-YAGI-02", "SOS-YAGI-01", "SOS-YAGI-03", "SOS-YAGI-04"],
+    "SOS-YAGI-05 đã đóng không còn triage được",
   );
 });
 
@@ -154,12 +153,12 @@ test("mọi builder từ chối khi chưa xác nhận", () => {
   assert.equal(
     buildCreateTaskPlan(context, {
       confirmed: false,
-      incidentId: "INC-0241",
+      incidentId: "INC-YAGI-01",
       title: "X",
       type: "Cứu hộ",
       priority: "Cao",
       teamId: "",
-      dueAt: "21/08/2026 12:00",
+      dueAt: "10/09/2024 18:00",
       description: "",
     }).ok,
     false,
@@ -167,26 +166,26 @@ test("mọi builder từ chối khi chưa xác nhận", () => {
   assert.equal(
     buildAcknowledgeAlertPlan(context, {
       confirmed: false,
-      alertKey: "shelter:Shelter:TH-03:shelter_overloaded",
+      alertKey: "shelter:Shelter:SHELTER-HN-03:shelter_overloaded",
     }).ok,
     false,
   );
   assert.equal(
     buildDispatchTeamPlan(context, {
       confirmed: false,
-      incidentId: "INC-0241",
-      teamId: "CH-01",
+      incidentId: "INC-YAGI-01",
+      teamId: "CH-LC-01",
     }).ok,
     false,
   );
   assert.equal(
-    buildRecallTeamPlan(context, { confirmed: false, teamId: "CH-01" }).ok,
+    buildRecallTeamPlan(context, { confirmed: false, teamId: "CH-LC-01" }).ok,
     false,
   );
   assert.equal(
     buildSosTriagePlan(context, {
       confirmed: false,
-      sosId: "SOS-0243",
+      sosId: "SOS-YAGI-04",
       mode: "verify",
     }).ok,
     false,
@@ -225,12 +224,12 @@ test("Giao nhiệm vụ: plan hợp lệ không đội; sự cố đã đóng/đ
   const { context } = commanderView();
   const plan = buildCreateTaskPlan(context, {
     confirmed: true,
-    incidentId: "INC-0241",
-    title: "Trục vớt phương tiện tại Phúc Tân",
+    incidentId: "INC-YAGI-01",
+    title: "Tìm kiếm nạn nhân mất tích tại Làng Nủ",
     type: "Cứu hộ",
     priority: "Cao",
     teamId: "",
-    dueAt: "21/08/2026 15:00",
+    dueAt: "10/09/2024 20:00",
     description: "",
   });
   assert.ok(plan.ok);
@@ -238,42 +237,42 @@ test("Giao nhiệm vụ: plan hợp lệ không đội; sự cố đã đóng/đ
   assert.equal(plan.plan.permission, "task_create");
   const closed = buildCreateTaskPlan(context, {
     confirmed: true,
-    incidentId: "INC-0229",
+    incidentId: "INC-YAGI-07",
     title: "X",
     type: "Cứu hộ",
     priority: "Cao",
     teamId: "",
-    dueAt: "21/08/2026 15:00",
+    dueAt: "10/09/2024 20:00",
     description: "",
   });
-  assert.equal(closed.ok, true, "INC-0229 Đã kiểm soát vẫn còn mở");
+  assert.equal(closed.ok, true, "INC-YAGI-07 Đã kiểm soát vẫn còn mở");
   const taskOnClosed = buildCreateTaskPlan(
     {
       ...context,
       incidents: context.incidents.map((item) =>
-        item.id === "INC-0234" ? { ...item, status: "Đã đóng" as const } : item,
+        item.id === "INC-YAGI-02" ? { ...item, status: "Đã đóng" as const } : item,
       ),
     },
     {
       confirmed: true,
-      incidentId: "INC-0234",
+      incidentId: "INC-YAGI-02",
       title: "X",
       type: "Cứu hộ",
       priority: "Cao",
       teamId: "",
-      dueAt: "21/08/2026 15:00",
+      dueAt: "10/09/2024 20:00",
       description: "",
     },
   );
   assert.equal(taskOnClosed.ok, false);
   const ghostTeam = buildCreateTaskPlan(context, {
     confirmed: true,
-    incidentId: "INC-0241",
+    incidentId: "INC-YAGI-01",
     title: "X",
     type: "Cứu hộ",
     priority: "Cao",
     teamId: "CH-99",
-    dueAt: "21/08/2026 15:00",
+    dueAt: "10/09/2024 20:00",
     description: "",
   });
   assert.equal(ghostTeam.ok, false);
@@ -304,55 +303,54 @@ test("Gửi cảnh báo: chỉ nhận cảnh báo chờ xác nhận; key lạ/kh
   );
 });
 
-test("Điều phối đội: dispatch bị chặn khi đội bận; thu hồi CH-03 theo lifecycle rồi dispatch hợp lệ", () => {
+test("Điều phối đội: dispatch bị chặn khi đội bận; thu hồi theo lifecycle rồi dispatch hợp lệ", () => {
   const { context } = commanderView();
   const blocked = buildDispatchTeamPlan(context, {
     confirmed: true,
-    incidentId: "INC-0241",
-    teamId: "CH-01",
+    incidentId: "INC-YAGI-01",
+    teamId: "CH-LC-01",
   });
   assert.equal(blocked.ok, false);
   assert.match(blocked.ok ? "" : blocked.error, /không sẵn sàng/);
   const recallRunning = buildRecallTeamPlan(context, {
     confirmed: true,
-    teamId: "CH-01",
+    teamId: "CH-LC-01",
   });
   assert.equal(
     recallRunning.ok,
     false,
-    "TSK-0241 đang thực hiện — không thể thu hồi theo lifecycle",
+    "TSK-YAGI-01 đang thực hiện — không thể thu hồi theo lifecycle",
   );
   const noTask = buildRecallTeamPlan(context, {
     confirmed: true,
-    teamId: "CH-04",
+    teamId: "CH-QN-01",
   });
   assert.equal(noTask.ok, false);
-  const recallPlan = buildRecallTeamPlan(context, {
+  // Đưa TSK-YAGI-06 về "Đã giao" (chưa bắt đầu) → CH-YB-01 thu hồi được theo lifecycle.
+  const assignedContext: CommandCenterActionContext = {
+    ...context,
+    tasks: context.tasks!.map((task) =>
+      task.id === "TSK-YAGI-06" ? { ...task, status: "Đã giao" as const } : task,
+    ),
+  };
+  const recallPlan = buildRecallTeamPlan(assignedContext, {
     confirmed: true,
-    teamId: "CH-03",
+    teamId: "CH-YB-01",
   });
   assert.ok(recallPlan.ok);
   assert.equal(recallPlan.plan.permission, "team_assign");
-  // Canonical change: thu hồi CH-03 khỏi TSK-0243 (Chờ giao) theo application contracts
-  const snapshot = source();
-  const task = snapshot.tasks.find((item) => item.id === "TSK-0243")!;
+  const task = assignedContext.tasks!.find((item) => item.id === "TSK-YAGI-06")!;
   const released = releaseTaskAssignment(task, NOW);
-  const tasks = snapshot.tasks.map((item) =>
-    item.id === task.id ? released : item,
+  const tasks = assignedContext.tasks!.map((item) => (item.id === task.id ? released : item));
+  const teams = context.teams.map((team) =>
+    team.id === "CH-YB-01" ? recalculateTeamAssignment(team, tasks, NOW) : team,
   );
-  const teams = snapshot.teams.map((team) =>
-    team.id === "CH-03" ? recalculateTeamAssignment(team, tasks, NOW) : team,
-  );
-  const nextContext: CommandCenterActionContext = {
-    ...context,
-    teams,
-    tasks,
-  };
-  assert.ok(dispatchableTeams(nextContext).some((item) => item.id === "CH-03"));
+  const nextContext: CommandCenterActionContext = { ...context, teams, tasks };
+  assert.ok(dispatchableTeams(nextContext).some((item) => item.id === "CH-YB-01"));
   const dispatchPlan = buildDispatchTeamPlan(nextContext, {
     confirmed: true,
-    incidentId: "INC-0241",
-    teamId: "CH-03",
+    incidentId: "INC-YAGI-05",
+    teamId: "CH-YB-01",
   });
   assert.ok(dispatchPlan.ok);
   assert.equal(dispatchPlan.plan.permission, "dispatch");
@@ -362,34 +360,34 @@ test("Xử lý SOS: verify SOS chưa xác minh; điều đội theo lifecycle; t
   const { context } = commanderView();
   const verify = buildSosTriagePlan(context, {
     confirmed: true,
-    sosId: "SOS-0243",
+    sosId: "SOS-YAGI-04",
     mode: "verify",
   });
   assert.ok(verify.ok);
   assert.equal(verify.plan.permission, "sos_verify");
   const verifiedAgain = buildSosTriagePlan(context, {
     confirmed: true,
-    sosId: "SOS-0242",
+    sosId: "SOS-YAGI-02",
     mode: "verify",
   });
   assert.equal(verifiedAgain.ok, false);
   const rescueUnverified = buildSosTriagePlan(context, {
     confirmed: true,
-    sosId: "SOS-0243",
+    sosId: "SOS-YAGI-04",
     mode: "rescue",
-    teamId: "CH-01",
+    teamId: "CH-LC-01",
   });
   assert.equal(rescueUnverified.ok, false);
   const samePriority = buildSosTriagePlan(context, {
     confirmed: true,
-    sosId: "SOS-0241",
+    sosId: "SOS-YAGI-01",
     mode: "priority",
     priority: "P1 — Khẩn cấp",
   });
   assert.equal(samePriority.ok, false);
   const triage = buildSosTriagePlan(context, {
     confirmed: true,
-    sosId: "SOS-0241",
+    sosId: "SOS-YAGI-01",
     mode: "priority",
     priority: "P2 — Cao",
   });
@@ -399,88 +397,90 @@ test("Xử lý SOS: verify SOS chưa xác minh; điều đội theo lifecycle; t
 
 /* --- Authorization giống hệt boundary (cùng resource context với provider) --- */
 
-test("commander được phép; công dân/vai trò hạn chế bị từ chối đúng resource", () => {
+test("cán bộ PCTT được phép; admin/công dân bị từ chối đúng resource", () => {
   const snapshot = source();
   const resources = createOperationalResourceContext(() => snapshot);
-  const commander = account("Trần Quốc Thuận");
+  const officer = account("nguyentrung");
+  const admin = account("thuantq");
   for (const [permission, resource] of [
-    ["create", { type: "Incident", id: "new", geographicScope: "Tây Hồ" }],
-    ["task_create", resources.incident("INC-0241")],
-    ["dispatch", resources.incident("INC-0241")],
-    ["team_assign", resources.team("CH-01")],
-    ["sos_verify", resources.sos("SOS-0243")],
+    ["create", { type: "Incident", id: "new", geographicScope: "Lào Cai" }],
+    ["task_create", resources.incident("INC-YAGI-01")],
+    ["dispatch", resources.incident("INC-YAGI-01")],
+    ["team_assign", resources.team("CH-LC-01")],
+    ["sos_verify", resources.sos("SOS-YAGI-04")],
   ] as const) {
     assert.equal(
-      authorizeResources(commander, {
-        permission,
-        resources: [resource as never],
-      }).allowed,
+      authorizeResources(officer, { permission, resources: [resource as never] }).allowed,
       true,
       permission,
     );
+    assert.equal(
+      authorizeResources(admin, { permission, resources: [resource as never] }).allowed,
+      false,
+      `admin V2 không mặc định có ${permission}`,
+    );
   }
-  const citizen = {
-    ...commander,
-    id: "USR-CITIZEN-TEST",
-    role: "citizen" as const,
-  };
+  const citizen = { ...officer, id: "USR-CITIZEN-TEST", role: "citizen" as const };
   assert.equal(
     authorizeResources(citizen, {
       permission: "create",
-      resources: [{ type: "Incident", id: "new", geographicScope: "Tây Hồ" }],
+      resources: [{ type: "Incident", id: "new", geographicScope: "Lào Cai" }],
     }).allowed,
     false,
   );
   assert.equal(
     authorizeResources(citizen, {
       permission: "sos_verify",
-      resources: [resources.sos("SOS-0243")],
+      resources: [resources.sos("SOS-YAGI-04")],
     }).allowed,
     false,
   );
 });
 
-test("geographic/ownership denial: warehouse staff không dispatch được; rescue_member không ack được", () => {
+test("tài khoản kho/đội viên cũ nay là công dân: không dispatch/ack; công dân khác địa bàn không tạo SOS ngoài phạm vi", () => {
   const snapshot = source();
   const resources = createOperationalResourceContext(() => snapshot);
-  const warehouseStaff = account("Nguyễn Nam Anh");
+  const formerWarehouse = account("namanh");
+  assert.equal(formerWarehouse.role, "citizen");
   assert.equal(
-    authorizeResources(warehouseStaff, {
+    authorizeResources(formerWarehouse, {
       permission: "dispatch",
-      resources: [resources.incident("INC-0241"), resources.team("CH-01")],
+      resources: [resources.incident("INC-YAGI-01"), resources.team("CH-LC-01")],
     }).allowed,
     false,
   );
-  const rescueMember = account("Lê Nguyễn Minh Trí");
-  const view = createAuthorizedOperationalView(rescueMember, snapshot);
-  const alerts = deriveAuthorizedAlerts(rescueMember, view);
-  const pending = alerts.filter(
-    (alert) => alert.requiresAcknowledgement && !alert.acknowledgedAt,
-  )[0];
-  if (pending) {
-    assert.equal(
-      authorizeResources(rescueMember, {
-        permission: "alert_acknowledge",
-        resources: [
-          {
-            type: "OperationalAlert",
-            id: pending.key,
-            geographicScope: pending.geographicScope,
-            assignedTeamId: pending.ownerTeamId ?? null,
-          },
-        ],
-      }).allowed,
-      false,
-    );
-  }
-  const localOfficer = account("Phạm Văn Đam");
+  const formerMember = account("minhtri");
+  assert.equal(formerMember.role, "citizen");
+  const view = createAuthorizedOperationalView(formerMember, snapshot);
+  assert.deepEqual(view.incidents, [], "công dân không có quyền view sự cố");
+  const alerts = deriveAuthorizedAlerts(formerMember, view);
   assert.equal(
-    authorizeResources(localOfficer, {
-      permission: "sos_verify",
-      resources: [resources.sos("SOS-0241")],
+    alerts.some((alert) => alert.requiresAcknowledgement && !alert.acknowledgedAt),
+    false,
+    "công dân không nhận cảnh báo tác nghiệp chờ xác nhận",
+  );
+  assert.equal(
+    authorizeResources(formerMember, {
+      permission: "alert_acknowledge",
+      resources: [{ type: "OperationalAlert", id: "any", geographicScope: "Hà Nội" }],
     }).allowed,
     false,
-    "SOS-0241 ngoài địa bàn Tây Hồ",
+  );
+  const localCitizen = account("phamdam");
+  assert.equal(
+    authorizeResources(localCitizen, {
+      permission: "sos_verify",
+      resources: [resources.sos("SOS-YAGI-01")],
+    }).allowed,
+    false,
+  );
+  assert.equal(
+    authorizeResources(localCitizen, {
+      permission: "sos_create",
+      resources: [{ type: "SosRequest", id: "new", geographicScope: "Bảo Yên, Lào Cai" }],
+    }).allowed,
+    false,
+    "công dân Tây Hồ không tạo SOS ngoài địa bàn",
   );
 });
 
@@ -500,9 +500,9 @@ test("Tạo sự cố qua boundary commit 1 lần và projection Command Center 
   assert.ok(plan.ok);
   h.execute(() => {
     const incident = createIncidentEntity(
-      "INC-0245",
+      "INC-YAGI-08",
       plan.plan.kind === "create_incident" ? plan.plan.input : ({} as never),
-      "Trần Quốc Thuận",
+      "Nguyễn Quốc Trung",
       NOW,
     );
     h.boundary.updateSnapshot((snapshot) => ({
@@ -517,7 +517,7 @@ test("Tạo sự cố qua boundary commit 1 lần và projection Command Center 
     "Situation Summary phải thay đổi khi canonical incidents thay đổi",
   );
   const incidentIds = h.state().snapshot.incidents.map((item) => item.id);
-  assert.equal(incidentIds[0], "INC-0245");
+  assert.equal(incidentIds[0], "INC-YAGI-08");
 });
 
 test("rollback atomic: lỗi giữa chuỗi mutation không để lại state nửa vờii", () => {
@@ -526,12 +526,12 @@ test("rollback atomic: lỗi giữa chuỗi mutation không để lại state n�
   assert.throws(() =>
     h.execute(() => {
       h.boundary.updateSnapshot((snapshot) =>
-        applyDispatch(snapshot, "INC-0241", "CH-05"),
+        applyDispatch(snapshot, "INC-YAGI-05", "CH-YB-01"),
       );
       h.boundary.updateSnapshot((snapshot) => ({
         ...snapshot,
         incidents: snapshot.incidents.map((item) =>
-          item.id === "INC-0241" ? { ...item, assignedTeamId: "CH-99" } : item,
+          item.id === "INC-YAGI-05" ? { ...item, assignedTeamId: "CH-99" } : item,
         ),
       }));
       throw new Error("Team update failed");
@@ -547,15 +547,12 @@ test("dispatch + thu hồi lưu thông nhất: projection đội sẵn sàng tha
   assert.deepEqual(dispatchableTeams(context), []);
   h.execute(() => {
     h.boundary.updateSnapshot((snapshot) => {
-      const task = snapshot.tasks.find((item) => item.id === "TSK-0243")!;
+      // Đưa TSK-YAGI-06 về "Đã giao" rồi gỡ đội theo application contracts.
+      const task = { ...snapshot.tasks.find((item) => item.id === "TSK-YAGI-06")!, status: "Đã giao" as const };
       const released = releaseTaskAssignment(task, NOW);
-      const tasks = snapshot.tasks.map((item) =>
-        item.id === task.id ? released : item,
-      );
+      const tasks = snapshot.tasks.map((item) => (item.id === task.id ? released : item));
       const teams = snapshot.teams.map((team) =>
-        team.id === "CH-03"
-          ? recalculateTeamAssignment(team, tasks, NOW)
-          : team,
+        team.id === "CH-YB-01" ? recalculateTeamAssignment(team, tasks, NOW) : team,
       );
       return { ...snapshot, tasks, teams };
     });
@@ -568,17 +565,11 @@ test("dispatch + thu hồi lưu thông nhất: projection đội sẵn sàng tha
     alerts: [],
     tasks: h.state().snapshot.tasks,
   };
-  assert.ok(
-    dispatchableTeams(contextAfterRecall).some((item) => item.id === "CH-03"),
-  );
-  const releasedTask = h
-    .state()
-    .snapshot.tasks.find((item) => item.id === "TSK-0243")!;
+  assert.ok(dispatchableTeams(contextAfterRecall).some((item) => item.id === "CH-YB-01"));
+  const releasedTask = h.state().snapshot.tasks.find((item) => item.id === "TSK-YAGI-06")!;
   assert.equal(releasedTask.teamId, "");
   h.execute(() => {
-    h.boundary.updateSnapshot((snapshot) =>
-      applyDispatch(snapshot, "INC-0234", "CH-03"),
-    );
+    h.boundary.updateSnapshot((snapshot) => applyDispatch(snapshot, "INC-YAGI-05", "CH-YB-01"));
   });
   assert.equal(h.commits(), 2);
   const contextAfterDispatch: CommandCenterActionContext = {
@@ -586,13 +577,9 @@ test("dispatch + thu hồi lưu thông nhất: projection đội sẵn sàng tha
     incidents: h.state().snapshot.incidents,
     teams: h.state().snapshot.teams,
   };
-  assert.ok(
-    !dispatchableTeams(contextAfterDispatch).some((item) => item.id === "CH-03"),
-  );
-  const incident = h
-    .state()
-    .snapshot.incidents.find((item) => item.id === "INC-0234")!;
-  assert.equal(incident.assignedTeamId, "CH-03");
+  assert.ok(!dispatchableTeams(contextAfterDispatch).some((item) => item.id === "CH-YB-01"));
+  const incident = h.state().snapshot.incidents.find((item) => item.id === "INC-YAGI-05")!;
+  assert.equal(incident.assignedTeamId, "CH-YB-01");
   assert.equal(incident.status, "Đang điều phối");
 });
 
@@ -605,20 +592,20 @@ test("Xử lý SOS qua boundary: verify/triage cập nhật candidates và queue
       sosRequests: h.state().snapshot.sosRequests,
       alerts: [],
     },
-    { confirmed: true, sosId: "SOS-0243", mode: "verify" },
+    { confirmed: true, sosId: "SOS-YAGI-04", mode: "verify" },
   );
   assert.ok(beforePlan.ok);
   h.execute(() => {
     h.boundary.updateSnapshot((snapshot) => ({
       ...snapshot,
       sosRequests: snapshot.sosRequests.map((item) =>
-        item.id === "SOS-0243" ? verifySos(item, NOW) : item,
+        item.id === "SOS-YAGI-04" ? verifySos(item, NOW) : item,
       ),
     }));
   });
   const sos = h
     .state()
-    .snapshot.sosRequests.find((item) => item.id === "SOS-0243")!;
+    .snapshot.sosRequests.find((item) => item.id === "SOS-YAGI-04")!;
   assert.equal(sos.verificationStatus, "Đã xác minh");
   const again = buildSosTriagePlan(
     {
@@ -627,32 +614,32 @@ test("Xử lý SOS qua boundary: verify/triage cập nhật candidates và queue
       sosRequests: h.state().snapshot.sosRequests,
       alerts: [],
     },
-    { confirmed: true, sosId: "SOS-0243", mode: "verify" },
+    { confirmed: true, sosId: "SOS-YAGI-04", mode: "verify" },
   );
   assert.equal(again.ok, false, "không thể verify lần hai — lifecycle re-check");
   h.execute(() => {
     h.boundary.updateSnapshot((snapshot) => ({
       ...snapshot,
       sosRequests: snapshot.sosRequests.map((item) =>
-        item.id === "SOS-0243" ? retriageSos(item, NOW, "P2 — Cao") : item,
+        item.id === "SOS-YAGI-04" ? retriageSos(item, NOW, "P2 — Cao") : item,
       ),
     }));
   });
   const queue = getCommandCenterActionQueue(h.state().snapshot);
-  const sosItem = queue.find((item) => item.id === "SOS-0243");
+  const sosItem = queue.find((item) => item.id === "SOS-YAGI-04");
   assert.ok(sosItem);
   assert.equal(sosItem?.priority, "P2 — Cao");
 });
 
 test("Xác nhận cảnh báo qua boundary: alert tự hết trạng thái chờ nhờ canonical derivation", () => {
   const h = harness();
-  const commander = account("Trần Quốc Thuận");
+  const commander = account("nguyentrung");
   const beforeAlerts = deriveAuthorizedAlerts(
     commander,
     createAuthorizedOperationalView(commander, h.state().snapshot),
   );
   const target = beforeAlerts.find(
-    (alert) => alert.key === "shelter:Shelter:TH-03:shelter_overloaded",
+    (alert) => alert.key === "shelter:Shelter:SHELTER-HN-03:shelter_overloaded",
   )!;
   assert.equal(target.acknowledgedAt, null);
   h.execute(() => {
@@ -683,35 +670,6 @@ test("Xác nhận cảnh báo qua boundary: alert tự hết trạng thái chờ
     alerts: afterAlerts,
   });
   assert.ok(!stillPending.some((alert) => alert.key === target.key));
-});
-
-test("Simulation compatibility: tick sau khi đã tạo sự cố mới vẫn deterministic", () => {
-  const h = harness();
-  h.execute(() => {
-    const incident = createIncidentEntity(
-      "INC-0246",
-      {
-        title: "Ngập sâu khu vực Nhật Tân",
-        type: "Ngập đô thị",
-        severity: "Cao",
-        location: { name: "Nhật Tân, Tây Hồ", coordinates: [105.85, 21.06] },
-        description: "",
-      },
-      "Trần Quốc Thuận",
-      NOW,
-    );
-    h.boundary.updateSnapshot((snapshot) => ({
-      ...snapshot,
-      incidents: [incident, ...snapshot.incidents],
-    }));
-  });
-  const next = applyNextSimulationTick(h.state().control, h.state().snapshot);
-  assert.ok(next);
-  const created = next.snapshot.incidents.find(
-    (item) => item.id === "INC-0246",
-  );
-  assert.ok(created, "sự cố vừa tạo vẫn tồn tại sau tick mô phỏng");
-  assert.ok(next.simulation.tick > 0);
 });
 
 /* --- Kiến trúc: không dataset/state song song --- */

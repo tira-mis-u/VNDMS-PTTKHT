@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
+import { Badge, Button, SectionHeader } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   SosActionDialogs,
@@ -51,7 +51,6 @@ export function SosDetailPage({
     tasks,
     teams,
     shelters,
-    evacuationOperations,
     can,
   } = useOperationalState();
   const sos = sosRequests.find((item) => item.id === id);
@@ -73,9 +72,6 @@ export function SosDetailPage({
   const task = tasks.find((item) => item.id === sos.linkedTaskId);
   const team = teams.find((item) => item.id === sos.assignedTeamId);
   const shelter = shelters.find((item) => item.id === sos.shelterDestinationId);
-  const evacuation = evacuationOperations.find(
-    (item) => item.id === sos.linkedEvacuationOperationId,
-  );
   const events = sosEvents
     .filter((item) => item.sosId === id)
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -109,13 +105,6 @@ export function SosDetailPage({
             >
               <MapPinned size={15} />
               Xem trên bản đồ
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => navigate(`/ai-assistant?context=SOS&id=${sos.id}`)}
-            >
-              <ShieldCheck size={15} />
-              Trợ lý AI
             </Button>
             {can("sos_verify") &&
               ["Mới tiếp nhận", "Đang xác minh"].includes(sos.status) && (
@@ -350,35 +339,15 @@ export function SosDetailPage({
                 id={shelter?.id}
                 title={shelter?.name}
                 action={
-                  shelter
-                    ? () => navigate(`/shelters/${shelter.id}`)
-                    : can("evacuation_create") && incident
-                      ? () => setDialog("shelter")
-                      : undefined
+                  shelter ? () => navigate(`/shelters/${shelter.id}`) : undefined
                 }
               />
             </div>
-            {evacuation && (
-              <div className="sos-evacuation-strip">
-                <span>
-                  <b>{evacuation.id}</b>
-                  {evacuation.status}
-                </span>
-                <span>
-                  {evacuation.evacuatedPopulation}/
-                  {evacuation.estimatedPopulation} người
-                </span>
-                <Progress value={evacuation.progress} tone="blue" />
-                <small>
-                  {evacuation.route.status} · {evacuation.route.name}
-                </small>
-              </div>
-            )}
           </section>
           <section className="incident-detail-section">
             <SectionHeader
               title="Bản đồ tác nghiệp"
-              description="SOS, sự cố, nhiệm vụ, đội cứu hộ, điểm sơ tán và tuyến liên quan"
+              description="SOS, sự cố, nhiệm vụ, đội cứu hộ và điểm sơ tán liên quan"
             />
             <Suspense
               fallback={
@@ -394,7 +363,6 @@ export function SosDetailPage({
                 task={task}
                 team={team}
                 shelter={shelter}
-                evacuation={evacuation}
                 navigate={navigate}
               />
             </Suspense>

@@ -26,13 +26,9 @@ import { useOperationalState } from "@/state/operations/OperationalStateContext"
 import { AccessDeniedPage } from "./AccessDeniedPage";
 
 const ROLE_COLORS: Record<Role, { bg: string; color: string; border: string }> = {
-  commander: { bg: "#fef3f2", color: "#b42318", border: "#fecdca" },
-  operator: { bg: "#eff8ff", color: "#175cd3", border: "#b2ddff" },
-  local_officer: { bg: "#fdf2fa", color: "#c11574", border: "#fbcfe8" },
-  rescue_leader: { bg: "#fffaeb", color: "#b54708", border: "#fedf89" },
-  rescue_member: { bg: "#fff6ed", color: "#c4320a", border: "#fdba74" },
-  warehouse_staff: { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
-  relief_worker: { bg: "#f5f3ff", color: "#7c3aed", border: "#ddd6fe" },
+  admin: { bg: "#fef3f2", color: "#b42318", border: "#fecdca" },
+  disaster_officer: { bg: "#eff8ff", color: "#175cd3", border: "#b2ddff" },
+  rescue_unit: { bg: "#fffaeb", color: "#b54708", border: "#fedf89" },
   citizen: { bg: "#f8fafc", color: "#475467", border: "#e2e8f0" },
 };
 
@@ -50,8 +46,7 @@ export function UserManagementPage({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  const isCommander =
-    store.currentUser?.role === "commander" || store.can("user_manage");
+  const isAdmin = store.can("user_manage");
 
   const rows = useMemo(
     () =>
@@ -97,7 +92,7 @@ export function UserManagementPage({
 
   const citizenCount = store.users.filter((u) => u.role === "citizen").length;
   const responderCount = store.users.filter((u) =>
-    ["rescue_leader", "rescue_member", "local_officer", "operator", "commander"].includes(u.role),
+    ["rescue_unit", "disaster_officer", "admin"].includes(u.role),
   ).length;
 
   return (
@@ -105,7 +100,7 @@ export function UserManagementPage({
       <PageSectionHeader
         section="Quản trị truy cập & Phân quyền"
         title={mode === "permissions" ? "Phân quyền người dùng" : "Quản lý người dùng"}
-        description="Hiển thị toàn bộ người dùng đã và đang sử dụng hệ thống. Chỉ huy có toàn quyền phân quyền tác nghiệp và kích hoạt tài khoản trực tiếp."
+        description="Hiển thị toàn bộ người dùng đã và đang sử dụng hệ thống. Quản trị hệ thống phân vai (4 vai) và kích hoạt tài khoản; không có quyền xác minh, điều phối hay chấp nhận kết quả nghiệp vụ."
         icon={UserCog}
         className="admin-page-header"
         actions={
@@ -193,7 +188,7 @@ export function UserManagementPage({
               <tr>
                 <th>Người dùng</th>
                 <th>Tên đăng nhập</th>
-                <th>Phân quyền vai trò (Chỉ huy trực tiếp gán)</th>
+                <th>Phân quyền vai trò (Quản trị hệ thống gán)</th>
                 <th>Phạm vi địa lý</th>
                 <th>Trạng thái</th>
                 <th>Cập nhật</th>
@@ -237,7 +232,7 @@ export function UserManagementPage({
                     </td>
                     {/* Ô có control riêng: chặn bubble để không mở drawer ngoài ý muốn */}
                     <td onClick={(event) => event.stopPropagation()}>
-                      {isCommander ? (
+                      {isAdmin ? (
                         <div className="direct-role-picker">
                           <UiSelect
                             className="role-inline-select"

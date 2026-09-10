@@ -5,7 +5,7 @@ import { Select as UiSelect } from "@/components/ui/Select";
 import { getOperationalTrend, type OperationalInsightsData, type TrendMetric } from "@/application/operations/operationalInsightsQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 
-const labels: Record<TrendMetric, string> = { incidents: "Sự cố được ghi nhận", alerts: "Cảnh báo tác nghiệp", sos: "Yêu cầu SOS", tasks: "Nhiệm vụ được tạo", evacuations: "Hoạt động sơ tán", relief: "Yêu cầu cứu trợ", events: "Sự kiện xử lý" };
+const labels: Record<TrendMetric, string> = { incidents: "Sự cố được ghi nhận", alerts: "Cảnh báo tác nghiệp", sos: "Yêu cầu SOS", tasks: "Nhiệm vụ được tạo", reports: "Phản ánh của người dân", events: "Sự kiện xử lý" };
 export function OperationalTrendsPage({ navigate }: { navigate: (path: string) => void }) {
   const store = useOperationalState();
   const [metric, setMetric] = useState<TrendMetric>("incidents");

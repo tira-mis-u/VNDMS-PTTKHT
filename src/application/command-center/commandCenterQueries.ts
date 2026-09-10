@@ -1,13 +1,9 @@
 import type { OperationalSnapshot } from "../operations/operationalSnapshot";
-import type { SimulationState } from "../../domain/simulation/types";
 import { calculateShelterCapacity } from "../../domain/shelters/rules";
-import { isEvacuationDelayed } from "../../domain/evacuations/rules";
 import { isSosWaitingTooLong } from "../../domain/sos/rules";
 import { isTaskOverdue, taskPriorityRank } from "../../domain/tasks/rules";
-import { hasRequestShortage, isReliefOverdue } from "../../domain/relief/rules";
 
-export type CommandCenterEntityKind =
-  "incident" | "sos" | "team" | "shelter" | "warehouse";
+export type CommandCenterEntityKind = "incident" | "sos" | "team" | "shelter";
 export type CommandCenterEntityRef = {
   kind: CommandCenterEntityKind;
   id: string;
@@ -20,10 +16,7 @@ export const commandCenterScenario = {
   scope: "Hà Nội",
 } as const;
 
-export function getCommandCenterHeader(
-  source: OperationalSnapshot,
-  simulation: SimulationState,
-) {
+export function getCommandCenterHeader(source: OperationalSnapshot) {
   const active = source.incidents.filter(
     (item) => !["Đã đóng", "Đã kiểm soát"].includes(item.status),
   );
@@ -33,12 +26,7 @@ export function getCommandCenterHeader(
     "Chưa có cập nhật";
   return {
     ...commandCenterScenario,
-    status:
-      simulation.status === "Đang chạy"
-        ? "Đang mô phỏng"
-        : active.length
-          ? "Đang ứng phó"
-          : "Đang theo dõi",
+    status: active.length ? "Đang ứng phó" : "Đang theo dõi",
     updatedAt,
   };
 }
@@ -206,85 +194,11 @@ export function getCommandCenterActionQueue(
       path: `/teams/${team.id}`,
       ref: { kind: "team", id: team.id },
     }));
-  const nowMs = Date.now();
-
-  // Cứu trợ: quá hạn cam kết hoặc không đủ hàng để đáp ứng
-  const reliefItems: CommandCenterActionItem[] = source.reliefRequests
-    .filter(
-      (request) =>
-        !["Đã đóng", "Từ chối", "Hủy", "Đã xác nhận"].includes(request.status) &&
-        (isReliefOverdue(request) ||
-          hasRequestShortage(request, source.reservations)),
-    )
-    .map((request) => {
-      const overdue = isReliefOverdue(request);
-      return {
-        id: request.id,
-        type: "Yêu cầu cứu trợ",
-        priority: overdue ? "Quá hạn" : "Thiếu hàng",
-        tone: overdue ? ("red" as const) : ("amber" as const),
-        title: `${request.code} · ${request.justification}`,
-        area: request.destination,
-        time: request.requiredBy,
-        status: request.status,
-        action: "Xử lý",
-        path: `/relief/requests/${request.id}`,
-        ref: {
-          kind: "warehouse" as const,
-          id: request.assignedWarehouseIds[0] ?? request.id,
-        },
-      };
-    });
-
-  // Chuyến hàng: gặp sự cố hoặc đã quá giờ dự kiến tới nơi mà chưa tới
-  const shipmentItems: CommandCenterActionItem[] = source.shipments
-    .filter((shipment) => {
-      if (["Hoàn tất", "Đã giao"].includes(shipment.status)) return false;
-      if (shipment.status === "Có sự cố") return true;
-      const eta = Date.parse(shipment.estimatedArrival);
-      return (
-        !shipment.actualArrival && Number.isFinite(eta) && eta < nowMs
-      );
-    })
-    .map((shipment) => ({
-      id: shipment.id,
-      type: "Chuyến hàng",
-      priority: shipment.status === "Có sự cố" ? "Sự cố" : "Trễ hẹn",
-      tone: shipment.status === "Có sự cố" ? ("red" as const) : ("amber" as const),
-      title: `${shipment.code} → ${shipment.destination}`,
-      area: shipment.destination,
-      time: shipment.estimatedArrival,
-      status: shipment.status,
-      action: "Kiểm tra",
-      path: `/relief/requests/${shipment.reliefRequestId}`,
-      ref: { kind: "warehouse" as const, id: shipment.warehouseId },
-    }));
-
-  // Thiệt hại: hồ sơ đã gửi nhưng chưa thẩm định xong (nghĩa vụ theo TTLT 43/2015)
-  const assessmentItems: CommandCenterActionItem[] = source.damageAssessments
-    .filter((item) => ["Đã gửi", "Đang thẩm định"].includes(item.status))
-    .map((item) => ({
-      id: item.id,
-      type: "Đánh giá thiệt hại",
-      priority: item.status === "Đã gửi" ? "Chờ thẩm định" : "Đang thẩm định",
-      tone: "blue" as const,
-      title: `${item.code} · ${item.summary}`,
-      area: item.area,
-      time: item.assessedAt,
-      status: item.status,
-      action: "Thẩm định",
-      path: `/recovery/assessments/${item.id}`,
-      ref: { kind: "incident" as const, id: item.incidentId },
-    }));
-
   const groups: Array<{ permission: string; items: CommandCenterActionItem[] }> = [
     { permission: "sos_view", items: sosItems },
     { permission: "team_view", items: teamItems },
     { permission: "task_view", items: taskItems },
     { permission: "view", items: incidentItems },
-    { permission: "relief_view", items: reliefItems },
-    { permission: "shipment_view", items: shipmentItems },
-    { permission: "damage_assessment_view", items: assessmentItems },
   ];
 
   const tonePriority = { red: 0, amber: 1, blue: 2 } as const;
@@ -348,7 +262,7 @@ export function getCommandCenterTimeline(
 
 export interface CommandCenterExceptionItem {
   id: string;
-  kind: "team" | "shelter" | "evacuation" | "sos" | "warehouse";
+  kind: "team" | "shelter" | "sos";
   name: string;
   owner: string;
   value: number;
@@ -390,20 +304,6 @@ export function getCommandCenterResourceExceptions(
         action: "Xử lý",
       };
     });
-  const evacuationItems: CommandCenterExceptionItem[] =
-    source.evacuationOperations
-      .filter(isEvacuationDelayed)
-      .map((operation) => ({
-        id: operation.id,
-        kind: "evacuation",
-        name: operation.sourceArea,
-        owner: `Sơ tán ${operation.id}`,
-        value: operation.progress,
-        display: operation.route.status,
-        state: operation.status,
-        tone: "amber",
-        action: "Điều phối",
-      }));
   const teamItems: CommandCenterExceptionItem[] = source.teams
     .filter(
       (team) =>
@@ -423,33 +323,7 @@ export function getCommandCenterResourceExceptions(
       tone: "red",
       action: "Kiểm tra",
     }));
-  const warehouseItems: CommandCenterExceptionItem[] = source.inventory
-    .filter(
-      (item) =>
-        item.quantityOnHand - item.quantityReserved <= item.reorderLevel,
-    )
-    .map((item) => ({
-      id: item.warehouseId,
-      kind: "warehouse",
-      name: item.name,
-      owner: `Kho ${item.warehouseId}`,
-      value: Math.min(
-        100,
-        Math.round(
-          (item.quantityOnHand / Math.max(1, item.reorderLevel)) * 100,
-        ),
-      ),
-      display: `${item.quantityOnHand - item.quantityReserved} ${item.unit} khả dụng`,
-      state: "Dưới ngưỡng",
-      tone: "amber",
-      action: "Theo dõi",
-    }));
-  return [
-    ...shelterItems,
-    ...evacuationItems,
-    ...teamItems,
-    ...warehouseItems,
-  ].slice(0, 4);
+  return [...shelterItems, ...teamItems].slice(0, 4);
 }
 
 export function findCommandCenterEntity(
@@ -462,7 +336,5 @@ export function findCommandCenterEntity(
     return source.sosRequests.find((item) => item.id === ref.id);
   if (ref.kind === "team")
     return source.teams.find((item) => item.id === ref.id);
-  if (ref.kind === "shelter")
-    return source.shelters.find((item) => item.id === ref.id);
-  return source.warehouses.find((item) => item.id === ref.id);
+  return source.shelters.find((item) => item.id === ref.id);
 }

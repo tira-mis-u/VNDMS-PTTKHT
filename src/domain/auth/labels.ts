@@ -1,12 +1,8 @@
 import type { Role } from "./types";
 export const roleLabels: Record<Role, string> = {
-  commander: "Chỉ huy",
-  operator: "Điều hành viên",
-  local_officer: "Cán bộ địa phương",
-  rescue_leader: "Đội trưởng đội cứu hộ",
-  rescue_member: "Thành viên cứu hộ",
-  warehouse_staff: "Nhân viên kho",
-  relief_worker: "Nhân viên cứu trợ",
+  admin: "Quản trị hệ thống",
+  disaster_officer: "Cán bộ phòng chống thiên tai",
+  rescue_unit: "Đơn vị cứu hộ",
   citizen: "Công dân",
 };
 export const roleOptions = Object.entries(roleLabels).map(([value, label]) => ({
@@ -26,6 +22,7 @@ const auditActionLabels: Record<string, string> = {
   USER_DEACTIVATED: "Vô hiệu hóa tài khoản",
   USER_ROLE_CHANGED: "Thay đổi vai trò",
   USER_SCOPE_CHANGED: "Thay đổi phạm vi địa bàn",
+  ROLE_MODEL_MIGRATED: "Chuyển đổi mô hình vai trò (V2)",
   PANIC_ALERT_TRIGGERED: "Bật cảnh báo 1 chạm (SOS Panic)",
   LIVE_BEACON_TOGGLED: "Bật/Tắt phát định vị Realtime",
 };

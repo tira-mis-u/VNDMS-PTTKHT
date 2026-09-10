@@ -31,18 +31,12 @@ export function ActionQueue({
     "Đội cứu hộ": "đội cứu hộ",
     "Nhiệm vụ": "nhiệm vụ quá hạn",
     "Sự cố": "sự cố",
-    "Yêu cầu cứu trợ": "yêu cầu cứu trợ",
-    "Chuyến hàng": "chuyến hàng",
-    "Đánh giá thiệt hại": "hồ sơ thiệt hại",
   };
   const modulePath: Record<string, string> = {
     "SOS khẩn cấp": "/sos",
     "Đội cứu hộ": "/teams",
     "Nhiệm vụ": "/tasks",
     "Sự cố": "/incidents",
-    "Yêu cầu cứu trợ": "/relief/requests",
-    "Chuyến hàng": "/relief/shipments",
-    "Đánh giá thiệt hại": "/recovery",
   };
   const open = (item: (typeof items)[number]) =>
     item.path ? onNavigate(item.path) : onOpen(item.ref);
@@ -53,9 +47,8 @@ export function ActionQueue({
     >
       {/*
         Bỏ nhãn "Xem toàn bộ hàng đợi": không có trang nào tên như vậy nên nút
-        đó không dẫn đi đâu. Hàng đợi gộp từ nhiều phân hệ (SOS, nhiệm vụ, đội,
-        sự cố, cứu trợ, chuyến hàng, thẩm định thiệt hại) — mỗi dòng đã mở
-        thẳng hồ sơ gốc của nó.
+        đó không dẫn đi đâu. Hàng đợi gộp từ các phân hệ còn lại (SOS, nhiệm vụ,
+        đội, sự cố) — mỗi dòng đã mở thẳng hồ sơ gốc của nó.
       */}
       <SectionHeader
         title="Cần xử lý"

@@ -1,4 +1,4 @@
-import { ClipboardCheck, ClipboardPlus, LifeBuoy, ListPlus, Radio } from "lucide-react";
+import { ClipboardPlus, LifeBuoy, ListPlus, Radio } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 
 /**
@@ -21,25 +21,17 @@ const actions = [
   { label: "Giao nhiệm vụ", icon: ListPlus, permission: "task_assign" },
   { label: "Điều phối đội", icon: LifeBuoy, permission: "team_assign" },
   { label: "Xử lý SOS", icon: Radio, permission: "sos_triage" },
-  {
-    label: "Ghi nhận thiệt hại",
-    icon: ClipboardCheck,
-    permission: "damage_assessment_create",
-    path: "/recovery",
-  },
 ] as const;
 
 export function QuickActions({
   onAction,
-  onNavigate,
 }: {
   onAction: (label: string) => void;
-  onNavigate: (path: string) => void;
 }) {
   const store = useOperationalState();
   // Chỉ hiện thao tác mà người đang trực thực sự có quyền thực hiện. Trước đây
   // mọi vai trò đều thấy đủ 5 nút, bấm vào thì bị chặn — đó là nút chết.
-  const allowed = actions.filter((action) => store.can(action.permission as never));
+  const allowed = actions.filter((action) => store.can(action.permission));
   if (!allowed.length) return null;
   return (
     <section className="cc-quick-actions">
@@ -50,9 +42,7 @@ export function QuickActions({
           return (
             <button
               key={action.label}
-              onClick={() =>
-                "path" in action ? onNavigate(action.path) : onAction(action.label)
-              }
+              onClick={() => onAction(action.label)}
             >
               <Icon size={15} />
               {action.label}

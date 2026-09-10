@@ -18,13 +18,11 @@ import {
   UNIFIED_MAP_LAYER_CONFIG,
   type UnifiedMapKind,
   type UnifiedMapPoint,
-  type UnifiedMapRouteLine,
 } from "@/application/map/unifiedMapQueries";
 import {
   fetchEcmwfWeatherData,
   fetchEcmwfGridSamples,
   fetchEcmwfStormField,
-  lookupWeatherFromCache,
   METEOROLOGICAL_STATIONS,
   type StationForecast,
   type ForecastGridSample,
@@ -40,9 +38,6 @@ import {
   WindParticleLayer,
   type WindSamplePoint,
 } from "@/infrastructure/weather/windParticleLayer";
-import {
-  resolveAdministrativeLocation,
-} from "@/infrastructure/gis/administrativeResolver";
 import { TemperatureShaderLayer } from "@/infrastructure/weather/temperatureShaderLayer";
 import {
   fetchLiveLocations,
@@ -69,7 +64,7 @@ function escapeHtml(value: string) {
 /** Phân loại marker realtime để chọn màu và biểu tượng. */
 function liveMarkerVariant(ping: LiveLocationPing) {
   if (ping.isPanicSOS) return "panic-sos";
-  if (ping.role === "rescue_leader" || ping.role === "rescue_member") return "rescue-team";
+  if (ping.role === "rescue_unit") return "rescue-team";
   if (ping.role === "citizen") return "citizen";
   return "officer";
 }
@@ -379,27 +374,6 @@ function pointCollection(points: UnifiedMapPoint[], kind: UnifiedMapKind) {
   };
 }
 
-function lineCollection(
-  routes: UnifiedMapRouteLine[],
-  blocked: boolean,
-) {
-  return {
-    type: "FeatureCollection" as const,
-    features: routes
-      .filter((route) => route.blocked === blocked)
-      .map((route) => ({
-        type: "Feature" as const,
-        geometry: { type: "LineString" as const, coordinates: route.points },
-        properties: {
-          id: route.id,
-          operationId: route.operationId,
-          name: route.name,
-          status: route.status,
-        },
-      })),
-  };
-}
-
 const RADIUS: Partial<Record<UnifiedMapKind, number>> = {
   sos: 8,
   incident: 7.5,
@@ -422,7 +396,6 @@ function findFirstRoadLayerId(map: MapLibreMap): string | undefined {
 
 export function UnifiedMapCanvas({
   points,
-  routes,
   focusKey,
   onSelect,
   focusTarget,
@@ -431,7 +404,6 @@ export function UnifiedMapCanvas({
   stormFocusKey = 0,
 }: {
   points: UnifiedMapPoint[];
-  routes: UnifiedMapRouteLine[];
   /** Chế độ gọn (nhúng trong Trung tâm điều hành): ẩn thanh mốc dự báo. */
   compact?: boolean;
   /**
@@ -964,315 +936,8 @@ export function UnifiedMapCanvas({
         },
       });
 
-      /*
-       * THẺ THÔNG TIN: DI CHUỘT ĐỂ XEM NHANH — BẤM ĐỂ GHIM
-       * ──────────────────────────────────────────────────────────────────
-       * Thẻ đen chỉ hiện khi rê chuột thì người dùng không kịp đọc, và chỉ
-       * cần nhích chuột là mất. Nay: bấm vào tỉnh/đảo/mốc bão sẽ GHIM thẻ lại
-       * (thẻ có dấu × để tắt), rê chuột chỗ khác không làm mất thẻ đã ghim,
-       * bấm ra chỗ trống trên bản đồ mới bỏ ghim.
-       */
-      const pinnedPopup = new Popup({
-        closeButton: false,
-        closeOnClick: false,
-        offset: 14,
-        className: "ecmwf-hover-popup ecmwf-pinned-popup",
-      });
-      let pinned = false;
-
-      const closePinned = () => {
-        pinned = false;
-        pinnedPopup.remove();
-      };
-      pinnedPopup.on("close", () => {
-        pinned = false;
-      });
-
-      /** Ghim thẻ: thêm thanh tiêu đề có dấu × và chặn hover ghi đè. */
-      const showPinned = (lngLat: { lng: number; lat: number }, html: string) => {
-        pinned = true;
-        weatherPopup.remove();
-        stormPopup.remove();
-        pinnedPopup.setLngLat(lngLat).setHTML(html).addTo(map);
-        const element = pinnedPopup.getElement();
-        element
-          ?.querySelector(".weather-hover-close")
-          ?.addEventListener("click", (event) => {
-            event.stopPropagation();
-            closePinned();
-          });
-      };
-
-      /** Cùng một thẻ, thêm nút đóng khi ở trạng thái ghim. */
-      const withCloseButton = (html: string) =>
-        html.replace(
-          '<div class="weather-hover-head">',
-          '<div class="weather-hover-head is-pinned"><button type="button" class="weather-hover-close" aria-label="Đóng thẻ thông tin">×</button>',
-        );
-
-      const stormPopup = new Popup({
-        closeButton: false,
-        closeOnClick: false,
-        offset: 12,
-        className: "ecmwf-hover-popup",
-      });
-      map.on("mouseenter", "om-storm-points-circle", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "om-storm-points-circle", () => {
-        map.getCanvas().style.cursor = "";
-        stormPopup.remove();
-      });
-      const stormCardHtml = (props: Record<string, unknown>) => `
-            <div class="weather-hover-card">
-              <div class="weather-hover-head">
-                <span class="weather-hover-title">${escapeHtml(String(props.stormName))}</span>
-              </div>
-              <div class="weather-hover-grid">
-                <div class="weather-hover-cell">
-                  <span class="weather-hover-cell-lbl">Thời điểm</span>
-                  <span class="weather-hover-cell-val">${escapeHtml(String(props.timeLabel))}${Number(props.forecast) === 1 ? " (dự báo)" : ""}</span>
-                </div>
-                <div class="weather-hover-cell">
-                  <span class="weather-hover-cell-lbl">Khí áp tâm</span>
-                  <span class="weather-hover-cell-val" style="color:#a5b4fc;">${props.pressure} hPa</span>
-                </div>
-                <div class="weather-hover-cell">
-                  <span class="weather-hover-cell-lbl">Gió & giật</span>
-                  <span class="weather-hover-cell-val" style="color:#fbbf24;">${props.windSpeed} (${props.windGusts}) km/h</span>
-                </div>
-                <div class="weather-hover-cell">
-                  <span class="weather-hover-cell-lbl">Cấp gió</span>
-                  <span class="weather-hover-cell-val">${escapeHtml(String(props.category))} · cấp ${props.beaufort}</span>
-                </div>
-              </div>
-            </div>
-          `;
-
-      map.on("mousemove", "om-storm-points-circle", (event: MapLayerMouseEvent) => {
-        if (pinned) return;
-        const props = event.features?.[0]?.properties;
-        if (!props) return;
-        stormPopup.setLngLat(event.lngLat).setHTML(stormCardHtml(props)).addTo(map);
-      });
-      // Bấm vào một mốc trên đường đi bão để giữ thẻ thông tin lại
-      map.on("click", "om-storm-points-circle", (event: MapLayerMouseEvent) => {
-        const props = event.features?.[0]?.properties;
-        if (!props) return;
-        event.preventDefault();
-        showPinned(event.lngLat, withCloseButton(stormCardHtml(props)));
-      });
-
       // Lớp hạt gió động (Windy-like) nằm dưới toàn bộ ký hiệu tác nghiệp
       windLayerRef.current = new WindParticleLayer(map);
-
-      // Tuyến sơ tán
-      map.addSource("om-routes-ok", { type: "geojson", data: lineCollection([], false) });
-      map.addSource("om-routes-blocked", { type: "geojson", data: lineCollection([], true) });
-      map.addLayer({
-        id: "om-routes-ok-line",
-        type: "line",
-        source: "om-routes-ok",
-        paint: { "line-color": "#0e7490", "line-width": 3, "line-opacity": 0.75 },
-      });
-      map.addLayer({
-        id: "om-routes-blocked-line",
-        type: "line",
-        source: "om-routes-blocked",
-        paint: {
-          "line-color": "#d92d20",
-          "line-width": 3,
-          "line-opacity": 0.85,
-          "line-dasharray": [2, 1.6],
-        },
-      });
-      for (const id of ["om-routes-ok-line", "om-routes-blocked-line"]) {
-        map.on("click", id, (event: MapLayerMouseEvent) => {
-          const props = event.features?.[0]?.properties;
-          if (!props?.operationId) return;
-          onSelectRef.current({ kind: "evacuation", id: props.operationId });
-        });
-        map.on("mouseenter", id, () => { map.getCanvas().style.cursor = "pointer"; });
-        map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; });
-      }
-
-      // ── Tương tác không gian Native NDMapVN + In-Memory Administrative PIP ──
-      // TUYỆT ĐỐI KHÔNG TẠO: lớp tương tác vô hình, invisible polygon hay canvas overlay
-      const styleLayerIds = new Set(map.getStyle()?.layers?.map((l) => l.id) ?? []);
-      const NDAMAPVN_NATIVE_LAYERS = [
-        "landcover-island",
-        "landcover-reef",
-        "water",
-        "water-offset",
-        "place-island",
-        "place-city-capital",
-        "place-city",
-        "place-town",
-        "place-village",
-        "water-name-ocean",
-        "water-name-lakeline",
-        "waterway-name",
-      ];
-      const interactiveNativeLayers = NDAMAPVN_NATIVE_LAYERS.filter((id) => styleLayerIds.has(id));
-
-      const weatherPopup = new Popup({
-        closeButton: false,
-        closeOnClick: false,
-        offset: 12,
-        className: "ecmwf-hover-popup",
-      });
-
-      // Hàm giải quyết danh xưng địa lý theo thứ tự ưu tiên:
-      // 1. Native NDMapVN feature (đảo, rạn san hô, vùng nước, nhãn địa danh bản địa)
-      // 2. In-Memory Administrative Point-in-Polygon (64 đối tượng GeoJSON 2024 trong RAM)
-      // Chỉ trả về danh xưng địa lý: popover không hiển thị nhãn nguồn dữ liệu
-      // hay loại đối tượng bên cạnh tên tỉnh/thành phố, quần đảo.
-      function resolveLocationIdentity(point: { x: number; y: number }, lngLat: { lng: number; lat: number }): {
-        title: string;
-      } | null {
-        // A. Kiểm tra native feature của NDMapVN
-        if (interactiveNativeLayers.length > 0) {
-          const nativeFeats = map.queryRenderedFeatures([point.x, point.y], { layers: interactiveNativeLayers });
-          if (nativeFeats.length > 0) {
-            const nf = nativeFeats[0];
-            const nName = (nf.properties?.name_vi || nf.properties?.name || nf.properties?.["name:vi"]) as string | undefined;
-            if (nName) {
-              return { title: nName };
-            }
-            if (nf.layer.id === "landcover-island" || nf.layer.id === "landcover-reef") {
-              return { title: "Hải đảo / Vùng rạn san hô" };
-            }
-          }
-        }
-
-        // B. Chạy In-Memory Administrative Resolver (Ray-Casting PIP)
-        const adminRes = resolveAdministrativeLocation(lngLat.lng, lngLat.lat);
-        if (adminRes.type === "province" && adminRes.province) {
-          return { title: adminRes.province };
-        }
-        if (adminRes.type === "boundary" && adminRes.candidates) {
-          return {
-            title: `Giáp ranh: ${adminRes.candidates[0]} – ${adminRes.candidates[1]}`,
-          };
-        }
-
-        return null;
-      }
-
-      // ── Sự kiện mousemove với Throttling & requestAnimationFrame (60 FPS) ──
-      let rafId: number | null = null;
-      let lastMovePoint = { x: -999, y: -999 };
-
-      map.on("mousemove", (e) => {
-        if (Math.abs(e.point.x - lastMovePoint.x) < 4 && Math.abs(e.point.y - lastMovePoint.y) < 4) return;
-        lastMovePoint = { x: e.point.x, y: e.point.y };
-
-        if (pinned) return; // đang ghim thẻ: rê chuột không ghi đè
-        if (rafId) cancelAnimationFrame(rafId);
-        rafId = requestAnimationFrame(() => {
-          // Bỏ qua nếu chuột đang hover vào thực thể nghiệp vụ VNDMS (sự cố, SOS, tuyến sơ tán)
-          const vndmsFeats = map.queryRenderedFeatures(e.point, {
-            layers: (map.getStyle()?.layers ?? [])
-              .map((l) => l.id)
-              .filter((id) => id.startsWith("om-") && id !== "om-temperature-heatmap"),
-          });
-          if (vndmsFeats.length > 0) {
-            weatherPopup.remove();
-            return;
-          }
-
-          const locationIdentity = resolveLocationIdentity(e.point, e.lngLat);
-          if (!locationIdentity) {
-            weatherPopup.remove();
-            map.getCanvas().style.cursor = "";
-            return;
-          }
-
-          map.getCanvas().style.cursor = "crosshair";
-
-          // Tra cứu dữ liệu thời tiết ECMWF-IFS HOÀN TOÀN TỪ CACHE (Tuyệt đối không gọi API)
-          const st = lookupWeatherFromCache(
-            locationIdentity.title,
-            [e.lngLat.lng, e.lngLat.lat],
-            weatherStationsRef.current,
-          );
-          if (!st) return;
-
-          weatherPopup.setLngLat(e.lngLat).setHTML(locationCardHtml(locationIdentity.title, st)).addTo(map);
-        });
-      });
-
-      /* Thẻ thông tin địa danh + thời tiết, dùng chung cho cả hover và ghim. */
-      function locationCardHtml(title: string, st: StationForecast) {
-        const currentRisk = st.dailySummary?.[0]?.floodRiskLevel || "Bình thường";
-        const riskColor =
-          currentRisk === "Đặc biệt nghiêm trọng" ? "#ef4444" :
-          currentRisk === "Nguy cơ cao" ? "#f97316" :
-          currentRisk === "Cảnh báo" ? "#eab308" : "#22c55e";
-        return `
-              <div class="weather-hover-card">
-                <div class="weather-hover-head">
-                  <span class="weather-hover-title">${escapeHtml(title)}</span>
-                </div>
-                <div class="weather-hover-grid">
-                  <div class="weather-hover-cell">
-                    <span class="weather-hover-cell-lbl">Nhiệt độ</span>
-                    <span class="weather-hover-cell-val" style="color:#f87171;">${st.current.temperature.toFixed(1)}°C</span>
-                  </div>
-                  <div class="weather-hover-cell">
-                    <span class="weather-hover-cell-lbl">Lượng mưa</span>
-                    <span class="weather-hover-cell-val" style="color:#38bdf8;">${st.current.rain.toFixed(1)} mm/h</span>
-                  </div>
-                  <div class="weather-hover-cell">
-                    <span class="weather-hover-cell-lbl">Gió & giật</span>
-                    <span class="weather-hover-cell-val" style="color:#e2e8f0;">${st.current.windSpeed.toFixed(0)} (${st.current.windGusts.toFixed(0)}) km/h</span>
-                  </div>
-                  <div class="weather-hover-cell">
-                    <span class="weather-hover-cell-lbl">Nguy cơ lũ</span>
-                    <span class="weather-hover-cell-val" style="color:${riskColor};">${currentRisk}</span>
-                  </div>
-                </div>
-                <p class="weather-hover-foot">Số liệu ECMWF-IFS gần nhất · bấm để giữ thẻ</p>
-              </div>
-            `;
-      }
-
-      const onCanvasLeave = () => {
-        if (rafId) cancelAnimationFrame(rafId);
-        weatherPopup.remove();
-        map.getCanvas().style.cursor = "";
-      };
-      map.getCanvas().addEventListener("mouseleave", onCanvasLeave);
-
-      // Click vào vị trí bất kỳ: chỉ xử lý các entity VNDMS, không mở popup thời tiết
-      map.on("click", (e) => {
-        if (e.defaultPrevented) return; // đã xử lý bởi lớp bão / thực thể
-        const vndmsFeats = map.queryRenderedFeatures(e.point, {
-          layers: (map.getStyle()?.layers ?? [])
-            .map((l) => l.id)
-            .filter((id) => id.startsWith("om-") && id !== "om-temperature-heatmap"),
-        });
-        if (vndmsFeats.length > 0) return;
-
-        // Bấm vào một tỉnh/thành, đảo hoặc vùng biển: ghim thẻ thông tin lại
-        // cho người dùng đọc kỹ. Bấm vào chỗ không xác định được địa danh thì
-        // bỏ ghim (đúng kỳ vọng "bấm ra ngoài thì tắt").
-        const identity = resolveLocationIdentity(e.point, e.lngLat);
-        if (!identity) {
-          closePinned();
-          return;
-        }
-        const st = lookupWeatherFromCache(
-          identity.title,
-          [e.lngLat.lng, e.lngLat.lat],
-          weatherStationsRef.current,
-        );
-        if (!st) {
-          closePinned();
-          return;
-        }
-        showPinned(e.lngLat, withCloseButton(locationCardHtml(identity.title, st)));
-      });
 
       setReady(true);
     });
@@ -1300,10 +965,6 @@ export function UnifiedMapCanvas({
       const source = map.getSource(`om-${layer.key}`) as GeoJSONSource | undefined;
       source?.setData(pointCollection(points, layer.key));
     }
-    const ok = map.getSource("om-routes-ok") as GeoJSONSource | undefined;
-    ok?.setData(lineCollection(routes, false));
-    const blocked = map.getSource("om-routes-blocked") as GeoJSONSource | undefined;
-    blocked?.setData(lineCollection(routes, true));
 
     // Cập nhật dữ liệu trạm khí tượng & lưới dự báo khi fetch hoàn tất
     if (weatherStations.length > 0 || gridSamples.length > 0) {
@@ -1313,7 +974,7 @@ export function UnifiedMapCanvas({
       }
       temperatureShaderRef.current?.updateWeatherData(weatherStations, gridSamples);
     }
-  }, [points, routes, ready, weatherStations, gridSamples]);
+  }, [points, ready, weatherStations, gridSamples]);
 
   // ── Shader nhiệt độ luôn bật (không có toggle) ──
   // temperatureShaderRef.current is initialized visible=true at startup

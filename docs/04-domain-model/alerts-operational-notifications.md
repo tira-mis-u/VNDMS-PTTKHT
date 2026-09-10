@@ -7,7 +7,6 @@ Module `src/domain/alerts/` — framework-independent, pure functions.
 ```ts
 AlertSeverity   = "critical" | "high" | "medium" | "low"
 AlertCategory   = "incident" | "sos" | "task" | "team" | "shelter"
-                | "evacuation" | "relief" | "playbook" | "recovery"
 AlertStatus     = "Chưa đọc" | "Đã đọc" | "Đã xác nhận"
 AlertCondition  = <25 mã điều kiện nghiệp vụ>  // vd "sos_p1_verified_unassigned"
 ```

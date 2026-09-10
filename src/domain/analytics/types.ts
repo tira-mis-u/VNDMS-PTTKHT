@@ -25,8 +25,7 @@ export interface OperationalException {
     | "Đội cứu hộ"
     | "Điểm sơ tán"
     | "SOS"
-    | "Cứu trợ"
-    | "Phục hồi";
+    | "Phản ánh";
   entityId: string;
   entityCode: string;
   title: string;
@@ -59,8 +58,10 @@ export interface IncidentAnalytics {
   averageResolutionMinutes: number | null;
   overdueCount: number;
   affectedPopulation: number;
-  evacuatedPopulation: number;
-  remainingPopulation: number;
+  /** Số người ghi nhận trong các SOS đã đóng thuộc phạm vi (canonical). */
+  rescuedPopulation: number;
+  /** Số người trong SOS còn mở (kể cả SOS đã xử lý nhưng chờ cán bộ duyệt đóng). */
+  pendingPopulation: number;
 }
 export interface TaskAnalytics {
   byStatus: DistributionRow[];
@@ -79,6 +80,12 @@ export interface TaskAnalytics {
     overdue: number;
   }>;
   dispatchToStartMinutes: number | null;
+  /** Nhiệm vụ đơn vị đã báo xong, đang chờ cán bộ xác nhận. */
+  awaitingReviewCount: number;
+  /** Số lần cán bộ từ chối kết quả (từ TaskReview canonical). */
+  rejectedReviewCount: number;
+  /** Số lần phân công lại có lý do (từ assignmentHistory). */
+  reassignmentCount: number;
 }
 export interface TeamAnalytics {
   total: number;
@@ -119,26 +126,6 @@ export interface ShelterAnalytics {
     status: string;
   }>;
 }
-export interface EvacuationAnalytics {
-  total: number;
-  active: number;
-  evacuated: number;
-  remaining: number;
-  completionRate: number;
-  averageProgress: number;
-  blockedRoutes: number;
-  rows: Array<{
-    id: string;
-    code: string;
-    incidentId: string;
-    shelterId: string;
-    status: string;
-    progress: number;
-    evacuated: number;
-    remaining: number;
-    routeStatus: string;
-  }>;
-}
 export interface SosAnalytics {
   byPriority: DistributionRow[];
   byStatus: DistributionRow[];
@@ -163,63 +150,31 @@ export interface SosAnalytics {
     bottleneck: string | null;
   }>;
 }
-export interface ReliefAnalytics {
+export interface CitizenReportAnalytics {
+  total: number;
+  pending: number;
+  valid: number;
+  invalid: number;
+  duplicate: number;
+  byCategory: DistributionRow[];
   byStatus: DistributionRow[];
-  byPriority: DistributionRow[];
-  pendingApprovals: number;
-  shortStockRequests: number;
-  overdueDeliveries: number;
-  warehouseAvailability: number;
-  reservedStock: number;
-  availableStock: number;
-  distributionProgress: number;
-  failedShipments: number;
-  lowStockItems: number;
-  requestRows: Array<{
+  averageReviewMinutes: number | null;
+  rows: Array<{
     id: string;
     code: string;
+    category: string;
     status: string;
-    priority: string;
-    shortage: number;
-    overdue: boolean;
-  }>;
-  warehouseRows: Array<{
-    id: string;
-    code: string;
-    name: string;
-    status: string;
-    utilization: number;
-    lowStock: number;
-  }>;
-}
-export interface RecoveryAnalytics {
-  assessmentByStatus: DistributionRow[];
-  damageByCategory: Array<{ category: string; value: number }>;
-  estimatedDamage: number;
-  verifiedDamage: number;
-  unverifiedDamage: number;
-  projectByStatus: DistributionRow[];
-  averageProjectProgress: number;
-  budgetUtilization: number;
-  delayedMilestones: number;
-  projectsRequiringAttention: number;
-  projectRows: Array<{
-    id: string;
-    code: string;
-    name: string;
-    status: string;
-    progress: number;
-    budgetUtilization: number;
-    delayedMilestones: number;
+    area: string;
+    createdAt: string;
+    waitingMinutes: number | null;
   }>;
 }
 export type OperationalReportType =
   | "Báo cáo tình hình tác chiến"
   | "Báo cáo sự cố"
   | "Báo cáo cứu hộ"
-  | "Báo cáo sơ tán"
-  | "Báo cáo cứu trợ"
-  | "Báo cáo phục hồi";
+  | "Báo cáo SOS"
+  | "Báo cáo phản ánh";
 export interface OperationalReport {
   type: OperationalReportType;
   title: string;
@@ -237,7 +192,8 @@ export interface OperationalReport {
   majorExceptions: OperationalException[];
   completedActions: string[];
   outstandingActions: string[];
-  recoveryStatus: string[];
+  /** Kết quả chờ xác nhận: nhiệm vụ đơn vị đã báo xong, SOS đã xử lý chờ đóng. */
+  pendingConfirmation: string[];
   audit: {
     generatedAt: string;
     generatedById: string;

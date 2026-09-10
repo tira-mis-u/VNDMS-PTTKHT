@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type {
   IncidentSeverity,
   IncidentStatus,
@@ -21,20 +21,35 @@ import {
 import {
   assignTaskToTeam,
   createTaskEntity,
+  createTaskReview,
+  decideTaskReview,
+  initialAssignmentRecord,
+  reassignTaskEntity,
   releaseTaskAssignment,
+  reportTaskDoneEntity,
+  reviewTaskResultEntity,
   transitionTaskEntity,
   type NewTaskInput,
 } from "../../application/tasks/taskUseCases";
 import {
+  createCitizenReportEntity,
+  reviewCitizenReportEntity,
+  type NewCitizenReportInput,
+} from "../../application/reports/reportUseCases";
+import {
+  createPublishedAlertDraft,
+  publishAlertEntity,
+  updatePublishedAlertEntity,
+  withdrawAlertEntity,
+  type PublishedAlertDraftInput,
+} from "../../application/published-alerts/publishedAlertUseCases";
+import type { CitizenReportStatus } from "../../domain/reports/types";
+import {
   applyTeamLocation,
   assertTeamDispatchable,
-  assignTeamToEvacuation,
   assignTeamToOperation,
-  assignTeamToReliefShipment,
   changeTeamStatus,
   recalculateTeamAssignment,
-  releaseTeamFromEvacuation,
-  releaseTeamFromReliefShipment,
   updateTeamCapabilities as applyTeamCapabilities,
   updateTeamProfile as applyTeamProfile,
   type TeamProfileInput,
@@ -48,23 +63,8 @@ import {
   type ShelterResourceInput,
 } from "../../application/shelters/shelterUseCases";
 import {
-  assignEvacuationTeam as applyEvacuationTeam,
-  createEvacuationOperation,
-  redirectEvacuation as applyEvacuationRedirect,
-  transitionEvacuation as applyEvacuationTransition,
-  updateEvacuationProgress as applyEvacuationProgress,
-  updateRouteStatus as applyRouteStatus,
-  type NewEvacuationInput,
-} from "../../application/evacuations/evacuationUseCases";
-import type {
-  EvacuationStatus,
-  RouteStatus,
-} from "../../domain/evacuations/types";
-import { assertShelterCanReceive } from "../../domain/shelters/rules";
-import {
   assertSosScope,
   createSosRequest,
-  evacuationInputFromSos,
   incidentInputFromSos,
   linkSosIncident as applySosIncident,
   linkSosTaskAndTeam,
@@ -77,86 +77,6 @@ import {
   type NewSosInput,
 } from "../../application/sos/sosUseCases";
 import type { SosLocation, SosPriority } from "../../domain/sos/types";
-import {
-  assertReliefScope,
-  adjustInventory as applyInventoryAdjustment,
-  approveReliefRequest as applyReliefApproval,
-  confirmShipmentReceipt as applyShipmentReceipt,
-  createReliefRequest as createReliefEntity,
-  dispatchReservation as applyReservationDispatch,
-  releaseReservation,
-  reserveStock,
-  transitionReliefRequest as applyReliefTransition,
-  transitionShipment as applyShipmentTransition,
-  type NewReliefRequestInput,
-} from "../../application/relief/reliefUseCases";
-import type {
-  ReliefRequestStatus,
-  ShipmentStatus,
-  WarehouseStatus,
-} from "../../domain/relief/types";
-import {
-  addDamageItem as applyDamageItemAdd,
-  addMilestone as applyRecoveryMilestoneAdd,
-  approveRecoveryProject as applyRecoveryApproval,
-  assertRecoveryScope,
-  attachEvidence as applyDamageEvidence,
-  cancelRecoveryProject as applyRecoveryCancellation,
-  completeMilestone as applyRecoveryMilestoneCompletion,
-  completeRecoveryProject as applyRecoveryCompletion,
-  createDamageAssessment as createDamageAssessmentEntity,
-  createRecoveryProject as createRecoveryProjectEntity,
-  createRevision as applyDamageRevision,
-  pauseRecoveryProject as applyRecoveryPause,
-  recordCompletionVerification as applyRecoveryCompletionVerification,
-  rejectDamageAssessment as applyDamageRejection,
-  rejectRecoveryProject as applyRecoveryProjectRejection,
-  resumeRecoveryProject as applyRecoveryResume,
-  reviewDamageAssessment as applyDamageReview,
-  skipMilestone as applyRecoveryMilestoneSkip,
-  startMilestone as applyRecoveryMilestoneStart,
-  startRecoveryProject as applyRecoveryStart,
-  submitDamageAssessment as applyDamageSubmission,
-  syncRecoveryProgress,
-  updateDamageAssessment as applyDamageUpdate,
-  updateRecoveryBudget as applyRecoveryBudget,
-  updateRecoveryProject as applyRecoveryUpdate,
-  verifyDamageAssessment as applyDamageVerification,
-  type NewDamageAssessmentInput,
-  type NewRecoveryProjectInput,
-} from "../../application/recovery/recoveryUseCases";
-import type {
-  DamageAssessment,
-  DamageItem,
-  RecoveryEvidence,
-  RecoveryMilestone,
-  RecoveryProject,
-} from "../../domain/recovery/types";
-import {
-  activatePlaybook as applyPlaybookActivation,
-  addStep as applyPlaybookStepAdd,
-  archivePlaybook as applyPlaybookArchive,
-  assignStepOwner as applyPlaybookStepOwner,
-  cancelPlaybook as applyPlaybookCancel,
-  completePlaybook as applyPlaybookCompletion,
-  completePlaybookStep as applyPlaybookStepCompletion,
-  createPlaybook as createPlaybookEntity,
-  pausePlaybook as applyPlaybookPause,
-  publishPlaybook as applyPlaybookPublish,
-  reorderSteps as applyPlaybookStepReorder,
-  resumePlaybook as applyPlaybookResume,
-  skipPlaybookStep as applyPlaybookStepSkip,
-  startPlaybookStep as applyPlaybookStepStart,
-  updatePlaybook as applyPlaybookUpdate,
-  updateStepEvidence as applyPlaybookEvidence,
-  type NewPlaybookInput,
-} from "../../application/playbooks/playbookUseCases";
-import type {
-  Playbook,
-  PlaybookStep,
-  PlaybookStepExecution,
-  PlaybookTimelineEvent,
-} from "../../domain/playbooks/types";
 import type { Permission } from "../../lib/permissions/permissions";
 import { hasPermission } from "../../lib/permissions/permissions";
 import { authorizeResources } from "../../lib/security/authorization";
@@ -178,14 +98,6 @@ import { createAuthorizedOperationalView } from "../../application/authorization
 import { createOperationalResourceContext } from "../../application/authorization/operationalResourceContext";
 import { createOperationalTimeline } from "../../application/operations/operationalTimeline";
 import { inMemoryOperationalRepository } from "../../infrastructure/persistence/inMemoryOperationalRepository";
-import {
-  applyNextSimulationTick,
-  changeSimulationSpeed,
-  resetSimulationState,
-  startSimulation,
-  stopSimulation,
-} from "../../application/simulation/simulationUseCases";
-import type { SimulationSpeed } from "../../domain/simulation/types";
 
 import { OperationalStateContext } from "./OperationalStateContext";
 import { useAtomicOperationalState } from "./useAtomicOperationalState";
@@ -217,18 +129,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     tasks,
     teams,
     shelters,
-    evacuationOperations,
     sosRequests,
-    warehouses,
-    inventory,
-    reliefRequests,
-    reservations,
-    shipments,
-    playbooks,
-    playbookExecutions,
-    damageAssessments,
-    recoveryProjects,
-    simulation,
     setIncidents,
     setEvents,
     setTasks,
@@ -237,87 +138,40 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setTeamEvents,
     setShelters,
     setShelterEvents,
-    setEvacuationOperations,
-    setEvacuationEvents,
     setSosRequests,
     setSosEvents,
-    setWarehouses,
-    setInventory,
-    setReliefRequests,
-    setReservations,
-    setShipments,
-    setReliefEvents,
-    setPlaybooks,
-    setPlaybookExecutions,
-    setPlaybookEvents,
-    setDamageAssessments,
-    setRecoveryProjects,
-    setRecoveryEvents,
     setAlertInteractions,
     setAlertEvents,
-    setSimulation,
+    setTaskReviews,
+    setCitizenReports,
+    setCitizenReportEvents,
+    setPublishedAlerts,
+    setPublishedAlertEvents,
     currentOperationalSnapshot,
-    currentSimulationState,
-    applyOperationalSnapshot,
     executeAtomic,
-  } = useAtomicOperationalState(
-    inMemoryOperationalRepository.load(),
-    resetSimulationState(),
-  );
+  } = useAtomicOperationalState(inMemoryOperationalRepository.load());
   const now = () => currentOperationalSnapshot().metadata.asOf;
   const timeOnly = () => now().split(" ")[1] ?? now();
   const {
-    system: systemResource,
     incident: incidentResource,
     team: teamResource,
     task: taskResources,
     shelter: shelterResource,
-    evacuation: evacuationResources,
     sos: sosResource,
-    warehouse: warehouseResource,
-    reliefRequest: reliefRequestResource,
-    reservation: reservationResources,
-    shipment: shipmentResources,
-    assessment: assessmentResource,
-    recoveryProject: recoveryProjectResource,
-    playbook: playbookResource,
-    playbookExecution: playbookExecutionResources,
+    citizenReport: citizenReportResource,
+    publishedAlert: publishedAlertResource,
   } = createOperationalResourceContext(currentOperationalSnapshot);
-  const {
-    pushEvent,
-    pushTeamEvent,
-    pushShelterEvent,
-    pushEvacuationEvent,
-    pushSosEvent,
-    pushReliefEvent,
-    pushRecoveryEvent,
-    pushTemplatePlaybookEvent,
-    pushPlaybookEvent,
-  } = createOperationalTimeline({
-    read: currentOperationalSnapshot,
-    actorName,
-    now,
-    timeOnly,
-    setEvents,
-    setTeamEvents,
-    setShelterEvents,
-    setEvacuationEvents,
-    setSosEvents,
-    setReliefEvents,
-    setRecoveryEvents,
-    setPlaybookEvents,
-    setPlaybookExecutions,
-  });
-  const syncRecoveryProjects = (nextTasks: IncidentTask[]) =>
-    setRecoveryProjects((current) =>
-      current.map((project) =>
-        syncRecoveryProgress(
-          project,
-          { tasks: nextTasks, assessments: damageAssessments },
-          now(),
-        ),
-      ),
-    );
+  const { pushEvent, pushTeamEvent, pushShelterEvent, pushSosEvent } =
+    createOperationalTimeline({
+      read: currentOperationalSnapshot,
+      actorName,
+      now,
+      timeOnly,
+      setEvents,
+      setTeamEvents,
+      setShelterEvents,
+      setSosEvents,
+    });
   const syncIncidentProgress = (
     incidentId: string,
     nextTasks: IncidentTask[],
@@ -427,13 +281,18 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const incident = incidents.find((item) => item.id === data.incidentId);
     const team = teams.find((item) => item.id === data.teamId);
     if (team) assertTeamDispatchable(team);
-    const task = createTaskEntity(id, data, now(), {
+    const created = createTaskEntity(id, data, now(), {
       teamLeader: team?.leader ?? "",
       coordinates: incident?.location.coordinates ?? [105.85, 21.05],
     });
+    const task = data.teamId
+      ? {
+          ...created,
+          assignmentHistory: [initialAssignmentRecord(data.teamId, actorName, now())],
+        }
+      : created;
     const next = [task, ...tasks];
     setTasks(next);
-    syncRecoveryProjects(next);
     if (data.teamId) {
       setTeams((current) =>
         current.map((item) =>
@@ -463,11 +322,25 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const team = teams.find((item) => item.id === teamId);
     if (!team) return;
     assertTeamDispatchable(team, taskId);
-    const assigned = assignTaskToTeam(
+    const assignedBase = assignTaskToTeam(
       task,
       { teamId, teamLeader: team.leader },
       now(),
     );
+    const assigned = {
+      ...assignedBase,
+      assignmentHistory: [
+        ...(task.assignmentHistory ?? []),
+        initialAssignmentRecord(
+          teamId,
+          actorName,
+          now(),
+          task.teamId && task.teamId !== teamId
+            ? "Gán lại đội (không ghi lý do — dùng Phân công lại để ghi lý do)"
+            : "Phân công ban đầu",
+        ),
+      ],
+    };
     const next = tasks.map((item) => (item.id === taskId ? assigned : item));
     setTasks(next);
     setTeams((current) =>
@@ -506,18 +379,19 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         ? "task_accept"
         : status === "Đang thực hiện"
           ? "task_start"
-          : status === "Hoàn thành"
-            ? "task_complete"
-            : status === "Đã hủy"
-              ? "task_cancel"
-              : "task_assign";
+          : status === "Chờ xác nhận"
+            ? "task_report_done"
+            : status === "Hoàn thành"
+              ? "task_complete"
+              : status === "Đã hủy"
+                ? "task_cancel"
+                : "task_assign";
     enforcePermission(permission, taskResources(taskId));
     const transitioned = transitionTaskEntity(task, status, now());
     const next = tasks.map((item) =>
       item.id === taskId ? transitioned : item,
     );
     setTasks(next);
-    syncRecoveryProjects(next);
     syncIncidentProgress(task.incidentId, next);
     if (task.teamId) {
       setTeams((current) =>
@@ -618,7 +492,6 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         : item,
     );
     setTasks(next);
-    syncRecoveryProjects(next);
     if (entersExecution && task.teamId) {
       setTeams((current) =>
         current.map((team) =>
@@ -955,364 +828,6 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "resources",
     );
   };
-  const createEvacuation = (input: NewEvacuationInput) => {
-    enforcePermission("evacuation_create", [
-      incidentResource(input.incidentId),
-      shelterResource(input.destinationShelterId),
-      { type: "Evacuation", id: "new", geographicScope: input.sourceArea },
-    ]);
-    const shelter = shelters.find(
-      (item) => item.id === input.destinationShelterId,
-    );
-    const incident = incidents.find((item) => item.id === input.incidentId);
-    if (!shelter || !incident)
-      throw new Error("Sự cố hoặc điểm sơ tán không hợp lệ.");
-    assertShelterCanReceive(shelter, input.estimatedPopulation);
-    const number =
-      Math.max(
-        0,
-        ...evacuationOperations.map(
-          (item) => Number(item.id.replace(/\D/g, "")) || 0,
-        ),
-      ) + 1;
-    const id = `EVAC-${String(number).padStart(3, "0")}`;
-    const midpoint: [number, number] = [
-      (input.sourceCoordinates[0] + shelter.coordinates[0]) / 2,
-      (input.sourceCoordinates[1] + shelter.coordinates[1]) / 2,
-    ];
-    const route = {
-      id: `RT-${String(number).padStart(3, "0")}`,
-      name: `${input.sourceArea} – ${shelter.name}`,
-      status: "Thông suốt" as const,
-      distanceKm:
-        Math.round(
-          Math.hypot(
-            input.sourceCoordinates[0] - shelter.coordinates[0],
-            input.sourceCoordinates[1] - shelter.coordinates[1],
-          ) *
-            90 *
-            10,
-        ) / 10,
-      estimatedMinutes: 30,
-      coordinates: [input.sourceCoordinates, midpoint, shelter.coordinates],
-      blockedSegments: [],
-      alternativeCoordinates: [
-        input.sourceCoordinates,
-        [midpoint[0] + 0.008, midpoint[1] + 0.006],
-        shelter.coordinates,
-      ] as [number, number][],
-      updatedAt: now(),
-    };
-    const operation = createEvacuationOperation(id, input, route, now());
-    setEvacuationOperations((current) => [operation, ...current]);
-    const changed = applyShelterCapacity(
-      {
-        ...shelter,
-        reservedCapacity: shelter.reservedCapacity + input.estimatedPopulation,
-      },
-      shelter.capacity,
-      shelter.reservedCapacity + input.estimatedPopulation,
-      now(),
-    );
-    setShelters((current) =>
-      current.map((item) =>
-        item.id === shelter.id
-          ? {
-              ...changed,
-              linkedIncidentIds: [
-                ...new Set([...changed.linkedIncidentIds, input.incidentId]),
-              ],
-              activeEvacuationOperationIds: [
-                ...changed.activeEvacuationOperationIds,
-                id,
-              ],
-            }
-          : item,
-      ),
-    );
-    pushShelterEvent(
-      shelter.id,
-      `Dự kiến tiếp nhận ${input.estimatedPopulation} người từ ${input.sourceArea}`,
-      "reservation",
-    );
-    pushEvacuationEvent(
-      id,
-      `Tạo phương án sơ tán tới ${shelter.id}`,
-      "created",
-    );
-    pushEvent(
-      input.incidentId,
-      `Tạo hoạt động ${id}, dự kiến sơ tán ${input.estimatedPopulation} người tới ${shelter.id}`,
-      "evacuation",
-    );
-    return id;
-  };
-  const transitionEvacuation = (
-    operationId: string,
-    status: EvacuationStatus,
-  ) => {
-    const permission: Permission =
-      status === "Đã phê duyệt"
-        ? "evacuation_approve"
-        : status === "Hoàn thành"
-          ? "evacuation_complete"
-          : status === "Đã hủy"
-            ? "evacuation_cancel"
-            : "evacuation_update";
-    enforcePermission(permission, evacuationResources(operationId));
-    const operation = evacuationOperations.find(
-      (item) => item.id === operationId,
-    );
-    if (!operation) return;
-    const changed = applyEvacuationTransition(operation, status, now());
-    setEvacuationOperations((current) =>
-      current.map((item) => (item.id === operationId ? changed : item)),
-    );
-    if (status === "Đang triển khai" && operation.assignedTeamId)
-      setTeams((current) =>
-        current.map((team) =>
-          team.id === operation.assignedTeamId
-            ? changeTeamStatus(team, "Đang thực hiện", now())
-            : team,
-        ),
-      );
-    if (status === "Hoàn thành" || status === "Đã hủy") {
-      const remaining =
-        operation.estimatedPopulation - operation.evacuatedPopulation;
-      setShelters((current) =>
-        current.map((shelter) => {
-          if (shelter.id !== operation.destinationShelterId) return shelter;
-          const occupancy =
-            status === "Hoàn thành"
-              ? shelter.currentOccupancy + remaining
-              : shelter.currentOccupancy;
-          const next = applyShelterOccupancy(
-            {
-              ...shelter,
-              reservedCapacity: Math.max(
-                0,
-                shelter.reservedCapacity - remaining,
-              ),
-            },
-            occupancy,
-            now(),
-          );
-          return {
-            ...next,
-            activeEvacuationOperationIds:
-              next.activeEvacuationOperationIds.filter(
-                (id) => id !== operationId,
-              ),
-          };
-        }),
-      );
-      if (operation.assignedTeamId)
-        setTeams((current) =>
-          current.map((team) =>
-            team.id === operation.assignedTeamId
-              ? releaseTeamFromEvacuation(team, now())
-              : team,
-          ),
-        );
-    }
-    pushEvacuationEvent(
-      operationId,
-      `Chuyển trạng thái hoạt động sang ${status.toUpperCase()}`,
-      "status",
-    );
-    pushEvent(
-      operation.incidentId,
-      `${operationId} chuyển sang ${status.toUpperCase()}`,
-      "evacuation_status",
-    );
-  };
-  const assignEvacuationTeam = (operationId: string, teamId: string) => {
-    enforcePermission(
-      "evacuation_assign",
-      [...evacuationResources(operationId), teamResource(teamId)],
-      "gán đội cho sơ tán",
-    );
-    const operation = evacuationOperations.find(
-      (item) => item.id === operationId,
-    );
-    const team = teams.find((item) => item.id === teamId);
-    if (!operation || !team)
-      throw new Error("Hoạt động hoặc đội cứu hộ không hợp lệ.");
-    if (operation.assignedTeamId === teamId) return;
-    const assigned = applyEvacuationTeam(operation, teamId, now());
-    const changedTeam = assignTeamToEvacuation(
-      team,
-      operationId,
-      operation.incidentId,
-      now(),
-    );
-    setEvacuationOperations((current) =>
-      current.map((item) => (item.id === operationId ? assigned : item)),
-    );
-    setTeams((current) =>
-      current.map((item) =>
-        item.id === teamId
-          ? changedTeam
-          : item.id === operation.assignedTeamId
-            ? releaseTeamFromEvacuation(item, now())
-            : item,
-      ),
-    );
-    pushEvacuationEvent(
-      operationId,
-      `Gán ${teamId} phụ trách hoạt động`,
-      "assignment",
-    );
-    pushTeamEvent(
-      teamId,
-      `Được phân công hoạt động sơ tán ${operationId}`,
-      "evacuation",
-    );
-  };
-  const updateEvacuationProgress = (operationId: string, evacuated: number) => {
-    enforcePermission("evacuation_update", evacuationResources(operationId));
-    const operation = evacuationOperations.find(
-      (item) => item.id === operationId,
-    );
-    if (!operation) return;
-    const changed = applyEvacuationProgress(operation, evacuated, now());
-    const delta = evacuated - operation.evacuatedPopulation;
-    setEvacuationOperations((current) =>
-      current.map((item) => (item.id === operationId ? changed : item)),
-    );
-    if (delta !== 0)
-      setShelters((current) =>
-        current.map((shelter) =>
-          shelter.id === operation.destinationShelterId
-            ? applyShelterOccupancy(
-                {
-                  ...shelter,
-                  reservedCapacity: Math.max(
-                    0,
-                    shelter.reservedCapacity - delta,
-                  ),
-                },
-                shelter.currentOccupancy + delta,
-                now(),
-              )
-            : shelter,
-        ),
-      );
-    pushEvacuationEvent(
-      operationId,
-      `Cập nhật đã sơ tán ${evacuated}/${operation.estimatedPopulation} người`,
-      "progress",
-      operation.assignedTeamId ?? actorName,
-    );
-  };
-  const updateEvacuationRoute = (operationId: string, status: RouteStatus) => {
-    enforcePermission("evacuation_update", evacuationResources(operationId));
-    const operation = evacuationOperations.find(
-      (item) => item.id === operationId,
-    );
-    if (!operation) return;
-    const changed = applyRouteStatus(operation, status, now());
-    setEvacuationOperations((current) =>
-      current.map((item) => (item.id === operationId ? changed : item)),
-    );
-    pushEvacuationEvent(
-      operationId,
-      status === "Bị chặn"
-        ? "Tuyến đang sử dụng bị chặn, tạm dừng hoạt động"
-        : `Cập nhật trạng thái tuyến: ${status}`,
-      "route",
-    );
-    if (status === "Bị chặn")
-      pushEvent(
-        operation.incidentId,
-        `${operationId} tạm dừng do tuyến sơ tán bị chặn`,
-        "route_blocked",
-      );
-  };
-  const redirectEvacuation = (operationId: string, shelterId: string) => {
-    enforcePermission(
-      "evacuation_update",
-      [...evacuationResources(operationId), shelterResource(shelterId)],
-      "chuyển hướng sơ tán",
-    );
-    const operation = evacuationOperations.find(
-      (item) => item.id === operationId,
-    );
-    const oldShelter = shelters.find(
-      (item) => item.id === operation?.destinationShelterId,
-    );
-    const shelter = shelters.find((item) => item.id === shelterId);
-    if (!operation || !oldShelter || !shelter)
-      throw new Error("Hoạt động hoặc điểm sơ tán không hợp lệ.");
-    const remaining =
-      operation.estimatedPopulation - operation.evacuatedPopulation;
-    assertShelterCanReceive(shelter, remaining);
-    const route = {
-      ...operation.route,
-      id: `${operation.route.id}-ALT`,
-      name: `${operation.sourceArea} – ${shelter.name}`,
-      status: "Đang dùng tuyến thay thế" as const,
-      coordinates: operation.route.alternativeCoordinates.length
-        ? operation.route.alternativeCoordinates
-        : [operation.sourceCoordinates, shelter.coordinates],
-      alternativeCoordinates: operation.route.coordinates,
-      blockedSegments: operation.route.blockedSegments,
-      updatedAt: now(),
-    };
-    const changed = applyEvacuationRedirect(operation, shelterId, route, now());
-    setEvacuationOperations((current) =>
-      current.map((item) => (item.id === operationId ? changed : item)),
-    );
-    setShelters((current) =>
-      current.map((item) => {
-        if (item.id === oldShelter.id)
-          return {
-            ...applyShelterCapacity(
-              {
-                ...item,
-                reservedCapacity: Math.max(
-                  0,
-                  item.reservedCapacity - remaining,
-                ),
-              },
-              item.capacity,
-              Math.max(0, item.reservedCapacity - remaining),
-              now(),
-            ),
-            activeEvacuationOperationIds:
-              item.activeEvacuationOperationIds.filter(
-                (id) => id !== operationId,
-              ),
-          };
-        if (item.id === shelterId)
-          return {
-            ...applyShelterCapacity(
-              { ...item, reservedCapacity: item.reservedCapacity + remaining },
-              item.capacity,
-              item.reservedCapacity + remaining,
-              now(),
-            ),
-            linkedIncidentIds: [
-              ...new Set([...item.linkedIncidentIds, operation.incidentId]),
-            ],
-            activeEvacuationOperationIds: [
-              ...new Set([...item.activeEvacuationOperationIds, operationId]),
-            ],
-          };
-        return item;
-      }),
-    );
-    pushEvacuationEvent(
-      operationId,
-      `Chuyển hướng từ ${oldShelter.id} tới ${shelterId}`,
-      "redirect",
-    );
-    pushShelterEvent(
-      shelterId,
-      `Tiếp nhận chuyển hướng ${remaining} người từ ${oldShelter.id}`,
-      "redirect",
-    );
-  };
   const verifySos = (sosId: string) => {
     enforcePermission("sos_verify", [sosResource(sosId)]);
     const sos = sosRequests.find((item) => item.id === sosId);
@@ -1461,37 +976,6 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "communication",
     );
   };
-  const routeSosToShelter = (sosId: string, shelterId: string) => {
-    const sos = sosRequests.find((item) => item.id === sosId);
-    if (!sos || !sos.linkedIncidentId)
-      throw new Error(
-        "Phải liên kết SOS với sự cố trước khi tạo hoạt động sơ tán.",
-      );
-    enforcePermission("evacuation_create", [
-      sosResource(sosId),
-      incidentResource(sos.linkedIncidentId),
-      shelterResource(shelterId),
-    ]);
-    const id = createEvacuation(evacuationInputFromSos(sos, shelterId));
-    setSosRequests((current) =>
-      current.map((item) =>
-        item.id === sosId
-          ? {
-              ...item,
-              shelterDestinationId: shelterId,
-              linkedEvacuationOperationId: id,
-              lastUpdatedAt: now(),
-            }
-          : item,
-      ),
-    );
-    pushSosEvent(
-      sosId,
-      `Chuyển ${sos.peopleAtRisk} người vào hoạt động ${id} tới ${shelterId}`,
-      "evacuation",
-    );
-    return id;
-  };
   const createSos = (input: NewSosInput) => {
     enforcePermission("sos_create", [
       { type: "SosRequest", id: "new", geographicScope: input.location.address },
@@ -1501,7 +985,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       ...sosRequests.map((item) => Number(item.id.replace(/\D/g, "")) || 0),
     );
     const id = `SOS-${String(maxNum + 1).padStart(4, "0")}`;
-    const newSos = createSosRequest(id, input, now());
+    const newSos = createSosRequest(id, input, now(), currentUser?.id ?? null);
     setSosRequests((current) => [newSos, ...current]);
     pushSosEvent(
       id,
@@ -1555,1692 +1039,273 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     );
     pushSosEvent(sosId, "Xác nhận kết quả và đóng SOS", "closed");
   };
-  const createReliefRequest = (input: NewReliefRequestInput) => {
-    enforcePermission("relief_create", [
-      { type: "ReliefRequest", id: "new", geographicScope: input.destination },
-      ...(input.incidentId ? [incidentResource(input.incidentId)] : []),
-      ...(input.shelterId ? [shelterResource(input.shelterId)] : []),
-      ...(input.evacuationOperationId
-        ? evacuationResources(input.evacuationOperationId)
-        : []),
-      ...(input.teamId ? [teamResource(input.teamId)] : []),
-    ]);
-    assertReliefScope(role, input.destination, currentScopeName);
-    const number =
-      Math.max(
-        240,
-        ...reliefRequests.map(
-          (item) => Number(item.id.replace(/\D/g, "")) || 0,
-        ),
-      ) + 1;
-    const id = `REQ-${String(number).padStart(4, "0")}`;
-    const request = createReliefEntity(id, input, now());
-    setReliefRequests((current) => [request, ...current]);
-    pushReliefEvent(
-      "request",
-      id,
-      `Tạo yêu cầu cứu trợ cho ${input.destination}`,
-      "created",
-    );
-    if (input.incidentId)
-      pushEvent(
-        input.incidentId,
-        `Tạo yêu cầu cứu trợ ${id}: ${input.justification}`,
-        "relief",
-      );
-    return id;
-  };
-  const transitionReliefRequest = (
-    requestId: string,
-    status: ReliefRequestStatus,
-  ) => {
-    const permission: Permission =
-      status === "Từ chối"
-        ? "relief_approve"
-        : status === "Hủy"
-          ? "relief_cancel"
-          : status === "Đã đóng"
-            ? "relief_receive"
-            : status === "Đã gửi"
-              ? "relief_create"
-              : "relief_approve";
-    enforcePermission(permission, [reliefRequestResource(requestId)]);
-    const request = reliefRequests.find((item) => item.id === requestId);
-    if (!request) return;
-    const changed = applyReliefTransition(request, status, now(), {
-      reservations,
-      shipments,
-    });
-    setReliefRequests((current) =>
-      current.map((item) => (item.id === requestId ? changed : item)),
-    );
-    if (status === "Hủy") {
-      const active = reservations.filter(
-        (item) =>
-          item.reliefRequestId === requestId && item.status === "Đang giữ",
-      );
-      let nextInventory = inventory;
-      const releasedIds = new Set<string>();
-      active.forEach((reservation) => {
-        const result = releaseReservation(reservation, nextInventory, now());
-        nextInventory = result.inventory;
-        releasedIds.add(reservation.id);
-      });
-      setInventory(nextInventory);
-      setReservations((current) =>
-        current.map((item) =>
-          releasedIds.has(item.id)
-            ? { ...item, status: "Đã giải phóng", releasedAt: now() }
-            : item,
-        ),
-      );
-    }
-    pushReliefEvent(
-      "request",
-      requestId,
-      `Chuyển trạng thái yêu cầu sang ${status.toUpperCase()}`,
-      "status",
-    );
-  };
-  const approveReliefRequest = (
-    requestId: string,
-    approved: Record<string, number>,
-  ) => {
-    enforcePermission("relief_approve", [reliefRequestResource(requestId)]);
-    const request = reliefRequests.find((item) => item.id === requestId);
-    if (!request) return;
-    const changed = applyReliefApproval(request, approved, actorName, now());
-    setReliefRequests((current) =>
-      current.map((item) => (item.id === requestId ? changed : item)),
-    );
-    pushReliefEvent(
-      "request",
-      requestId,
-      "Phê duyệt phân bổ vật tư",
-      "approved",
-    );
-  };
-  const reserveReliefStock = (
-    requestId: string,
-    warehouseId: string,
-    allocations: Array<{ itemCode: string; quantity: number }>,
-  ) => {
-    enforcePermission(
-      "relief_reserve",
-      [reliefRequestResource(requestId), warehouseResource(warehouseId)],
-      "giữ hàng tại kho",
-    );
-    const request = reliefRequests.find((item) => item.id === requestId);
-    const warehouse = warehouses.find((item) => item.id === warehouseId);
-    if (!request || !warehouse)
-      throw new Error("Yêu cầu hoặc kho không hợp lệ.");
-    assertReliefScope(role, warehouse.administrativeArea, currentScopeName);
-    const id = `RES-${requestId.replace("REQ-", "")}-${String(reservations.filter((item) => item.reliefRequestId === requestId).length + 1).padStart(2, "0")}`;
-    const result = reserveStock(
-      id,
-      request,
-      warehouse,
-      inventory,
-      allocations,
-      now(),
-    );
-    setInventory(result.inventory);
-    setReservations((current) => [result.reservation, ...current]);
-    setReliefRequests((current) =>
-      current.map((item) =>
-        item.id === requestId
-          ? {
-              ...item,
-              status: "Đã giữ hàng",
-              assignedWarehouseIds: [
-                ...new Set([...item.assignedWarehouseIds, warehouseId]),
-              ],
-              lastUpdatedAt: now(),
-            }
-          : item,
-      ),
-    );
-    pushReliefEvent(
-      "request",
-      requestId,
-      `Giữ hàng tại ${warehouseId}: ${result.reservation.items.map((item) => `${item.quantity} ${item.unit} ${item.name}`).join(", ")}`,
-      "reservation",
-    );
-    pushReliefEvent(
-      "warehouse",
-      warehouseId,
-      `Giữ hàng cho ${requestId}`,
-      "reservation",
-    );
-    return id;
-  };
-  const dispatchReliefReservation = (
-    reservationId: string,
-    teamId: string | null = null,
-  ) => {
-    enforcePermission(
-      "relief_dispatch",
-      [
-        ...reservationResources(reservationId),
-        ...(teamId ? [teamResource(teamId)] : []),
-      ],
-      "xuất kho và điều phối vận chuyển",
-    );
-    const reservation = reservations.find((item) => item.id === reservationId);
-    const request = reliefRequests.find(
-      (item) => item.id === reservation?.reliefRequestId,
-    );
-    const warehouse = warehouses.find(
-      (item) => item.id === reservation?.warehouseId,
-    );
-    if (!reservation || !request || !warehouse)
-      throw new Error("Phiếu giữ hàng không hợp lệ.");
-    assertReliefScope(role, warehouse.administrativeArea, currentScopeName);
-    const team = teamId ? teams.find((item) => item.id === teamId) : undefined;
-    if (team) assertTeamDispatchable(team);
-    const number =
-      Math.max(
-        240,
-        ...shipments.map((item) => Number(item.id.replace(/\D/g, "")) || 0),
-      ) + 1;
-    const id = `SHP-${String(number).padStart(4, "0")}`;
-    const midpoint: [number, number] = [
-      (warehouse.coordinates[0] + request.destinationCoordinates[0]) / 2,
-      (warehouse.coordinates[1] + request.destinationCoordinates[1]) / 2,
-    ];
-    const result = applyReservationDispatch(
-      id,
-      reservation,
-      request,
-      warehouse,
-      inventory,
-      {
-        assignedTeamId: teamId,
-        method: team ? "Phương tiện của đội cứu hộ" : "Xe vận tải kho",
-        driver: team?.leader ?? warehouse.responsibleOfficer.name,
-        contact: team?.contact ?? warehouse.contact,
-        estimatedArrival: "21/08/2026 12:30",
-        routeCoordinates: [
-          warehouse.coordinates,
-          midpoint,
-          request.destinationCoordinates,
-        ],
-      },
-      now(),
-    );
-    setInventory(result.inventory);
-    setReservations((current) =>
-      current.map((item) =>
-        item.id === reservationId ? result.reservation : item,
-      ),
-    );
-    setShipments((current) => [result.shipment, ...current]);
-    setReliefRequests((current) =>
-      current.map((item) =>
-        item.id === request.id
-          ? {
-              ...item,
-              status: "Đã xuất kho",
-              shipmentIds: [...item.shipmentIds, id],
-              lastUpdatedAt: now(),
-            }
-          : item,
-      ),
-    );
-    if (team)
-      setTeams((current) =>
-        current.map((item) =>
-          item.id === team.id
-            ? assignTeamToReliefShipment(item, id, request.incidentId, now())
-            : item,
-        ),
-      );
-    pushReliefEvent(
-      "shipment",
-      id,
-      `Xuất hàng từ ${warehouse.id} tới ${request.destination}`,
-      "dispatch",
-    );
-    pushReliefEvent(
-      "request",
-      request.id,
-      `Tạo chuyến hàng ${id} từ ${warehouse.id}`,
-      "dispatch",
-    );
-    return id;
-  };
-  const updateShipmentStatus = (
-    shipmentId: string,
-    status: ShipmentStatus,
-    note?: string,
-  ) => {
-    enforcePermission("shipment_update", shipmentResources(shipmentId));
-    const shipment = shipments.find((item) => item.id === shipmentId);
-    if (!shipment) return;
-    const changed = applyShipmentTransition(shipment, status, now(), note);
-    const next = shipments.map((item) =>
-      item.id === shipmentId ? changed : item,
-    );
-    setShipments(next);
-    const request = reliefRequests.find(
-      (item) => item.id === shipment.reliefRequestId,
-    );
-    if (request) {
-      let requestStatus = request.status;
-      if (status === "Đang vận chuyển") requestStatus = "Đang vận chuyển";
-      if (
-        (status === "Đã giao" || status === "Hoàn tất") &&
-        next
-          .filter((item) => item.reliefRequestId === request.id)
-          .every((item) => ["Đã giao", "Hoàn tất"].includes(item.status))
-      )
-        requestStatus = "Đã giao";
-      setReliefRequests((current) =>
-        current.map((item) =>
-          item.id === request.id
-            ? { ...item, status: requestStatus, lastUpdatedAt: now() }
-            : item,
-        ),
-      );
-    }
-    if (status === "Đang vận chuyển" && shipment.assignedTeamId)
-      setTeams((current) =>
-        current.map((team) =>
-          team.id === shipment.assignedTeamId &&
-          team.status === "Đang điều động"
-            ? changeTeamStatus(team, "Đang thực hiện", now())
-            : team,
-        ),
-      );
-    if (status === "Hoàn tất" && shipment.assignedTeamId)
-      setTeams((current) =>
-        current.map((team) =>
-          team.id === shipment.assignedTeamId
-            ? releaseTeamFromReliefShipment(team, now())
-            : team,
-        ),
-      );
-    pushReliefEvent(
-      "shipment",
-      shipmentId,
-      `Cập nhật chuyến hàng: ${status}${note ? ` — ${note}` : ""}`,
-      "status",
-    );
-  };
-  const confirmShipmentReceipt = (
-    shipmentId: string,
-    receiver: string,
-    receiverRole: string,
-    note: string,
-  ) => {
-    enforcePermission("relief_receive", shipmentResources(shipmentId));
-    const shipment = shipments.find((item) => item.id === shipmentId);
-    if (!shipment) return;
-    const changed = applyShipmentReceipt(
-      shipment,
-      receiver,
-      receiverRole,
+  /* ── V2: đơn vị báo xong → chờ xác nhận; cán bộ xác nhận; phân công lại có lý do ── */
+  const reportTaskDone = (taskId: string, note: string) => {
+    enforcePermission("task_report_done", taskResources(taskId), "báo hoàn thành nhiệm vụ");
+    const task = tasks.find((item) => item.id === taskId);
+    if (!task) return;
+    const snapshot = currentOperationalSnapshot();
+    const reviewNumber =
+      Math.max(0, ...snapshot.taskReviews.map((r) => Number(r.id.replace(/\D/g, "")) || 0)) + 1;
+    const review = createTaskReview(
+      `TRV-${String(reviewNumber).padStart(4, "0")}`,
+      task,
+      actorName,
       note,
       now(),
     );
-    const next = shipments.map((item) =>
-      item.id === shipmentId ? changed : item,
-    );
-    setShipments(next);
-    const request = reliefRequests.find(
-      (item) => item.id === shipment.reliefRequestId,
-    );
-    if (
-      request &&
-      next
-        .filter((item) => item.reliefRequestId === request.id)
-        .every((item) => Boolean(item.receipt))
-    )
-      setReliefRequests((current) =>
-        current.map((item) =>
-          item.id === request.id
-            ? {
-                ...item,
-                status: "Đã xác nhận",
-                receivedAt: now(),
-                lastUpdatedAt: now(),
-              }
-            : item,
-        ),
-      );
-    if (shipment.assignedTeamId)
-      setTeams((current) =>
-        current.map((team) =>
-          team.id === shipment.assignedTeamId
-            ? releaseTeamFromReliefShipment(team, now())
-            : team,
-        ),
-      );
-    pushReliefEvent(
-      "shipment",
-      shipmentId,
-      `Xác nhận giao nhận bởi ${receiver}`,
-      "receipt",
-    );
-  };
-  const adjustWarehouseInventory = (itemId: string, quantityOnHand: number) => {
-    enforcePermission("warehouse_adjust_stock", [
-      warehouseResource(
-        inventory.find((value) => value.id === itemId)?.warehouseId ??
-          "missing",
-      ),
-    ]);
-    const item = inventory.find((value) => value.id === itemId);
-    if (!item) return;
-    const itemWarehouse = warehouses.find(
-      (value) => value.id === item.warehouseId,
-    );
-    if (itemWarehouse)
-      assertReliefScope(
-        role,
-        itemWarehouse.administrativeArea,
-        currentScopeName,
-      );
-    const changed = applyInventoryAdjustment(item, quantityOnHand, now());
-    setInventory((current) =>
-      current.map((value) => (value.id === itemId ? changed : value)),
-    );
-    pushReliefEvent(
-      "warehouse",
-      item.warehouseId,
-      `Điều chỉnh tồn ${item.name}: ${quantityOnHand} ${item.unit}`,
-      "stock",
-    );
-  };
-  const setWarehouseStatus = (warehouseId: string, status: WarehouseStatus) => {
-    enforcePermission(
-      status === "Tạm đóng" ? "warehouse_close" : "warehouse_update",
-      [warehouseResource(warehouseId)],
-    );
-    const warehouse = warehouses.find((item) => item.id === warehouseId);
-    if (!warehouse) return;
-    assertReliefScope(role, warehouse.administrativeArea, currentScopeName);
-    if (
-      status === "Tạm đóng" &&
-      (reservations.some(
-        (item) =>
-          item.warehouseId === warehouseId && item.status === "Đang giữ",
-      ) ||
-        shipments.some(
-          (item) =>
-            item.warehouseId === warehouseId &&
-            !["Hoàn tất"].includes(item.status),
-        ))
-    )
-      throw new Error(
-        "Không thể đóng kho khi còn hàng giữ hoặc chuyến hàng đang mở.",
-      );
-    setWarehouses((current) =>
-      current.map((item) =>
-        item.id === warehouseId
-          ? { ...item, status, lastUpdatedAt: now() }
-          : item,
-      ),
-    );
-    pushReliefEvent(
-      "warehouse",
-      warehouseId,
-      `Chuyển trạng thái kho sang ${status}`,
-      "status",
-    );
-  };
-  const createDamageAssessment = (input: NewDamageAssessmentInput) => {
-    enforcePermission("damage_assessment_create", [
-      {
-        type: "DamageAssessment",
-        id: "new",
-        geographicScope: input.geographicScope,
-      },
-      incidentResource(input.incidentId),
-    ]);
-    assertRecoveryScope(role, input.geographicScope, currentScopeName);
-    if (!incidents.some((item) => item.id === input.incidentId))
-      throw new Error("Sự cố không hợp lệ.");
-    const id = `DA-${String(Math.max(240, ...damageAssessments.map((item) => Number(item.id.replace(/\D/g, "")) || 0)) + 1).padStart(4, "0")}`;
-    const value = createDamageAssessmentEntity(id, input, now());
-    setDamageAssessments((current) => [value, ...current]);
-    pushRecoveryEvent(
-      "assessment",
-      id,
-      input.incidentId,
-      `Tạo đánh giá thiệt hại ${id}`,
-      "assessment_created",
-    );
-    return id;
-  };
-  const updateDamageAssessment = (
-    id: string,
-    changes: Partial<
-      Omit<
-        DamageAssessment,
-        | "id"
-        | "code"
-        | "incidentId"
-        | "status"
-        | "verification"
-        | "verifiedAt"
-        | "createdAt"
-        | "updatedAt"
-      >
-    >,
-  ) => {
-    enforcePermission("damage_assessment_edit", [
-      assessmentResource(id),
-      ...(changes.geographicScope
-        ? [
-            {
-              type: "DamageAssessment",
-              id,
-              geographicScope: changes.geographicScope,
-            },
-          ]
-        : []),
-    ]);
-    const value = damageAssessments.find((item) => item.id === id);
-    if (!value) return;
-    assertRecoveryScope(role, value.geographicScope, currentScopeName);
-    setDamageAssessments((current) =>
-      current.map((item) =>
-        item.id === id ? applyDamageUpdate(item, changes, now()) : item,
-      ),
-    );
-  };
-  const submitDamageAssessment = (id: string) => {
-    enforcePermission("damage_assessment_submit", [assessmentResource(id)]);
-    const value = damageAssessments.find((item) => item.id === id);
-    if (!value) return;
-    assertRecoveryScope(role, value.geographicScope, currentScopeName);
-    setDamageAssessments((current) =>
-      current.map((item) =>
-        item.id === id ? applyDamageSubmission(item, now()) : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "assessment",
-      id,
-      value.incidentId,
-      `Gửi ${id} để thẩm định`,
-      "assessment_submitted",
-    );
-  };
-  const reviewDamageAssessment = (id: string) => {
-    enforcePermission("damage_assessment_verify", [assessmentResource(id)]);
-    const value = damageAssessments.find((item) => item.id === id);
-    if (!value) return;
-    assertRecoveryScope(role, value.geographicScope, currentScopeName);
-    setDamageAssessments((current) =>
-      current.map((item) =>
-        item.id === id ? applyDamageReview(item, now()) : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "assessment",
-      id,
-      value.incidentId,
-      `Bắt đầu thẩm định ${id}`,
-      "assessment_reviewed",
-    );
-  };
-  const verifyDamageAssessment = (
-    id: string,
-    evidenceIds: string[],
-    note: string,
-  ) => {
-    enforcePermission("damage_assessment_verify", [assessmentResource(id)]);
-    const value = damageAssessments.find((item) => item.id === id);
-    if (!value) return;
-    assertRecoveryScope(role, value.geographicScope, currentScopeName);
-    setDamageAssessments((current) =>
-      current.map((item) =>
-        item.id === id
-          ? applyDamageVerification(item, actorName, evidenceIds, note, now())
-          : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "assessment",
-      id,
-      value.incidentId,
-      `Xác minh đánh giá thiệt hại ${id}`,
-      "assessment_verified",
-    );
-  };
-  const rejectDamageAssessment = (id: string, reason: string) => {
-    enforcePermission("damage_assessment_reject", [assessmentResource(id)]);
-    const value = damageAssessments.find((item) => item.id === id);
-    if (!value) return;
-    assertRecoveryScope(role, value.geographicScope, currentScopeName);
-    setDamageAssessments((current) =>
-      current.map((item) =>
-        item.id === id
-          ? applyDamageRejection(item, actorName, reason, [], now())
-          : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "assessment",
-      id,
-      value.incidentId,
-      `Từ chối ${id}: ${reason}`,
-      "assessment_rejected",
-    );
-  };
-  const addDamageItem = (assessmentId: string, item: DamageItem) => {
-    enforcePermission("damage_assessment_edit", [
-      assessmentResource(assessmentId),
-    ]);
-    const value = damageAssessments.find((row) => row.id === assessmentId);
-    if (!value) return;
-    assertRecoveryScope(role, value.geographicScope, currentScopeName);
-    setDamageAssessments((current) =>
-      current.map((row) =>
-        row.id === assessmentId ? applyDamageItemAdd(row, item, now()) : row,
-      ),
-    );
-  };
-  const attachDamageEvidence = (
-    assessmentId: string,
-    evidence: RecoveryEvidence,
-  ) => {
-    enforcePermission("damage_assessment_edit", [
-      assessmentResource(assessmentId),
-    ]);
-    const value = damageAssessments.find((row) => row.id === assessmentId);
-    if (!value) return;
-    assertRecoveryScope(role, value.geographicScope, currentScopeName);
-    setDamageAssessments((current) =>
-      current.map((row) =>
-        row.id === assessmentId
-          ? applyDamageEvidence(row, evidence, now())
-          : row,
-      ),
-    );
-  };
-  const createDamageRevision = (assessmentId: string) => {
-    enforcePermission("damage_assessment_edit", [
-      assessmentResource(assessmentId),
-    ]);
-    const value = damageAssessments.find((item) => item.id === assessmentId);
-    if (!value) throw new Error("Không tìm thấy đánh giá thiệt hại.");
-    assertRecoveryScope(role, value.geographicScope, currentScopeName);
-    const id = `${value.id}-R${value.revision + 1}`;
-    const revision = applyDamageRevision(id, value, actorName, now());
-    setDamageAssessments((current) => [revision, ...current]);
-    pushRecoveryEvent(
-      "assessment",
-      id,
-      value.incidentId,
-      `Tạo bản điều chỉnh ${id} từ ${value.id}`,
-      "assessment_revision",
-    );
-    return id;
-  };
-  const createRecoveryProject = (input: NewRecoveryProjectInput) => {
-    enforcePermission("recovery_project_create", [
-      {
-        type: "RecoveryProject",
-        id: "new",
-        geographicScope: input.geographicScope,
-      },
-      incidentResource(input.incidentId),
-      ...input.assessmentIds.map(assessmentResource),
-    ]);
-    assertRecoveryScope(role, input.geographicScope, currentScopeName);
-    if (!incidents.some((item) => item.id === input.incidentId))
-      throw new Error("Sự cố không hợp lệ.");
-    const id = `RP-${String(Math.max(240, ...recoveryProjects.map((item) => Number(item.id.replace(/\D/g, "")) || 0)) + 1).padStart(4, "0")}`;
-    const value = createRecoveryProjectEntity(id, input, now());
-    setRecoveryProjects((current) => [value, ...current]);
-    pushRecoveryEvent(
-      "project",
-      id,
-      input.incidentId,
-      `Tạo dự án khôi phục ${id}`,
-      "project_created",
-    );
-    return id;
-  };
-  const updateRecoveryProject = (
-    id: string,
-    changes: Partial<
-      Pick<
-        RecoveryProject,
-        | "name"
-        | "category"
-        | "priority"
-        | "owner"
-        | "geographicScope"
-        | "estimatedBudget"
-        | "targetDate"
-        | "notes"
-        | "assessmentIds"
-        | "assignedTeamIds"
-        | "relatedReliefRequestIds"
-      >
-    >,
-  ) => {
-    enforcePermission("recovery_project_create", [
-      recoveryProjectResource(id),
-      ...(changes.geographicScope
-        ? [
-            {
-              type: "RecoveryProject",
-              id,
-              geographicScope: changes.geographicScope,
-            },
-          ]
-        : []),
-      ...(changes.assessmentIds ?? []).map(assessmentResource),
-      ...(changes.assignedTeamIds ?? []).map(teamResource),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === id);
-    if (!value) return;
-    assertRecoveryScope(role, value.geographicScope, currentScopeName);
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === id ? applyRecoveryUpdate(item, changes, now()) : item,
-      ),
-    );
-  };
-  const approveRecoveryProject = (id: string, budget: number) => {
-    enforcePermission("recovery_project_approve", [
-      recoveryProjectResource(id),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === id);
-    if (!value) return;
-    assertRecoveryScope(role, value.geographicScope, currentScopeName);
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === id
-          ? applyRecoveryApproval(item, damageAssessments, budget, now())
-          : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      id,
-      value.incidentId,
-      `Phê duyệt dự án ${id} với ngân sách ${budget.toLocaleString("vi-VN")} đồng`,
-      "project_approved",
-    );
-  };
-  const rejectRecoveryProject = (id: string, reason: string) => {
-    enforcePermission("recovery_project_approve", [
-      recoveryProjectResource(id),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === id);
-    if (!value) return;
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === id
-          ? applyRecoveryProjectRejection(item, reason, now())
-          : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      id,
-      value.incidentId,
-      `Từ chối dự án ${id}: ${reason}`,
-      "project_rejected",
-    );
-  };
-  const startRecoveryProject = (id: string) => {
-    enforcePermission("recovery_project_execute", [
-      recoveryProjectResource(id),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === id);
-    if (!value) return;
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === id ? applyRecoveryStart(item, now()) : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      id,
-      value.incidentId,
-      `Khởi động dự án ${id}`,
-      "project_started",
-    );
-  };
-  const pauseRecoveryProject = (id: string) => {
-    enforcePermission("recovery_project_execute", [
-      recoveryProjectResource(id),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === id);
-    if (!value) return;
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === id ? applyRecoveryPause(item, now()) : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      id,
-      value.incidentId,
-      `Tạm dừng dự án ${id}`,
-      "project_paused",
-    );
-  };
-  const resumeRecoveryProject = (id: string) => {
-    enforcePermission("recovery_project_execute", [
-      recoveryProjectResource(id),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === id);
-    if (!value) return;
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === id ? applyRecoveryResume(item, now()) : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      id,
-      value.incidentId,
-      `Tiếp tục dự án ${id}`,
-      "project_resumed",
-    );
-  };
-  const cancelRecoveryProject = (id: string) => {
-    enforcePermission("recovery_project_cancel", [recoveryProjectResource(id)]);
-    const value = recoveryProjects.find((item) => item.id === id);
-    if (!value) return;
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === id ? applyRecoveryCancellation(item, now()) : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      id,
-      value.incidentId,
-      `Hủy dự án ${id}`,
-      "project_cancelled",
-    );
-  };
-  const updateRecoveryBudget = (
-    id: string,
-    spent: number,
-    overrideNote: string | null = null,
-  ) => {
-    enforcePermission("recovery_project_execute", [
-      recoveryProjectResource(id),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === id);
-    if (!value) return;
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === id
-          ? applyRecoveryBudget(item, spent, overrideNote, now())
-          : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      id,
-      value.incidentId,
-      `Cập nhật chi phí dự án ${id}: ${spent.toLocaleString("vi-VN")} đồng`,
-      "budget_updated",
-    );
-  };
-  const verifyRecoveryCompletion = (
-    id: string,
-    note: string,
-    evidence: string[],
-  ) => {
-    enforcePermission("recovery_project_approve", [
-      recoveryProjectResource(id),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === id);
-    if (!value) return;
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === id
-          ? applyRecoveryCompletionVerification(
-              item,
-              actorName,
-              note,
-              evidence,
-              now(),
-            )
-          : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      id,
-      value.incidentId,
-      `Ghi nhận xác minh hoàn thành dự án ${id}`,
-      "completion_verified",
-    );
-  };
-  const completeRecoveryProject = (id: string) => {
-    enforcePermission("recovery_project_execute", [
-      recoveryProjectResource(id),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === id);
-    if (!value) return;
-    const context = { tasks, assessments: damageAssessments };
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === id ? applyRecoveryCompletion(item, context, now()) : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      id,
-      value.incidentId,
-      `Hoàn thành dự án ${id}`,
-      "project_completed",
-    );
-  };
-  const addRecoveryMilestone = (
-    projectId: string,
-    milestone: Omit<
-      RecoveryMilestone,
-      "projectId" | "order" | "status" | "progress" | "completedAt"
-    >,
-  ) => {
-    enforcePermission("recovery_project_execute", [
-      recoveryProjectResource(projectId),
-    ]);
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === projectId
-          ? applyRecoveryMilestoneAdd(item, milestone, now())
-          : item,
-      ),
-    );
-  };
-  const startRecoveryMilestone = (projectId: string, milestoneId: string) => {
-    enforcePermission("recovery_project_execute", [
-      recoveryProjectResource(projectId),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === projectId);
-    if (!value) return;
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === projectId
-          ? syncRecoveryProgress(
-              applyRecoveryMilestoneStart(item, milestoneId, now()),
-              { tasks, assessments: damageAssessments },
-              now(),
-            )
-          : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      projectId,
-      value.incidentId,
-      `Bắt đầu mốc công việc ${milestoneId}`,
-      "milestone_started",
-    );
-  };
-  const completeRecoveryMilestone = (
-    projectId: string,
-    milestoneId: string,
-  ) => {
-    enforcePermission("recovery_project_execute", [
-      recoveryProjectResource(projectId),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === projectId);
-    if (!value) return;
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === projectId
-          ? syncRecoveryProgress(
-              applyRecoveryMilestoneCompletion(item, milestoneId, now()),
-              { tasks, assessments: damageAssessments },
-              now(),
-            )
-          : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      projectId,
-      value.incidentId,
-      `Hoàn thành mốc công việc ${milestoneId}`,
-      "milestone_completed",
-    );
-  };
-  const skipRecoveryMilestone = (projectId: string, milestoneId: string) => {
-    enforcePermission("recovery_project_execute", [
-      recoveryProjectResource(projectId),
-    ]);
-    const value = recoveryProjects.find((item) => item.id === projectId);
-    if (!value) return;
-    setRecoveryProjects((current) =>
-      current.map((item) =>
-        item.id === projectId
-          ? syncRecoveryProgress(
-              applyRecoveryMilestoneSkip(item, milestoneId, now()),
-              { tasks, assessments: damageAssessments },
-              now(),
-            )
-          : item,
-      ),
-    );
-    pushRecoveryEvent(
-      "project",
-      projectId,
-      value.incidentId,
-      `Bỏ qua mốc công việc tùy chọn ${milestoneId}`,
-      "milestone_skipped",
-    );
-  };
-  const createTaskFromRecoveryProject = (projectId: string) => {
-    enforcePermission("recovery_project_execute", [
-      recoveryProjectResource(projectId),
-    ]);
-    const project = recoveryProjects.find((item) => item.id === projectId);
-    const incident = incidents.find((item) => item.id === project?.incidentId);
-    if (!project || !incident)
-      throw new Error("Dự án hoặc sự cố không hợp lệ.");
-    enforcePermission("task_create", [
-      incidentResource(incident.id),
-      recoveryProjectResource(projectId),
-    ]);
-    const id = `TSK-${String(Math.max(240, ...tasks.map((item) => Number(item.id.replace(/\D/g, "")) || 0)) + 1).padStart(4, "0")}`;
-    const task = createTaskEntity(
-      id,
-      {
-        incidentId: incident.id,
-        title: `${project.code} — ${project.name}`,
-        type: "Khôi phục",
-        priority: project.priority,
-        teamId: "",
-        assignee: "",
-        location: project.location.name,
-        dueAt: project.targetDate,
-        description: `Nhiệm vụ được tạo để phục vụ dự án khôi phục ${project.code}.`,
-      },
-      now(),
-      { teamLeader: "", coordinates: project.location.coordinates },
-    );
-    const next = [task, ...tasks];
+    const reported = reportTaskDoneEntity(task, now());
+    const next = tasks.map((item) => (item.id === taskId ? reported : item));
     setTasks(next);
-    setRecoveryProjects((current) =>
+    setTaskReviews((current) => [review, ...current]);
+    pushTeamEvent(
+      task.teamId,
+      `${taskId} báo hoàn thành, chờ cán bộ xác nhận`,
+      "task_status",
+      task.teamId,
+    );
+    pushEvent(
+      task.incidentId,
+      `${taskId} báo hoàn thành (${note.trim()}) — chờ xác nhận`,
+      "task_status",
+      task.teamId || actorName,
+    );
+  };
+  const reviewTaskResult = (taskId: string, accepted: boolean, note: string) => {
+    enforcePermission("task_review", taskResources(taskId), "xác nhận kết quả nhiệm vụ");
+    const task = tasks.find((item) => item.id === taskId);
+    if (!task) return;
+    const snapshot = currentOperationalSnapshot();
+    const pending = snapshot.taskReviews.find(
+      (r) => r.taskId === taskId && r.decision === "Chờ xác nhận",
+    );
+    if (!pending) throw new Error("Không có báo cáo kết quả nào đang chờ xác nhận.");
+    const decided = decideTaskReview(pending, accepted, note, actorName, now());
+    setTaskReviews((current) =>
+      current.map((r) => (r.id === decided.id ? decided : r)),
+    );
+    if (accepted) {
+      // Chấp nhận: đi qua transitionTask để đồng bộ đội, sự cố và SOS liên kết.
+      transitionTask(taskId, "Hoàn thành");
+      pushEvent(
+        task.incidentId,
+        `Cán bộ chấp nhận kết quả ${taskId}${note.trim() ? `: ${note.trim()}` : ""}`,
+        "task_status",
+      );
+      return;
+    }
+    const rejected = reviewTaskResultEntity(task, false, now());
+    const next = tasks.map((item) => (item.id === taskId ? rejected : item));
+    setTasks(next);
+    syncIncidentProgress(task.incidentId, next);
+    pushTeamEvent(
+      task.teamId,
+      `Kết quả ${taskId} bị từ chối: ${note.trim()} — tiếp tục thực hiện`,
+      "task_status",
+      task.teamId,
+    );
+    pushEvent(
+      task.incidentId,
+      `Cán bộ từ chối kết quả ${taskId}: ${note.trim()}`,
+      "task_status",
+    );
+  };
+  const reassignTask = (taskId: string, teamId: string, reason: string) => {
+    enforcePermission(
+      "task_assign",
+      [...taskResources(taskId), teamResource(teamId)],
+      "phân công lại nhiệm vụ",
+    );
+    const task = tasks.find((item) => item.id === taskId);
+    if (!task) return;
+    const team = teams.find((item) => item.id === teamId);
+    if (!team) return;
+    assertTeamDispatchable(team, taskId);
+    const reassigned = reassignTaskEntity(
+      task,
+      { teamId, teamLeader: team.leader },
+      reason,
+      actorName,
+      now(),
+    );
+    const next = tasks.map((item) => (item.id === taskId ? reassigned : item));
+    setTasks(next);
+    // Báo cáo đang chờ xác nhận (nếu có) không còn giá trị sau khi đổi đội.
+    setTaskReviews((current) =>
+      current.map((r) =>
+        r.taskId === taskId && r.decision === "Chờ xác nhận"
+          ? {
+              ...r,
+              decision: "Từ chối" as const,
+              reviewedBy: actorName,
+              reviewedAt: now(),
+              reviewNote: `Phân công lại cho ${teamId}: ${reason.trim()}`,
+            }
+          : r,
+      ),
+    );
+    setTeams((current) =>
+      current.map((item) => {
+        if (item.id === teamId)
+          return assignTeamToOperation(item, taskId, task.incidentId, now());
+        if (task.teamId && item.id === task.teamId)
+          return recalculateTeamAssignment(item, next, now());
+        return item;
+      }),
+    );
+    if (task.teamId)
+      pushTeamEvent(
+        task.teamId,
+        `Được rút khỏi ${taskId} (phân công lại: ${reason.trim()})`,
+        "assignment",
+      );
+    pushTeamEvent(teamId, `Nhận phân công lại nhiệm vụ ${taskId}`, "assignment");
+    setSosRequests((current) =>
       current.map((item) =>
-        item.id === projectId
-          ? syncRecoveryProgress(
-              {
-                ...item,
-                taskIds: [...item.taskIds, id],
-                requiredTaskIds: [...item.requiredTaskIds, id],
-              },
-              { tasks: next, assessments: damageAssessments },
-              now(),
-            )
+        item.linkedTaskId === taskId
+          ? { ...item, assignedTeamId: teamId, lastUpdatedAt: now() }
           : item,
       ),
     );
     pushEvent(
-      incident.id,
-      `Tạo nhiệm vụ ${id} từ dự án ${project.code}`,
-      "recovery_task",
+      task.incidentId,
+      `Phân công lại ${taskId}: ${task.teamId || "chưa có đội"} → ${teamId}. Lý do: ${reason.trim()}`,
+      "task_assignment",
     );
-    pushRecoveryEvent(
-      "project",
-      projectId,
-      incident.id,
-      `Tạo và liên kết nhiệm vụ ${id}`,
-      "task_created",
-    );
-    return id;
   };
-  const createPlaybook = (input: NewPlaybookInput) => {
-    enforcePermission("playbook_edit", [
-      { type: "Playbook", id: "new", geographicScope: input.geographicScope },
+
+  /* ── V2: Phản ánh của người dân ── */
+  const createCitizenReport = (input: NewCitizenReportInput) => {
+    enforcePermission("report_create", [
+      {
+        type: "CitizenReport",
+        id: "new",
+        geographicScope: input.location.administrativeArea,
+        ownerUserId: currentUser?.id ?? null,
+      },
     ]);
+    if (!currentUser) throw new Error("Cần đăng nhập để gửi phản ánh.");
+    const snapshot = currentOperationalSnapshot();
     const number =
-      Math.max(
-        0,
-        ...playbooks.map((item) => Number(item.id.replace(/\D/g, "")) || 0),
-      ) + 1;
-    const id = `PB-${String(number).padStart(3, "0")}`;
-    const value = createPlaybookEntity(id, input, now());
-    setPlaybooks((current) => [value, ...current]);
-    pushTemplatePlaybookEvent(id, `Tạo phương án ứng phó ${value.code}`, "created");
-    return id;
-  };
-  const updatePlaybook = (
-    playbookId: string,
-    changes: Partial<
-      Pick<
-        Playbook,
-        | "name"
-        | "description"
-        | "disasterType"
-        | "triggerConditions"
-        | "severityThreshold"
-        | "geographicScope"
-        | "owner"
-        | "estimatedDuration"
-      >
-    >,
-  ) => {
-    enforcePermission("playbook_edit", [
-      playbookResource(playbookId),
-      ...(changes.geographicScope
-        ? [
-            {
-              type: "Playbook",
-              id: playbookId,
-              geographicScope: changes.geographicScope,
-            },
-          ]
-        : []),
+      Math.max(0, ...snapshot.citizenReports.map((r) => Number(r.id.replace(/\D/g, "")) || 0)) + 1;
+    const id = `RPT-${String(number).padStart(4, "0")}`;
+    const report = createCitizenReportEntity(id, input, currentUser.id, now());
+    setCitizenReports((current) => [report, ...current]);
+    setCitizenReportEvents((current) => [
+      {
+        id: `RPE-${Date.now()}-${current.length + 1}`,
+        reportId: id,
+        type: "created",
+        message: `Gửi phản ánh ${input.category} tại ${report.location.address}`,
+        actor: actorName,
+        timestamp: now(),
+      },
+      ...current,
     ]);
-    setPlaybooks((current) =>
-      current.map((item) =>
-        item.id === playbookId
-          ? applyPlaybookUpdate(item, changes, now())
-          : item,
-      ),
-    );
-  };
-  const publishPlaybook = (playbookId: string) => {
-    enforcePermission("playbook_publish", [playbookResource(playbookId)]);
-    const value = playbooks.find((item) => item.id === playbookId);
-    if (!value) return;
-    setPlaybooks((current) =>
-      current.map((item) =>
-        item.id === playbookId ? applyPlaybookPublish(item, now()) : item,
-      ),
-    );
-    pushTemplatePlaybookEvent(
-      playbookId,
-      `Xuất bản phương án ứng phó ${value.code}`,
-      "published",
-    );
-  };
-  const archivePlaybook = (playbookId: string) => {
-    enforcePermission("playbook_edit", [playbookResource(playbookId)]);
-    const value = playbooks.find((item) => item.id === playbookId);
-    if (!value) return;
-    if (
-      playbookExecutions.some(
-        (item) =>
-          item.playbookId === playbookId &&
-          ["Đang hoạt động", "Tạm dừng"].includes(item.status),
-      )
-    )
-      throw new Error("Không thể lưu trữ phương án khi vẫn còn đợt thực hiện đang mở.");
-    setPlaybooks((current) =>
-      current.map((item) =>
-        item.id === playbookId ? applyPlaybookArchive(item, now()) : item,
-      ),
-    );
-    pushTemplatePlaybookEvent(
-      playbookId,
-      `Lưu trữ phương án ứng phó ${value.code}`,
-      "archived",
-    );
-  };
-  const addPlaybookStep = (
-    playbookId: string,
-    step: Omit<
-      PlaybookStep,
-      | "playbookId"
-      | "order"
-      | "status"
-      | "startedAt"
-      | "completedAt"
-      | "completedBy"
-    >,
-  ) => {
-    enforcePermission("playbook_edit", [playbookResource(playbookId)]);
-    setPlaybooks((current) =>
-      current.map((item) =>
-        item.id === playbookId ? applyPlaybookStepAdd(item, step, now()) : item,
-      ),
-    );
-  };
-  const reorderPlaybookSteps = (playbookId: string, stepIds: string[]) => {
-    enforcePermission("playbook_edit", [playbookResource(playbookId)]);
-    setPlaybooks((current) =>
-      current.map((item) =>
-        item.id === playbookId
-          ? applyPlaybookStepReorder(item, stepIds, now())
-          : item,
-      ),
-    );
-  };
-  const activatePlaybook = (playbookId: string, incidentId: string) => {
-    enforcePermission(
-      "playbook_activate",
-      [playbookResource(playbookId), incidentResource(incidentId)],
-      "kích hoạt phương án ứng phó",
-    );
-    const playbook = playbooks.find((item) => item.id === playbookId);
-    const incident = incidents.find((item) => item.id === incidentId);
-    if (!playbook || !incident)
-      throw new Error("Phương án ứng phó hoặc sự cố không hợp lệ.");
-    if (
-      playbookExecutions.some(
-        (item) =>
-          item.playbookId === playbookId &&
-          item.incidentId === incidentId &&
-          ["Đang hoạt động", "Tạm dừng"].includes(item.status),
-      )
-    )
-      throw new Error("Phương án ứng phó đã được kích hoạt cho sự cố này.");
-    const id = `PBX-${String(Math.max(0, ...playbookExecutions.map((item) => Number(item.id.replace(/\D/g, "")) || 0)) + 1).padStart(4, "0")}`;
-    const execution = applyPlaybookActivation(
-      id,
-      playbook,
-      incident,
-      actorName,
-      role,
-      currentScopeName,
-      now(),
-    );
-    setPlaybookExecutions((current) => [execution, ...current]);
-    const event: PlaybookTimelineEvent = {
-      // Executed only inside an event-handler mutation command, never during render.
-      // oxlint-disable-next-line react/purity
-      id: `PBE-${Date.now()}`,
-      executionId: id,
-      playbookId,
-      incidentId,
-      stepId: null,
-      type: "activated",
-      message: `Kích hoạt ${playbook.code} cho ${incidentId}`,
-      actor: actorName,
-      timestamp: now(),
-      source: "Điều hành kế hoạch ứng phó",
-    };
-    setPlaybookEvents((current) => [event, ...current]);
-    setPlaybookExecutions((current) =>
-      current.map((item) =>
-        item.id === id ? { ...item, timeline: [event] } : item,
-      ),
-    );
-    pushEvent(incidentId, event.message, "playbook");
     return id;
   };
-  const pausePlaybookExecution = (executionId: string) => {
-    enforcePermission(
-      "playbook_execute",
-      playbookExecutionResources(executionId),
-    );
-    const execution = playbookExecutions.find(
-      (item) => item.id === executionId,
-    );
-    if (!execution) return;
-    setPlaybookExecutions((current) =>
-      current.map((item) =>
-        item.id === executionId ? applyPlaybookPause(item, now()) : item,
-      ),
-    );
-    pushPlaybookEvent(executionId, null, "Tạm dừng phương án ứng phó", "paused");
-  };
-  const resumePlaybookExecution = (executionId: string) => {
-    enforcePermission(
-      "playbook_execute",
-      playbookExecutionResources(executionId),
-    );
-    const execution = playbookExecutions.find(
-      (item) => item.id === executionId,
-    );
-    const playbook = playbooks.find(
-      (item) => item.id === execution?.playbookId,
-    );
-    if (!execution || !playbook) return;
-    setPlaybookExecutions((current) =>
-      current.map((item) =>
-        item.id === executionId
-          ? applyPlaybookResume(playbook, item, now())
-          : item,
-      ),
-    );
-    pushPlaybookEvent(
-      executionId,
-      null,
-      "Tiếp tục thực hiện phương án ứng phó",
-      "resumed",
-    );
-  };
-  const cancelPlaybookExecution = (executionId: string) => {
-    enforcePermission(
-      "playbook_cancel",
-      playbookExecutionResources(executionId),
-    );
-    const execution = playbookExecutions.find(
-      (item) => item.id === executionId,
-    );
-    if (!execution) return;
-    setPlaybookExecutions((current) =>
-      current.map((item) =>
-        item.id === executionId ? applyPlaybookCancel(item, now()) : item,
-      ),
-    );
-    pushPlaybookEvent(executionId, null, "Hủy đợt thực hiện phương án ứng phó", "cancelled");
-  };
-  const completePlaybookExecution = (executionId: string) => {
-    enforcePermission(
-      "playbook_execute",
-      playbookExecutionResources(executionId),
-    );
-    const execution = playbookExecutions.find(
-      (item) => item.id === executionId,
-    );
-    const playbook = playbooks.find(
-      (item) => item.id === execution?.playbookId,
-    );
-    if (!execution || !playbook) return;
-    setPlaybookExecutions((current) =>
-      current.map((item) =>
-        item.id === executionId
-          ? applyPlaybookCompletion(playbook, item, now())
-          : item,
-      ),
-    );
-    pushPlaybookEvent(executionId, null, "Hoàn thành phương án điều phối", "completed");
-  };
-  const startPlaybookStep = (executionId: string, stepId: string) => {
-    enforcePermission(
-      "playbook_execute",
-      playbookExecutionResources(executionId),
-    );
-    const execution = playbookExecutions.find(
-      (item) => item.id === executionId,
-    );
-    const playbook = playbooks.find(
-      (item) => item.id === execution?.playbookId,
-    );
-    if (!execution || !playbook) return;
-    setPlaybookExecutions((current) =>
-      current.map((item) =>
-        item.id === executionId
-          ? applyPlaybookStepStart(playbook, item, stepId, actorName, now())
-          : item,
-      ),
-    );
-    pushPlaybookEvent(
-      executionId,
-      stepId,
-      `Bắt đầu bước ${playbook.steps.find((item) => item.id === stepId)?.name}`,
-      "step_started",
-    );
-  };
-  const completePlaybookStep = (executionId: string, stepId: string) => {
-    enforcePermission(
-      "playbook_execute",
-      playbookExecutionResources(executionId),
-    );
-    const execution = playbookExecutions.find(
-      (item) => item.id === executionId,
-    );
-    const playbook = playbooks.find(
-      (item) => item.id === execution?.playbookId,
-    );
-    if (!execution || !playbook) return;
-    const context = {
-      tasks,
-      teams,
-      shelters,
-      evacuations: evacuationOperations,
-      sosRequests,
-      reliefRequests,
-    };
-    const changed = applyPlaybookStepCompletion(
-      playbook,
-      execution,
-      stepId,
-      context,
+  const reviewCitizenReport = (
+    reportId: string,
+    decision: Exclude<CitizenReportStatus, "Mới">,
+    note: string,
+    duplicateOfId: string | null = null,
+  ) => {
+    enforcePermission("report_review", [citizenReportResource(reportId)], "đánh giá phản ánh");
+    const report = currentOperationalSnapshot().citizenReports.find((r) => r.id === reportId);
+    if (!report) return;
+    const reviewed = reviewCitizenReportEntity(
+      report,
+      decision,
+      note,
       actorName,
       now(),
+      duplicateOfId,
     );
-    setPlaybookExecutions((current) =>
-      current.map((item) => (item.id === executionId ? changed : item)),
+    setCitizenReports((current) =>
+      current.map((r) => (r.id === reportId ? reviewed : r)),
     );
-    pushPlaybookEvent(
-      executionId,
-      stepId,
-      `Hoàn thành bước ${playbook.steps.find((item) => item.id === stepId)?.name}`,
-      "step_completed",
-    );
-    changed.stepExecutions
-      .filter(
-        (item) =>
-          item.status === "Bị chặn" &&
-          execution.stepExecutions.find(
-            (oldStep) => oldStep.stepId === item.stepId,
-          )?.status !== "Bị chặn",
-      )
-      .forEach((item) =>
-        pushPlaybookEvent(
-          executionId,
-          item.stepId,
-          `Bước ${playbook.steps.find((step) => step.id === item.stepId)?.name} bị chặn: ${item.blockedReason}`,
-          "step_blocked",
-          "Hệ thống nghiệp vụ",
-        ),
-      );
-  };
-  const skipPlaybookStep = (executionId: string, stepId: string) => {
-    const canOverride = can("playbook_override");
-    enforcePermission(
-      canOverride ? "playbook_override" : "playbook_execute",
-      playbookExecutionResources(executionId),
-    );
-    const execution = playbookExecutions.find(
-      (item) => item.id === executionId,
-    );
-    const playbook = playbooks.find(
-      (item) => item.id === execution?.playbookId,
-    );
-    if (!execution || !playbook) return;
-    setPlaybookExecutions((current) =>
-      current.map((item) =>
-        item.id === executionId
-          ? applyPlaybookStepSkip(
-              playbook,
-              item,
-              stepId,
-              actorName,
-              canOverride,
-              now(),
-            )
-          : item,
-      ),
-    );
-    pushPlaybookEvent(
-      executionId,
-      stepId,
-      `Bỏ qua bước ${playbook.steps.find((item) => item.id === stepId)?.name}`,
-      "step_skipped",
-    );
-  };
-  const assignPlaybookStepOwner = (
-    executionId: string,
-    stepId: string,
-    owner: string,
-  ) => {
-    enforcePermission(
-      "playbook_execute",
-      playbookExecutionResources(executionId),
-    );
-    setPlaybookExecutions((current) =>
-      current.map((item) =>
-        item.id === executionId
-          ? applyPlaybookStepOwner(item, stepId, owner, now())
-          : item,
-      ),
-    );
-    pushPlaybookEvent(
-      executionId,
-      stepId,
-      `Gán bước cho ${owner}`,
-      "step_owner",
-    );
-  };
-  const createRecoveryProjectFromPlaybook = (executionId: string) => {
-    enforcePermission(
-      "recovery_project_create",
-      playbookExecutionResources(executionId),
-    );
-    const execution = playbookExecutions.find(
-      (item) => item.id === executionId,
-    );
-    const playbook = playbooks.find(
-      (item) => item.id === execution?.playbookId,
-    );
-    const incident = incidents.find(
-      (item) => item.id === execution?.incidentId,
-    );
-    const basis = damageAssessments.filter(
-      (item) =>
-        item.incidentId === execution?.incidentId &&
-        item.status === "Đã xác minh",
-    );
-    if (!execution || !playbook || !incident)
-      throw new Error("Đợt thực hiện phương án hoặc sự cố không hợp lệ.");
-    if (!basis.length)
-      throw new Error(
-        "Chưa có đánh giá thiệt hại đã xác minh để tạo dự án khôi phục.",
-      );
-    const id = `RP-${String(Math.max(240, ...recoveryProjects.map((item) => Number(item.id.replace(/\D/g, "")) || 0)) + 1).padStart(4, "0")}`;
-    const project = createRecoveryProjectEntity(
-      id,
+    setCitizenReportEvents((current) => [
       {
-        name: `Khôi phục sau ${incident.title}`,
-        incidentId: incident.id,
-        assessmentIds: basis.map((item) => item.id),
-        category: "Khôi phục sau ứng phó",
-        priority: incident.severity === "Khẩn cấp" ? "Khẩn cấp" : "Cao",
-        owner: execution.activatedBy,
-        geographicScope: `${incident.location.name}`,
-        estimatedBudget: basis.reduce(
-          (sum, item) => sum + item.estimatedLoss,
-          0,
-        ),
-        targetDate: "30/09/2026",
-        location: {
-          name: incident.location.name,
-          coordinates: incident.location.coordinates,
-        },
-        affectedAreaCoordinates: basis[0].affectedAreaCoordinates,
-        notes: `Khởi tạo từ đợt thực hiện ${execution.id} của phương án ${playbook.code}.`,
+        id: `RPE-${Date.now()}-${current.length + 1}`,
+        reportId,
+        type: "reviewed",
+        message: `Đánh dấu ${decision}${note.trim() ? `: ${note.trim()}` : ""}${
+          decision === "Trùng" && duplicateOfId ? ` (trùng với ${duplicateOfId})` : ""
+        }`,
+        actor: actorName,
+        timestamp: now(),
       },
-      now(),
-    );
-    setRecoveryProjects((current) => [project, ...current]);
-    pushRecoveryEvent(
-      "project",
-      id,
-      incident.id,
-      `Tạo dự án ${id} từ đợt thực hiện phương án ${execution.id}`,
-      "project_created_from_playbook",
-    );
-    pushPlaybookEvent(
-      executionId,
-      null,
-      `Chuyển giai đoạn sang khôi phục, tạo dự án ${id}`,
-      "recovery_project_created",
-    );
-    return id;
-  };
-  const createTaskFromPlaybookStep = (executionId: string, stepId: string) => {
-    enforcePermission(
-      "playbook_execute",
-      playbookExecutionResources(executionId),
-    );
-    const execution = playbookExecutions.find(
-      (item) => item.id === executionId,
-    );
-    const playbook = playbooks.find(
-      (item) => item.id === execution?.playbookId,
-    );
-    const template = playbook?.steps.find((item) => item.id === stepId);
-    const incident = incidents.find(
-      (item) => item.id === execution?.incidentId,
-    );
-    if (!execution || !playbook || !template || !incident)
-      throw new Error("Đợt thực hiện, bước hoặc sự cố không hợp lệ.");
-    enforcePermission("task_create", [
-      incidentResource(incident.id),
-      ...playbookExecutionResources(executionId),
+      ...current,
     ]);
-    if (template.type !== "Nhiệm vụ")
-      throw new Error("Chỉ bước Nhiệm vụ mới có thể tạo Task.");
+  };
+
+  /* ── V2: Cảnh báo công bố (nháp → công bố → cập nhật/thu hồi) ── */
+  const pushPublishedAlertEvent = (
+    alertId: string,
+    type: "drafted" | "published" | "updated" | "withdrawn",
+    message: string,
+  ) =>
+    setPublishedAlertEvents((current) => [
+      {
+        id: `PAE-${Date.now()}-${current.length + 1}`,
+        alertId,
+        type,
+        message,
+        actor: actorName,
+        timestamp: now(),
+      },
+      ...current,
+    ]);
+  const draftPublishedAlert = (input: PublishedAlertDraftInput) => {
+    enforcePermission("published_alert_manage", [
+      { type: "PublishedAlert", id: "new", geographicScope: input.areaName },
+    ]);
+    const snapshot = currentOperationalSnapshot();
     const number =
-      Math.max(
-        240,
-        ...tasks.map((item) => Number(item.id.replace(/\D/g, "")) || 0),
-      ) + 1;
-    const id = `TSK-${String(number).padStart(4, "0")}`;
-    const task = createTaskEntity(
-      id,
-      {
-        incidentId: incident.id,
-        title: template.name,
-        type: "Phương án ứng phó / quy trình",
-        priority: incident.severity === "Khẩn cấp" ? "Khẩn cấp" : "Cao",
-        teamId: "",
-        assignee: "",
-        location: incident.location.name,
-        dueAt: "21/08/2026 13:00",
-        description: `Tạo từ ${playbook.code}, bước ${template.order}: ${template.objective}`,
-      },
-      now(),
-      { teamLeader: "", coordinates: incident.location.coordinates },
-    );
-    setTasks((current) => [task, ...current]);
-    setPlaybookExecutions((current) =>
-      current.map((item) =>
-        item.id === executionId
-          ? applyPlaybookEvidence(
-              item,
-              stepId,
-              {
-                linkedTaskIds: [
-                  ...new Set([
-                    ...item.stepExecutions.find(
-                      (value) => value.stepId === stepId,
-                    )!.linkedTaskIds,
-                    id,
-                  ]),
-                ],
-              },
-              now(),
-            )
-          : item,
-      ),
-    );
-    pushEvent(
-      incident.id,
-      `Tạo nhiệm vụ ${id} từ ${playbook.code} / ${template.name}`,
-      "playbook_task",
-    );
-    pushPlaybookEvent(
-      executionId,
-      stepId,
-      `Tạo và liên kết nhiệm vụ ${id}`,
-      "task_created",
-    );
+      Math.max(0, ...snapshot.publishedAlerts.map((a) => Number(a.id.replace(/\D/g, "")) || 0)) + 1;
+    const id = `PUB-${String(number).padStart(4, "0")}`;
+    const draft = createPublishedAlertDraft(id, input, actorName, now());
+    setPublishedAlerts((current) => [draft, ...current]);
+    pushPublishedAlertEvent(id, "drafted", `Soạn nháp cảnh báo: ${draft.title}`);
     return id;
   };
-  const updatePlaybookStepEvidence = (
-    executionId: string,
-    stepId: string,
-    changes: Partial<
-      Pick<
-        PlaybookStepExecution,
-        | "notes"
-        | "verificationNote"
-        | "linkedTaskIds"
-        | "linkedTeamIds"
-        | "linkedShelterIds"
-        | "linkedEvacuationIds"
-        | "linkedSosIds"
-        | "linkedReliefRequestIds"
-      >
-    >,
-  ) => {
-    enforcePermission(
-      "playbook_execute",
-      [
-        ...playbookExecutionResources(executionId),
-        ...(changes.linkedTaskIds ?? []).flatMap(taskResources),
-        ...(changes.linkedTeamIds ?? []).map(teamResource),
-        ...(changes.linkedShelterIds ?? []).map(shelterResource),
-        ...(changes.linkedEvacuationIds ?? []).flatMap(evacuationResources),
-        ...(changes.linkedSosIds ?? []).map(sosResource),
-        ...(changes.linkedReliefRequestIds ?? []).map(reliefRequestResource),
-      ],
-      "cập nhật liên kết bằng chứng phương án ứng phó",
+  const updatePublishedAlert = (alertId: string, input: PublishedAlertDraftInput) => {
+    enforcePermission("published_alert_manage", [publishedAlertResource(alertId)]);
+    const alert = currentOperationalSnapshot().publishedAlerts.find((a) => a.id === alertId);
+    if (!alert) return;
+    const updated = updatePublishedAlertEntity(alert, input, now());
+    setPublishedAlerts((current) =>
+      current.map((a) => (a.id === alertId ? updated : a)),
     );
-    setPlaybookExecutions((current) =>
-      current.map((item) =>
-        item.id === executionId
-          ? applyPlaybookEvidence(item, stepId, changes, now())
-          : item,
-      ),
-    );
-    pushPlaybookEvent(
-      executionId,
-      stepId,
-      "Cập nhật bằng chứng và liên kết nghiệp vụ cho bước",
-      "step_evidence",
+    pushPublishedAlertEvent(
+      alertId,
+      "updated",
+      alert.status === "Đã công bố"
+        ? `Cập nhật bản tin đã công bố (bản ${updated.revision})`
+        : "Cập nhật nội dung nháp",
     );
   };
-  const stepSimulation = () => {
-    const currentSimulation = currentSimulationState();
-    enforcePermission("simulation_control", [
-      systemResource(
-        "Simulation",
-        "red-river-flood-hanoi",
-        currentSimulation.status,
-      ),
-    ]);
-    const result = applyNextSimulationTick(
-      currentSimulation,
-      currentOperationalSnapshot(),
+  const publishAlert = (alertId: string) => {
+    enforcePermission("published_alert_manage", [publishedAlertResource(alertId)], "công bố cảnh báo");
+    const alert = currentOperationalSnapshot().publishedAlerts.find((a) => a.id === alertId);
+    if (!alert) return;
+    const published = publishAlertEntity(alert, now());
+    setPublishedAlerts((current) =>
+      current.map((a) => (a.id === alertId ? published : a)),
     );
-    applyOperationalSnapshot(result.snapshot);
-    setSimulation(result.simulation);
+    pushPublishedAlertEvent(alertId, "published", `Công bố cảnh báo tới người dân: ${alert.title}`);
   };
-  const playSimulation = () => {
-    const currentSimulation = currentSimulationState();
-    enforcePermission("simulation_control", [
-      systemResource(
-        "Simulation",
-        "red-river-flood-hanoi",
-        currentSimulation.status,
-      ),
-    ]);
-    setSimulation((current) => startSimulation(current));
+  const withdrawPublishedAlert = (alertId: string, reason: string) => {
+    enforcePermission("published_alert_manage", [publishedAlertResource(alertId)], "thu hồi cảnh báo");
+    const alert = currentOperationalSnapshot().publishedAlerts.find((a) => a.id === alertId);
+    if (!alert) return;
+    const withdrawn = withdrawAlertEntity(alert, reason, now());
+    setPublishedAlerts((current) =>
+      current.map((a) => (a.id === alertId ? withdrawn : a)),
+    );
+    pushPublishedAlertEvent(alertId, "withdrawn", `Thu hồi cảnh báo: ${reason.trim()}`);
   };
-  const pauseSimulation = () => {
-    const currentSimulation = currentSimulationState();
-    enforcePermission("simulation_control", [
-      systemResource(
-        "Simulation",
-        "red-river-flood-hanoi",
-        currentSimulation.status,
-      ),
-    ]);
-    setSimulation((current) => stopSimulation(current));
-  };
-  const setSimulationSpeed = (speed: SimulationSpeed) => {
-    const currentSimulation = currentSimulationState();
-    enforcePermission("simulation_control", [
-      systemResource(
-        "Simulation",
-        "red-river-flood-hanoi",
-        currentSimulation.status,
-      ),
-    ]);
-    setSimulation((current) => changeSimulationSpeed(current, speed));
-  };
-  const resetSimulation = () => {
-    const currentSimulation = currentSimulationState();
-    enforcePermission("simulation_control", [
-      systemResource(
-        "Simulation",
-        "red-river-flood-hanoi",
-        currentSimulation.status,
-      ),
-    ]);
-    applyOperationalSnapshot(inMemoryOperationalRepository.load());
-    setSimulation(resetSimulationState());
-  };
-  useEffect(() => {
-    if (simulation.status !== "Đang chạy") return;
-    const delay = Math.max(250, 1600 / simulation.speed);
-    const timer = window.setTimeout(() => executeAtomic(stepSimulation), delay);
-    return () => window.clearTimeout(timer);
-  });
+
   const addEvent = (incidentId: string, message: string, actor = actorName) => {
     enforcePermission("update", [incidentResource(incidentId)]);
     pushEvent(incidentId, message, "manual", actor);
@@ -3259,13 +1324,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         : []),
     ]);
     if (!incident) throw new Error("Không tìm thấy sự cố cần đóng.");
-    assertIncidentCanClose(id, {
-      tasks,
-      sosRequests,
-      evacuations: evacuationOperations,
-      reliefRequests,
-      playbookExecutions,
-    });
+    assertIncidentCanClose(id, { tasks, sosRequests });
     setIncidents((current) =>
       current.map((item) =>
         item.id === id
@@ -3397,7 +1456,6 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     alertInteractions: authorizedAlertInteractions,
     alerts: authorizedAlerts,
     alertEvents: authorizedAlertEvents,
-    simulation,
     session,
     currentUser,
     users,
@@ -3432,12 +1490,6 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     updateShelterOccupancy: atomic(updateShelterOccupancy),
     setShelterOpen: atomic(setShelterOpen),
     updateShelterResources: atomic(updateShelterResources),
-    createEvacuation: atomic(createEvacuation),
-    transitionEvacuation: atomic(transitionEvacuation),
-    assignEvacuationTeam: atomic(assignEvacuationTeam),
-    updateEvacuationProgress: atomic(updateEvacuationProgress),
-    updateEvacuationRoute: atomic(updateEvacuationRoute),
-    redirectEvacuation: atomic(redirectEvacuation),
     verifySos: atomic(verifySos),
     rejectSos: atomic(rejectSos),
     linkSosToIncident: atomic(linkSosToIncident),
@@ -3447,70 +1499,19 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     updateSosLocation: atomic(updateSosLocation),
     addSosUpdate: atomic(addSosUpdate),
     markSosNoContact: atomic(markSosNoContact),
-    routeSosToShelter: atomic(routeSosToShelter),
     createSos: atomic(createSos),
     resolveSos: atomic(resolveSos),
     closeSos: atomic(closeSos),
     cancelSos: atomic(cancelSos),
-    createReliefRequest: atomic(createReliefRequest),
-    transitionReliefRequest: atomic(transitionReliefRequest),
-    approveReliefRequest: atomic(approveReliefRequest),
-    reserveReliefStock: atomic(reserveReliefStock),
-    dispatchReliefReservation: atomic(dispatchReliefReservation),
-    updateShipmentStatus: atomic(updateShipmentStatus),
-    confirmShipmentReceipt: atomic(confirmShipmentReceipt),
-    adjustWarehouseInventory: atomic(adjustWarehouseInventory),
-    setWarehouseStatus: atomic(setWarehouseStatus),
-    createPlaybook: atomic(createPlaybook),
-    updatePlaybook: atomic(updatePlaybook),
-    publishPlaybook: atomic(publishPlaybook),
-    archivePlaybook: atomic(archivePlaybook),
-    addPlaybookStep: atomic(addPlaybookStep),
-    reorderPlaybookSteps: atomic(reorderPlaybookSteps),
-    activatePlaybook: atomic(activatePlaybook),
-    pausePlaybookExecution: atomic(pausePlaybookExecution),
-    resumePlaybookExecution: atomic(resumePlaybookExecution),
-    cancelPlaybookExecution: atomic(cancelPlaybookExecution),
-    completePlaybookExecution: atomic(completePlaybookExecution),
-    startPlaybookStep: atomic(startPlaybookStep),
-    completePlaybookStep: atomic(completePlaybookStep),
-    skipPlaybookStep: atomic(skipPlaybookStep),
-    assignPlaybookStepOwner: atomic(assignPlaybookStepOwner),
-    createRecoveryProjectFromPlaybook: atomic(
-      createRecoveryProjectFromPlaybook,
-    ),
-    createTaskFromPlaybookStep: atomic(createTaskFromPlaybookStep),
-    updatePlaybookStepEvidence: atomic(updatePlaybookStepEvidence),
-    createDamageAssessment: atomic(createDamageAssessment),
-    updateDamageAssessment: atomic(updateDamageAssessment),
-    submitDamageAssessment: atomic(submitDamageAssessment),
-    reviewDamageAssessment: atomic(reviewDamageAssessment),
-    verifyDamageAssessment: atomic(verifyDamageAssessment),
-    rejectDamageAssessment: atomic(rejectDamageAssessment),
-    addDamageItem: atomic(addDamageItem),
-    attachDamageEvidence: atomic(attachDamageEvidence),
-    createDamageRevision: atomic(createDamageRevision),
-    createRecoveryProject: atomic(createRecoveryProject),
-    updateRecoveryProject: atomic(updateRecoveryProject),
-    approveRecoveryProject: atomic(approveRecoveryProject),
-    rejectRecoveryProject: atomic(rejectRecoveryProject),
-    startRecoveryProject: atomic(startRecoveryProject),
-    pauseRecoveryProject: atomic(pauseRecoveryProject),
-    resumeRecoveryProject: atomic(resumeRecoveryProject),
-    cancelRecoveryProject: atomic(cancelRecoveryProject),
-    updateRecoveryBudget: atomic(updateRecoveryBudget),
-    verifyRecoveryCompletion: atomic(verifyRecoveryCompletion),
-    completeRecoveryProject: atomic(completeRecoveryProject),
-    addRecoveryMilestone: atomic(addRecoveryMilestone),
-    startRecoveryMilestone: atomic(startRecoveryMilestone),
-    completeRecoveryMilestone: atomic(completeRecoveryMilestone),
-    skipRecoveryMilestone: atomic(skipRecoveryMilestone),
-    createTaskFromRecoveryProject: atomic(createTaskFromRecoveryProject),
-    playSimulation: atomic(playSimulation),
-    pauseSimulation: atomic(pauseSimulation),
-    stepSimulation: atomic(stepSimulation),
-    resetSimulation: atomic(resetSimulation),
-    setSimulationSpeed: atomic(setSimulationSpeed),
+    reportTaskDone: atomic(reportTaskDone),
+    reviewTaskResult: atomic(reviewTaskResult),
+    reassignTask: atomic(reassignTask),
+    createCitizenReport: atomic(createCitizenReport),
+    reviewCitizenReport: atomic(reviewCitizenReport),
+    draftPublishedAlert: atomic(draftPublishedAlert),
+    updatePublishedAlert: atomic(updatePublishedAlert),
+    publishAlert: atomic(publishAlert),
+    withdrawPublishedAlert: atomic(withdrawPublishedAlert),
     addEvent: atomic(addEvent),
     closeIncident: atomic(closeIncident),
     markAlertRead: atomic(markAlertRead),

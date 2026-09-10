@@ -4,3 +4,4 @@ export {
   AlertNotificationBell,
   AlertNotificationPopover,
 } from "./components/AlertNotificationPopover";
+export { PublishedAlertSection } from "./components/PublishedAlertSection";

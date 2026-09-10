@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ChevronRight, FlaskConical, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import {
   getCommandCenterHeader,
   type CommandCenterEntityRef,
@@ -23,8 +23,7 @@ export function CommandCenter({
   navigate: (path: string) => void;
 }) {
   const store = useOperationalState();
-  const { simulation } = store;
-  const scenario = getCommandCenterHeader(store, simulation);
+  const scenario = getCommandCenterHeader(store);
   const [selected, setSelected] = useState<CommandCenterEntityRef | null>(null);
   const [dialogAction, setDialogAction] = useState<string | null>(null);
   const openEntity = useCallback(
@@ -42,15 +41,13 @@ export function CommandCenter({
       }
       if (label === "Mở phương án điều phối" && selected) {
         const path =
-          selected.kind === "warehouse"
-            ? `/relief/warehouses/${selected.id}`
-            : selected.kind === "team"
-              ? `/teams/${selected.id}`
-              : selected.kind === "shelter"
-                ? `/shelters/${selected.id}`
-                : selected.kind === "sos"
-                  ? `/sos/${selected.id}`
-                  : "/";
+          selected.kind === "team"
+            ? `/teams/${selected.id}`
+            : selected.kind === "shelter"
+              ? `/shelters/${selected.id}`
+              : selected.kind === "sos"
+                ? `/sos/${selected.id}`
+                : "/";
         setSelected(null);
         navigate(path);
         return;
@@ -80,31 +77,13 @@ export function CommandCenter({
       />
       <CommandSectionTabs active="/" navigate={navigate} />
 
-      {simulation.tick > 0 && (
-        <button
-          className="cc-simulation-strip"
-          onClick={() => navigate("/simulation")}
-        >
-          <FlaskConical size={15} />
-          <b>DỮ LIỆU MÔ PHỎNG</b>
-          <span>
-            Bước mô phỏng {simulation.tick}/{simulation.maxTick} · {simulation.stage} ·
-            Mực nước {simulation.riverLevel.toFixed(2)} m · Các bảng dưới đây
-            đang đọc dữ liệu nghiệp vụ đã được đồng bộ.
-          </span>
-          <ChevronRight size={14} />
-        </button>
-      )}
       {/*
         Trung tâm điều hành chỉ giữ những gì thay đổi theo phút VÀ dẫn tới một
         hành động ngay: hàng đợi việc, tình hình chung, cảnh báo, bản đồ, sổ
-        trực ban. Các bảng "ngoại lệ" của hậu cần, phương án, phục hồi và bảng
-        sự cố thu nhỏ đã được gỡ bỏ — chúng chỉ là bản sao của trang chuyên
-        môn, nhịp thay đổi theo ngày/tuần, và làm màn hình chỉ huy phải cuộn
-        bốn lần mới xem hết.
+        trực ban.
       */}
       <div className="cc-layout">
-        <QuickActions onAction={setDialogAction} onNavigate={navigate} />
+        <QuickActions onAction={setDialogAction} />
         <SituationSummary />
         <ResourceAlertStrip onNavigate={navigate} />
         <ActionQueue

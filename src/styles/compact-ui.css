@@ -345,7 +345,8 @@ html[data-theme="dark"] .sidebar-collapsed .nav-group-title {
   .login-card { padding: 22px; }
 }
 
-/* Refinement pass: roomier shell, consistent module headings and safe tables. */
+/* Refinement pass: roomier shell,
+consistent module headings and safe tables. */
 .topbar {
   height: 78px;
   padding-block: 8px;
@@ -420,7 +421,8 @@ html[data-theme="dark"] :is(.breadcrumbs, .analytics-eyebrow, .ai-eyebrow, .simu
   .om-map-zone { min-height: 430px; }
 }
 
-/* Badges and worklists may scroll, but labels must never overlap columns. */
+/* Badges and worklists may scroll,
+but labels must never overlap columns. */
 .badge { white-space: nowrap; }
 .incident-list-table,
 .task-list-table,
@@ -506,7 +508,10 @@ html[data-theme="dark"] :is(.breadcrumbs, .analytics-eyebrow, .ai-eyebrow, .simu
   .operational-report { padding: 28px 22px; }
 }
 
-/* Conversational assistant: chat canvas, user bubble, assistant card, fixed composer. */
+/* Conversational assistant: chat canvas,
+user bubble,
+assistant card,
+fixed composer. */
 .ai-workspace { max-width: 1540px; }
 .ai-page-header {
   padding: 0 2px;
@@ -539,12 +544,6 @@ html[data-theme="dark"] :is(.breadcrumbs, .analytics-eyebrow, .ai-eyebrow, .simu
   border-radius: 14px;
   background: linear-gradient(145deg, #fff 0%, #f1f6ff 100%);
   box-shadow: 0 5px 18px rgba(16, 24, 40, 0.06);
-}
-.ai-welcome-icon,
-.ai-assistant-mark {
-  border-radius: 50%;
-  background: linear-gradient(135deg, #175cd3, #528bdb);
-  color: #fff;
 }
 .ai-starters button {
   min-height: 42px;
@@ -640,7 +639,7 @@ html[data-theme="dark"] .ai-starters button:hover {
 @media (max-width: 1100px) {
   .ai-layout { grid-template-columns: minmax(0, 1fr); }
   .ai-conversation,
-  .ai-evidence-panel { min-width: 0; }
+.ai-evidence-panel { min-width: 0; }
   .incident-header-actions {
     width: 100%;
     flex-wrap: wrap;
@@ -657,7 +656,8 @@ html[data-theme="dark"] .ai-starters button:hover {
 }
 
 /* ================================================================
-   System design tokens — semantic typography, controls and spacing
+   System design tokens — semantic typography,
+controls and spacing
    ================================================================ */
 :root {
   --type-page-title: 30px;
@@ -906,20 +906,6 @@ button { font-size: var(--type-control); }
   .analytics-tabs button {
     flex: 1 1 150px;
     justify-content: flex-start;
-    white-space: normal;
-  }
-  :where(.shelter-summary, .relief-summary) {
-    flex-wrap: wrap;
-    align-items: stretch;
-    gap: var(--space-1);
-    overflow: visible;
-    padding: var(--space-2);
-  }
-  :where(.shelter-summary, .relief-summary) > div {
-    flex: 1 1 140px;
-    min-height: 34px;
-    padding: var(--space-1) var(--space-2);
-    border-right: 0;
     white-space: normal;
   }
   :where(
@@ -1172,10 +1158,6 @@ html[data-theme="dark"] .page-section-actions > button {
   .om-header-side { width: 100%; min-width: 0; }
   .om-data-stamp { min-width: 0; white-space: normal; line-height: 1.4; }
 }
-/* Shared contrast repairs for detail views and action surfaces. */
-html[data-theme="dark"] .milestone-sequence em {
-  color: #b9c5d4;
-}
 html[data-theme="dark"] .danger-text {
   color: #ff8a80;
 }
@@ -1311,7 +1293,8 @@ body {
   font-weight: var(--weight-semibold);
 }
 
-/* One border, radius and focus language for interactive controls. */
+/* One border,
+radius and focus language for interactive controls. */
 .workspace :where(
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):not([type="file"]),
   textarea
@@ -1354,7 +1337,8 @@ html[data-theme="dark"] .ai-drawer :where(input, textarea)::placeholder {
   color: #95a3b5;
 }
 
-/* Search is a first-class control, not an invisible input on a toolbar. */
+/* Search is a first-class control,
+not an invisible input on a toolbar. */
 .incident-search,
 .input-with-icon {
   min-height: var(--control-height);
@@ -1469,29 +1453,6 @@ html[data-theme="dark"] .ai-drawer :where(input, textarea)::placeholder {
   font-size: var(--font-size-label);
   font-weight: var(--weight-medium);
   white-space: nowrap;
-}
-
-/* Shared surfaces and content insets. */
-:where(
-  .content-section,
-  .side-section,
-  .cc-panel,
-  .incident-worklist,
-  .task-worklist,
-  .team-worklist,
-  .shelter-worklist,
-  .sos-worklist,
-  .relief-worklist,
-  .analytics-section,
-  .admin-content,
-  .simulation-panel,
-  .profile-hero,
-  .profile-information
-) {
-  border-color: var(--border-subtle);
-  border-radius: var(--radius-surface);
-  background: var(--surface-card);
-  box-shadow: var(--shadow-surface);
 }
 :where(
   .incident-filters,
@@ -1821,47 +1782,6 @@ html[data-theme="dark"] :is(
   color: #94a3b8 !important;
 }
 
-html[data-theme="dark"] :is(
-  .shelter-row,
-  .team-list-row,
-  .task-list-row,
-  .sos-row,
-  .relief-row,
-  .warehouse-row,
-  .assessment-row,
-  .project-row,
-  .playbook-row,
-  .incident-list-row,
-  .cc-incident-row,
-  .cc-action-item,
-  .admin-table tbody tr,
-  .data-table tbody tr
-) {
-  background: #111827 !important;
-  border-bottom-color: #1f2d3d !important;
-  color: #e2eaf5 !important;
-}
-
-html[data-theme="dark"] :is(
-  .shelter-row,
-  .team-list-row,
-  .task-list-row,
-  .sos-row,
-  .relief-row,
-  .warehouse-row,
-  .assessment-row,
-  .project-row,
-  .playbook-row,
-  .incident-list-row,
-  .cc-incident-row,
-  .cc-action-item,
-  .admin-table tbody tr,
-  .data-table tbody tr
-):hover {
-  background: #1e293b !important;
-  color: #f8fafc !important;
-}
-
 html[data-theme="dark"] .shelter-primary b,
 html[data-theme="dark"] .shelter-capacity b,
 html[data-theme="dark"] .shelter-condition b,
@@ -1920,7 +1840,8 @@ html[data-theme="dark"] svg {
 }
 
 /* ================================================================
-   FINAL DENSITY SEAL — loaded last, overrides all earlier passes.
+   FINAL DENSITY SEAL — loaded last,
+overrides all earlier passes.
    Purpose: resolve btn-md/topbar size conflict between
    interface-polish.css "production readability" section (40px/17px)
    and earlier compact-ui passes (34px/13px). Target: 36px / label-size.
@@ -1949,7 +1870,8 @@ html[data-theme="dark"] svg {
   .app-shell .app-body { height: calc(100vh - 58px) !important; }
 }
 
-/* Buttons: 36px md / 30px sm — accessible touch target, visually compact */
+/* Buttons: 36px md / 30px sm — accessible touch target,
+visually compact */
 .app-shell .btn-md,
 .app-shell .workspace .btn-md {
   min-height: 36px !important;
@@ -2023,7 +1945,9 @@ html[data-theme="dark"] svg {
   gap: 8px !important;
 }
 
-/* Khắc phục triệt để input nằm trong search/filter wrapper: không bị lòi khung, không viền kép, nền trong suốt đồng bộ */
+/* Khắc phục triệt để input nằm trong search/filter wrapper: không bị lòi khung,
+không viền kép,
+nền trong suốt đồng bộ */
 .app-shell .workspace :where(.incident-search, .input-with-icon) {
   display: flex !important;
   align-items: center !important;
@@ -2061,7 +1985,8 @@ html[data-theme="dark"] .app-shell .workspace :where(.incident-search, .input-wi
   color: #f1f5f9 !important;
 }
 
-/* Bỏ bộ lọc tối / filter làm mờ bản đồ trong dark mode — bản đồ sắc nét, sáng rõ */
+/* Bỏ bộ lọc tối / filter làm mờ bản đồ trong dark mode — bản đồ sắc nét,
+sáng rõ */
 html[data-theme="dark"] .map-canvas,
 html[data-theme="dark"] .maplibregl-canvas,
 html[data-theme="dark"] .map-shell .map-canvas {
@@ -2135,7 +2060,9 @@ html[data-theme="dark"] .map-shell .map-canvas {
    DARK MODE — Badge / Status / Nav-Count Color Protection
    The global "html[data-theme=dark] span { color: #cbd5e1 }" rule
    (compact-ui.css L1683) is too broad and would desaturate colored
-   badges, status dots, and nav counts. Re-assert their colors here.
+   badges,
+status dots,
+and nav counts. Re-assert their colors here.
    ================================================================ */
 
 /* Badge colors: restore semantic tone in dark mode */
@@ -2183,7 +2110,8 @@ html[data-theme="dark"] .status-dot-blue {
   box-shadow: 0 0 0 3px rgba(46, 144, 250, 0.18) !important;
 }
 
-/* Nav count badge: urgent red, must stay visible */
+/* Nav count badge: urgent red,
+must stay visible */
 html[data-theme="dark"] .sidebar:not(.sidebar-collapsed) .nav-count,
 html[data-theme="dark"] .sidebar .nav-item.active .nav-count {
   background: #b91c1c !important;
@@ -2252,20 +2180,6 @@ html[data-theme="dark"] .map-legend {
 }
 
 /* ================================================================
-   ECMWF hover popup — protect against broad dark span rule
-   ================================================================ */
-html[data-theme="dark"] .weather-hover-card .weather-hover-title,
-html[data-theme="dark"] .weather-hover-card .weather-hover-cell-val {
-  color: inherit !important;
-}
-html[data-theme="dark"] .weather-hover-card .weather-hover-region {
-  color: #8da4be !important;
-}
-html[data-theme="dark"] .weather-hover-card .weather-hover-cell-lbl {
-  color: #8da4be !important;
-}
-
-/* ================================================================
    FILTER TOOLBAR BASELINE — nhãn bọc Select phải cao đúng bằng chính
    control (36px). Trước đây nhãn giữ chiều cao 42px của --control-height
    nên Select bị canh giữa và nhô lên ~3px so với ô tìm kiếm cùng hàng
@@ -2328,10 +2242,12 @@ html[data-theme="dark"] .weather-hover-card .weather-hover-cell-lbl {
 
 /* ══════════════════════════════════════════════════════════════════════════
  * Sửa lỗi: mũi tên dropdown xoay kéo theo cả vạch ngăn "|"
- * Vạch ngăn trước đây là `border-left` vẽ ngay trên chính thẻ <svg>, nên khi
- * mở danh sách và xoay mũi tên 180° thì vạch ngăn xoay theo, nhảy sang phải.
+ * Vạch ngăn trước đây là `border-left` vẽ ngay trên chính thẻ <svg>,
+nên khi
+ * mở danh sách và xoay mũi tên 180° thì vạch ngăn xoay theo,
+nhảy sang phải.
  * Cách sửa: vạch ngăn chuyển thành `border-right` của vùng chữ (không xoay),
- * chỉ còn mũi tên xoay.
+* chỉ còn mũi tên xoay.
  * ══════════════════════════════════════════════════════════════════════════ */
 .ui-select-trigger > svg {
   border-left: 0 !important;

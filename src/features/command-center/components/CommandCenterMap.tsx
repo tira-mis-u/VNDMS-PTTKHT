@@ -3,7 +3,6 @@ import { Maximize2 } from "lucide-react";
 import { UnifiedMapCanvas } from "@/features/operational-map/components/UnifiedMapCanvas";
 import {
   getUnifiedMapPoints,
-  getUnifiedMapRoutes,
   type UnifiedMapKind,
 } from "@/application/map/unifiedMapQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
@@ -13,11 +12,11 @@ import { OPERATIONAL_MAP_WORKSPACE_PATH } from "@/app/routes/router";
  * BẢN ĐỒ TRONG TRUNG TÂM ĐIỀU HÀNH
  * ─────────────────────────────────────────────────────────────────────────
  * Trước đây đây là một bản đồ **riêng** (640 dòng): ký hiệu khác, bộ lọc lớp
- * khác, popup khác và chỉ hiển thị 5 loại đối tượng — trong khi "Bản đồ tác
- * nghiệp" hiển thị 9 loại kèm bão, gió, nhiệt độ. Hai bản đồ khác nhau trong
+ * khác, popup khác — trong khi "Bản đồ tác
+ * nghiệp" hiển thị đủ lớp tác nghiệp kèm bão, gió, nhiệt độ. Hai bản đồ khác nhau trong
  * cùng một hệ thống nghĩa là hai "sự thật" khác nhau về cùng một tình huống:
- * người trực nhìn bản đồ nhỏ tưởng đã thấy hết, thực ra thiếu tuyến sơ tán,
- * kho vật tư, dự án phục hồi và toàn bộ lớp khí tượng.
+ * người trực nhìn bản đồ nhỏ tưởng đã thấy hết, thực ra thiếu toàn bộ lớp
+ * khí tượng.
  *
  * Nay Trung tâm điều hành nhúng CHÍNH bản đồ tác nghiệp ở chế độ gọn: cùng
  * một thành phần, cùng ký hiệu, cùng dữ liệu — chỉ bỏ thanh mốc dự báo và bộ
@@ -35,10 +34,6 @@ export function CommandCenterMap({
     tasks,
     teams,
     shelters,
-    evacuationOperations,
-    reliefRequests,
-    warehouses,
-    recoveryProjects,
   } = store;
 
   const points = useMemo(
@@ -50,16 +45,7 @@ export function CommandCenterMap({
       tasks,
       teams,
       shelters,
-      evacuationOperations,
-      reliefRequests,
-      warehouses,
-      recoveryProjects,
     ],
-  );
-  const routes = useMemo(
-    () => getUnifiedMapRoutes(store),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [evacuationOperations],
   );
 
   const detailPath = (ref: { kind: UnifiedMapKind; id: string }) => {
@@ -74,12 +60,6 @@ export function CommandCenterMap({
         return `/teams/${ref.id}`;
       case "shelter":
         return "/shelters";
-      case "evacuation":
-        return "/evacuations";
-      case "relief":
-        return `/relief/requests/${ref.id}`;
-      case "warehouse":
-        return `/relief/warehouses/${ref.id}`;
       default:
         return OPERATIONAL_MAP_WORKSPACE_PATH;
     }
@@ -102,7 +82,6 @@ export function CommandCenterMap({
       <div className="cc-map-frame">
         <UnifiedMapCanvas
           points={points}
-          routes={routes}
           focusKey={0}
           focusTarget={null}
           compact

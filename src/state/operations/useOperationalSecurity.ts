@@ -67,9 +67,39 @@ export function useOperationalSecurity() {
         result: "SUCCESS",
         reason: "Khôi phục phiên lưu trên thiết bị sau khi tải lại trang.",
       });
-    if (event) {
-      auditGateway.replace([event, ...existing]);
-      return [event, ...existing];
+    // Migration mô hình vai trò V2 (chạy trong listUsers/restoreSession) được ghi
+    // vào nhật ký bảo mật đúng một lần cho mỗi lần chạy thật.
+    const migration = authGateway.lastRoleModelMigration();
+    const migrationResourceId = migration
+      ? `roleModel:v${migration.version}:${migration.migratedAt}`
+      : null;
+    const migrationEvent =
+      migration &&
+      migration.entries.length > 0 &&
+      !existing.some(
+        (item) =>
+          item.action === "ROLE_MODEL_MIGRATED" &&
+          item.resourceId === migrationResourceId,
+      )
+        ? createSecurityAudit({
+            actorId: null,
+            actorName: "Hệ thống",
+            role: null,
+            action: "ROLE_MODEL_MIGRATED",
+            resourceType: "RoleModel",
+            resourceId: migrationResourceId,
+            timestamp: migration.migratedAt,
+            geographicScope: "Toàn quốc",
+            result: "SUCCESS",
+            reason: `Chuyển ${migration.entries.length} tài khoản sang mô hình 4 vai; ${migration.exceptions.length} ngoại lệ giữ nguyên chờ rà soát.`,
+          })
+        : null;
+    const prepended = [event, migrationEvent].filter(
+      (item): item is SecurityAuditEvent => Boolean(item),
+    );
+    if (prepended.length) {
+      auditGateway.replace([...prepended, ...existing]);
+      return [...prepended, ...existing];
     }
     return existing;
   });

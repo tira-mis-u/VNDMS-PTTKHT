@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Map as MapLibreMap, Popup, type GeoJSONSource } from "maplibre-gl";
+import { Map as MapLibreMap, type GeoJSONSource } from "maplibre-gl";
 
 import {
   getNdaMapBaseStyle,
@@ -253,65 +253,11 @@ export function OperationalMap({
         },
       });
 
-      const hoverPopup = new Popup({
-        closeButton: false,
-        closeOnClick: false,
-        offset: 12,
-        className: "ecmwf-hover-popup",
-      });
-
-
-      map.on("mousemove", "cc-weather-hitbox", (e) => {
-        const feat = e.features?.[0];
-        const stationId = feat?.properties?.stationId;
-        if (!stationId) return;
-
-        const st = weatherStationsRef.current.find((s) => s.stationId === stationId);
-        if (!st) return;
-
+      map.on("mouseenter", "cc-weather-hitbox", () => {
         map.getCanvas().style.cursor = "pointer";
-
-        const currentRisk = st.dailySummary?.[0]?.floodRiskLevel || "Bình thường";
-        const riskColor =
-          currentRisk === "Đặc biệt nghiêm trọng"
-            ? "#ef4444"
-            : currentRisk === "Nguy cơ cao"
-            ? "#f97316"
-            : currentRisk === "Cảnh báo"
-            ? "#eab308"
-            : "#22c55e";
-
-        hoverPopup.setLngLat(e.lngLat).setHTML(`
-          <div class="weather-hover-card">
-            <div class="weather-hover-head">
-              <span class="weather-hover-title">${st.stationName}</span>
-              <span class="weather-hover-region">Vùng ${st.region}</span>
-            </div>
-            <div class="weather-hover-grid">
-              <div class="weather-hover-cell">
-                <span class="weather-hover-cell-lbl">Nhiệt độ</span>
-                <span class="weather-hover-cell-val" style="color:#f87171;">${st.current.temperature.toFixed(1)}°C</span>
-              </div>
-              <div class="weather-hover-cell">
-                <span class="weather-hover-cell-lbl">Lượng mưa</span>
-                <span class="weather-hover-cell-val" style="color:#38bdf8;">${st.current.rain.toFixed(1)} mm/h</span>
-              </div>
-              <div class="weather-hover-cell">
-                <span class="weather-hover-cell-lbl">Gió & giật</span>
-                <span class="weather-hover-cell-val" style="color:#e2e8f0;">${st.current.windSpeed.toFixed(0)} (${st.current.windGusts.toFixed(0)}) km/h</span>
-              </div>
-              <div class="weather-hover-cell">
-                <span class="weather-hover-cell-lbl">Nguy cơ lũ</span>
-                <span class="weather-hover-cell-val" style="color:${riskColor};">${currentRisk}</span>
-              </div>
-            </div>
-          </div>
-        `).addTo(map);
       });
-
       map.on("mouseleave", "cc-weather-hitbox", () => {
         map.getCanvas().style.cursor = "";
-        hoverPopup.remove();
       });
 
       map.on("click", "cc-weather-hitbox", (e) => {

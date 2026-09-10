@@ -22,10 +22,6 @@ const canFor =
   (permission: Permission) =>
     (permissionMatrix[role] as readonly Permission[]).includes(permission);
 
-const allLabels = navigationGroups.flatMap((group) =>
-  group.items.map((item) => item.label),
-);
-
 test("nhãn điều hướng tách biệt: Phân tích vs Quản trị", () => {
   // Báo cáo là tab trong phân hệ Phân tích tác nghiệp nên dùng chung nhãn
   // điều hướng với mục sidebar "Phân tích tác nghiệp".
@@ -81,55 +77,52 @@ test("mọi permission của mục điều hướng đều tồn tại trong ma 
       );
 });
 
-test("commander nhìn thấy toàn bộ nhóm điều hướng", () => {
-  const groups = visibleNavigationGroups(canFor("commander"));
-  assert.equal(groups.length, navigationGroups.length);
-  assert.deepEqual(
-    groups.flatMap((group) => group.items.map((item) => item.label)),
-    allLabels,
-  );
+/* V2 (4 vai): các test theo vai cũ (commander/warehouse_staff/operator/relief_worker/
+ * rescue_member) chuyển sang admin/disaster_officer/rescue_unit/citizen. */
+
+test("cán bộ PCTT nhìn thấy toàn bộ mục nghiệp vụ; admin thấy Phân quyền và chỉ đọc Phản ánh", () => {
+  const officer = visibleNavigationGroups(canFor("disaster_officer"));
+  const officerLabels = officer.flatMap((group) => group.items.map((item) => item.label));
+  for (const label of ["Trung tâm điều hành", "Bản đồ tác nghiệp", "Cảnh báo", "Sự cố", "SOS", "Nhiệm vụ", "Đội cứu hộ", "Phản ánh", "Điểm sơ tán"])
+    assert.ok(officerLabels.includes(label), `disaster_officer thiếu mục ${label}`);
+  assert.ok(!officerLabels.includes("Phân quyền"), "cán bộ không có user_manage");
+  const admin = visibleNavigationGroups(canFor("admin"));
+  const adminLabels = admin.flatMap((group) => group.items.map((item) => item.label));
+  assert.ok(adminLabels.includes("Phân quyền"));
+  assert.ok(adminLabels.includes("Nhật ký bảo mật"));
+  // Admin đọc được danh sách Phản ánh (report_view) nhưng không có report_review.
+  assert.ok(adminLabels.includes("Phản ánh"));
+  assert.ok(!canFor("admin")("report_review"));
+  assert.ok(adminLabels.includes("Điểm sơ tán"));
 });
 
-test("tài khoản kho chỉ thấy đúng các module được phân quyền", () => {
-  const groups = visibleNavigationGroups(canFor("warehouse_staff"));
-  const labels = groups.flatMap((group) =>
-    group.items.map((item) => item.label),
-  );
-  // Sau khi gộp chuỗi hậu cần, thủ kho chỉ còn hai mục: Cảnh báo và Cứu trợ
-  // (kho & tồn, chuyến hàng là tab bên trong phân hệ Cứu trợ).
-  assert.deepEqual(labels, ["Cảnh báo", "Cứu trợ"]);
-  // Nhóm Quản trị bị ẩn hoàn toàn vì không còn mục nào hợp lệ.
+test("đơn vị cứu hộ chỉ thấy đúng các module được phân quyền", () => {
+  const groups = visibleNavigationGroups(canFor("rescue_unit"));
+  const labels = groups.flatMap((group) => group.items.map((item) => item.label));
+  for (const label of ["SOS", "Nhiệm vụ", "Đội cứu hộ", "Điểm sơ tán", "Cảnh báo"])
+    assert.ok(labels.includes(label), `rescue_unit thiếu mục ${label}`);
+  assert.ok(!labels.includes("Phản ánh"));
   assert.ok(groups.every((group) => group.label !== "Quản trị"));
 });
 
-test("điều hành viên thấy Nhật ký bảo mật nhưng không thấy mục Người dùng", () => {
-  const groups = visibleNavigationGroups(canFor("operator"));
-  const labels = groups.flatMap((group) =>
-    group.items.map((item) => item.label),
+test("công dân dùng nhóm điều hướng riêng của Cổng công dân", () => {
+  const groups = visibleNavigationGroups(canFor("citizen"), "citizen");
+  assert.deepEqual(
+    groups.flatMap((group) => group.items.map((item) => item.label)),
+    ["Trang chủ & Bản đồ", "Điểm sơ tán an toàn", "Cảnh báo thiên tai", "Hồ sơ & Địa bàn"],
   );
-  assert.ok(labels.includes("Nhật ký bảo mật"));
-  assert.ok(!labels.includes("Người dùng"));
 });
 
 test("trang đích sau đăng nhập theo vai trò", () => {
-  // Quy tắc thô: mục đầu tiên được phép đọc theo thứ tự sidebar.
-  assert.equal(firstAccessibleNavPath(canFor("commander")), "/");
-  assert.equal(firstAccessibleNavPath(canFor("warehouse_staff")), "/alerts");
+  assert.equal(firstAccessibleNavPath(canFor("admin")), "/");
+  assert.equal(firstAccessibleNavPath(canFor("disaster_officer")), "/");
   assert.equal(firstAccessibleNavPath(() => false), "/");
-  // Quy tắc theo vai trò: đưa người dùng về đúng bàn làm việc của họ thay vì
-  // một danh sách chỉ đọc. Thủ kho và nhân viên cứu trợ vào thẳng phân hệ Cứu
-  // trợ; thành viên đội cứu hộ vào danh sách nhiệm vụ.
-  assert.equal(landingPathForRole(canFor("commander"), "commander"), "/");
-  assert.equal(
-    landingPathForRole(canFor("warehouse_staff"), "warehouse_staff"),
-    "/relief/requests",
-  );
-  assert.equal(
-    landingPathForRole(canFor("relief_worker"), "relief_worker"),
-    "/relief/requests",
-  );
-  assert.equal(landingPathForRole(canFor("rescue_member"), "rescue_member"), "/tasks");
-  // Không có quyền nào thì vẫn quay về quy tắc thô, không văng ra ngoài.
+  assert.equal(landingPathForRole(canFor("admin"), "admin"), "/");
+  assert.equal(landingPathForRole(canFor("disaster_officer"), "disaster_officer"), "/");
+  // Đơn vị cứu hộ vào thẳng Nhiệm vụ — nơi tiếp nhận/báo cáo kết quả.
+  assert.equal(landingPathForRole(canFor("rescue_unit"), "rescue_unit"), "/tasks");
+  // Công dân về Cổng công dân tại "/".
+  assert.equal(landingPathForRole(canFor("citizen"), "citizen"), "/");
   assert.equal(landingPathForRole(() => false, "citizen"), "/");
 });
 

@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Clock3, Database, MapPinned, Waves } from "lucide-react";
+import { ArrowRight, Clock3, Database, MapPinned, Waves } from "lucide-react";
 import { PageSectionHeader } from "@/components/ui";
 import { getOperationalSituation, type OperationalInsightsData } from "@/application/operations/operationalInsightsQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
@@ -18,9 +18,6 @@ export function OperationalSituationPage({ navigate }: { navigate: (path: string
         icon={Waves}
       />
       <CommandSectionTabs active={SITUATION_WORKSPACE_PATH} navigate={navigate} />
-      {situation.simulationActive && (
-        <div className="insights-notice simulation"><AlertTriangle size={17} /><div><b>Dữ liệu mô phỏng được tách biệt</b><p>{situation.simulationLabel}</p></div></div>
-      )}
       <section aria-labelledby="situation-summary-title">
         <div className="insights-section-head"><div><h2 id="situation-summary-title">Tổng quan tình hình</h2><p>Mỗi chỉ số dẫn tới hồ sơ nguồn tương ứng.</p></div></div>
         <div className="situation-metrics">
@@ -36,7 +33,7 @@ export function OperationalSituationPage({ navigate }: { navigate: (path: string
         <section className="insights-card" aria-labelledby="area-title">
           <div className="insights-section-head"><div><h2 id="area-title">Tình hình theo địa bàn</h2><p>Địa danh lấy trực tiếp từ hồ sơ nghiệp vụ; không dựng vùng địa lý mới.</p></div><MapPinned size={18} /></div>
           <div className="area-list">
-            {situation.areas.map((area) => <button key={area.area} onClick={() => navigate(area.incidentPath)}><span><b>{area.area}</b><small>{area.activeIncidents} sự cố · {area.urgentSos} SOS khẩn cấp · {area.evacuations} hoạt động sơ tán</small></span><ArrowRight size={15} /></button>)}
+            {situation.areas.map((area) => <button key={area.area} onClick={() => navigate(area.incidentPath)}><span><b>{area.area}</b><small>{area.activeIncidents} sự cố · {area.urgentSos} SOS khẩn cấp · {area.pendingReports} phản ánh chờ đánh giá</small></span><ArrowRight size={15} /></button>)}
             {!situation.areas.length && <p className="insights-empty">Chưa có bản ghi tác nghiệp theo địa bàn trong phạm vi hiện tại.</p>}
           </div>
         </section>

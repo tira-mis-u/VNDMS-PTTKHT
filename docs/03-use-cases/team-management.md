@@ -2,12 +2,12 @@
 
 ## Tác nhân và quyền
 
-- Commander: xem, chỉnh sửa, điều phối, đổi trạng thái, cập nhật vị trí.
-- Operator: xem, chỉnh sửa, điều phối và cập nhật vận hành.
-- Local Officer: xem và cập nhật vị trí trong phạm vi demo.
-- Rescue Leader: xem, đổi trạng thái, vị trí và quản lý nhân sự.
-- Rescue Member: xem và gửi cập nhật vị trí.
-- Citizen: không có quyền truy cập quản lý lực lượng.
+- `admin`: xem, tạo/chỉnh sửa đội, quản lý thành viên; **không** điều phối.
+- `disaster_officer`: xem, chỉnh sửa, điều phối, gỡ/đổi phân công (có lý do).
+- `rescue_unit`: chỉ huy toàn bộ các đội — đổi trạng thái, cập nhật vị trí, quản lý nhân sự mọi đội; không giao việc.
+- `citizen`: không có quyền truy cập quản lý lực lượng.
+
+Quan hệ `teamId` trên tài khoản không còn dùng để cấp/thu hẹp quyền.
 
 Mọi mutation gọi `assertPermission` trong `OperationalContext`; việc ẩn nút chỉ là lớp UX.
 

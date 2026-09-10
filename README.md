@@ -1,6 +1,6 @@
 # VNDMS — Hệ thống quản lý, giám sát và phòng chống thiên tai
 
-VNDMS là một **ứng dụng web tác nghiệp** mô phỏng phòng điều hành phòng chống thiên tai của Việt Nam: từ lúc nhận tin cảnh báo, ra phương án ứng phó, điều động lực lượng, sơ tán dân, cấp phát cứu trợ, cho tới thẩm định thiệt hại và tái thiết. Toàn bộ nghiệp vụ chạy trên **một trạng thái tác nghiệp duy nhất** (canonical operational state) có phân quyền, có ranh giới ghi dữ liệu nguyên tử, và có bản đồ khí tượng dùng **dữ liệu thời tiết thật**.
+VNDMS là một **ứng dụng web tác nghiệp** mô phỏng phòng điều hành phòng chống thiên tai của Việt Nam: từ lúc nhận tin cảnh báo và phản ánh của người dân, tiếp nhận SOS, điều động lực lượng cứu hộ, theo dõi nhiệm vụ đến khi cán bộ xác nhận kết quả, và công bố cảnh báo tới người dân. Phiên bản V2 thu gọn còn **4 vai trò**: `admin`, `disaster_officer`, `rescue_unit`, `citizen`. Toàn bộ nghiệp vụ chạy trên **một trạng thái tác nghiệp duy nhất** (canonical operational state) có phân quyền, có ranh giới ghi dữ liệu nguyên tử, và có bản đồ khí tượng dùng **dữ liệu thời tiết thật**.
 
 > **Phạm vi trung thực:** đây là một **frontend modular-monolith**, không có backend riêng. Toàn bộ dữ liệu nghiệp vụ nằm trong bộ nhớ trình duyệt và được nạp từ kịch bản mẫu. Phân quyền được thực thi trong trình duyệt để chứng minh kiến trúc ứng dụng — **không phải ranh giới bảo mật thật**. Riêng phần khí tượng – thuỷ văn là dữ liệu thật, gọi trực tiếp từ dịch vụ mở.
 
@@ -8,11 +8,11 @@ VNDMS là một **ứng dụng web tác nghiệp** mô phỏng phòng điều h�
 
 ## 1. Bài toán
 
-Điều hành thiên tai hỏng vì dữ liệu rời rạc chứ hiếm khi vì thiếu màn hình: đội cứu hộ được giao ở hai nơi, SOS không khớp với nhiệm vụ, kho báo giữ hàng nhưng chuyến xe không có, báo cáo tổng hợp lệch với hồ sơ gốc. VNDMS xử lý đúng chỗ đó:
+Điều hành thiên tai hỏng vì dữ liệu rời rạc chứ hiếm khi vì thiếu màn hình: đội cứu hộ được giao ở hai nơi, SOS không khớp với nhiệm vụ, đơn vị báo "xong" nhưng chưa ai xác nhận, báo cáo tổng hợp lệch với hồ sơ gốc. VNDMS xử lý đúng chỗ đó:
 
 - **Một nguồn dữ liệu tác nghiệp duy nhất** cho mọi phân hệ — không phân hệ nào có bộ dữ liệu riêng.
 - **Một cửa ghi duy nhất**: mọi thay đổi đi qua `OperationalProvider`, kiểm quyền rồi mới vào `OperationalMutationBoundary`; hoặc **commit trọn vẹn**, hoặc **huỷ toàn bộ bản nháp**.
-- **Đọc cũng bị lọc quyền**: giao diện, phân tích và trợ lý AI chỉ nhìn thấy phần dữ liệu tài khoản đang đăng nhập được phép thấy.
+- **Đọc cũng bị lọc quyền**: giao diện và phân tích chỉ nhìn thấy phần dữ liệu tài khoản đang đăng nhập được phép thấy; công dân chỉ thấy SOS/phản ánh của chính mình.
 - **Nói thật về dữ liệu**: cái gì là quan trắc, cái gì là dự báo, cái gì là ước tính, cái gì chưa có — đều được ghi rõ ngay trên giao diện.
 
 ---
@@ -29,9 +29,9 @@ Presentation (src/features, src/components)
 Luồng ghi dữ liệu:
 
 ```text
-Thao tác trên giao diện (hoặc hành động AI đã được xác nhận)
+Thao tác trên giao diện
   → lệnh của OperationalProvider
-  → kiểm quyền: vai · phạm vi địa lý · quyền sở hữu đội/kho · trạng thái vòng đời
+  → kiểm quyền: vai · phạm vi địa lý · quyền sở hữu bản ghi (ownerUserId) · trạng thái vòng đời
       · kiểm toàn bộ tài nguyên liên quan của lệnh đa tài nguyên
   → OperationalMutationBoundary tạo bản nháp
   → áp quy tắc domain/application + ghi dòng thời gian canonical
@@ -43,7 +43,7 @@ Nguyên tắc bất biến của dự án:
 | Nguyên tắc | Ý nghĩa |
 | --- | --- |
 | Một chủ sở hữu trạng thái | `OperationalProvider` là nơi duy nhất giữ và sửa dữ liệu tác nghiệp |
-| Không có dataset song song | Trung tâm điều hành, Phân tích, Mô phỏng, AI đều đọc cùng một state |
+| Không có dataset song song | Trung tâm điều hành, Phân tích, Cổng công dân đều đọc cùng một state |
 | Đọc đã lọc quyền | Presentation nhận *authorized canonical read view*, không nhận state thô |
 | Rollback xác định | Bản nháp hỏng ở bước nào cũng bị huỷ toàn bộ, không để lại dữ liệu nửa vời |
 | Không có nút chết | Vai không có quyền thì nút biến mất, không phải bấm rồi bị chặn |
@@ -64,40 +64,37 @@ Thanh điều hướng gom theo **nhịp công việc**, không theo sơ đồ t
 | | Sự cố | Vòng đời sự cố, mức độ, nhiệm vụ/đội liên quan, điều kiện đóng sự cố |
 | | Phân tích tác nghiệp | 4 tab: vận hành · nguồn lực · sự cố · báo cáo (có nút in) |
 | **Ứng phó** | SOS | Tiếp nhận, xác minh, phân loại ưu tiên, sinh nhiệm vụ, điều đội, kết thúc |
-| | Nhiệm vụ | Giao – nhận – bắt đầu – cập nhật hiện trường – hoàn thành |
+| | Nhiệm vụ | Giao – nhận – bắt đầu – cập nhật hiện trường – **đơn vị báo xong** – **cán bộ xác nhận/từ chối**; phân công lại phải có lý do và lưu lịch sử |
 | | Đội cứu hộ | Trạng thái, sẵn sàng, thành viên, vị trí |
-| | Sơ tán | Lệnh sơ tán + tab điểm sơ tán (sức chứa, tuyến, chuyển hướng) |
-| | Phương án ứng phó | Kịch bản chuẩn hoá theo Điều 22 Luật PCTT, chia giai đoạn quanh "giờ 0" |
-| **Hậu cần** | Cứu trợ | Một chuỗi: yêu cầu → duyệt → giữ hàng ở kho → chuyến hàng → ký nhận |
-| **Phục hồi** | Phục hồi & tái thiết | Thẩm định thiệt hại và dự án tái thiết là hai tab của cùng hồ sơ |
-| **Quản trị** | Phân quyền · Nhật ký bảo mật | Ma trận quyền theo vai và vết kiểm tra bảo mật |
+| | Phản ánh | Phản ánh của người dân (ngập, sạt lở, hư hỏng…) → cán bộ tiếp nhận / chuyển SOS / trùng / từ chối |
+| | Điểm sơ tán | Danh mục tra cứu điểm sơ tán (sức chứa, khả năng tiếp cận); không còn lệnh sơ tán |
+| **Quản trị** | Phân quyền · Nhật ký bảo mật | Ma trận quyền theo 4 vai, nhật ký migration vai trò và vết kiểm tra bảo mật |
 
-Ngoài sidebar còn có: **Cổng công dân** (giao diện riêng cho vai `citizen`: bản đồ, gửi SOS, tra điểm sơ tán, cảnh báo), **Mô phỏng** (`/simulation`) và **Trợ lý AI** (`/ai-assistant`).
+Ngoài sidebar còn có **Cổng công dân** (giao diện cho vai `citizen`: bản đồ, thời tiết, lấy vị trí, chạm SOS, theo dõi SOS của mình, gửi phản ánh, tra điểm sơ tán, cảnh báo đã công bố). Trang **Cảnh báo** có thêm khối **Cảnh báo công bố** (nháp → công bố → thu hồi) do cán bộ PCTT quản lý.
+
+Các phân hệ **Cứu trợ/Kho/Chuyến hàng, Phương án ứng phó, Phục hồi & thẩm định, Mô phỏng, Trợ lý AI, Lệnh sơ tán** đã được **xóa thật** khỏi mã nguồn ở V2 (route, menu, form, command, seed, test), không chỉ ẩn.
 
 ---
 
-## 4. Phương án ứng phó — bám luật, không bám cảm tính
+## 4. Vòng đời nhiệm vụ V2 — đơn vị báo xong, cán bộ xác nhận
 
-Mỗi bước trong phương án không chỉ có tên và người phụ trách, mà còn có **ba trường bắt buộc** để kiểm tra được:
+```text
+Chờ giao → Đã giao → Đã tiếp nhận → Đang thực hiện → Chờ xác nhận → Hoàn thành
+                                          ↑                 │
+                                          └── từ chối (kèm lý do) ──┘
+```
 
-- `leadTimeHours` — mốc giờ so với **"giờ 0"** (thời điểm bão đổ bộ / mực nước đạt báo động III). Âm là việc phải xong **trước** khi thiên tai xảy ra.
-- `riskLevels` — bước áp dụng cho cấp độ rủi ro thiên tai nào (1–5 theo **QĐ 18/2021/QĐ-TTg**).
-- `legalBasis` — bước đáp ứng khoản nào trong **6 nội dung bắt buộc của Điều 22 Luật Phòng, chống thiên tai**.
-
-Giao diện chi tiết phương án nhóm các bước thành **Trước thiên tai — Trong thiên tai — Sau thiên tai**. Hai kịch bản hiện có:
-
-| Kịch bản | Số bước | Phân bố |
-| --- | --- | --- |
-| Ứng phó Bão Yagi 2024 — Quốc gia (`PB-YAGI-2024`) | 20 | 8 trước bão · 7 trong bão · 5 sau bão |
-| Ứng phó Lũ lớn Sông Hồng — Hà Nội (`PB-FLOOD-001`) | 16 | 5 trước lũ · 9 trong lũ · 2 kết thúc |
-
-Khối "trước thiên tai" bám mốc lead time theo thông lệ quốc tế (timeline phòng thiên tai của MLIT Nhật Bản, FEMA Phase 1, tín hiệu bão 36/24/18/12 giờ của PAGASA) và nội dung theo Điều 22: rà soát đê/hồ chứa/công trình trọng điểm (−72 h), kêu gọi tàu thuyền và đối chiếu tồn kho (−48 h), chốt danh sách hộ phải sơ tán ưu tiên nhóm dễ tổn thương (−36 h), chằng chống nhà cửa và chốt chặn ngầm tràn (−24 h), thử phương án liên lạc dự phòng khi mất sóng (−12 h), hoàn tất sơ tán (−6 h). Kết thúc bằng hai bước bắt buộc: **công bố kết thúc ứng phó** và **họp rút kinh nghiệm trong 7 ngày**.
+- Đơn vị cứu hộ (`rescue_unit`) chỉ **báo xong** (`task_report_done`), tạo bản ghi `TaskReview` kèm ghi chú bắt buộc; nhiệm vụ **không tự đóng**.
+- Cán bộ PCTT (`disaster_officer`) **chấp nhận** → Hoàn thành, hoặc **từ chối** → quay lại Đang thực hiện; từ chối bắt buộc nêu lý do.
+- **Phân công lại** đổi đội/người phụ trách, bắt buộc lý do, lưu `assignmentHistory`.
+- SOS gắn `ownerUserId` người gửi; đơn vị cập nhật hiện trường nhưng chỉ cán bộ mới đóng SOS. Sự cố không đóng được khi còn nhiệm vụ "Chờ xác nhận" hoặc SOS chưa đóng.
+- Báo cáo/phân tích đọc từ hồ sơ canonical: SOS chờ duyệt và nhiệm vụ chờ xác nhận **không** tính là kết thúc.
 
 ---
 
 ## 5. Bản đồ và dữ liệu khí tượng — phần dùng dữ liệu thật
 
-Bản đồ nền là **NDAMapVN** (vector tile, nhãn tiếng Việt) hiển thị bằng **MapLibre GL JS**. Trên nền đó là các lớp tác nghiệp (sự cố, SOS, nhiệm vụ, đội, điểm sơ tán, hoạt động sơ tán, yêu cầu cứu trợ, kho, dự án phục hồi, tuyến sơ tán) và các lớp khí tượng:
+Bản đồ nền là **NDAMapVN** (vector tile, nhãn tiếng Việt) hiển thị bằng **MapLibre GL JS**. Trên nền đó là các lớp tác nghiệp (sự cố, SOS, nhiệm vụ, đội, điểm sơ tán) và các lớp khí tượng — bộ công cụ bản đồ kiểu Windy (lớp, trục thời gian, panel) dùng chung cho cả 4 vai:
 
 | Lớp | Nguồn | Ghi chú |
 | --- | --- | --- |
@@ -118,22 +115,41 @@ Trục thời gian nằm dưới bản đồ, kéo được tới **từng giờ
 
 ## 6. Phân quyền
 
-Bảy vai: `commander`, `operator`, `local_officer`, `rescue_leader`, `rescue_member`, `warehouse_staff`, `citizen` (còn `relief_worker` trong ma trận quyền). Hệ thống kiểm **năm lớp**:
+Bốn vai: `admin`, `disaster_officer`, `rescue_unit`, `citizen`. Hệ thống kiểm **năm lớp**:
 
-1. **RBAC** — ma trận quyền theo vai (hơn 80 quyền chi tiết cho từng hành vi, không phải CRUD chung chung).
-2. **Phạm vi địa lý** — quốc gia / tỉnh / quận-huyện / phường-xã / cơ sở / kho.
-3. **Quyền sở hữu** — đội trưởng chỉ tác động lên đội mình, nhân viên kho chỉ lên kho mình.
-4. **Trạng thái vòng đời** — không cho phép hành động sai pha (ví dụ giao việc cho đội đang mất liên lạc).
+1. **RBAC** — một ma trận quyền duy nhất (`src/lib/permissions/permissions.ts`).
+2. **Phạm vi địa lý** — quốc gia / tỉnh / quận-huyện / phường-xã.
+3. **Quyền sở hữu bản ghi** — quyền `*_own` (SOS, phản ánh) chỉ áp dụng khi `ownerUserId` trùng tài khoản; quan hệ đội/kho trên tài khoản **không còn** hiệu lực cấp quyền.
+4. **Trạng thái vòng đời** — không cho phép hành động sai pha (ví dụ giao việc cho đội đang mất liên lạc, chấp nhận kết quả khi chưa báo xong).
 5. **Tài nguyên liên quan** — lệnh chạm nhiều đối tượng thì phải hợp lệ với **tất cả**, nếu không thì huỷ cả lệnh.
 
-Đọc dữ liệu đi qua *authorized read view*; hành động do AI đề xuất còn bị **kiểm quyền lại lần cuối** ngay trước khi thực thi.
+| Vai | Được | Không được |
+| --- | --- | --- |
+| `admin` | Quản lý người dùng, nhật ký bảo mật, xem toàn bộ dữ liệu tác nghiệp, quản lý đội/điểm sơ tán, gửi SOS/phản ánh | **Không mặc định** có quyền xác minh SOS, điều phối, chấp nhận kết quả nhiệm vụ, công bố cảnh báo |
+| `disaster_officer` | Toàn bộ nghiệp vụ: tạo sự cố, xác minh/điều phối SOS, giao/phân công lại/xác nhận nhiệm vụ, duyệt phản ánh, công bố/thu hồi cảnh báo; xem nhật ký bảo mật (giữ từ vai `operator` cũ) | Quản lý người dùng |
+| `rescue_unit` | Nhận/bắt đầu/cập nhật/báo xong nhiệm vụ, cập nhật trạng thái & vị trí mọi đội, cập nhật hiện trường SOS, xác nhận cảnh báo tác nghiệp | Giao việc, chấp nhận kết quả, đóng SOS, công bố cảnh báo |
+| `citizen` | Gửi & theo dõi SOS của mình, gửi & theo dõi phản ánh của mình, xem cảnh báo công bố, điểm sơ tán, bản đồ/thời tiết/vị trí | Mọi dữ liệu tác nghiệp nội bộ |
+
+Đọc dữ liệu đi qua *authorized read view*.
 
 ---
 
-## 7. Mô phỏng và trợ lý AI
+## 7. Migration mô hình vai trò V2
 
-- **Mô phỏng** (`/simulation`): kịch bản lũ Sông Hồng – Hà Nội, seed cố định `20240901`, **16 bước**, đi qua các pha *Bình thường → Cảnh báo → Nguy hiểm → Ứng phó → Sơ tán → Cứu hộ → Ổn định → Phục hồi*. Tác động của từng bước được ghi vào chính trạng thái tác nghiệp qua cửa ghi chung, và có thể reset về mốc gốc.
-- **Trợ lý AI** (`/ai-assistant`): engine **luật + truy vấn cục bộ**, không gọi mô hình ngoài, không embedding, không vector database. Mỗi câu trả lời gắn nhãn **FACT / INFERENCE / UNKNOWN** kèm dẫn chứng là hồ sơ canonical; đề xuất hành động luôn phải được người dùng xác nhận rồi mới thực thi.
+Khi tải ứng dụng, `LocalAuthenticationAdapter` kiểm tra `vndms.auth.roleModel.version`. Nếu chưa bằng `2`:
+
+1. sao lưu danh sách người dùng hiện có vào `vndms.auth.users.v5.backup.r1`;
+2. ánh xạ vai theo bảng dưới (giữ nguyên `id`, `username`, mật khẩu, phạm vi, trạng thái); gỡ `teamId`/`warehouseId` khỏi hiệu lực phân quyền; tài khoản ngoài bảng được ánh xạ theo vai cũ hoặc giữ nguyên và ghi vào danh sách ngoại lệ;
+3. ghi nhật ký `vndms.auth.roleModel.migrationLog` và audit `ROLE_MODEL_MIGRATED`; **không tạo tài khoản mới**.
+
+Chạy lại là **idempotent**. Rollback: `rollbackRoleModelMigration(storage)` khôi phục bản sao lưu và xóa version/log/phiên.
+
+| Vai cũ | Vai V2 |
+| --- | --- |
+| `commander` | `admin` |
+| `operator` | `disaster_officer` |
+| `rescue_leader` | `rescue_unit` |
+| `local_officer`, `rescue_member`, `warehouse_staff`, `relief_worker`, `citizen` | `citizen` |
 
 ---
 
@@ -143,14 +159,12 @@ Trạng thái khởi tạo lấy từ kịch bản **Bão Yagi 2024 — quy mô 
 
 | Đối tượng | Số lượng | | Đối tượng | Số lượng |
 | --- | ---: | --- | --- | ---: |
-| Sự cố | 7 | | Kho | 3 |
-| Nhiệm vụ | 7 | | Mặt hàng tồn kho | 11 |
-| Đội cứu hộ | 7 | | Yêu cầu cứu trợ | 3 |
-| Điểm sơ tán | 6 | | Chuyến hàng | 2 |
-| Hoạt động sơ tán | 3 | | Hồ sơ thiệt hại | 4 |
-| Yêu cầu SOS | 5 | | Dự án tái thiết | 4 |
+| Sự cố | 7 | | Yêu cầu SOS | 5 |
+| Nhiệm vụ | 7 | | Cảnh báo công bố | 2 |
+| Đội cứu hộ | 7 | | Phản ánh | 0 (tạo từ Cổng công dân) |
+| Điểm sơ tán | 6 | | | |
 
-Kịch bản **Lũ Sông Hồng** (`src/data/scenarios/red-river-flood`) hiện đóng vai trò *fixture cho test* và định danh cho engine mô phỏng, không nạp vào runtime.
+Kịch bản **Lũ Sông Hồng** (`src/data/scenarios/red-river-flood`) hiện đóng vai trò *fixture cho test*, không nạp vào runtime.
 
 ---
 
@@ -160,15 +174,15 @@ Mật khẩu dùng chung: **`VNDMS@2026`**.
 
 | Tên đăng nhập | Họ tên | Vai trò | Phạm vi / ràng buộc |
 | --- | --- | --- | --- |
-| `thuantq` | Trần Quốc Thuận | Chỉ huy | Toàn quốc |
-| `nguyentrung` | Nguyễn Quốc Trung | Điều hành viên | Toàn quốc |
-| `phamdam` | Phạm Văn Đam | Cán bộ địa phương | Quận Tây Hồ, Hà Nội |
-| `phamhieu` | Phạm Trung Hiếu | Đội trưởng cứu hộ | Hà Nội · đội `CH-05` |
-| `minhtri` | Lê Nguyễn Minh Trí | Thành viên cứu hộ | Hà Nội · đội `CH-05` |
-| `namanh` | Nguyễn Nam Anh | Nhân viên kho | Kho `KHO-01` |
-| `trantuan` | Trần Thái Tuấn | Công dân | Cổng công dân |
+| `thuantq` (`USR-CMD-001`) | Trần Quốc Thuận | `admin` — Quản trị hệ thống | Toàn quốc |
+| `nguyentrung` (`USR-OPS-001`) | Nguyễn Quốc Trung | `disaster_officer` — Cán bộ PCTT | Toàn quốc |
+| `phamhieu` (`USR-RSL-001`) | Phạm Trung Hiếu | `rescue_unit` — Đơn vị cứu hộ (chỉ huy toàn bộ các đội) | Toàn quốc |
+| `phamdam` (`USR-LOC-001`) | Phạm Văn Đam | `citizen` — Công dân | Quận Tây Hồ, Hà Nội |
+| `minhtri` (`USR-RSM-001`) | Lê Nguyễn Minh Trí | `citizen` — Công dân | Hà Nội |
+| `namanh` (`USR-WHS-001`) | Nguyễn Nam Anh | `citizen` — Công dân | Quận Hoàn Kiếm, Hà Nội |
+| `trantuan` (`USR-CTZ-001`) | Trần Thái Tuấn | `citizen` — Công dân | Toàn quốc |
 
-Đăng nhập bằng hai tài khoản khác nhau là cách nhanh nhất để thấy ranh giới phân quyền: cùng một màn hình nhưng khác dữ liệu, khác nút bấm.
+Không có tài khoản seed/bootstrap nào khác. Đăng nhập bằng hai tài khoản khác nhau là cách nhanh nhất để thấy ranh giới phân quyền: cùng một màn hình nhưng khác dữ liệu, khác nút bấm.
 
 ---
 
@@ -211,15 +225,15 @@ Dữ liệu khí tượng (Open-Meteo) **không cần khoá API**, nhưng có gi
 ## 12. Kiểm thử và chất lượng
 
 ```bash
-npm test            # toàn bộ: 43 tệp test, 294 kịch bản
-npm run test:focused # đường găng: mutation boundary, phân quyền, AI, mô phỏng
+npm test            # toàn bộ: 27 tệp test, 190 kịch bản
+npm run test:focused # đường găng: mutation boundary, phân quyền, migration vai trò, nhiệm vụ/phản ánh/cảnh báo công bố
 npm run lint
 npm run build
 ```
 
-Suite tập trung vào giá trị kiến trúc chứ không chạy theo phần trăm coverage: quy tắc vòng đời domain; use case và truy vấn phân tích; phiên đăng nhập và phân quyền theo tài nguyên; commit lồng nhau và rollback toàn phần; liên kết chéo Task–Team, SOS–Task–Team, Shelter–Evacuation–Team, Relief–Warehouse–Shipment; nhất quán Playbook/Recovery; lan truyền và reset mô phỏng; grounding và xác nhận của AI; quét tĩnh chống bypass cửa ghi.
+Suite tập trung vào giá trị kiến trúc chứ không chạy theo phần trăm coverage: quy tắc vòng đời domain; use case và truy vấn phân tích; phiên đăng nhập và phân quyền theo tài nguyên/chủ sở hữu; migration vai trò V2 (version, idempotent, backup/rollback); commit lồng nhau và rollback toàn phần; liên kết chéo SOS–Task–Team; vòng đời báo xong → xác nhận; phản ánh và cảnh báo công bố; quét tĩnh chống bypass cửa ghi.
 
-**Trạng thái thật của suite:** hiện **185 kịch bản đạt / 109 không đạt** trên tổng 294. Phần không đạt là **nợ kỹ thuật có sẵn từ trước** (mong đợi trong test đã lệch so với dữ liệu và nhãn giao diện hiện tại, ví dụ `identity-branding-normalization` import hằng số đã bị gỡ). Vì vậy cổng chất lượng thực tế đang dùng là **`tsc -b` sạch + `npm run build` xanh + test có mục tiêu cho phần đang sửa**, và việc dọn suite là hạng mục còn nợ được ghi nhận công khai chứ không giấu.
+**Trạng thái thật của suite:** **188 kịch bản đạt / 2 không đạt** trên tổng 190. Hai kịch bản không đạt nằm trong `ui-content-normalization` và là **nợ có sẵn từ trước V2** (một test phụ thuộc `scripts/audit-ui-content.mjs` đã bị xóa ở commit trước; một test kiểm cỡ chữ < 12,5 px trong CSS gốc). Chúng được giữ nguyên, không skip, không nới lỏng.
 
 Chi tiết chiến lược: [`tests/README.md`](./tests/README.md).
 
@@ -232,14 +246,11 @@ Chi tiết chiến lược: [`tests/README.md`](./tests/README.md).
 /                                  Trung tâm điều hành
 /workspace/Bản%20đồ%20tác%20nghiệp Bản đồ tác nghiệp
 /alerts        /incidents     /tasks        /teams
-/sos           /evacuations   /shelters
-/relief/requests  /relief/warehouses  /relief/shipments
-/playbooks     /recovery      /analytics
-/simulation    /ai-assistant  /profile
-/admin/audit   /workspace/Phân%20quyền
+/sos           /shelters      /reports      /analytics
+/profile       /admin/audit   /workspace/Phân%20quyền
 ```
 
-Trang chi tiết dùng đúng mã canonical, ví dụ `/incidents/INC-0241`, `/tasks/TSK-0241`, `/playbooks/PB-YAGI-2024`, `/playbooks/PB-FLOOD-001/execute`, `/relief/warehouses/KHO-01`.
+Trang chi tiết dùng đúng mã canonical, ví dụ `/incidents/INC-YAGI-01`, `/tasks/TSK-YAGI-01`, `/sos/SOS-YAGI-01`, `/teams/CH-HN-01`. Các đường dẫn `/relief/*`, `/playbooks`, `/recovery`, `/simulation`, `/ai-assistant`, `/evacuations` trả về trang không tìm thấy.
 
 ---
 
@@ -248,11 +259,11 @@ Trang chi tiết dùng đúng mã canonical, ví dụ `/incidents/INC-0241`, `/t
 1. Đăng nhập `thuantq` → **Trung tâm điều hành**: đọc hàng đợi việc, dải nguồn lực vượt ngưỡng và sổ trực ban.
 2. Mở **Bản đồ tác nghiệp**: xem lớp gió và nhiệt độ thật; nếu có xoáy thuận trong 10 ngày tới, dải phía trên sẽ nêu tên và mốc thời gian — bấm *Xem trên bản đồ*.
 3. Bấm **Xem lại Bão số 3 Yagi — 09/2024** rồi kéo trục thời gian: quan sát bão vượt Biển Đông, mốc **đổ bộ** và mốc **tan** trong đất liền.
-4. Vào **Ứng phó → Phương án ứng phó → Bão Yagi 2024**: đọc 20 bước chia ba giai đoạn, mỗi bước có mốc giờ, cấp độ rủi ro và căn cứ Điều 22.
-5. Mở một **SOS**, xác minh và sinh nhiệm vụ, điều đội — rồi quay lại xem sự cố, đội và phân tích đã đổi theo.
-6. Chạy vài bước **Mô phỏng** rồi reset về mốc gốc.
-7. Đăng nhập lại bằng `phamdam` (Tây Hồ) hoặc `phamhieu` (đội CH-05) để thấy ranh giới đọc/ghi thu hẹp đúng theo vai.
-8. Xem `/admin/audit` để hiểu vết kiểm tra bảo mật và giới hạn của bản demo cục bộ.
+4. Đăng nhập `nguyentrung` (cán bộ PCTT): mở một **SOS**, xác minh và sinh nhiệm vụ, điều đội — rồi quay lại xem sự cố, đội và phân tích đã đổi theo. Vào **Cảnh báo → Cảnh báo công bố** để soạn nháp/công bố/thu hồi.
+5. Đăng nhập `phamhieu` (đơn vị cứu hộ): nhận, bắt đầu và **báo xong** nhiệm vụ — trạng thái chuyển "Chờ xác nhận", không tự đóng.
+6. Quay lại `nguyentrung`: **chấp nhận** hoặc **từ chối** kết quả (từ chối phải nêu lý do); thử **phân công lại** và xem lịch sử.
+7. Đăng nhập `trantuan` hoặc `minhtri` (công dân): lấy vị trí, chạm SOS, gửi phản ánh, theo dõi SOS của mình, xem cảnh báo đã công bố.
+8. Đăng nhập `thuantq` (admin): xem `/workspace/Phân%20quyền`, nhật ký migration vai trò và `/admin/audit`; để ý admin **không** có nút xác minh/điều phối/xác nhận kết quả.
 
 ---
 
@@ -280,8 +291,8 @@ Ngoài ra, phần khí tượng có giới hạn khoa học phải nêu: bộ d�
 1. Backend với phân quyền phía máy chủ và giao dịch bền vững; đẩy toàn bộ ma trận quyền xuống tầng dữ liệu.
 2. Nhà cung cấp định danh, phiên HttpOnly/MFA và nhật ký kiểm toán bất biến.
 3. Truyền sự kiện thời gian thực, idempotency, kiểm soát tương tranh lạc quan, giám sát vận hành.
-4. Hoàn thiện nhóm **Hậu cần & Phục hồi**: cảnh báo hạn dùng vật tư, sinh yêu cầu cứu trợ theo định mức (15 lít nước và 2.100 kcal/người/ngày), danh sách hộ thụ hưởng dùng chung, hỗ trợ hộ dân theo NĐ 20/2021 và biểu mẫu thiệt hại theo TTLT 43/2015.
-5. Dọn nợ test suite và dựng CI/CD, kiểm thử E2E trên trình duyệt, kiểm tra khả năng tiếp cận.
+4. Đồng bộ schema Supabase (`supabase/schema.sql` còn ràng buộc CHECK theo vai cũ) sang 4 vai V2; hiện client ánh xạ vai cũ → mới khi đọc hồ sơ.
+5. Dựng CI/CD, kiểm thử E2E trên trình duyệt, kiểm tra khả năng tiếp cận; dọn 2 kịch bản `ui-content-normalization` còn nợ.
 6. Nguồn tile bản đồ có SLA cho môi trường vận hành thật.
 
 ---
@@ -295,4 +306,5 @@ Ngoài ra, phần khí tượng có giới hạn khoa học phải nêu: bộ d�
 | [`tests/README.md`](./tests/README.md) | Chiến lược kiểm thử |
 | [`THAY-DOI.md`](./THAY-DOI.md) | Nhật ký các đợt cải tiến, kèm số đo trước/sau |
 | [`PHAN-TICH-UX-VA-PHAM-VI.md`](./PHAN-TICH-UX-VA-PHAM-VI.md) | Phân tích trải nghiệm và phạm vi |
-| [`RA-SOAT-DOT-2.md`](./RA-SOAT-DOT-2.md) · [`RA-SOAT-DOT-3.md`](./RA-SOAT-DOT-3.md) | Rà soát có phản biện: phương án ứng phó so với chuẩn Mỹ/Trung/Nhật/Philippines, Hậu cần – Phục hồi, mức tối giản của Trung tâm điều hành, kèm bảng trạng thái triển khai |
+| [`docs/03-use-cases/v2-use-cases-tg01-tg21.md`](./docs/03-use-cases/v2-use-cases-tg01-tg21.md) | 21 use case TG01–TG21 với actor V2 |
+| [`BAO-CAO-REFACTOR-V2.md`](./BAO-CAO-REFACTOR-V2.md) | Báo cáo refactor V2 (mapping, ma trận tiện ích, Giữ/Sửa/Gộp/Xóa, kết quả build/lint/test, migration) |

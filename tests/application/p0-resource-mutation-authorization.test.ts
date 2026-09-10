@@ -1,3 +1,9 @@
+/*
+ * V2 (4 vai): test "warehouse ownership" gỡ cùng module Kho (thay bằng test công dân
+ * cũ là thủ kho không còn quyền kho); test geographic dùng công dân (sos_create);
+ * ownership rescue_unit dựa vào Task/SOS đã phân công, không còn teamId trên tài khoản.
+ * Ngưỡng số lệnh enforcePermission hạ từ 100 → 40 vì 6 nhóm nghiệp vụ đã xóa thật.
+ */
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
@@ -7,8 +13,11 @@ import {
 } from "../../src/lib/security/authorization";
 import { demoUsers } from "../../src/infrastructure/auth/demoUsers";
 
-const user = (username: string) =>
-  structuredClone(demoUsers.find((item) => item.username === username)!);
+const user = (username: string) => {
+  const found = demoUsers.find((item) => item.username === username);
+  if (!found) throw new Error(`demo user ${username} không tồn tại`);
+  return structuredClone(found);
+};
 const resource = (
   changes: Partial<AuthorizationResource>,
 ): AuthorizationResource => ({
@@ -19,19 +28,20 @@ const resource = (
 });
 
 test("authorized resource mutation thành công và sai địa bàn bị từ chối", () => {
-  const local = user("Phạm Văn Đam");
+  const local = user("phamdam"); // công dân, scope Tây Hồ
   assert.equal(
     authorizeResources(local, {
-      permission: "update",
-      resources: [resource({})],
+      permission: "sos_create",
+      resources: [resource({ type: "SosRequest", id: "new" })],
     }).allowed,
     true,
   );
   const denied = authorizeResources(local, {
-    permission: "update",
+    permission: "sos_create",
     resources: [
       resource({
-        id: "INC-0234",
+        type: "SosRequest",
+        id: "new",
         geographicScope: "Ngọc Thụy, Long Biên, Hà Nội",
       }),
     ],
@@ -40,70 +50,57 @@ test("authorized resource mutation thành công và sai địa bàn bị từ ch
   assert.match(denied.reason, /ngoài phạm vi/);
 });
 
-test("rescue ownership chặn Team không được phân công", () => {
-  const leader = user("Phạm Trung Hiếu");
+test("rescue ownership: đơn vị cứu hộ chỉ thao tác Task/SOS đã được phân công, nhưng cập nhật mọi đội", () => {
+  const unit = user("phamhieu");
   assert.equal(
-    authorizeResources(leader, {
-      permission: "team_update_status",
-      resources: [
-        resource({
-          type: "Team",
-          id: "CH-05",
-          geographicScope: "Long Biên, Hà Nội",
-          assignedTeamId: "CH-05",
-        }),
-      ],
+    authorizeResources(unit, {
+      permission: "task_report_done",
+      resources: [resource({ type: "Task", id: "TSK-YAGI-01", geographicScope: "Lào Cai", assignedTeamId: "CH-LC-01" })],
     }).allowed,
     true,
   );
-  const denied = authorizeResources(leader, {
-    permission: "team_update_status",
-    resources: [
-      resource({
-        type: "Team",
-        id: "CH-03",
-        geographicScope: "Tây Hồ, Hà Nội",
-        assignedTeamId: "CH-03",
-      }),
-    ],
+  const denied = authorizeResources(unit, {
+    permission: "task_report_done",
+    resources: [resource({ type: "Task", id: "TSK-YAGI-02", geographicScope: "Lào Cai", assignedTeamId: null })],
   });
   assert.equal(denied.allowed, false);
+  assert.match(denied.reason, /đã được cán bộ phân công/);
+  // Chỉ huy toàn bộ lực lượng: mọi đội đều cập nhật được trạng thái.
+  for (const id of ["CH-LC-01", "CH-CB-01", "CH-QN-01"])
+    assert.equal(
+      authorizeResources(unit, {
+        permission: "team_update_status",
+        resources: [resource({ type: "Team", id, geographicScope: "Toàn quốc", assignedTeamId: id })],
+      }).allowed,
+      true,
+      id,
+    );
 });
 
-test("warehouse ownership chặn thao tác kho khác", () => {
-  const staff = user("Nguyễn Nam Anh");
+test("thủ kho cũ (nay công dân) không còn bất kỳ quyền kho/điều phối nào", () => {
+  const former = user("namanh");
+  assert.equal(former.role, "citizen");
+  for (const permission of ["dispatch", "task_assign", "team_update_status", "shelter_update"] as const)
+    assert.equal(
+      authorizeResources(former, {
+        permission,
+        resources: [resource({ geographicScope: "Hoàn Kiếm, Hà Nội" })],
+      }).allowed,
+      false,
+      permission,
+    );
+  // Vẫn gửi SOS trong địa bàn của mình.
   assert.equal(
-    authorizeResources(staff, {
-      permission: "warehouse_adjust_stock",
-      resources: [
-        resource({
-          type: "Warehouse",
-          id: "KHO-01",
-          geographicScope: "Hoàn Kiếm, Hà Nội",
-          warehouseId: "KHO-01",
-        }),
-      ],
+    authorizeResources(former, {
+      permission: "sos_create",
+      resources: [resource({ type: "SosRequest", id: "new", geographicScope: "Hoàn Kiếm, Hà Nội" })],
     }).allowed,
     true,
-  );
-  assert.equal(
-    authorizeResources(staff, {
-      permission: "warehouse_adjust_stock",
-      resources: [
-        resource({
-          type: "Warehouse",
-          id: "KHO-02",
-          geographicScope: "Tây Hồ, Hà Nội",
-          warehouseId: "KHO-02",
-        }),
-      ],
-    }).allowed,
-    false,
   );
 });
 
 test("multi-resource mutation từ chối nếu chỉ một resource ngoài scope", () => {
-  const scopedOperator = user("Nguyễn Quốc Trung");
+  const scopedOperator = user("nguyentrung");
   scopedOperator.geographicScope = {
     level: "district",
     name: "Tây Hồ, Hà Nội",
@@ -113,17 +110,17 @@ test("multi-resource mutation từ chối nếu chỉ một resource ngoài scop
     permission: "task_assign",
     sensitiveOperation: "gán nhiệm vụ cho đội",
     resources: [
-      resource({ type: "Task", id: "TSK-0241", assignedTeamId: null }),
+      resource({ type: "Task", id: "TSK-YAGI-04", assignedTeamId: null }),
       resource({
         type: "Team",
-        id: "CH-05",
-        geographicScope: "Long Biên, Hà Nội",
-        assignedTeamId: "CH-05",
+        id: "CH-LC-01",
+        geographicScope: "Lào Cai",
+        assignedTeamId: "CH-LC-01",
       }),
     ],
   });
   assert.equal(decision.allowed, false);
-  assert.equal(decision.resourceId, "CH-05");
+  assert.equal(decision.resourceId, "CH-LC-01");
 });
 
 test("provider không còn mutation permission call thiếu resource context", () => {
@@ -165,5 +162,6 @@ test("provider không còn mutation permission call thiếu resource context", (
     }
     assert.equal((source.match(/permissionMatrix/g) ?? []).length, 0);
   }
-  assert.ok(calls >= 100);
+  // Baseline 102 lệnh; sau khi xóa 6 nhóm nghiệp vụ còn ~48 (9 command V2 mới đều có resource context).
+  assert.ok(calls >= 40, `chỉ còn ${calls} lệnh enforcePermission`);
 });

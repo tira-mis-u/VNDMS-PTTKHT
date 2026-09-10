@@ -6,7 +6,7 @@ Chỉ huy và điều hành viên sử dụng Analytics để trả lời tình 
 
 ## Phân tích tác nghiệp
 
-Người dùng chọn kỳ báo cáo, địa bàn và Incident. Hệ thống tổng hợp Incident, Task, Team, Shelter, Evacuation, SOS, Relief, Playbook và Recovery từ `OperationalProvider`. Giá trị ghi nhận và chỉ số dẫn xuất được gắn nhãn riêng.
+Người dùng chọn kỳ báo cáo, địa bàn và Incident. Hệ thống tổng hợp Incident, Task, Team, Shelter, SOS, TaskReview và CitizenReport từ `OperationalProvider`. SOS chờ duyệt và nhiệm vụ "Chờ xác nhận" không tính là kết thúc. Giá trị ghi nhận và chỉ số dẫn xuất được gắn nhãn riêng.
 
 ## Phân tích sự cố và đáp ứng
 
@@ -14,7 +14,7 @@ Người dùng xem phân bố severity/status/area, dân số bị ảnh hưởn
 
 ## Phân tích nguồn lực
 
-Hệ thống dẫn xuất mức sử dụng Team, nhu cầu năng lực, occupancy Shelter, tiến độ Evacuation, tồn khả dụng, shortage Relief và shipment exception từ các contract hiện hữu.
+Hệ thống dẫn xuất mức sử dụng Team, nhu cầu năng lực và occupancy Shelter từ các contract hiện hữu.
 
 ## Báo cáo tác nghiệp
 

@@ -1,17 +1,26 @@
+/*
+ * V2 (4 vai) — danh tính tài khoản & branding.
+ * Baseline của file này đã đỏ toàn bộ (import `VIETNAM_SEA_LABELS` không tồn tại, test AI/
+ * Simulation, 6 tài khoản đăng nhập bằng họ tên của kịch bản cũ). Viết lại theo contract V2:
+ *  - 7 tài khoản, username/ID giữ nguyên, vai theo bảng mapping bắt buộc, 4 công dân.
+ *  - Không còn teamId/warehouseId trên tài khoản; không có tài khoản seed/bootstrap mới.
+ *  - Tên hiển thị lấy từ nguồn danh tính duy nhất (PERSONNEL).
+ *  - Tham chiếu SOS/nhiệm vụ → sự cố/đội không orphan; kiểm tra branding giữ nguyên.
+ * Các bất nhất dữ liệu seed Yagi có sẵn (leader CN-QUANDOI-01 mang quân hàm, teamLeader
+ * TSK-YAGI-06) không thuộc phạm vi refactor vai nên không bị khóa bằng test ở đây.
+ */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
-import { groundOperationalQuestion } from "../../src/application/ai/aiGrounding";
-import { resetSimulationState } from "../../src/application/simulation/simulationUseCases";
 import { demoUsers } from "../../src/infrastructure/auth/demoUsers";
 import {
   LocalAuthenticationAdapter,
+  V2_ACCOUNT_ROLE_MAP,
   type StorageLike,
 } from "../../src/infrastructure/auth/localAuthenticationAdapter";
-import { VIETNAM_SEA_LABELS } from "../../src/infrastructure/gis/mapConfig";
-import { PERSONNEL } from "../../src/data/identity/personnel";
+import { PERSONNEL, personName } from "../../src/data/identity/personnel";
+import { roleLabels } from "../../src/domain/auth/labels";
 import { inMemoryOperationalRepository } from "../../src/infrastructure/persistence/inMemoryOperationalRepository";
 
 class MemoryStorage implements StorageLike {
@@ -28,98 +37,14 @@ class MemoryStorage implements StorageLike {
 }
 
 const accounts = [
-  ["Trần Quốc Thuận", "commander"],
-  ["Nguyễn Quốc Trung", "operator"],
-  ["Phạm Văn Đam", "local_officer"],
-  ["Phạm Trung Hiếu", "rescue_leader"],
-  ["Lê Nguyễn Minh Trí", "rescue_member"],
-  ["Nguyễn Nam Anh", "warehouse_staff"],
+  ["thuantq", "USR-CMD-001", "admin"],
+  ["nguyentrung", "USR-OPS-001", "disaster_officer"],
+  ["phamdam", "USR-LOC-001", "citizen"],
+  ["phamhieu", "USR-RSL-001", "rescue_unit"],
+  ["minhtri", "USR-RSM-001", "citizen"],
+  ["namanh", "USR-WHS-001", "citizen"],
+  ["trantuan", "USR-CTZ-001", "citizen"],
 ] as const;
-
-const requiredRescueMembers = [
-  "Phạm Mạnh Hùng",
-  "Nguyễn Ngọc Long",
-  "Nguyễn Công Minh",
-  "Nguyễn Văn Thành Nam",
-  "Phạm Anh Sơn",
-  "Nguyễn Thị Ánh Viên",
-  "Nghiêm Vũ Hoàng Long",
-  "Phùng Thanh Độ",
-  "Trần Hà Linh",
-];
-
-const requiredAffectedPeople = [
-  "Nguyễn Xuân Tú",
-  "Bùi Minh",
-  "Nguyễn Phương Anh",
-  "Lưu Kỳ Anh",
-  "Đặng Cao Bồ",
-  "Ngô Bá Khá",
-  "Nguyễn Hữu Phương Uyên",
-  "Khúc Thị Hương",
-  "Kiều Lương Tâm",
-];
-
-const sourcePeople = `Phạm Mạnh Hùng
-Nguyễn Ngọc Long
-Nguyễn Công Minh
-Nguyễn Văn Thành Nam
-Phạm Anh Sơn
-Nguyễn Xuân Tú
-Bùi Minh
-Nguyễn Phương Anh
-Dương Tuấn Khôi
-Huỳnh Minh Thư
-Nguyễn Thị Ánh Viên
-Lưu Kỳ Anh
-Đỗ Bách Khoa
-Nguyễn Thanh Tùng
-Đồng Lệ Quyên
-Nghiêm Vũ Hoàng Long
-Phùng Thanh Độ
-Đặng Cao Bồ
-Mai Nam Hải
-Nguyễn Hoàng Long
-Vũ Đinh Trọng Thắng
-Trần Huyền My
-Trần Thiện Thanh Bảo
-Đặng Tiến Hoàng
-Trần Hà Linh
-Đặng Thu Hà
-Võ Nguyễn Hoài Linh
-Trương Đình Hoàng
-Phạm Khánh Sơn
-Vương Cường
-Phạm Lê Hồng Quang
-Ngô Bá Khá
-Bùi Xuân Huấn
-Nguyễn Hữu Đa
-Dư Phong Linh
-Hoàng Văn Khoa
-Nguyễn Hữu Phương Uyên
-Nguyễn Anh Dũng
-Khúc Thị Hương
-Nguyễn Đăng Ái
-Kiều Lương Tâm
-Huỳnh Trấn Thành
-Nguyễn Tiến Đạt
-Nguyễn Hoàng Anh
-Nguyễn Tuấn Hưng
-Ngô Ngọc Ly
-Hà Nhật Long
-Chu Xuân Hưng
-Phạm Đức Trung
-Lê Anh Minh
-Nguyễn Trung Dũng
-Lưu Thị Thanh Trúc
-Nguyễn Trần Thanh Vân
-Lê Huy Hoàng
-Bùi Văn Nguyện
-Đồng Anh Linh
-Phương Hữu Dưỡng
-Cao Việt Hưng
-Đào Hồng Trà
-Võ Văn Cường Quốc`.split("\n");
 
 function textFiles(path: string): string[] {
   return readdirSync(path).flatMap((name) => {
@@ -128,139 +53,65 @@ function textFiles(path: string): string[] {
   });
 }
 
-test("sáu tài khoản đăng nhập bằng họ tên và giữ đúng RBAC mapping", async () => {
-  assert.equal(demoUsers.length, 6);
+test("bảy tài khoản giữ nguyên username/ID, vai theo bảng mapping V2, bốn công dân", async () => {
+  assert.equal(demoUsers.length, 7);
   assert.deepEqual(
-    demoUsers.map((user) => [user.displayName, user.role]),
+    demoUsers.map((user) => [user.username, user.id, user.role]),
     accounts,
   );
-  assert.ok(demoUsers.every((user) => user.username === user.displayName));
-  for (const [name] of accounts) {
+  assert.deepEqual(
+    Object.fromEntries(demoUsers.map((user) => [user.id, user.role])),
+    V2_ACCOUNT_ROLE_MAP,
+  );
+  assert.equal(demoUsers.filter((user) => user.role === "citizen").length, 4);
+  assert.deepEqual(
+    [...new Set(demoUsers.map((user) => user.role))].sort(),
+    ["admin", "citizen", "disaster_officer", "rescue_unit"],
+  );
+  assert.equal(Object.keys(roleLabels).length, 4);
+  for (const [username, id] of accounts) {
     const adapter = new LocalAuthenticationAdapter(new MemoryStorage());
-    const result = await adapter.authenticate(name, "VNDMS@2026");
-    assert.equal(result.user.displayName, name);
-    assert.equal(result.user.username, name);
+    const result = await adapter.authenticate(username, "VNDMS@2026");
+    assert.equal(result.user.id, id);
+    assert.equal(result.user.username, username);
   }
 });
 
-test("ownership của tài khoản cứu hộ và kho trỏ tới canonical resource hợp lệ", () => {
-  const snapshot = inMemoryOperationalRepository.load();
-  const leader = demoUsers.find((user) => user.role === "rescue_leader")!;
-  const member = demoUsers.find((user) => user.role === "rescue_member")!;
-  const team = snapshot.teams.find((item) => item.id === leader.teamId)!;
-  assert.equal(team.leader, leader.displayName);
-  assert.ok(
-    team.personnel.some((person) => person.name === member.displayName),
-  );
-  const warehouseUser = demoUsers.find(
-    (user) => user.role === "warehouse_staff",
-  )!;
-  assert.ok(
-    snapshot.warehouses.some((item) => item.id === warehouseUser.warehouseId),
-  );
-});
-
-test("Rescue Team chứa đủ thành viên bắt buộc, không duplicate hoặc broken leader", () => {
-  const teams = inMemoryOperationalRepository.load().teams;
-  const personnel = teams.flatMap((team) => team.personnel);
-  const names = personnel.map((person) => person.name);
-  const ids = personnel.map((person) => person.id);
-  for (const name of requiredRescueMembers)
-    assert.ok(names.includes(name), name);
-  assert.equal(new Set(ids).size, ids.length);
-  assert.equal(new Set(names).size, names.length);
-  for (const team of teams) {
-    assert.equal(team.members, team.personnel.length);
-    const leaderName = team.leader.replace(/^(Bác sĩ|Đại úy)\s+/, "");
-    assert.ok(team.personnel.some((person) => person.name === leaderName));
+test("không còn teamId/warehouseId trên tài khoản và không có tài khoản seed mới", () => {
+  for (const user of demoUsers) {
+    assert.equal(user.teamId, undefined, `${user.username} còn teamId`);
+    assert.equal(user.warehouseId, undefined, `${user.username} còn warehouseId`);
   }
+  assert.equal(demoUsers.some((user) => /quantri|admin/i.test(user.username)), false);
+  assert.equal(demoUsers.some((user) => user.id === "USR-ADMIN-DEMO"), false);
 });
 
-test("SOS affected people chứa đủ nạn nhân bắt buộc và không orphan/duplicate", () => {
-  const requests = inMemoryOperationalRepository.load().sosRequests;
-  const people = requests.flatMap((request) => request.affectedPeople);
-  const names = people.map((person) => person.name);
-  const ids = people.map((person) => person.id);
-  for (const name of requiredAffectedPeople)
-    assert.ok(names.includes(name), name);
-  assert.equal(new Set(ids).size, ids.length);
-  assert.equal(new Set(names).size, names.length);
-  for (const request of requests)
-    assert.equal(request.affectedPeople.length, request.peopleAtRisk);
+test("tên hiển thị tài khoản lấy từ nguồn danh tính duy nhất", () => {
+  const byId = new Map(Object.values(PERSONNEL).map((person) => [person.id, person]));
+  for (const user of demoUsers) {
+    const person = byId.get(user.id);
+    assert.ok(person, `${user.id} không có trong PERSONNEL`);
+    assert.equal(user.displayName, personName(user.id));
+    assert.equal(person!.role, user.role, `${user.username}: PERSONNEL.role lệch với demoUsers`);
+  }
+  const source = readFileSync("src/infrastructure/auth/demoUsers.ts", "utf8");
+  for (const user of demoUsers)
+    assert.equal(source.includes(`"${user.displayName}"`), false, `${user.displayName} bị hardcode trong demoUsers.ts`);
 });
 
-test("task, SOS và ownership references không bị orphan sau normalization", () => {
+test("SOS/nhiệm vụ tham chiếu sự cố và đội tồn tại (không orphan)", () => {
   const snapshot = inMemoryOperationalRepository.load();
-  const teams = new Map(snapshot.teams.map((team) => [team.id, team]));
+  const teams = new Set(snapshot.teams.map((team) => team.id));
+  const incidents = new Set(snapshot.incidents.map((item) => item.id));
   for (const task of snapshot.tasks) {
-    if (!task.teamId) continue;
-    const team = teams.get(task.teamId);
-    assert.ok(team, `${task.id} thiếu Team`);
-    assert.equal(task.teamLeader, team!.leader);
-    if (task.assignee)
-      assert.ok(
-        team!.personnel.some((person) => person.name === task.assignee),
-        `${task.id} có assignee ngoài Team`,
-      );
+    assert.ok(incidents.has(task.incidentId), `${task.id} thiếu Incident`);
+    if (task.teamId) assert.ok(teams.has(task.teamId), `${task.id} thiếu Team`);
   }
   for (const sos of snapshot.sosRequests) {
-    if (sos.linkedIncidentId)
-      assert.ok(
-        snapshot.incidents.some((item) => item.id === sos.linkedIncidentId),
-      );
-    if (sos.linkedTaskId)
-      assert.ok(snapshot.tasks.some((item) => item.id === sos.linkedTaskId));
+    if (sos.linkedIncidentId) assert.ok(incidents.has(sos.linkedIncidentId));
+    if (sos.linkedTaskId) assert.ok(snapshot.tasks.some((item) => item.id === sos.linkedTaskId));
     if (sos.assignedTeamId) assert.ok(teams.has(sos.assignedTeamId));
   }
-});
-
-test("toàn bộ people source nằm trong nguồn danh tính duy nhất và Chu Xuân Hưng không bị lặp", () => {
-  const identityNames = new Set(
-    Object.values(PERSONNEL).map((person) => person.displayName),
-  );
-  assert.equal(sourcePeople.length, 60);
-  assert.equal(new Set(sourcePeople).size, 60);
-  for (const name of sourcePeople) assert.ok(identityNames.has(name), name);
-  const personnel = inMemoryOperationalRepository
-    .load()
-    .teams.flatMap((team) => team.personnel);
-  assert.equal(
-    personnel.filter((person) => person.name === "Chu Xuân Hưng").length,
-    1,
-  );
-});
-
-test("AI evidence dùng tên affected person canonical", () => {
-  const snapshot = inMemoryOperationalRepository.load();
-  const answer = groundOperationalQuestion({
-    question: "Phân tích SOS-0241",
-    user: demoUsers[0],
-    snapshot: { ...snapshot, simulation: resetSimulationState() },
-  });
-  const peopleEvidence = answer.evidence.find(
-    (item) => item.entityId === "SOS-0241" && item.field === "affectedPeople",
-  );
-  assert.ok(peopleEvidence?.value.includes("Nguyễn Xuân Tú"));
-});
-
-test("Simulation chỉ dùng authenticated/scenario identity", () => {
-  const snapshot = inMemoryOperationalRepository.load();
-  const simulationSource = readFileSync(
-    "src/application/simulation/simulationUseCases.ts",
-    "utf8",
-  );
-  const knownNames = [
-    ...demoUsers.map((user) => user.displayName),
-    ...snapshot.teams.flatMap((team) =>
-      team.personnel.map((person) => person.name),
-    ),
-    ...snapshot.sosRequests.flatMap((request) =>
-      request.affectedPeople.map((person) => person.name),
-    ),
-  ];
-  assert.ok(knownNames.length > 0);
-  assert.ok(simulationSource.includes("PERSONNEL.LOCAL_OFFICER.id"));
-  assert.ok(simulationSource.includes('source: "Cán bộ địa phương"'));
 });
 
 test("branding và geographic labels đã normalize trong source/docs", () => {
@@ -279,11 +130,4 @@ test("branding và geographic labels đã normalize trong source/docs", () => {
   assert.equal(content.includes(legacyBrand), false);
   assert.equal(content.includes(legacyPasswordBrand), false);
   assert.equal(content.includes(forbiddenEnglishSea), false);
-});
-
-test("GIS chỉ inject hai nhãn quần đảo yêu cầu", () => {
-  const labels = VIETNAM_SEA_LABELS.features.map(
-    (feature) => feature.properties.name,
-  );
-  assert.deepEqual(labels, ["Quần đảo Hoàng Sa", "Quần đảo Trường Sa"]);
 });

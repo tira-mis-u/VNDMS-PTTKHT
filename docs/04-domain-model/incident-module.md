@@ -17,7 +17,7 @@
 - `addEvent`
 - `closeIncident`
 
-Vai trò demo hiện tại là `commander`. Permission matrix đã chuẩn bị cho commander, operator, local officer, rescue leader và citizen. Đây là kiểm tra tại data/service layer phía client; khi có API thật, cùng policy phải được thực thi lại ở server.
+Tạo/đóng sự cố thuộc `disaster_officer`; `admin` chỉ xem. Sự cố không đóng được khi còn nhiệm vụ chưa Hoàn thành/Hủy (kể cả "Chờ xác nhận") hoặc SOS chưa Đã đóng/Từ chối/Hủy. Đây là kiểm tra tại data/service layer phía client; khi có API thật, cùng policy phải được thực thi lại ở server.
 
 ## State consistency
 

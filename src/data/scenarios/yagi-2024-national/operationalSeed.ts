@@ -510,8 +510,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: "TSK-YAGI-01",
     currentIncident: "INC-YAGI-01",
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 22.073,
       longitude: 104.423,
@@ -552,8 +550,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: "TSK-YAGI-03",
     currentIncident: "INC-YAGI-02",
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 22.54,
       longitude: 105.84,
@@ -597,8 +593,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: "TSK-YAGI-04",
     currentIncident: "INC-YAGI-03",
-    currentEvacuationOperation: "EVAC-YAGI-01",
-    currentReliefShipment: null,
     location: {
       latitude: 21.052,
       longitude: 105.862,
@@ -638,8 +632,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: "TSK-YAGI-06",
     currentIncident: "INC-YAGI-04",
-    currentEvacuationOperation: "EVAC-YAGI-02",
-    currentReliefShipment: null,
     location: {
       latitude: 21.715,
       longitude: 104.872,
@@ -679,8 +671,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: null,
     currentIncident: "INC-YAGI-06",
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 20.951,
       longitude: 107.074,
@@ -720,8 +710,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: null,
     currentIncident: "INC-YAGI-07",
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 20.449,
       longitude: 106.344,
@@ -763,8 +751,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: "TSK-YAGI-01",
     currentIncident: "INC-YAGI-01",
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 22.075,
       longitude: 104.42,

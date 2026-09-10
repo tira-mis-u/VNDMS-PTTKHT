@@ -12,25 +12,14 @@ export type AlertCategory =
   | "sos"
   | "task"
   | "team"
-  | "shelter"
-  | "evacuation"
-  | "relief"
-  | "playbook"
-  | "recovery";
+  | "shelter";
 
 export type AlertSourceType =
   | "Incident"
   | "SOS"
   | "Task"
   | "Team"
-  | "Shelter"
-  | "Evacuation"
-  | "ReliefRequest"
-  | "Inventory"
-  | "Shipment"
-  | "PlaybookExecution"
-  | "DamageAssessment"
-  | "RecoveryProject";
+  | "Shelter";
 
 export type AlertStatus = "Chưa đọc" | "Đã đọc" | "Đã xác nhận";
 
@@ -48,19 +37,7 @@ export type AlertCondition =
   | "team_unavailable_during_response"
   | "shelter_overloaded"
   | "shelter_near_capacity"
-  | "shelter_inaccessible"
-  | "evacuation_blocked_or_paused"
-  | "evacuation_slow"
-  | "relief_request_shortage"
-  | "inventory_out_of_stock"
-  | "inventory_low_stock"
-  | "shipment_delayed"
-  | "shipment_incident"
-  | "playbook_required_steps_blocked"
-  | "assessment_verification_stalled"
-  | "recovery_milestone_overdue"
-  | "recovery_budget_exceeded"
-  | "recovery_budget_risk";
+  | "shelter_inaccessible";
 
 export interface AlertSourceRef {
   type: AlertSourceType;
@@ -85,7 +62,6 @@ export interface DerivedAlert {
   readPermission: Permission;
   geographicScope?: string;
   ownerTeamId?: string | null;
-  ownerWarehouseId?: string | null;
   requiresAcknowledgement: boolean;
   /** Mốc thời gian nghiệp vụ tạo ra điều kiện cảnh báo (deterministic). */
   detectedAt: string;
@@ -162,10 +138,6 @@ export const alertCategoryLabels: Record<AlertCategory, string> = {
   task: "Nhiệm vụ",
   team: "Đội cứu hộ",
   shelter: "Điểm sơ tán",
-  evacuation: "Sơ tán",
-  relief: "Cứu trợ & kho",
-  playbook: "Kế hoạch ứng phó",
-  recovery: "Phục hồi",
 };
 
 export const alertConditionLabels: Record<AlertCondition, string> = {
@@ -183,16 +155,4 @@ export const alertConditionLabels: Record<AlertCondition, string> = {
   shelter_overloaded: "Điểm sơ tán quá tải",
   shelter_near_capacity: "Điểm sơ tán gần đầy",
   shelter_inaccessible: "Điểm sơ tán không thể tiếp cận",
-  evacuation_blocked_or_paused: "Hoạt động sơ tán bị chặn hoặc tạm dừng",
-  evacuation_slow: "Hoạt động sơ tán đang chậm",
-  relief_request_shortage: "Yêu cầu cứu trợ thiếu hàng",
-  inventory_out_of_stock: "Kho đã hết hàng",
-  inventory_low_stock: "Tồn kho dưới mức đặt hàng lại",
-  shipment_delayed: "Chuyến hàng quá giờ dự kiến",
-  shipment_incident: "Chuyến hàng gặp sự cố",
-  playbook_required_steps_blocked: "Bước bắt buộc của quy trình bị chặn",
-  assessment_verification_stalled: "Đánh giá thiệt hại chờ xác minh quá lâu",
-  recovery_milestone_overdue: "Mốc phục hồi quá hạn",
-  recovery_budget_exceeded: "Ngân sách phục hồi vượt phê duyệt",
-  recovery_budget_risk: "Ngân sách phục hồi sắp chạm hạn mức",
 };

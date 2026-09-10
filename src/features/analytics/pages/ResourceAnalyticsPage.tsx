@@ -2,14 +2,14 @@ import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   Building2,
-  PackageOpen,
+  ClipboardCheck,
+  MessageSquareWarning,
   ShieldCheck,
-  Truck,
 } from "lucide-react";
 import {
-  getEvacuationAnalytics,
-  getReliefAnalytics,
+  getCitizenReportAnalytics,
   getShelterAnalytics,
+  getTaskAnalytics,
   getTeamAnalytics,
   type AnalyticsData,
 } from "@/application/analytics/analyticsQueries";
@@ -39,12 +39,9 @@ export function ResourceAnalyticsPage({
     () => getShelterAnalytics(data, filter),
     [data, filter],
   );
-  const evacuation = useMemo(
-    () => getEvacuationAnalytics(data, filter),
-    [data, filter],
-  );
-  const relief = useMemo(
-    () => getReliefAnalytics(data, filter),
+  const tasks = useMemo(() => getTaskAnalytics(data, filter), [data, filter]);
+  const reports = useMemo(
+    () => getCitizenReportAnalytics(data, filter),
     [data, filter],
   );
   return (
@@ -53,7 +50,7 @@ export function ResourceAnalyticsPage({
         active="/analytics/resources"
         navigate={navigate}
         title="Phân tích nguồn lực"
-        description="Năng lực cứu hộ, điểm sơ tán, vận chuyển cứu trợ và tồn kho từ các phân hệ nghiệp vụ hiện hành."
+        description="Năng lực cứu hộ, điểm sơ tán, kết quả chờ xác nhận và phản ánh của người dân từ các phân hệ nghiệp vụ hiện hành."
       />
       <AnalyticsFilters
         value={filter}
@@ -84,28 +81,28 @@ export function ResourceAnalyticsPage({
           description={`${shelter.overloaded} điểm quá tải`}
         />
         <MetricCard
-          label="Dân số đã sơ tán"
-          value={evacuation.evacuated}
+          label="Nhiệm vụ chờ xác nhận"
+          value={tasks.awaitingReviewCount}
           basis="Ghi nhận"
-          description={`${evacuation.remaining} người còn lại`}
+          description={`${tasks.rejectedReviewCount} lần bị từ chối kết quả`}
         />
         <MetricCard
-          label="Tồn khả dụng"
-          value={relief.availableStock}
+          label="Phân công lại"
+          value={tasks.reassignmentCount}
           basis="Dẫn xuất"
-          description={`${relief.reservedStock} đơn vị đang giữ`}
+          description="Số lần đổi đội có lý do"
         />
         <MetricCard
-          label="Yêu cầu thiếu hàng"
-          value={relief.shortStockRequests}
-          basis="Dẫn xuất"
-          description={`${relief.failedShipments} chuyến có sự cố`}
+          label="Phản ánh chờ đánh giá"
+          value={reports.pending}
+          basis="Ghi nhận"
+          description={`${reports.valid} hợp lệ · ${reports.duplicate} trùng`}
         />
       </div>
       <div className="analytics-layout-2">
         <Section
           title="Tải công việc đội cứu hộ"
-          description="Phân công lấy từ nhiệm vụ, sự cố, hoạt động sơ tán và chuyến hàng hiện hữu."
+          description="Phân công lấy từ nhiệm vụ và sự cố hiện hữu."
           action={<ShieldCheck size={17} />}
         >
           <div className="analytics-compact-table">
@@ -141,7 +138,7 @@ export function ResourceAnalyticsPage({
         </Section>
         <Section
           title="Nhu cầu năng lực"
-          description="Nhu cầu được dẫn xuất từ loại Nhiệm vụ đang mở và hoạt động sơ tán chưa có đội."
+          description="Nhu cầu được dẫn xuất từ loại Nhiệm vụ đang mở."
         >
           <div className="analytics-capability-list">
             {team.capability.slice(0, 8).map((item) => (
@@ -215,23 +212,23 @@ export function ResourceAnalyticsPage({
       </Section>
       <div className="analytics-layout-2">
         <Section
-          title="Hoạt động sơ tán"
-          description={`${evacuation.completionRate}% hoàn thành · tiến độ trung bình ${evacuation.averageProgress}%`}
-          action={<Truck size={17} />}
+          title="Nhiệm vụ theo sự cố"
+          description={`${tasks.completionRate}% hoàn thành · ${tasks.overdueCount} quá hạn`}
+          action={<ClipboardCheck size={17} />}
         >
           <div className="analytics-compact-table">
             <table>
               <thead>
                 <tr>
-                  <th>Hoạt động</th>
-                  <th>Dân số</th>
-                  <th>Tiến độ</th>
-                  <th>Tuyến</th>
+                  <th>Sự cố</th>
+                  <th>Tổng</th>
+                  <th>Đang mở</th>
+                  <th>Quá hạn</th>
                 </tr>
               </thead>
               <tbody>
-                {evacuation.rows.map((item) => (
-                  <tr key={item.id}>
+                {tasks.byIncident.map((item) => (
+                  <tr key={item.incidentId}>
                     <td>
                       <EntityLink
                         path={`/incidents/${item.incidentId}`}
@@ -239,14 +236,12 @@ export function ResourceAnalyticsPage({
                       >
                         {item.code}
                       </EntityLink>
-                      <small>{item.status}</small>
+                      <small>{item.title}</small>
                     </td>
-                    <td>
-                      {item.evacuated} / {item.evacuated + item.remaining}
-                    </td>
-                    <td>{item.progress}%</td>
-                    <td>
-                      <StatusPill value={item.routeStatus} />
+                    <td>{item.total}</td>
+                    <td>{item.open}</td>
+                    <td className={item.overdue ? "danger-text" : ""}>
+                      {item.overdue}
                     </td>
                   </tr>
                 ))}
@@ -255,27 +250,19 @@ export function ResourceAnalyticsPage({
           </div>
         </Section>
         <Section
-          title="Áp lực kho"
-          description={`${relief.lowStockItems} mặt hàng dưới ngưỡng · ${relief.distributionProgress}% chuyến hoàn tất`}
-          action={<PackageOpen size={17} />}
+          title="Phản ánh theo loại"
+          description={`${reports.total} phản ánh trong kỳ · ${reports.averageReviewMinutes ?? "—"} phút đánh giá trung bình`}
+          action={<MessageSquareWarning size={17} />}
         >
           <div className="analytics-list-rows warehouses">
-            {relief.warehouseRows.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => navigate(`/relief/warehouses/${item.id}`)}
-              >
+            {reports.byCategory.map((item) => (
+              <button key={item.label} onClick={() => navigate("/reports")}>
                 <div>
-                  <b>
-                    {item.code} · {item.name}
-                  </b>
-                  <span>{item.status}</span>
+                  <b>{item.label}</b>
+                  <span>{item.percentage}% tổng phản ánh</span>
                 </div>
                 <span>
-                  <strong>{item.utilization}%</strong> sử dụng
-                </span>
-                <span className={item.lowStock ? "danger-text" : ""}>
-                  <strong>{item.lowStock}</strong> dưới ngưỡng
+                  <strong>{item.value}</strong> phản ánh
                 </span>
               </button>
             ))}
@@ -283,45 +270,42 @@ export function ResourceAnalyticsPage({
         </Section>
       </div>
       <Section
-        title="Yêu cầu cứu trợ có áp lực"
-        description="Số lượng thiếu được tính từ nhu cầu đã duyệt sau khi trừ phần phân bổ chưa giải phóng."
+        title="Phản ánh chờ đánh giá"
+        description="Thời gian chờ tính từ lúc người dân gửi đến thời điểm tham chiếu; chỉ phản ánh chưa được cán bộ đánh giá mới có thời gian chờ."
       >
         <div className="analytics-table-wrap">
           <table className="analytics-table">
             <thead>
               <tr>
-                <th>Yêu cầu</th>
-                <th>Ưu tiên</th>
-                <th>Vòng đời</th>
-                <th>Thiếu</th>
-                <th>Giao nhận</th>
+                <th>Phản ánh</th>
+                <th>Loại</th>
+                <th>Khu vực</th>
+                <th>Trạng thái</th>
+                <th>Chờ đánh giá</th>
               </tr>
             </thead>
             <tbody>
-              {relief.requestRows.map((item) => (
+              {reports.rows.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <EntityLink
-                      path={`/relief/requests/${item.id}`}
-                      navigate={navigate}
-                    >
+                    <EntityLink path="/reports" navigate={navigate}>
                       {item.code}
                     </EntityLink>
                   </td>
+                  <td>{item.category}</td>
+                  <td>{item.area}</td>
                   <td>
-                    <StatusPill value={item.priority} />
-                  </td>
-                  <td>{item.status}</td>
-                  <td className={item.shortage ? "danger-text" : ""}>
-                    {item.shortage.toLocaleString("vi-VN")} đơn vị
+                    <StatusPill value={item.status} />
                   </td>
                   <td>
-                    {item.overdue ? (
+                    {item.waitingMinutes !== null && item.waitingMinutes > 120 ? (
                       <span className="danger-text">
-                        <AlertTriangle size={13} /> Quá hạn
+                        <AlertTriangle size={13} /> {item.waitingMinutes} phút
                       </span>
+                    ) : item.waitingMinutes !== null ? (
+                      `${item.waitingMinutes} phút`
                     ) : (
-                      "Trong hạn"
+                      "Đã đánh giá"
                     )}
                   </td>
                 </tr>

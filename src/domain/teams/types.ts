@@ -44,8 +44,6 @@ export interface RescueTeam {
   vehicles: TeamVehicle[];
   currentTask: string | null;
   currentIncident: string | null;
-  currentEvacuationOperation: string | null;
-  currentReliefShipment: string | null;
   location: TeamLocation;
   coordinates: [number, number];
   lastLocationUpdate: string;

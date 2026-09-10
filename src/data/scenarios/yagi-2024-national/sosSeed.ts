@@ -5,6 +5,7 @@ export const initialSosRequests: SosRequest[] = [
   {
     id: "SOS-YAGI-01",
     code: "SOS-YAGI-01",
+    ownerUserId: null,
     receivedAt: "10/09/2024 05:40",
     reporter: {
       name: personName(PERSONNEL.NGUYEN_ANH_DUNG.id),
@@ -52,7 +53,6 @@ export const initialSosRequests: SosRequest[] = [
     assignedTeamId: "CH-LC-01",
     linkedTaskId: "TSK-YAGI-01",
     shelterDestinationId: null,
-    linkedEvacuationOperationId: null,
     communicationStatus: "Gián đoạn",
     lastContactAt: "10/09/2024 14:10",
     lastUpdatedAt: "10/09/2024 14:20",
@@ -62,6 +62,7 @@ export const initialSosRequests: SosRequest[] = [
   {
     id: "SOS-YAGI-02",
     code: "SOS-YAGI-02",
+    ownerUserId: null,
     receivedAt: "10/09/2024 07:15",
     reporter: {
       name: personName(PERSONNEL.NGUYEN_HOANG_ANH.id),
@@ -102,7 +103,6 @@ export const initialSosRequests: SosRequest[] = [
     assignedTeamId: "CH-CB-01",
     linkedTaskId: "TSK-YAGI-03",
     shelterDestinationId: null,
-    linkedEvacuationOperationId: null,
     communicationStatus: "Kết nối",
     lastContactAt: "10/09/2024 13:10",
     lastUpdatedAt: "10/09/2024 13:10",
@@ -112,6 +112,7 @@ export const initialSosRequests: SosRequest[] = [
   {
     id: "SOS-YAGI-03",
     code: "SOS-YAGI-03",
+    ownerUserId: null,
     receivedAt: "09/09/2024 22:30",
     reporter: {
       name: personName(PERSONNEL.NGUYEN_ANH_DUNG.id),
@@ -153,7 +154,6 @@ export const initialSosRequests: SosRequest[] = [
     assignedTeamId: "CH-HN-01",
     linkedTaskId: "TSK-YAGI-04",
     shelterDestinationId: "SHELTER-HN-01",
-    linkedEvacuationOperationId: "EVAC-YAGI-01",
     communicationStatus: "Kết nối",
     lastContactAt: "10/09/2024 14:00",
     lastUpdatedAt: "10/09/2024 14:00",
@@ -163,6 +163,7 @@ export const initialSosRequests: SosRequest[] = [
   {
     id: "SOS-YAGI-04",
     code: "SOS-YAGI-04",
+    ownerUserId: null,
     receivedAt: "10/09/2024 06:00",
     reporter: {
       name: personName(PERSONNEL.NGUYEN_TUAN_HUNG.id),
@@ -201,7 +202,6 @@ export const initialSosRequests: SosRequest[] = [
     assignedTeamId: null,
     linkedTaskId: null,
     shelterDestinationId: null,
-    linkedEvacuationOperationId: null,
     communicationStatus: "Gián đoạn",
     lastContactAt: "10/09/2024 06:00",
     lastUpdatedAt: "10/09/2024 06:00",
@@ -211,6 +211,7 @@ export const initialSosRequests: SosRequest[] = [
   {
     id: "SOS-YAGI-05",
     code: "SOS-YAGI-05",
+    ownerUserId: null,
     receivedAt: "07/09/2024 16:30",
     reporter: {
       name: personName(PERSONNEL.PHAM_DUC_TRUNG.id),
@@ -245,7 +246,6 @@ export const initialSosRequests: SosRequest[] = [
     assignedTeamId: "CH-QN-01",
     linkedTaskId: null,
     shelterDestinationId: null,
-    linkedEvacuationOperationId: null,
     communicationStatus: "Kết nối",
     lastContactAt: "07/09/2024 18:00",
     lastUpdatedAt: "07/09/2024 18:30",

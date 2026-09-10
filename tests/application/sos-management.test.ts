@@ -1,8 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+/*
+ * V2 (4 vai): test "SOS tạo input evacuation" đã được thay bằng contract mới
+ * `shelterDestinationId` + `routedSosForShelter` vì module Sơ tán (EvacuationOperation)
+ * đã bị gỡ; Điểm sơ tán chỉ còn là danh mục tra cứu. Thêm test ownerUserId/gpsCaptured
+ * và scope theo scopeLevel (local_officer đã gộp vào citizen).
+ */
 import {
   assertSosScope,
-  evacuationInputFromSos,
+  createSosRequest,
   incidentInputFromSos,
   linkSosIncident,
   linkSosTaskAndTeam,
@@ -15,12 +21,12 @@ import {
 import { createIncidentEntity } from "../../src/application/incidents/incidentUseCases";
 import { createTaskEntity } from "../../src/application/tasks/taskUseCases";
 import { assignTeamToOperation } from "../../src/application/teams/teamUseCases";
-import { createEvacuationOperation } from "../../src/application/evacuations/evacuationUseCases";
 import { filterAndSortSos } from "../../src/application/sos/sosQueries";
 import { initialSosRequests } from "../../src/data/scenarios/red-river-flood/sosSeed";
 import { initialTeams } from "../../src/data/scenarios/red-river-flood/operationalSeed";
-import { initialShelters } from "../../src/data/scenarios/red-river-flood/shelterEvacuationSeed";
+import { initialShelters } from "../../src/data/scenarios/red-river-flood/shelterSeed";
 import { assertShelterCanReceive } from "../../src/domain/shelters/rules";
+import { routedSosForShelter } from "../../src/application/shelters/shelterQueries";
 import {
   assertPermission,
   hasPermission,
@@ -70,29 +76,48 @@ test("tạo Task và gán Team dùng application contracts hiện hữu", () => 
   assert.equal(assignedTeam.currentTask, "TSK-0300");
   assert.equal(linked.status, "Đã điều phối");
 });
-test("SOS tạo input evacuation và kiểm tra capacity Shelter hiện hữu", () => {
+test("SOS hướng tới điểm sơ tán qua shelterDestinationId (không còn EvacuationOperation)", () => {
+  const shelter = clone(initialShelters.find((item) => item.status !== "Tạm đóng")!);
   const sos = {
     ...clone(initialSosRequests[1]),
     peopleAtRisk: 12,
-    linkedIncidentId: "INC-0241",
+    shelterDestinationId: shelter.id,
   };
-  const shelter = clone(initialShelters.find((item) => item.id === "TH-05")!);
   assert.doesNotThrow(() => assertShelterCanReceive(shelter, sos.peopleAtRisk));
-  const input = evacuationInputFromSos(sos, shelter.id);
-  const route = {
-    id: "RT-X",
-    name: "Tuyến thử",
-    status: "Thông suốt" as const,
-    distanceKm: 2,
-    estimatedMinutes: 10,
-    coordinates: [sos.location.coordinates, shelter.coordinates],
-    blockedSegments: [],
-    alternativeCoordinates: [],
-    updatedAt: "x",
+  const routed = routedSosForShelter([sos, clone(initialSosRequests[0])], shelter.id);
+  assert.deepEqual(routed.map((item) => item.id), [sos.id]);
+  // SOS đã kết thúc không còn tính là đang hướng tới điểm.
+  const closed = { ...sos, status: "Đã đóng" as const };
+  assert.equal(routedSosForShelter([closed], shelter.id).length, 0);
+});
+test("SOS mới gắn ownerUserId và chỉ đánh dấu GPS khi thiết bị thật sự cấp tọa độ", () => {
+  const base = clone(initialSosRequests[0]);
+  const input = {
+    reporter: base.reporter,
+    location: base.location,
+    description: "Test",
+    peopleAtRisk: 1,
+    injuredCount: 0,
+    missingCount: 0,
+    childrenCount: 0,
+    elderlyCount: 0,
+    disabledCount: 0,
+    severity: base.severity,
+    communicationStatus: base.communicationStatus,
   };
-  const operation = createEvacuationOperation("EVAC-X", input, route, "x");
-  assert.equal(operation.destinationShelterId, "TH-05");
-  assert.equal(operation.estimatedPopulation, 12);
+  const manual = createSosRequest("SOS-9001", input, "21/08/2026 10:45", "USR-CTZ-001");
+  assert.equal(manual.ownerUserId, "USR-CTZ-001");
+  assert.equal(manual.gpsCaptured, false);
+  assert.equal(manual.status, "Mới tiếp nhận");
+  const gps = createSosRequest(
+    "SOS-9002",
+    { ...input, gpsCaptured: true },
+    "21/08/2026 10:45",
+    "USR-RSL-001",
+  );
+  assert.equal(gps.gpsCaptured, true);
+  const anonymous = createSosRequest("SOS-9003", input, "21/08/2026 10:45");
+  assert.equal(anonymous.ownerUserId, null);
 });
 test("resolution bắt buộc kết quả và closure chỉ sau đã xử lý", () => {
   const sos = clone(initialSosRequests[0]);
@@ -138,11 +163,14 @@ test("RBAC và geographic scope được enforcement", () => {
     () => assertPermission("citizen", "sos_dispatch"),
     /không có quyền/,
   );
+  // Vai cán bộ địa phương đã gộp vào citizen: ràng buộc phạm vi theo scopeLevel.
   assert.throws(
-    () => assertSosScope("local_officer", "Đà Nẵng", "Hà Nội"),
+    () => assertSosScope("citizen", "Đà Nẵng", "Hà Nội", "province"),
     /ngoài phạm vi/,
   );
   assert.doesNotThrow(() =>
-    assertSosScope("local_officer", "Tây Hồ, Hà Nội", "Hà Nội"),
+    assertSosScope("citizen", "Tây Hồ, Hà Nội", "Hà Nội", "province"),
   );
+  assert.doesNotThrow(() => assertSosScope("disaster_officer", "Đà Nẵng", "Hà Nội", "national"));
+  assert.doesNotThrow(() => assertSosScope("admin", "Đà Nẵng", "Hà Nội", "province"));
 });

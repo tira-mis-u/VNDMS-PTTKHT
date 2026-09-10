@@ -263,7 +263,8 @@ html[data-theme="dark"] .om-map-zone {
   background: #f4f6f9;
 }
 
-/* Cột chú giải góc dưới trái: các khối xếp chồng, không khối nào đè khối nào. */
+/* Cột chú giải góc dưới trái: các khối xếp chồng,
+không khối nào đè khối nào. */
 .om-legend-stack {
   position: absolute;
   left: 12px;
@@ -773,7 +774,7 @@ html[data-theme="dark"] .om-drawer-actions {
 /* ─────────────────────────────────────────────────────────────
  * TRƯỜNG GIÓ ĐỘNG & BÃO ECMWF-IFS
  * Canvas hạt gió phủ trên nền bản đồ nhưng nằm dưới mọi ký hiệu tác nghiệp,
- * marker và popup; không nhận sự kiện chuột để không cản trở thao tác.
+* marker và popup; không nhận sự kiện chuột để không cản trở thao tác.
  * ───────────────────────────────────────────────────────────── */
 .om-wind-canvas {
   position: absolute;
@@ -825,15 +826,17 @@ html[data-theme="dark"] .om-wind-canvas {
 }
 @media (prefers-reduced-motion: reduce) {
   .om-storm-swirl,
-  .om-storm-halo {
+.om-storm-halo {
     animation: none;
   }
 }
 
 /* ─────────────────────────────────────────────────────────────
  * KHỐI KHÍ TƯỢNG ECMWF-IFS DƯỚI BẢN ĐỒ
- * Gộp thang nhiệt độ, tình hình bão/dòng gió và phần giải nghĩa ký hiệu vào
- * một khối duy nhất nằm ngoài khung bản đồ, tránh che địa hình.
+ * Gộp thang nhiệt độ,
+tình hình bão/dòng gió và phần giải nghĩa ký hiệu vào
+ * một khối duy nhất nằm ngoài khung bản đồ,
+tránh che địa hình.
  * ───────────────────────────────────────────────────────────── */
 .om-weather-board {
   margin-top: 16px;
@@ -989,9 +992,12 @@ html[data-theme="dark"] .om-temp-ticks {
 /* ─────────────────────────────────────────────────────────────
  * TRỤC THỜI GIAN DỰ BÁO (bão + trường gió) — NẰM DƯỚI BẢN ĐỒ
  *
- * Bản trước thanh này nổi bên trong khung bản đồ: che địa hình, và khi khung
+ * Bản trước thanh này nổi bên trong khung bản đồ: che địa hình,
+và khi khung
  * bản đồ cao hơn phần màn hình còn lại thì nó nằm hẳn ngoài vùng nhìn thấy.
- * Nay nó là một dải riêng ngay dưới khung bản đồ, luôn thấy được, và cho phép
+ * Nay nó là một dải riêng ngay dưới khung bản đồ,
+luôn thấy được,
+và cho phép
  * chọn GIỜ BẤT KỲ chứ không nhảy theo nấc cố định của mô hình.
  * ───────────────────────────────────────────────────────────── */
 .om-canvas-shell {
@@ -1231,49 +1237,6 @@ html[data-theme="dark"] .om-timeline-past {
   }
 }
 
-
-
-/* Thẻ thông tin đã GHIM (bấm vào tỉnh/đảo/mốc bão).
-   Thẻ hover cố tình `pointer-events: none` để không chặn thao tác bản đồ;
-   thẻ đã ghim thì ngược lại — phải bấm được nút × và bôi đen chữ trong thẻ. */
-.ecmwf-pinned-popup,
-.ecmwf-pinned-popup .maplibregl-popup-content {
-  pointer-events: auto !important;
-  user-select: text;
-}
-.ecmwf-pinned-popup .maplibregl-popup-content {
-  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.45);
-  outline: 1px solid rgba(148, 163, 184, 0.45);
-}
-.weather-hover-head.is-pinned {
-  position: relative;
-  padding-right: 20px;
-}
-.weather-hover-close {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 20px;
-  height: 20px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 5px;
-  background: rgba(148, 163, 184, 0.18);
-  color: #e2e8f0;
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-}
-.weather-hover-close:hover { background: rgba(239, 68, 68, 0.35); color: #fff; }
-.weather-hover-foot {
-  margin: 6px 0 0;
-  font-size: 10.5px;
-  color: #94a3b8;
-}
-.ecmwf-pinned-popup .weather-hover-foot { display: none; }
-
 /* Ký hiệu khí tượng trong chú giải trên bản đồ */
 .om-legend-sep {
   width: 1px;
@@ -1392,9 +1355,12 @@ html[data-theme="dark"] .om-replay-banner {
 /* ══════════════════════════════════════════════════════════════════════════
  * CHIỀU CAO BẢN ĐỒ — dồn tối đa không gian dọc cho bản đồ
  * ─────────────────────────────────────────────────────────────────────────
- * Đo thực tế trước khi sửa (khung 1500×950): tiêu đề trang chiếm 152 px, thanh
- * bộ lọc 160 px, nên bản đồ chỉ còn 530 px — không đủ để nhìn đồng thời Biển
- * Đông và đồng bằng Bắc Bộ. Cách xử lý: nén phần đầu trang và thanh lọc, rồi
+ * Đo thực tế trước khi sửa (khung 1500×950): tiêu đề trang chiếm 152 px,
+thanh
+ * bộ lọc 160 px,
+nên bản đồ chỉ còn 530 px — không đủ để nhìn đồng thời Biển
+ * Đông và đồng bằng Bắc Bộ. Cách xử lý: nén phần đầu trang và thanh lọc,
+rồi
  * cho bản đồ ăn toàn bộ chiều cao còn lại của cửa sổ (và tự cao thêm trên màn
  * hình lớn thay vì bị chặn ở 760 px). Ai cần to hơn nữa thì bấm nút mở rộng
  * toàn cửa sổ trên thanh công cụ bản đồ.
@@ -1464,7 +1430,8 @@ html[data-theme="dark"] .om-replay-banner {
   .operational-map-page .om-filter-search-box { flex: 0 1 230px; min-width: 180px; }
 }
 
-/* Nén thanh lọc: chip thấp hơn, chữ nhỏ hơn — đổi lấy ~60px cho bản đồ. */
+/* Nén thanh lọc: chip thấp hơn,
+chữ nhỏ hơn — đổi lấy ~60px cho bản đồ. */
 .operational-map-page .om-layer-chip,
 .operational-map-page .om-sev-chip,
 .operational-map-page .om-filter-count-badge,
@@ -1484,7 +1451,8 @@ html[data-theme="dark"] .om-replay-banner {
   font-size: 11px;
 }
 
-/* Khi dải cảnh báo "đang xem lại" hiện ra, nó đẩy bản đồ xuống ~52px — trừ đi
+/* Khi dải cảnh báo "đang xem lại" hiện ra,
+nó đẩy bản đồ xuống ~52px — trừ đi
    đúng chừng đó để trục thời gian không bị rơi khỏi màn hình. */
 .operational-map-page.has-replay-banner .om-layout {
   height: clamp(600px, calc(100vh - 202px), 1540px);

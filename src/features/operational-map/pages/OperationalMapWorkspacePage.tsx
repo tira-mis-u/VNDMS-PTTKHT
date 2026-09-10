@@ -11,8 +11,6 @@ import {
   findUnifiedMapDetail,
   getUnifiedMapDataStamp,
   getUnifiedMapPoints,
-  getUnifiedMapRoutes,
-  visibleUnifiedMapRoutes,
   type UnifiedMapKind,
   type UnifiedMapSeverity,
 } from "@/application/map/unifiedMapQueries";
@@ -122,10 +120,6 @@ export function OperationalMapWorkspacePage({
     tasks,
     teams,
     shelters,
-    evacuationOperations,
-    reliefRequests,
-    warehouses,
-    recoveryProjects,
   } = store;
 
   const allPoints = useMemo(
@@ -139,16 +133,7 @@ export function OperationalMapWorkspacePage({
       tasks,
       teams,
       shelters,
-      evacuationOperations,
-      reliefRequests,
-      warehouses,
-      recoveryProjects,
     ],
-  );
-  const allRoutes = useMemo(
-    () => getUnifiedMapRoutes(store),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [evacuationOperations],
   );
   const totals = useMemo(() => countByLayer(allPoints), [allPoints]);
   const dataStamp = useMemo(() => getUnifiedMapDataStamp(store), [store]);
@@ -177,10 +162,6 @@ export function OperationalMapWorkspacePage({
   const visiblePoints = useMemo(
     () => filterUnifiedMapPoints(allPoints, { search, severity, layers }),
     [allPoints, search, severity, layers],
-  );
-  const visibleRoutes = useMemo(
-    () => visibleUnifiedMapRoutes(allRoutes, filterUnifiedMapPoints(allPoints, { search: "", severity: "", layers })),
-    [allRoutes, allPoints, layers],
   );
 
   const focusTarget = useMemo(
@@ -222,8 +203,6 @@ export function OperationalMapWorkspacePage({
   /** Trường bão đang hiển thị: bản xem lại (nếu bật) hoặc dự báo trực tiếp. */
   const stormField = replayField ?? liveStormField;
   const replayPreset = HISTORICAL_STORM_PRESETS.find((item) => item.id === replayId);
-  const hasBlockedRoute = visibleRoutes.some((route) => route.blocked);
-  const hasOpenRoute = visibleRoutes.some((route) => !route.blocked);
 
   return (
     <div
@@ -386,7 +365,6 @@ export function OperationalMapWorkspacePage({
         <div className="om-map-zone">
           <UnifiedMapCanvas
             points={visiblePoints}
-            routes={visibleRoutes}
             focusKey={focusKey}
             focusTarget={activeFocusTarget ?? null}
             onSelect={setSelected}
@@ -404,14 +382,6 @@ export function OperationalMapWorkspacePage({
                     <i style={{ background: layer.color }} /> {layer.label}
                   </span>
                 ) : null,
-              )}
-              {/* Chỉ liệt kê ký hiệu ĐANG THỰC SỰ VẼ trên bản đồ: nếu không có
-                  tuyến sơ tán nào trong phạm vi/bộ lọc hiện tại thì không nêu. */}
-              {hasOpenRoute && (
-                <span className="om-legend-line"><b /> Tuyến sơ tán</span>
-              )}
-              {hasBlockedRoute && (
-                <span className="om-legend-line om-legend-line-blocked"><b /> Tuyến bị chặn / hạn chế</span>
               )}
 
               {/* Ký hiệu khí tượng ĐANG VẼ TRÊN BẢN ĐỒ phải nằm ngay trong chú

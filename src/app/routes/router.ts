@@ -9,30 +9,15 @@ export type AppRoute =
   | { name: "team-detail"; id: string }
   | { name: "shelter-list" }
   | { name: "shelter-detail"; id: string }
-  | { name: "evacuation-list" }
-  | { name: "evacuation-detail"; id: string }
   | { name: "sos-list" }
   | { name: "sos-detail"; id: string }
-  | { name: "relief-request-list" }
-  | { name: "relief-request-detail"; id: string }
-  | { name: "warehouse-list" }
-  | { name: "shipment-list" }
-  | { name: "warehouse-detail"; id: string }
-  | { name: "playbook-list" }
-  | { name: "playbook-detail"; id: string }
-  | { name: "playbook-execution"; id: string }
-  | { name: "assessment-list" }
-  | { name: "assessment-detail"; id: string }
-  | { name: "recovery-project-list" }
-  | { name: "recovery-project-detail"; id: string }
+  | { name: "report-list" }
   | { name: "analytics-operations" }
   | { name: "analytics-resources" }
   | { name: "analytics-incidents" }
   | { name: "analytics-reports" }
   | { name: "alert-list" }
   | { name: "alert-detail"; id: string }
-  | { name: "simulation" }
-  | { name: "ai-assistant" }
   | { name: "operational-map"; focus: string | null }
   | { name: "operational-situation" }
   | { name: "operational-history" }
@@ -48,8 +33,6 @@ export const OPERATIONAL_MAP_WORKSPACE_LABEL = "Bản đồ tác nghiệp";
 export const OPERATIONAL_MAP_WORKSPACE_PATH = `/workspace/${encodeURIComponent(
   OPERATIONAL_MAP_WORKSPACE_LABEL,
 )}`;
-export const RECONSTRUCTION_WORKSPACE_LABEL = "Tái thiết";
-export const RECONSTRUCTION_WORKSPACE_PATH = `/workspace/${encodeURIComponent(RECONSTRUCTION_WORKSPACE_LABEL)}`;
 export const SITUATION_WORKSPACE_PATH = `/workspace/${encodeURIComponent("Tình hình thiên tai")}`;
 export const HISTORY_WORKSPACE_PATH = `/workspace/${encodeURIComponent("Lịch sử thiên tai")}`;
 export const TRENDS_WORKSPACE_PATH = `/workspace/${encodeURIComponent("Xu hướng")}`;
@@ -77,46 +60,10 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
   const shelter = pathname.match(/^\/shelters\/([^/]+)$/);
   if (shelter)
     return { name: "shelter-detail", id: decodeURIComponent(shelter[1]) };
-  if (pathname === "/evacuations") return { name: "evacuation-list" };
-  const evacuation = pathname.match(/^\/evacuations\/([^/]+)$/);
-  if (evacuation)
-    return {
-      name: "evacuation-detail",
-      id: decodeURIComponent(evacuation[1]),
-    };
   if (pathname === "/sos") return { name: "sos-list" };
   const sos = pathname.match(/^\/sos\/([^/]+)$/);
   if (sos) return { name: "sos-detail", id: decodeURIComponent(sos[1]) };
-  if (pathname === "/relief" || pathname === "/relief/requests")
-    return { name: "relief-request-list" };
-  const relief = pathname.match(/^\/relief\/requests\/([^/]+)$/);
-  if (relief)
-    return { name: "relief-request-detail", id: decodeURIComponent(relief[1]) };
-  if (pathname === "/relief/shipments") return { name: "shipment-list" };
-  if (pathname === "/relief/warehouses") return { name: "warehouse-list" };
-  const warehouse = pathname.match(/^\/relief\/warehouses\/([^/]+)$/);
-  if (warehouse)
-    return { name: "warehouse-detail", id: decodeURIComponent(warehouse[1]) };
-  if (pathname === "/playbooks") return { name: "playbook-list" };
-  const execution = pathname.match(/^\/playbooks\/([^/]+)\/execute$/);
-  if (execution)
-    return { name: "playbook-execution", id: decodeURIComponent(execution[1]) };
-  const playbook = pathname.match(/^\/playbooks\/([^/]+)$/);
-  if (playbook)
-    return { name: "playbook-detail", id: decodeURIComponent(playbook[1]) };
-  if (pathname === "/recovery" || pathname === "/recovery/assessments")
-    return { name: "assessment-list" };
-  const assessment = pathname.match(/^\/recovery\/assessments\/([^/]+)$/);
-  if (assessment)
-    return { name: "assessment-detail", id: decodeURIComponent(assessment[1]) };
-  if (pathname === "/recovery/projects")
-    return { name: "recovery-project-list" };
-  const recoveryProject = pathname.match(/^\/recovery\/projects\/([^/]+)$/);
-  if (recoveryProject)
-    return {
-      name: "recovery-project-detail",
-      id: decodeURIComponent(recoveryProject[1]),
-    };
+  if (pathname === "/reports") return { name: "report-list" };
   if (pathname === "/analytics" || pathname === "/analytics/operations")
     return { name: "analytics-operations" };
   if (pathname === "/analytics/resources")
@@ -127,9 +74,6 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
   if (pathname === "/alerts") return { name: "alert-list" };
   const alert = pathname.match(/^\/alerts\/([^/]+)$/);
   if (alert) return { name: "alert-detail", id: decodeURIComponent(alert[1]) };
-  if (pathname === "/simulation" || pathname === "/simulation/red-river-flood")
-    return { name: "simulation" };
-  if (pathname === "/ai-assistant") return { name: "ai-assistant" };
   if (pathname === "/profile") return { name: "profile" };
   if (pathname === "/admin" || pathname === "/admin/users")
     return { name: "admin-users" };
@@ -143,11 +87,6 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
       );
       return { name: "operational-map", focus: params.get("focus") };
     }
-    // Tái thiết là alias điều hướng của danh sách Recovery Project chính thức.
-    // Giữ nguyên URL workspace khi tải lại; detail và mutation vẫn dùng route,
-    // state và application contract canonical dưới /recovery/projects.
-    if (label === RECONSTRUCTION_WORKSPACE_LABEL)
-      return { name: "recovery-project-list" };
     if (label === "Tình hình thiên tai") return { name: "operational-situation" };
     if (label === "Lịch sử thiên tai") return { name: "operational-history" };
     if (label === "Xu hướng") return { name: "operational-trends" };
@@ -164,29 +103,18 @@ export function activeNavigationLabel(route: AppRoute) {
   if (route.name.startsWith("incident")) return "Sự cố";
   if (route.name.startsWith("task")) return "Nhiệm vụ";
   if (route.name.startsWith("team")) return "Đội cứu hộ";
-  // Điểm sơ tán là tab của phân hệ Sơ tán ⇒ highlight cùng một mục sidebar.
-  if (route.name.startsWith("shelter")) return "Sơ tán";
-  if (route.name.startsWith("evacuation")) return "Sơ tán";
+  // Điểm sơ tán là danh mục tra cứu; công dân thấy mục "Điểm sơ tán an toàn".
+  if (route.name.startsWith("shelter")) return "Điểm sơ tán";
   if (route.name.startsWith("sos")) return "SOS";
-  // Yêu cầu cứu trợ, kho & tồn, chuyến hàng đã gộp thành một mục "Cứu trợ"
-  // với ba tab trong trang; mọi route hậu cần highlight cùng mục đó.
-  if (route.name.startsWith("relief")) return "Cứu trợ";
-  if (route.name.startsWith("shipment")) return "Cứu trợ";
-  if (route.name.startsWith("playbook")) return "Phương án ứng phó";
-  // Thẩm định thiệt hại và dự án tái thiết là hai tab của "Phục hồi & tái thiết".
-  if (route.name.startsWith("assessment")) return "Phục hồi & tái thiết";
-  if (route.name.startsWith("recovery")) return "Phục hồi & tái thiết";
-  if (route.name.startsWith("warehouse")) return "Cứu trợ";
+  if (route.name.startsWith("report")) return "Phản ánh";
   if (route.name === "alert-detail" || route.name === "alert-list") return "Cảnh báo";
   // Báo cáo là tab bên trong phân hệ Phân tích tác nghiệp, không còn là mục
   // điều hướng riêng nên vẫn highlight mục "Phân tích tác nghiệp" trên sidebar.
   if (route.name.startsWith("analytics")) return "Phân tích tác nghiệp";
-  if (route.name === "ai-assistant") return "Trợ lý AI";
   if (route.name === "operational-map") return "Bản đồ tác nghiệp";
   if (route.name === "operational-situation") return "Tình hình thiên tai";
   if (route.name === "operational-history") return "Lịch sử thiên tai";
   if (route.name === "operational-trends") return "Xu hướng";
-  if (route.name === "simulation") return "Mô phỏng ứng phó";
   if (route.name === "profile") return "Hồ sơ cá nhân";
   if (route.name === "admin-audit") return "Nhật ký bảo mật";
   if (route.name === "admin-permissions") return "Phân quyền";

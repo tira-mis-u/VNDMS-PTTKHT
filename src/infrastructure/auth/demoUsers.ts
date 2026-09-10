@@ -3,6 +3,18 @@ import type { AuthCredential, AuthUser } from "../../domain/auth/types";
 
 const now = "21/08/2026 08:00";
 
+/**
+ * 7 tài khoản demo — username và ID KHÔNG đổi so với trước V2.
+ * Mapping vai trò cũ → mới:
+ *   thuantq     USR-CMD-001  commander       → admin
+ *   nguyentrung USR-OPS-001  operator        → disaster_officer
+ *   phamhieu    USR-RSL-001  rescue_leader   → rescue_unit (chỉ huy toàn bộ lực lượng, không gắn 1 đội)
+ *   phamdam     USR-LOC-001  local_officer   → citizen
+ *   minhtri     USR-RSM-001  rescue_member   → citizen (teamId CH-05 cũ hết hiệu lực)
+ *   namanh      USR-WHS-001  warehouse_staff → citizen (warehouseId KHO-01 cũ hết hiệu lực)
+ *   trantuan    USR-CTZ-001  citizen         → citizen
+ * Không có tài khoản seed/bootstrap nào khác.
+ */
 export const demoUsers: AuthUser[] = [
   {
     id: "USR-CMD-001",
@@ -41,7 +53,6 @@ export const demoUsers: AuthUser[] = [
     role: PERSONNEL.RESCUE_LEADER.role,
     geographicScope: { ...PERSONNEL.RESCUE_LEADER.geographicScope! },
     active: true,
-    teamId: "CH-05",
     createdAt: now,
     updatedAt: now,
   },
@@ -52,7 +63,6 @@ export const demoUsers: AuthUser[] = [
     role: PERSONNEL.RESCUE_MEMBER.role,
     geographicScope: { ...PERSONNEL.RESCUE_MEMBER.geographicScope! },
     active: true,
-    teamId: "CH-05",
     createdAt: now,
     updatedAt: now,
   },
@@ -63,13 +73,12 @@ export const demoUsers: AuthUser[] = [
     role: PERSONNEL.WAREHOUSE_STAFF.role,
     geographicScope: { ...PERSONNEL.WAREHOUSE_STAFF.geographicScope! },
     active: true,
-    warehouseId: "KHO-01",
     createdAt: now,
     updatedAt: now,
   },
   {
     id: "USR-CTZ-001",
-    displayName: "Trần Thái Tuấn",
+    displayName: personName(PERSONNEL.CITIZEN.id),
     username: "trantuan",
     role: "citizen",
     geographicScope: { level: "national", code: "VN", name: "Toàn quốc" },

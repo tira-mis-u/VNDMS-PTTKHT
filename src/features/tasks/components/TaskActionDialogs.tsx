@@ -3,11 +3,20 @@ import { useState, type ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import type { IncidentTask, TaskStatus } from "@/domain/tasks/types";
 import type { RescueTeam } from "@/domain/teams/types";
-import { getValidTransitions } from "@/domain/tasks/rules";
+import { getValidTransitions, TASK_LIFECYCLE } from "@/domain/tasks/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { DialogBackdrop, Badge, Button, Input, Textarea } from "@/components/ui";
 export type TaskDialog =
-  "transition" | "assign" | "update" | "progress" | "cancel" | null;
+  | "transition"
+  | "assign"
+  | "update"
+  | "progress"
+  | "cancel"
+  /** Đơn vị cứu hộ báo xong (→ Chờ xác nhận). */
+  | "report-done"
+  /** Cán bộ chấp nhận/từ chối kết quả. */
+  | "review"
+  | null;
 export function TaskActionDialogs({
   mode,
   task,
@@ -28,6 +37,8 @@ export function TaskActionDialogs({
       {mode === "update" && <FieldUpdate task={task} onClose={onClose} />}{" "}
       {mode === "progress" && <ProgressUpdate task={task} onClose={onClose} />}{" "}
       {mode === "cancel" && <Cancel task={task} onClose={onClose} />}
+      {mode === "report-done" && <ReportDone task={task} onClose={onClose} />}
+      {mode === "review" && <Review task={task} onClose={onClose} />}
     </>
   );
 }
@@ -67,11 +78,15 @@ function Transition({
   task: IncidentTask;
   onClose: () => void;
 }) {
-  const { transitionTask } = useOperationalState();
+  const { transitionTask, can } = useOperationalState();
+  // Báo xong / xác nhận kết quả đi qua hộp thoại riêng (có ghi chú, có review).
   const options = getValidTransitions(task.status).filter(
-    (s) => s !== "Đã hủy",
+    (s) => s !== "Đã hủy" && s !== "Chờ xác nhận" && s !== "Hoàn thành",
+  ).filter((s) =>
+    s === "Đã tiếp nhận" ? can("task_accept") : s === "Đang thực hiện" ? can("task_start") : can("task_assign"),
   );
   const [next, setNext] = useState<TaskStatus>(options[0] ?? task.status);
+  const [error, setError] = useState("");
   return (
     <Frame
       title="Cập nhật trạng thái"
@@ -85,8 +100,12 @@ function Transition({
           <Button
             disabled={!options.length}
             onClick={() => {
-              transitionTask(task.id, next);
-              onClose();
+              try {
+                transitionTask(task.id, next);
+                onClose();
+              } catch (reason) {
+                setError(reason instanceof Error ? reason.message : "Không thể chuyển trạng thái.");
+              }
             }}
           >
             Xác nhận
@@ -112,29 +131,26 @@ function Transition({
         </label>
       ) : (
         <p className="form-hint">
-          Nhiệm vụ đang ở trạng thái kết thúc và không còn transition hợp lệ.
+          {task.status === "Đang thực hiện"
+            ? "Đơn vị dùng “Báo hoàn thành” để chuyển sang Chờ xác nhận; cán bộ xác nhận kết quả trước khi nhiệm vụ Hoàn thành."
+            : task.status === "Chờ xác nhận"
+              ? "Nhiệm vụ đang chờ cán bộ phòng chống thiên tai xác nhận kết quả."
+              : "Nhiệm vụ đang ở trạng thái kết thúc hoặc bạn không có quyền chuyển trạng thái."}
+        </p>
+      )}
+      {error && (
+        <p className="team-form-error">
+          <AlertTriangle size={14} />
+          {error}
         </p>
       )}
       <div className="task-transition-path">
-        {[
-          "Chờ giao",
-          "Đã giao",
-          "Đã tiếp nhận",
-          "Đang thực hiện",
-          "Hoàn thành",
-        ].map((s, i) => (
+        {TASK_LIFECYCLE.map((s, i) => (
           <span
             className={
               s === task.status
                 ? "current"
-                : i <
-                    [
-                      "Chờ giao",
-                      "Đã giao",
-                      "Đã tiếp nhận",
-                      "Đang thực hiện",
-                      "Hoàn thành",
-                    ].indexOf(task.status)
+                : i < TASK_LIFECYCLE.indexOf(task.status)
                   ? "done"
                   : ""
             }
@@ -154,11 +170,15 @@ function Assign({
   task: IncidentTask;
   onClose: () => void;
 }) {
-  const { teams, assignTaskTeam } = useOperationalState();
+  const { teams, assignTaskTeam, reassignTask } = useOperationalState();
+  const reassigning = Boolean(task.teamId);
   const [selected, setSelected] = useState(task.teamId);
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
+  const history = task.assignmentHistory ?? [];
   return (
     <Frame
-      title="Điều phối đội thực hiện"
+      title={reassigning ? "Phân công lại nhiệm vụ" : "Điều phối đội thực hiện"}
       eyebrow={task.id}
       onClose={onClose}
       footer={
@@ -167,17 +187,36 @@ function Assign({
             Hủy
           </Button>
           <Button
-            disabled={!selected}
+            disabled={!selected || (reassigning && (!reason.trim() || selected === task.teamId))}
             onClick={() => {
-              assignTaskTeam(task.id, selected);
-              onClose();
+              try {
+                if (reassigning) reassignTask(task.id, selected, reason);
+                else assignTaskTeam(task.id, selected);
+                onClose();
+              } catch (cause) {
+                setError(cause instanceof Error ? cause.message : "Không thể điều phối.");
+              }
             }}
           >
-            Xác nhận điều phối
+            {reassigning ? "Xác nhận phân công lại" : "Xác nhận điều phối"}
           </Button>
         </>
       }
     >
+      {reassigning && (
+        <label className="field field-full">
+          <span>
+            Lý do phân công lại <b>*</b>
+          </span>
+          <Textarea
+            autoFocus
+            rows={2}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="VD: Đội hiện tại mất liên lạc / thiếu năng lực xuồng máy / đội mới gần hiện trường hơn…"
+          />
+        </label>
+      )}
       <div className="dispatch-team-list">
         {teams.map((team) => (
           <Team
@@ -188,6 +227,142 @@ function Assign({
           />
         ))}
       </div>
+      {history.length > 0 && (
+        <p className="form-hint">
+          Lịch sử phân công: {history.map((h) => `${h.fromTeamId ?? "—"} → ${h.toTeamId} (${h.at}, ${h.actor}: ${h.reason})`).join("; ")}
+        </p>
+      )}
+      {error && (
+        <p className="team-form-error">
+          <AlertTriangle size={14} />
+          {error}
+        </p>
+      )}
+    </Frame>
+  );
+}
+function ReportDone({
+  task,
+  onClose,
+}: {
+  task: IncidentTask;
+  onClose: () => void;
+}) {
+  const { reportTaskDone } = useOperationalState();
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+  return (
+    <Frame
+      title="Báo hoàn thành nhiệm vụ"
+      eyebrow={task.id}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Hủy
+          </Button>
+          <Button
+            disabled={!note.trim()}
+            onClick={() => {
+              try {
+                reportTaskDone(task.id, note);
+                onClose();
+              } catch (cause) {
+                setError(cause instanceof Error ? cause.message : "Không thể báo hoàn thành.");
+              }
+            }}
+          >
+            Gửi báo cáo kết quả
+          </Button>
+        </>
+      }
+    >
+      <label className="field field-full">
+        <span>Tóm tắt kết quả *</span>
+        <Textarea
+          autoFocus
+          rows={4}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Số người đã hỗ trợ, tình trạng hiện trường khi rời đi, vật tư đã dùng…"
+        />
+      </label>
+      <p className="form-hint">
+        Nhiệm vụ chuyển sang <b>Chờ xác nhận</b>. Nhiệm vụ chỉ Hoàn thành khi cán bộ
+        phòng chống thiên tai chấp nhận kết quả; nếu bị từ chối, nhiệm vụ quay lại
+        Đang thực hiện kèm lý do.
+      </p>
+      {error && (
+        <p className="team-form-error">
+          <AlertTriangle size={14} />
+          {error}
+        </p>
+      )}
+    </Frame>
+  );
+}
+function Review({
+  task,
+  onClose,
+}: {
+  task: IncidentTask;
+  onClose: () => void;
+}) {
+  const { reviewTaskResult, taskReviews } = useOperationalState();
+  const pending = taskReviews.find(
+    (r) => r.taskId === task.id && r.decision === "Chờ xác nhận",
+  );
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+  const decide = (accepted: boolean) => {
+    try {
+      reviewTaskResult(task.id, accepted, note);
+      onClose();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không thể xác nhận kết quả.");
+    }
+  };
+  return (
+    <Frame
+      title="Xác nhận kết quả nhiệm vụ"
+      eyebrow={task.id}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Đóng
+          </Button>
+          <Button className="btn-danger" disabled={!note.trim()} onClick={() => decide(false)}>
+            Từ chối — yêu cầu làm tiếp
+          </Button>
+          <Button onClick={() => decide(true)}>Chấp nhận — Hoàn thành</Button>
+        </>
+      }
+    >
+      <div className="transition-current">
+        <span>Báo cáo của đơn vị</span>
+        <Badge tone="blue">{pending ? pending.reportedBy : "Không có"}</Badge>
+      </div>
+      <p className="form-hint">
+        {pending
+          ? `${pending.reportedAt} — ${pending.reportNote}`
+          : "Không tìm thấy báo cáo kết quả đang chờ xác nhận."}
+      </p>
+      <label className="field field-full">
+        <span>Ghi chú của cán bộ (bắt buộc khi từ chối)</span>
+        <Textarea
+          rows={3}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Lý do từ chối hoặc nhận xét khi chấp nhận…"
+        />
+      </label>
+      {error && (
+        <p className="team-form-error">
+          <AlertTriangle size={14} />
+          {error}
+        </p>
+      )}
     </Frame>
   );
 }

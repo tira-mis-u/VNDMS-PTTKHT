@@ -4,6 +4,7 @@ export const initialSosRequests: SosRequest[] = [
   {
     id: "SOS-0241",
     code: "SOS-0241",
+    ownerUserId: null,
     receivedAt: "21/08/2026 09:12",
     reporter: {
       name: personName(PERSONNEL.NGUYEN_ANH_DUNG.id),
@@ -65,7 +66,6 @@ export const initialSosRequests: SosRequest[] = [
     assignedTeamId: "CH-01",
     linkedTaskId: "TSK-0241",
     shelterDestinationId: null,
-    linkedEvacuationOperationId: null,
     communicationStatus: "Gián đoạn",
     lastContactAt: "21/08/2026 10:36",
     lastUpdatedAt: "21/08/2026 10:38",
@@ -75,6 +75,7 @@ export const initialSosRequests: SosRequest[] = [
   {
     id: "SOS-0242",
     code: "SOS-0242",
+    ownerUserId: null,
     receivedAt: "21/08/2026 09:48",
     reporter: {
       name: personName(PERSONNEL.NGUYEN_HOANG_ANH.id),
@@ -174,7 +175,6 @@ export const initialSosRequests: SosRequest[] = [
     assignedTeamId: null,
     linkedTaskId: null,
     shelterDestinationId: "TH-02",
-    linkedEvacuationOperationId: "EVAC-002",
     communicationStatus: "Kết nối",
     lastContactAt: "21/08/2026 10:31",
     lastUpdatedAt: "21/08/2026 10:33",
@@ -184,6 +184,7 @@ export const initialSosRequests: SosRequest[] = [
   {
     id: "SOS-0243",
     code: "SOS-0243",
+    ownerUserId: null,
     receivedAt: "21/08/2026 10:18",
     reporter: {
       name: personName(PERSONNEL.NGUYEN_TUAN_HUNG.id),
@@ -219,7 +220,6 @@ export const initialSosRequests: SosRequest[] = [
     assignedTeamId: null,
     linkedTaskId: null,
     shelterDestinationId: null,
-    linkedEvacuationOperationId: null,
     communicationStatus: "Gián đoạn",
     lastContactAt: "21/08/2026 10:18",
     lastUpdatedAt: "21/08/2026 10:18",
@@ -229,6 +229,7 @@ export const initialSosRequests: SosRequest[] = [
   {
     id: "SOS-0244",
     code: "SOS-0244",
+    ownerUserId: null,
     receivedAt: "21/08/2026 07:42",
     reporter: {
       name: personName(PERSONNEL.PHAM_DUC_TRUNG.id),
@@ -262,7 +263,6 @@ export const initialSosRequests: SosRequest[] = [
     assignedTeamId: "CH-04",
     linkedTaskId: null,
     shelterDestinationId: null,
-    linkedEvacuationOperationId: null,
     communicationStatus: "Kết nối",
     lastContactAt: "21/08/2026 08:35",
     lastUpdatedAt: "21/08/2026 08:40",

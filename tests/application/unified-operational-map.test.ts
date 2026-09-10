@@ -1,3 +1,9 @@
+/*
+ * V2 (4 vai): bản đồ hợp nhất còn 5 lớp canonical (incident/sos/task/team/shelter).
+ * Test simulation tick (10) và tuyến sơ tán (11) đã gỡ cùng module Mô phỏng/Sơ tán;
+ * test vai kho (5) chuyển thành "công dân cũ là thủ kho không còn thấy lớp tác nghiệp".
+ * Người dân thấy lớp Điểm sơ tán (danh mục tra cứu) nhưng không lớp tác nghiệp nào khác.
+ */
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -12,19 +18,19 @@ import {
   findUnifiedMapDetail,
   getUnifiedMapDataStamp,
   getUnifiedMapPoints,
-  getUnifiedMapRoutes,
-  visibleUnifiedMapRoutes,
-  type UnifiedMapRouteLine,
 } from "../../src/application/map/unifiedMapQueries";
-import { applyNextSimulationTick, resetSimulationState } from "../../src/application/simulation/simulationUseCases";
 import { operationalMapFocusPath } from "../../src/app/routes/router";
 import { demoUsers } from "../../src/infrastructure/auth/demoUsers";
 import { inMemoryOperationalRepository } from "../../src/infrastructure/persistence/inMemoryOperationalRepository";
 
-const user = (username: string) =>
-  structuredClone(demoUsers.find((item) => item.username === username)!);
+// Baseline tra theo displayName nên luôn undefined; V2 tra đúng theo username.
+const user = (username: string) => {
+  const found = demoUsers.find((item) => item.username === username);
+  if (!found) throw new Error(`demo user ${username} không tồn tại`);
+  return structuredClone(found);
+};
 const citizen = () => ({
-  ...user("Trần Quốc Thuận"),
+  ...user("thuantq"),
   id: "USR-CITIZEN-TEST",
   displayName: "Công dân kiểm thử",
   role: "citizen" as const,
@@ -46,10 +52,6 @@ test("1. Unified geospatial query đọc đúng canonical entities có tọa đ�
     "task",
     "team",
     "shelter",
-    "evacuation",
-    "relief",
-    "warehouse",
-    "recovery",
   ])
     assert.ok(kinds.has(kind as never), `thiếu layer ${kind}`);
   // mọi point dẫn thẳng tới canonical entity qua id
@@ -63,13 +65,13 @@ test("1. Unified geospatial query đọc đúng canonical entities có tọa đ�
   }
 });
 
-test("2. Commander và Operator nhìn đủ lớp operational trên toàn Hà Nội", () => {
+test("2. Admin và Cán bộ PCTT nhìn đủ lớp operational trên toàn quốc", () => {
   const commander = createAuthorizedOperationalView(
-    user("Trần Quốc Thuận"),
+    user("thuantq"),
     load(),
   );
   const operator = createAuthorizedOperationalView(
-    user("Nguyễn Quốc Trung"),
+    user("nguyentrung"),
     load(),
   );
   const commanderCounts = countByLayer(getUnifiedMapPoints(commander));
@@ -82,32 +84,31 @@ test("2. Commander và Operator nhìn đủ lớp operational trên toàn Hà N�
     assert.equal(
       operatorCounts[key as keyof typeof operatorCounts],
       commanderCounts[key as keyof typeof commanderCounts],
-      `operator không có global visibility tại layer ${key}`,
+      `cán bộ PCTT không có global visibility tại layer ${key}`,
     );
   }
 });
 
-test("3. Local Officer chỉ thấy entity trong scope Tây Hồ trên bản đồ", () => {
-  const view = createAuthorizedOperationalView(user("Phạm Văn Đam"), load());
+test("3. Cán bộ địa phương cũ (nay là công dân) không còn thấy lớp sự cố", () => {
+  const view = createAuthorizedOperationalView(user("phamdam"), load());
   const points = getUnifiedMapPoints(view);
-  const incidents = points.filter((p) => p.kind === "incident");
-  assert.ok(incidents.some((p) => p.id === "INC-0241"));
-  assert.equal(
-    incidents.some((p) => p.id === "INC-0234"),
-    false,
-    "INC-0234 Long Biên không được lọt vào map của Local Officer Tây Hồ",
-  );
+  assert.equal(points.some((p) => p.kind === "incident"), false);
+  assert.equal(points.some((p) => p.kind === "sos"), false);
+  assert.equal(points.some((p) => p.kind === "task"), false);
+  assert.equal(points.some((p) => p.kind === "team"), false);
+  // Điểm sơ tán là danh mục tra cứu chung cho mọi vai.
+  assert.ok(points.some((p) => p.kind === "shelter"));
 });
 
-test("4. Rescue role: team/ownership filtering được bảo tồn trong map points", () => {
-  const view = createAuthorizedOperationalView(user("Phạm Trung Hiếu"), load());
+test("4. Đơn vị cứu hộ: chỉ huy toàn bộ đội, layer đội khớp authorized view", () => {
+  const view = createAuthorizedOperationalView(user("phamhieu"), load());
   const points = getUnifiedMapPoints(view);
   const allowedTeamIds = new Set(view.teams.map((team) => team.id));
   const visibleTeams = points.filter((p) => p.kind === "team");
-  assert.deepEqual(
-    visibleTeams.map((point) => point.id),
-    ["CH-05"],
-    "đội trưởng chỉ được nhận layer đội thuộc ownership",
+  assert.equal(
+    visibleTeams.length,
+    load().teams.length,
+    "đơn vị cứu hộ (chỉ huy toàn lực lượng) thấy mọi đội, không bị khóa vào một đội",
   );
   for (const point of visibleTeams) assert.ok(allowedTeamIds.has(point.id));
   // Không có point nào thuộc entity đã bị authorized view loại ra.
@@ -116,25 +117,22 @@ test("4. Rescue role: team/ownership filtering được bảo tồn trong map po
     assert.ok(allowedIncidentIds.has(point.id));
 });
 
-test("5. Warehouse role chỉ thấy kho được phân quyền", () => {
-  const view = createAuthorizedOperationalView(user("Nguyễn Nam Anh"), load());
+test("5. Thủ kho cũ (nay là công dân) không còn quyền kho/lớp tác nghiệp", () => {
+  const view = createAuthorizedOperationalView(user("namanh"), load());
   const points = getUnifiedMapPoints(view);
-  const warehouses = points.filter((p) => p.kind === "warehouse");
-  assert.ok(warehouses.length > 0, "warehouse_staff cần thấy kho của mình");
-  for (const point of warehouses)
-    assert.ok(view.warehouses.some((w) => w.id === point.id));
-  // warehouse_staff không có quyền incident/sos → các lớp này rỗng
   assert.equal(points.some((p) => p.kind === "incident"), false);
   assert.equal(points.some((p) => p.kind === "sos"), false);
+  assert.equal(points.some((p) => p.kind === "team"), false);
+  assert.equal(points.some((p) => p.kind === "task"), false);
 });
 
-test("6. Citizen bị từ chối toàn bộ operational layers", () => {
+test("6. Citizen chỉ nhận lớp Điểm sơ tán (danh mục tra cứu)", () => {
   const view = createAuthorizedOperationalView(citizen(), load());
   const points = getUnifiedMapPoints(view);
-  assert.deepEqual(
-    points,
-    [],
-    "công dân không được nhận bất kỳ layer tác nghiệp nào",
+  assert.ok(points.length > 0);
+  assert.ok(
+    points.every((p) => p.kind === "shelter"),
+    "công dân không được nhận bất kỳ layer tác nghiệp nào ngoài điểm sơ tán",
   );
 });
 
@@ -146,10 +144,6 @@ test("7. Entity click mapping → detail route canonical cho mọi layer", () =>
     ["task", "/tasks/"],
     ["team", "/teams/"],
     ["shelter", "/shelters/"],
-    ["evacuation", "/evacuations/"],
-    ["relief", "/relief/requests/"],
-    ["warehouse", "/relief/warehouses/"],
-    ["recovery", "/recovery/projects/"],
   ] as const;
   for (const [kind, prefix] of cases) {
     const point = getUnifiedMapPoints(source).find((p) => p.kind === kind);
@@ -179,13 +173,13 @@ test("8. Layer filter chỉ giữ layer bật; search lọc trong tập authoriz
   assert.equal(filtered.some((p) => p.kind === "sos"), false);
   assert.equal(filtered.some((p) => p.kind === "task"), false);
   const searched = filterUnifiedMapPoints(points, {
-    search: "SOS-0241",
+    search: "SOS-YAGI-01",
     severity: "",
     layers: defaultUnifiedMapLayers(),
   });
   assert.deepEqual(
     searched.map((p) => p.id),
-    ["SOS-0241"],
+    ["SOS-YAGI-01"],
   );
   const sev = filterUnifiedMapPoints(points, {
     search: "",
@@ -211,59 +205,20 @@ test("9. Không duplicate dataset: id unique trong từng kind", () => {
   );
 });
 
-test("10. Simulation tick → canonical mutation phản ánh trong map query", () => {
-  let simulation = resetSimulationState();
-  let snapshot = load();
-  const baselinePoints = getUnifiedMapPoints(
-    createAuthorizedOperationalView(user("Trần Quốc Thuận"), snapshot),
-  ).length;
-  const baselineRoutes = getUnifiedMapRoutes(snapshot).map((r) => r.id);
-  for (let i = 0; i < 13; i++) {
-    const result = applyNextSimulationTick(simulation, snapshot);
-    simulation = result.simulation;
-    snapshot = result.snapshot;
-  }
-  const after = getUnifiedMapRoutes(snapshot);
-  const afterPoints = getUnifiedMapPoints(
-    createAuthorizedOperationalView(user("Trần Quốc Thuận"), snapshot),
-  );
-  assert.notEqual(afterPoints.length, baselinePoints);
-  const afterIds = new Set(after.map((r: UnifiedMapRouteLine) => r.id));
-  assert.ok(
-    baselineRoutes.some((id) => !afterIds.has(id)) ||
-      baselineRoutes.length !== after.length ||
-      JSON.stringify(after.map((r) => r.status)) !==
-        JSON.stringify(
-          getUnifiedMapRoutes(load()).map((r) => r.status),
-        ),
-    "simulation phải biến đổi canonical state của routes/points",
-  );
-});
-
-test("11. Tuyến sơ tán bị chặn render dashed; ẩn khi layer evacuation tắt", () => {
-  const source = load();
-  const routes = getUnifiedMapRoutes(source);
-  assert.ok(routes.length > 0);
-  assert.ok(
-    routes.every((r) => r.points.length > 1),
-    "route cần polyline canonical",
-  );
-  assert.ok(
-    routes.some((r) => r.blocked),
-    "kịch bản Red River có tuyến bị chặn/hạn chế",
-  );
+test("10. Lớp bản đồ mặc định chỉ gồm 5 kind canonical V2", () => {
   const layers = defaultUnifiedMapLayers();
-  layers.evacuation = false;
-  const points = filterUnifiedMapPoints(getUnifiedMapPoints(source), {
-    search: "",
-    severity: "",
-    layers,
-  });
-  assert.equal(visibleUnifiedMapRoutes(routes, points).length, 0);
+  assert.deepEqual(Object.keys(layers).sort(), [
+    "incident",
+    "shelter",
+    "sos",
+    "task",
+    "team",
+  ]);
+  assert.ok(Object.values(layers).every(Boolean));
 });
 
-test("12. Data stamp & drawer detail không rò dữ liệu cho query ngoài scope", () => {
-  const view = createAuthorizedOperationalView(user("Phạm Văn Đam"), load());
+test("12. Data stamp & drawer detail không rò dữ liệu cho query ngoài quyền", () => {
+  const view = createAuthorizedOperationalView(user("phamdam"), load());
   const stamp = getUnifiedMapDataStamp(view);
   assert.ok(stamp === null || typeof stamp === "string");
   const leak = findUnifiedMapDetail(view, {
@@ -273,7 +228,7 @@ test("12. Data stamp & drawer detail không rò dữ liệu cho query ngoài sco
   assert.equal(
     leak,
     undefined,
-    "drawer resolve được entity ngoài scope của Local Officer",
+    "drawer resolve được sự cố dù tài khoản công dân không có quyền view",
   );
   const authorizedIds = {
     incident: new Set(view.incidents.map((item) => item.id)),
@@ -281,10 +236,6 @@ test("12. Data stamp & drawer detail không rò dữ liệu cho query ngoài sco
     task: new Set(view.tasks.map((item) => item.id)),
     team: new Set(view.teams.map((item) => item.id)),
     shelter: new Set(view.shelters.map((item) => item.id)),
-    evacuation: new Set(view.evacuationOperations.map((item) => item.id)),
-    relief: new Set(view.reliefRequests.map((item) => item.id)),
-    warehouse: new Set(view.warehouses.map((item) => item.id)),
-    recovery: new Set(view.recoveryProjects.map((item) => item.id)),
   };
   for (const point of getUnifiedMapPoints(view))
     assert.ok(

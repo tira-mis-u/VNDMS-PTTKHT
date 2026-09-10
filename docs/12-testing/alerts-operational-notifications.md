@@ -15,10 +15,9 @@ Ba file test mới (32 case), chạy cùng suite `npm test`:
 
 ## `tests/application/alert-management.test.ts`
 
-- Authorized Alert View theo role: commander 21; local_officer chỉ Tây Hồ (không TH-03/SHP-0243/CH-04/INC-0234); warehouse_staff chỉ `KHO-01` (đúng 1 alert); rescue_member không thấy alert đội CH-04 (ownership).
-- Citizen và null user ⇒ rỗng; `citizen` không có `alert_view`/`alert_acknowledge`.
-- `alertAuthorizationResource` mirror geography + warehouse của entity nguồn.
-- Read/ack qua authorize boundary: officer đọc được SOS Tây Hồ, bị chặn shelter Hoàn Kiếm (“ngoài phạm vi địa lý”); rescue_member bị chặn ack; warehouse_staff bị chặn do thiếu quyền đọc nguồn SOS.
+- Authorized Alert View theo 4 vai trên seed Yagi: `admin`/`disaster_officer`/`rescue_unit` (national) thấy 25 alert (critical 8 / high 14 / medium 3); `citizen` và null user ⇒ rỗng; `citizen` không có `alert_view`/`alert_acknowledge`; `admin` không có `alert_acknowledge`.
+- `alertAuthorizationResource` mirror geography của entity nguồn.
+- Read/ack qua authorize boundary: chỉ 8 alert critical yêu cầu ack; ack alert không yêu cầu bị từ chối.
 - Use case read receipt + ack với event attribution; ack lần hai báo lỗi.
 - Filters: severity/category/status/search Unicode-không-dấu/cửa sổ thởi gian.
 - `summarizeAlerts`, `getAlertAnalytics` (pending ack 5; ack rate 0 → 20% sau 1/5 ack).
@@ -28,10 +27,8 @@ Ba file test mới (32 case), chạy cùng suite `npm test`:
 
 - Pipeline đầy đủ: repository → authorized view → derive; ack commit đúng 1 lần kèm AlertEvent attribution; xử lý entity nguồn ⇒ alert hết hiệu lực dù interaction còn trong snapshot.
 - Rollback: command throw sau khi ghi interactions/events ⇒ draft bị hủy nguyên trạng (mutation boundary).
-- Deny tại boundary: officer ack ngoài scope; rescue_leader ack đội khác (ownership); rescue_member thiếu `alert_acknowledge`; officer ack trong scope thành công. Không ghi gì khi bị từ chối.
+- Deny tại boundary: `admin` thiếu `alert_acknowledge`; `citizen` không có quyền đọc; `disaster_officer`/`rescue_unit` ack thành công. Không ghi gì khi bị từ chối.
 - Command Center parity: cùng phép derive ⇒ cùng collection (không dataset riêng).
-- AI grounding: intent `alert_overview`, FACT + evidence `OperationalAlert`, `actions` rỗng (AI không tự xử lý); officer không thấy evidence ngoài Tây Hồ.
-- Simulation: tick 13 xuất hiện `shelter:TH-01:shelter_near_capacity`; tick 20 alert INC-0241 hết hiệu lực; không duplicate key ở mọi tick; reset ⇒ baseline + interactions rỗng.
 - Analytics: ack rate đổi theo canonical mutation.
 - Router: `/alerts`, `/alerts/:key` (decode key), label “Cảnh báo”.
 

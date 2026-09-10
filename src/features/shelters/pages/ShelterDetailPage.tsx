@@ -17,7 +17,6 @@ import {
   Waves,
 } from "lucide-react";
 import { calculateShelterCapacity } from "@/domain/shelters/rules";
-import type { EvacuationOperation } from "@/domain/evacuations/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
@@ -48,20 +47,14 @@ export function ShelterDetailPage({
   const {
     shelters,
     shelterEvents,
-    evacuationOperations,
-    evacuationEvents,
     incidents,
     teams,
-    reliefRequests,
-    reservations,
+    sosRequests,
     can,
     setShelterOpen,
   } = useOperationalState();
   const shelter = shelters.find((item) => item.id === id);
   const [dialog, setDialog] = useState<ShelterDialog>(null);
-  const [selectedOperation, setSelectedOperation] = useState<
-    EvacuationOperation | undefined
-  >();
   if (!shelter)
     return (
       <div className="workspace-content">
@@ -75,38 +68,23 @@ export function ShelterDetailPage({
         </div>
       </div>
     );
-  const shelterRelief = reliefRequests.filter(
-    (item) =>
-      item.shelterId === id &&
-      !["Đã đóng", "Từ chối", "Hủy"].includes(item.status),
-  );
   const capacity = calculateShelterCapacity(shelter);
-  const operations = evacuationOperations.filter(
-    (item) => item.destinationShelterId === id,
-  );
-  const active = operations.filter(
-    (item) => !["Hoàn thành", "Đã hủy"].includes(item.status),
+  // SOS đang được hướng tới điểm này (canonical: SosRequest.shelterDestinationId).
+  const routedSos = sosRequests.filter(
+    (item) =>
+      item.shelterDestinationId === id &&
+      !["Đã đóng", "Từ chối", "Hủy"].includes(item.status),
   );
   const linkedIncidents = incidents.filter((item) =>
     shelter.linkedIncidentIds.includes(item.id),
   );
   const linkedTeams = teams.filter((team) =>
-    operations.some((operation) => operation.assignedTeamId === team.id),
+    routedSos.some((item) => item.assignedTeamId === team.id),
   );
-  const events = [
-    ...shelterEvents
-      .filter((event) => event.shelterId === id)
-      .map((event) => ({ ...event, kind: "shelter" })),
-    ...evacuationEvents
-      .filter((event) =>
-        operations.some((operation) => operation.id === event.operationId),
-      )
-      .map((event) => ({ ...event, shelterId: id, kind: "evacuation" })),
-  ].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  const openDialog = (mode: ShelterDialog, operation?: EvacuationOperation) => {
-    setSelectedOperation(operation);
-    setDialog(mode);
-  };
+  const events = shelterEvents
+    .filter((event) => event.shelterId === id)
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  const openDialog = (mode: ShelterDialog) => setDialog(mode);
   return (
     <div className="workspace-content shelter-detail-page">
       <header className="shelter-detail-header">
@@ -147,21 +125,6 @@ export function ShelterDetailPage({
               <MapPinned size={15} />
               Xem trên bản đồ
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                navigate(`/ai-assistant?context=Shelter&id=${shelter.id}`)
-              }
-            >
-              <ShieldCheck size={15} />
-              Trợ lý AI
-            </Button>
-            {can("evacuation_create") && (
-              <Button onClick={() => openDialog("create-evacuation")}>
-                <Navigation size={15} />
-                Điều phối dân cư
-              </Button>
-            )}
             {can("shelter_update") && (
               <Button
                 variant="secondary"
@@ -181,7 +144,7 @@ export function ShelterDetailPage({
             {can("shelter_close") && shelter.status !== "Tạm đóng" && (
               <Button
                 variant="secondary"
-                disabled={Boolean(active.length)}
+                disabled={Boolean(routedSos.length)}
                 onClick={() => setShelterOpen(shelter.id, false)}
               >
                 Tạm đóng
@@ -312,175 +275,42 @@ export function ShelterDetailPage({
           </section>
           <section className="incident-detail-section">
             <SectionHeader
-              title="Hoạt động sơ tán"
-              description="Dân cư, tiến độ, đội phụ trách và tuyến tiếp cận"
+              title="SOS đang hướng tới điểm"
+              description={`${routedSos.length} yêu cầu SOS được điều phối tới điểm này`}
             />
-            <div className="evacuation-list">
-              {operations.map((operation) => (
-                <article
-                  key={operation.id}
-                  className={
-                    operation.route.status === "Bị chặn" ? "route-blocked" : ""
-                  }
+            <div className="linked-request-list">
+              {routedSos.map((request) => (
+                <button
+                  key={request.id}
+                  onClick={() => navigate(`/sos/${request.id}`)}
                 >
-                  <div className="evacuation-heading">
-                    <span>
-                      <b>{operation.id}</b>
-                      <Badge
-                        tone={
-                          operation.status === "Tạm dừng"
-                            ? "amber"
-                            : operation.status === "Hoàn thành"
-                              ? "green"
-                              : operation.status === "Đang triển khai"
-                                ? "blue"
-                                : "neutral"
-                        }
-                      >
-                        {operation.status}
-                      </Badge>
-                      <Badge
-                        tone={
-                          operation.priority === "Khẩn cấp" ? "red" : "amber"
-                        }
-                      >
-                        {operation.priority}
-                      </Badge>
-                    </span>
-                    <div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        title="Mở chi tiết hoạt động sơ tán"
-                        onClick={() => navigate(`/evacuations/${operation.id}`)}
-                      >
-                        Chi tiết
-                      </Button>
-                      {can("evacuation_update") && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => openDialog("operation", operation)}
-                        >
-                          Cập nhật
-                        </Button>
-                      )}
-                      {can("evacuation_update") && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => openDialog("redirect", operation)}
-                        >
-                          Chuyển hướng
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="evacuation-body">
-                    <div>
-                      <span>Khu vực nguồn</span>
-                      <b>{operation.sourceArea}</b>
-                      <small>
-                        {operation.evacuatedPopulation}/
-                        {operation.estimatedPopulation} người đã sơ tán
-                      </small>
-                    </div>
-                    <div>
-                      <span>Đội phụ trách</span>
-                      {operation.assignedTeamId ? (
-                        <button
-                          onClick={() =>
-                            navigate(`/teams/${operation.assignedTeamId}`)
-                          }
-                        >
-                          {operation.assignedTeamId}
-                          <ChevronRight size={13} />
-                        </button>
-                      ) : (
-                        <b>Chưa phân công</b>
-                      )}
-                      <small>
-                        Hoàn thành dự kiến {operation.expectedCompletion}
-                      </small>
-                    </div>
-                    <div>
-                      <span>Tuyến đang sử dụng</span>
-                      <b>{operation.route.name}</b>
-                      <small>
-                        {operation.route.distanceKm} km ·{" "}
-                        {operation.route.estimatedMinutes} phút ·{" "}
-                        {operation.route.status}
-                      </small>
-                    </div>
-                  </div>
-                  <div className="evacuation-progress">
-                    <Progress
-                      value={operation.progress}
-                      tone={
-                        operation.route.status === "Bị chặn" ? "amber" : "blue"
-                      }
-                    />
-                    <span>{operation.progress}%</span>
-                  </div>
-                  {operation.route.blockedSegments.length > 0 && (
-                    <p className="blocked-route-note">
-                      <AlertTriangle size={13} />
-                      {operation.route.blockedSegments.join("; ")}
-                    </p>
-                  )}
-                </article>
-              ))}
-              {!operations.length && (
-                <p className="section-empty">
-                  Chưa có hoạt động sơ tán tới điểm này.
-                </p>
-              )}
-            </div>
-          </section>
-          <section className="incident-detail-section">
-            <SectionHeader
-              title="Yêu cầu cứu trợ đang hoạt động"
-              description={`${shelterRelief.length} yêu cầu phục vụ điểm này`}
-            />
-            <div className="warehouse-request-list">
-              {shelterRelief.map((request) => {
-                const allocated = reservations
-                  .filter(
-                    (item) =>
-                      item.reliefRequestId === request.id &&
-                      item.status !== "Đã giải phóng",
-                  )
-                  .flatMap((item) => item.items)
-                  .reduce((sum, item) => sum + item.quantity, 0);
-                const approved = request.items.reduce(
-                  (sum, item) => sum + item.quantityApproved,
-                  0,
-                );
-                return (
-                  <button
-                    key={request.id}
-                    onClick={() => navigate(`/relief/requests/${request.id}`)}
+                  <span>
+                    <b>
+                      {request.code} · {request.location.name}
+                    </b>
+                    <small>
+                      {request.peopleAtRisk} người · {request.priority} ·{" "}
+                      {request.assignedTeamId
+                        ? `Đội ${request.assignedTeamId}`
+                        : "Chưa phân công đội"}
+                    </small>
+                  </span>
+                  <Badge
+                    tone={
+                      request.status === "Đã xử lý"
+                        ? "green"
+                        : request.status === "Đang cứu hộ"
+                          ? "blue"
+                          : "amber"
+                    }
                   >
-                    <span>
-                      <b>
-                        {request.code} ·{" "}
-                        {request.items.map((item) => item.name).join(", ")}
-                      </b>
-                      <small>
-                        Đã phân bổ {allocated}/{approved} ·{" "}
-                        {request.assignedWarehouseIds.join(", ") ||
-                          "Chưa chọn kho"}
-                      </small>
-                    </span>
-                    <Badge tone={allocated < approved ? "amber" : "blue"}>
-                      {allocated < approved ? "Thiếu hàng" : request.status}
-                    </Badge>
-                  </button>
-                );
-              })}
-              {!shelterRelief.length && (
+                    {request.status}
+                  </Badge>
+                </button>
+              ))}
+              {!routedSos.length && (
                 <p className="section-empty">
-                  Chưa có yêu cầu cứu trợ đang mở.
+                  Chưa có SOS nào được điều phối tới điểm này.
                 </p>
               )}
             </div>
@@ -521,8 +351,8 @@ export function ShelterDetailPage({
           </section>
           <section className="incident-detail-section">
             <SectionHeader
-              title="Bản đồ tác nghiệp và tuyến sơ tán"
-              description="Tuyến đang dùng, tuyến bị chặn và phương án thay thế"
+              title="Bản đồ tác nghiệp"
+              description="Điểm sơ tán, sự cố liên quan và đội cứu hộ đang điều phối"
             />
             <Suspense
               fallback={
@@ -535,7 +365,6 @@ export function ShelterDetailPage({
               <ShelterOperationalMap
                 shelter={shelter}
                 shelters={shelters}
-                operations={active}
                 incidents={linkedIncidents}
                 teams={linkedTeams}
               />
@@ -612,7 +441,6 @@ export function ShelterDetailPage({
       <ShelterActionDialogs
         mode={dialog}
         shelter={shelter}
-        operation={selectedOperation}
         onClose={() => setDialog(null)}
       />
     </div>

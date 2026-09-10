@@ -58,10 +58,10 @@ export function IncidentAnalyticsPage({
           description="Tổng trên các sự cố trong phạm vi"
         />
         <MetricCard
-          label="Đã sơ tán"
-          value={incident.evacuatedPopulation}
+          label="Người đã cứu hộ (SOS đã đóng)"
+          value={incident.rescuedPopulation}
           basis="Ghi nhận"
-          description={`${incident.remainingPopulation.toLocaleString("vi-VN")} người còn lại trong phạm vi ảnh hưởng`}
+          description={`${incident.pendingPopulation.toLocaleString("vi-VN")} người trong SOS còn mở hoặc chờ duyệt đóng`}
         />
         <MetricCard
           label="Xác nhận trung bình"

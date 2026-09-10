@@ -4,11 +4,12 @@ import {
   OperationalMutationBoundary,
   type AtomicMutationState,
 } from "@/application/operations/operationalMutationBoundary";
-import type { SimulationState } from "@/domain/simulation/types";
 
+/** Không còn "control state" (mô phỏng đã gỡ); giữ generic để boundary không đổi. */
+export type OperationalControlState = Record<string, never>;
 export type OperationalAtomicState = AtomicMutationState<
   OperationalSnapshot,
-  SimulationState
+  OperationalControlState
 >;
 
 type SnapshotSetter<K extends keyof OperationalSnapshot> = Dispatch<
@@ -22,17 +23,14 @@ function resolve<T>(action: SetStateAction<T>, current: T): T {
 }
 
 /** React state mechanics only. Business rules remain in domain/application modules. */
-export function useAtomicOperationalState(
-  initialSnapshot: OperationalSnapshot,
-  initialSimulation: SimulationState,
-) {
+export function useAtomicOperationalState(initialSnapshot: OperationalSnapshot) {
   const [state, setState] = useState<OperationalAtomicState>(() => ({
     snapshot: initialSnapshot,
-    control: initialSimulation,
+    control: {},
   }));
   const stateRef = useRef(state);
   const boundary = useRef(
-    new OperationalMutationBoundary<OperationalSnapshot, SimulationState>(),
+    new OperationalMutationBoundary<OperationalSnapshot, OperationalControlState>(),
   );
 
   const setSlice =
@@ -54,25 +52,6 @@ export function useAtomicOperationalState(
       }));
     };
 
-  const setSimulation: Dispatch<SetStateAction<SimulationState>> = (action) => {
-    if (boundary.current.active) {
-      boundary.current.updateControl((control) => resolve(action, control));
-      return;
-    }
-    setState((current) => ({
-      ...current,
-      control: resolve(action, current.control),
-    }));
-  };
-
-  const applyOperationalSnapshot = (snapshot: OperationalSnapshot) => {
-    if (boundary.current.active) {
-      boundary.current.updateSnapshot(() => snapshot);
-      return;
-    }
-    setState((current) => ({ ...current, snapshot }));
-  };
-
   const executeAtomic = <TResult>(operation: () => TResult): TResult =>
     boundary.current.execute(
       stateRef.current,
@@ -85,43 +64,27 @@ export function useAtomicOperationalState(
 
   return {
     ...state.snapshot,
-    simulation: state.control,
     setIncidents: setSlice("incidents"),
     setEvents: setSlice("events"),
     setTasks: setSlice("tasks"),
     setTaskUpdates: setSlice("taskUpdates"),
+    setTaskReviews: setSlice("taskReviews"),
     setTeams: setSlice("teams"),
     setTeamEvents: setSlice("teamEvents"),
     setShelters: setSlice("shelters"),
     setShelterEvents: setSlice("shelterEvents"),
-    setEvacuationOperations: setSlice("evacuationOperations"),
-    setEvacuationEvents: setSlice("evacuationEvents"),
     setSosRequests: setSlice("sosRequests"),
     setSosEvents: setSlice("sosEvents"),
-    setWarehouses: setSlice("warehouses"),
-    setInventory: setSlice("inventory"),
-    setReliefRequests: setSlice("reliefRequests"),
-    setReservations: setSlice("reservations"),
-    setShipments: setSlice("shipments"),
-    setReliefEvents: setSlice("reliefEvents"),
-    setPlaybooks: setSlice("playbooks"),
-    setPlaybookExecutions: setSlice("playbookExecutions"),
-    setPlaybookEvents: setSlice("playbookEvents"),
-    setDamageAssessments: setSlice("damageAssessments"),
-    setRecoveryProjects: setSlice("recoveryProjects"),
-    setRecoveryEvents: setSlice("recoveryEvents"),
+    setCitizenReports: setSlice("citizenReports"),
+    setCitizenReportEvents: setSlice("citizenReportEvents"),
+    setPublishedAlerts: setSlice("publishedAlerts"),
+    setPublishedAlertEvents: setSlice("publishedAlertEvents"),
     setAlertInteractions: setSlice("alertInteractions"),
     setAlertEvents: setSlice("alertEvents"),
-    setSimulation,
     currentOperationalSnapshot: () =>
       boundary.current.active
         ? boundary.current.readSnapshot()
         : stateRef.current.snapshot,
-    currentSimulationState: () =>
-      boundary.current.active
-        ? boundary.current.readControl()
-        : stateRef.current.control,
-    applyOperationalSnapshot,
     executeAtomic,
   };
 }

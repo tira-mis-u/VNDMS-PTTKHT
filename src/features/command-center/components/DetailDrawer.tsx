@@ -3,14 +3,12 @@ import {
   MapPin,
   UserRound,
   Users,
-  Warehouse as WarehouseIcon,
   X,
 } from "lucide-react";
 import type { Incident } from "@/domain/incidents/types";
 import type { SosRequest } from "@/domain/sos/types";
 import type { RescueTeam } from "@/domain/teams/types";
 import type { Shelter } from "@/domain/shelters/types";
-import type { Warehouse } from "@/domain/relief/types";
 import {
   findCommandCenterEntity,
   type CommandCenterEntityRef,
@@ -36,14 +34,11 @@ export function DetailDrawer({
   const sos = selected.kind === "sos" ? (value as SosRequest) : undefined;
   const team = selected.kind === "team" ? (value as RescueTeam) : undefined;
   const shelter = selected.kind === "shelter" ? (value as Shelter) : undefined;
-  const warehouse =
-    selected.kind === "warehouse" ? (value as Warehouse) : undefined;
   const title =
     incident?.title ??
     (sos ? `Yêu cầu hỗ trợ ${sos.id}` : undefined) ??
     team?.name ??
     shelter?.name ??
-    warehouse?.name ??
     selected.id;
   const eyebrow = incident
     ? "Chi tiết sự cố"
@@ -51,9 +46,7 @@ export function DetailDrawer({
       ? "Yêu cầu SOS"
       : team
         ? "Đội cứu hộ"
-        : shelter
-          ? "Điểm sơ tán"
-          : "Kho cứu trợ";
+        : "Điểm sơ tán";
   return (
     <>
       <button
@@ -194,10 +187,7 @@ export function DetailDrawer({
                     Phân công hiện tại
                   </dt>
                   <dd>
-                    {team.currentTask ??
-                      team.currentEvacuationOperation ??
-                      team.currentReliefShipment ??
-                      "Chưa có"}
+                    {team.currentTask ?? "Chưa có"}
                   </dd>
                 </div>
                 <div>
@@ -250,32 +240,6 @@ export function DetailDrawer({
                 Đang tiếp nhận {shelter.currentOccupancy}/{shelter.capacity}{" "}
                 người.
               </p>
-            </>
-          )}
-          {warehouse && (
-            <>
-              <div className="drawer-status">
-                <Badge tone={warehouse.status === "Tạm đóng" ? "red" : "green"}>
-                  {warehouse.status}
-                </Badge>
-                <span>{warehouse.administrativeArea}</span>
-              </div>
-              <dl className="drawer-facts">
-                <div>
-                  <dt>
-                    <WarehouseIcon size={14} />
-                    Mức sử dụng
-                  </dt>
-                  <dd>{warehouse.currentUtilization}%</dd>
-                </div>
-                <div>
-                  <dt>
-                    <UserRound size={14} />
-                    Phụ trách
-                  </dt>
-                  <dd>{warehouse.responsibleOfficer.name}</dd>
-                </div>
-              </dl>
             </>
           )}
         </div>

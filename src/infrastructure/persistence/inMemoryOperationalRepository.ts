@@ -9,33 +9,14 @@ import {
   scenarioMetadata,
 } from "../../data/scenarios/yagi-2024-national/operationalSeed";
 import {
-  initialEvacuationEvents,
-  initialEvacuationOperations,
   initialShelterEvents,
   initialShelters,
-} from "../../data/scenarios/yagi-2024-national/shelterEvacuationSeed";
+} from "../../data/scenarios/yagi-2024-national/shelterSeed";
 import {
   initialSosEvents,
   initialSosRequests,
 } from "../../data/scenarios/yagi-2024-national/sosSeed";
-import {
-  initialDamageAssessments,
-  initialRecoveryEvents,
-  initialRecoveryProjects,
-} from "../../data/scenarios/yagi-2024-national/recoverySeed";
-import {
-  initialPlaybookEvents,
-  initialPlaybookExecutions,
-  initialPlaybooks,
-} from "../../data/scenarios/yagi-2024-national/playbookSeed";
-import {
-  initialInventory,
-  initialReliefEvents,
-  initialReliefRequests,
-  initialReservations,
-  initialShipments,
-  initialWarehouses,
-} from "../../data/scenarios/yagi-2024-national/reliefSeed";
+import { initialPublishedAlerts } from "../../data/scenarios/yagi-2024-national/publishedAlertSeed";
 
 function clone<T>(value: T): T {
   return structuredClone(value);
@@ -54,26 +35,17 @@ export const inMemoryOperationalRepository = {
       events: initialEvents,
       tasks: initialTasks,
       taskUpdates: initialTaskUpdates,
+      taskReviews: [],
       teams: initialTeams,
       teamEvents: initialTeamEvents,
       shelters: initialShelters,
       shelterEvents: initialShelterEvents,
-      evacuationOperations: initialEvacuationOperations,
-      evacuationEvents: initialEvacuationEvents,
       sosRequests: initialSosRequests,
       sosEvents: initialSosEvents,
-      warehouses: initialWarehouses,
-      inventory: initialInventory,
-      reliefRequests: initialReliefRequests,
-      reservations: initialReservations,
-      shipments: initialShipments,
-      reliefEvents: initialReliefEvents,
-      playbooks: initialPlaybooks,
-      playbookExecutions: initialPlaybookExecutions,
-      playbookEvents: initialPlaybookEvents,
-      damageAssessments: initialDamageAssessments,
-      recoveryProjects: initialRecoveryProjects,
-      recoveryEvents: initialRecoveryEvents,
+      citizenReports: [],
+      citizenReportEvents: [],
+      publishedAlerts: initialPublishedAlerts,
+      publishedAlertEvents: [],
       alertInteractions: [],
       alertEvents: [],
     });

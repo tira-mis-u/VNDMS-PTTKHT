@@ -7,7 +7,6 @@ import type {
 } from "../../domain/sos/types";
 import type { CreateIncidentInput } from "../incidents/incidentUseCases";
 import type { NewTaskInput } from "../tasks/taskUseCases";
-import type { NewEvacuationInput } from "../evacuations/evacuationUseCases";
 import { calculateSosTriage, getSosTransitions } from "../../domain/sos/rules";
 export type NewSosInput = Pick<
   SosRequest,
@@ -22,17 +21,24 @@ export type NewSosInput = Pick<
   | "disabledCount"
   | "severity"
   | "communicationStatus"
-> & { affectedPeople?: SosRequest["affectedPeople"] };
+> & {
+  affectedPeople?: SosRequest["affectedPeople"];
+  /** Chỉ đặt true khi tọa độ thật sự lấy từ thiết bị định vị. */
+  gpsCaptured?: boolean;
+};
 export function createSosRequest(
   id: string,
   input: NewSosInput,
   timestamp: string,
+  ownerUserId: string | null = null,
 ): SosRequest {
   const base: SosRequest = {
     id,
     code: id,
+    ownerUserId,
     receivedAt: timestamp,
     ...input,
+    gpsCaptured: input.gpsCaptured ?? false,
     affectedPeople: input.affectedPeople ?? [],
     priority: "P4 — Thấp",
     triageReasons: [],
@@ -42,7 +48,6 @@ export function createSosRequest(
     assignedTeamId: null,
     linkedTaskId: null,
     shelterDestinationId: null,
-    linkedEvacuationOperationId: null,
     lastContactAt: timestamp,
     lastUpdatedAt: timestamp,
     resolutionSummary: null,
@@ -51,12 +56,18 @@ export function createSosRequest(
   const triage = calculateSosTriage(base);
   return { ...base, priority: triage.priority, triageReasons: triage.reasons };
 }
+/**
+ * Phạm vi địa lý không còn gắn với một vai riêng (cán bộ địa phương đã gộp);
+ * mọi tài khoản có scope hẹp hơn "Toàn quốc" đều bị ràng buộc.
+ */
 export function assertSosScope(
   role: UserRole,
   administrativeArea: string,
   scope: string,
+  scopeLevel: "national" | "province" | "district" | "commune" | "warehouse" = "national",
 ) {
-  if (role === "local_officer" && !administrativeArea.includes(scope))
+  if (role === "admin") return;
+  if (scopeLevel !== "national" && !administrativeArea.includes(scope))
     throw new Error("Yêu cầu SOS nằm ngoài phạm vi địa lý được phân công.");
 }
 export function transitionSos(
@@ -195,27 +206,6 @@ export function taskInputFromSos(
     location: sos.location.address,
     dueAt: "21/08/2026 12:00",
     description: sos.description,
-  };
-}
-export function evacuationInputFromSos(
-  sos: SosRequest,
-  shelterId: string,
-): NewEvacuationInput {
-  if (!sos.linkedIncidentId) throw new Error("SOS chưa liên kết với sự cố.");
-  return {
-    incidentId: sos.linkedIncidentId,
-    sourceArea: sos.location.name,
-    sourceCoordinates: sos.location.coordinates,
-    destinationShelterId: shelterId,
-    estimatedPopulation: sos.peopleAtRisk,
-    priority:
-      sos.priority === "P1 — Khẩn cấp"
-        ? "Khẩn cấp"
-        : sos.priority === "P2 — Cao"
-          ? "Cao"
-          : "Trung bình",
-    expectedCompletion: "21/08/2026 13:00",
-    notes: `Tạo từ ${sos.id}`,
   };
 }
 export function resolveSos(

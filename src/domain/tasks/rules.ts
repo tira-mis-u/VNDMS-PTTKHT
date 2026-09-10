@@ -4,7 +4,9 @@ export const taskTransitions: Record<TaskStatus, TaskStatus[]> = {
   "Chờ giao": ["Đã giao", "Đã hủy"],
   "Đã giao": ["Đã tiếp nhận", "Đã hủy"],
   "Đã tiếp nhận": ["Đang thực hiện"],
-  "Đang thực hiện": ["Hoàn thành", "Đã hủy"],
+  "Đang thực hiện": ["Chờ xác nhận", "Hoàn thành", "Đã hủy"],
+  // Cán bộ chấp nhận → Hoàn thành; từ chối (có lý do) → quay lại thực hiện.
+  "Chờ xác nhận": ["Hoàn thành", "Đang thực hiện"],
   "Hoàn thành": [],
   "Đã hủy": [],
 };
@@ -41,6 +43,16 @@ export function calculateIncidentProgress(tasks: IncidentTask[]) {
     active.reduce((sum, task) => sum + task.progress, 0) / active.length,
   );
 }
+
+/** Trình tự vòng đời hiển thị trên UI (không gồm trạng thái nhánh "Đã hủy"). */
+export const TASK_LIFECYCLE: TaskStatus[] = [
+  "Chờ giao",
+  "Đã giao",
+  "Đã tiếp nhận",
+  "Đang thực hiện",
+  "Chờ xác nhận",
+  "Hoàn thành",
+];
 
 export function getValidTransitions(status: TaskStatus) {
   return taskTransitions[status];

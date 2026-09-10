@@ -40,7 +40,7 @@ export function deriveAuthorizedAlerts(
 export function alertAuthorizationResource(
   alert: Pick<
     OperationalAlert,
-    "key" | "geographicScope" | "ownerTeamId" | "ownerWarehouseId"
+    "key" | "geographicScope" | "ownerTeamId"
   >,
 ): AuthorizationResource {
   return {
@@ -48,7 +48,6 @@ export function alertAuthorizationResource(
     id: alert.key,
     geographicScope: alert.geographicScope,
     assignedTeamId: alert.ownerTeamId ?? null,
-    warehouseId: alert.ownerWarehouseId ?? null,
   };
 }
 

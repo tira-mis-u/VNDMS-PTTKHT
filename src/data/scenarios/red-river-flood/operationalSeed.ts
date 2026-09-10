@@ -413,8 +413,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: "TSK-0241",
     currentIncident: "INC-0241",
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 21.0438,
       longitude: 105.8588,
@@ -493,8 +491,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: null,
     currentIncident: "INC-0241",
-    currentEvacuationOperation: "EVAC-001",
-    currentReliefShipment: null,
     location: {
       latitude: 21.0342,
       longitude: 105.8521,
@@ -568,8 +564,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: "TSK-0243",
     currentIncident: "INC-0241",
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 21.0678,
       longitude: 105.8228,
@@ -643,8 +637,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: null,
     currentIncident: null,
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 21.0391,
       longitude: 105.8317,
@@ -722,8 +714,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: null,
     currentIncident: null,
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 21.0512,
       longitude: 105.8892,
@@ -821,8 +811,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: null,
     currentIncident: "INC-0241",
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 21.0398,
       longitude: 105.8462,
@@ -920,8 +908,6 @@ export const initialTeams: RescueTeam[] = [
     ],
     currentTask: null,
     currentIncident: null,
-    currentEvacuationOperation: null,
-    currentReliefShipment: null,
     location: {
       latitude: 21.0264,
       longitude: 105.8098,

@@ -11,8 +11,7 @@
 - Team utilization;
 - Shelter occupancy/overload;
 - SOS response/bottleneck;
-- Relief shortage/low stock;
-- Recovery damage/progress/budget;
+- SOS chờ duyệt / nhiệm vụ chờ xác nhận không tính kết thúc;
 - report content, metric basis, navigation path và audit metadata.
 
 ## Regression gate

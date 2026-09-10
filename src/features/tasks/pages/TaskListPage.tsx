@@ -21,6 +21,7 @@ const tabs = [
   "Đã giao",
   "Đã tiếp nhận",
   "Đang thực hiện",
+  "Chờ xác nhận",
   "Hoàn thành",
 ];
 const priorityTone = (value: string) =>
@@ -34,7 +35,7 @@ const priorityTone = (value: string) =>
 const statusTone = (value: string) =>
   value === "Hoàn thành"
     ? "green"
-    : value === "Đang thực hiện"
+    : value === "Đang thực hiện" || value === "Chờ xác nhận"
       ? "blue"
       : value === "Chờ giao"
         ? "neutral"

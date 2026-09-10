@@ -46,9 +46,7 @@ export function getAllowedTeamTransitions(team: RescueTeam) {
     (status) =>
       !(
         status === "Sẵn sàng" &&
-        (team.currentTask ||
-          team.currentEvacuationOperation ||
-          team.currentReliefShipment)
+        team.currentTask
       ),
   );
 }

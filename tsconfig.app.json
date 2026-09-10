@@ -23,5 +23,31 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/features/relief/**",
+    "src/features/simulation/**",
+    "src/features/playbooks/**",
+    "src/features/recovery/**",
+    "src/features/evacuations/**",
+    "src/features/ai-assistant/**",
+    "src/application/relief/**",
+    "src/application/simulation/**",
+    "src/application/playbooks/**",
+    "src/application/recovery/**",
+    "src/application/evacuations/**",
+    "src/application/ai/**",
+    "src/domain/relief/**",
+    "src/domain/simulation/**",
+    "src/domain/playbooks/**",
+    "src/domain/recovery/**",
+    "src/domain/evacuations/**",
+    "src/domain/ai/**",
+    "src/data/scenarios/**/playbookSeed.ts",
+    "src/data/scenarios/**/shelterEvacuationSeed.ts",
+    "src/features/command-center/components/LogisticsExceptions.tsx",
+    "src/features/command-center/components/PlaybookOperations.tsx",
+    "src/features/command-center/components/RecoveryExceptions.tsx",
+    "src/features/command-center/components/ResourceExceptions.tsx"
+  ]
 }

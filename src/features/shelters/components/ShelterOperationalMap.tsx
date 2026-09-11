@@ -4,7 +4,9 @@ import { Building2, Crosshair, Minus, Plus } from "lucide-react";
 import type { Shelter } from "@/domain/shelters/types";
 import type { Incident } from "@/domain/incidents/types";
 import type { RescueTeam } from "@/domain/teams/types";
-import { useDualMapEngine, MapEngineBadge } from "@/infrastructure/gis/useDualMapEngine";
+import { useDualMapEngine } from "@/infrastructure/gis/useDualMapEngine";
+import { attachDetailMapStationPills, attachDetailMapTemperature } from "@/infrastructure/weather/detailMapTemperature";
+import { UNIFIED_MAP_KIND_COLORS } from "@/application/map/unifiedMapQueries";
 
 /**
  * Bản đồ điểm sơ tán (danh mục tra cứu). V2 đã gỡ phân hệ Sơ tán nên bản đồ
@@ -28,6 +30,9 @@ export default function ShelterOperationalMap({
     zoom: 11,
     seaLabelPrefix: "shelter",
     onMapLibreLoad(map) {
+      // Nền nhiệt ECMWF như Bản đồ tác nghiệp.
+      attachDetailMapTemperature(map);
+      attachDetailMapStationPills(map, shelter.coordinates);
       const addMLMarker = (coords: [number, number], className: string, label: string) => {
         const el = document.createElement("div");
         el.className = `shelter-map-marker ${className}`;
@@ -61,16 +66,16 @@ export default function ShelterOperationalMap({
 
     addM(shelter.coordinates, "#079455", shelter.name);
     shelters.filter((s) => s.id !== shelter.id).forEach((s) =>
-      addM(s.coordinates, (s.status === "Quá tải" || s.status === "Không thể tiếp cận") ? "#d92d20" : "#344054", s.name)
+      addM(s.coordinates, UNIFIED_MAP_KIND_COLORS.shelter, s.name)
     );
-    incidents.forEach((inc) => addM(inc.location.coordinates, "#d92d20", inc.title));
+    incidents.forEach((inc) => addM(inc.location.coordinates, UNIFIED_MAP_KIND_COLORS.incident, inc.title));
     teams.forEach((tm) => addM(tm.coordinates, "#1570ef", tm.name));
   }, [engine, ready, shelter, shelters, incidents, teams]);
 
   return (
     <div className="shelter-operational-map" style={{ position: "relative" }}>
       <div ref={container} className="map-canvas" />
-      <MapEngineBadge engine={engine} />
+      {/* Huy hiệu thời tiết nổi đã gỡ: thời tiết + thương hiệu NDAMapVN hiển thị tĩnh trên dòng tiêu đề khối bản đồ. */}
       {!ready && <div className="map-loading"><span className="spinner" />Đang tải bản đồ điểm sơ tán…</div>}
       <div className="map-toolbar">
         <button onClick={() => zoomBy(1)} aria-label="Phóng to bản đồ"><Plus size={16} /></button>
@@ -86,6 +91,7 @@ export default function ShelterOperationalMap({
         <span><i className="shelter-key exception" />Điểm quá tải / không tiếp cận</span>
         <span><i className="shelter-key incident" />Sự cố liên quan</span>
         <span><i className="shelter-key team" />Đội cứu hộ</span>
+        <span><i className="wx-key" />Nền nhiệt ECMWF</span>
       </div>
       <div className="map-attribution">© OpenFreeMap · © OpenStreetMap</div>
     </div>

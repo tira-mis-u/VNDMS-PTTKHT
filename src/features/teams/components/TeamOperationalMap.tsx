@@ -15,15 +15,15 @@ import type { Incident } from "@/domain/incidents/types";
 import type { IncidentTask } from "@/domain/tasks/types";
 import type { RescueTeam } from "@/domain/teams/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { useDualMapEngine, MapEngineBadge } from "@/infrastructure/gis/useDualMapEngine";
+import { useDualMapEngine } from "@/infrastructure/gis/useDualMapEngine";
+import { attachDetailMapStationPills, attachDetailMapTemperature } from "@/infrastructure/weather/detailMapTemperature";
+import { UNIFIED_MAP_KIND_COLORS } from "@/application/map/unifiedMapQueries";
 
 const KIND_COLOR: Record<string, string> = {
   primary: "#1570ef",
   other: "#344054",
   lost: "#d92d20",
-  incident: "#d92d20",
-  task: "#d97706",
-  shelter: "#079455",
+  ...UNIFIED_MAP_KIND_COLORS,
 };
 
 export default function TeamOperationalMap({
@@ -49,6 +49,9 @@ export default function TeamOperationalMap({
     zoom: 12.5,
     seaLabelPrefix: "team",
     onMapLibreLoad(map) {
+      // Nền nhiệt ECMWF như Bản đồ tác nghiệp.
+      attachDetailMapTemperature(map);
+      attachDetailMapStationPills(map, team.coordinates);
       const addIconMarker = (
         coords: [number, number],
         className: string,
@@ -129,7 +132,7 @@ export default function TeamOperationalMap({
   return (
     <div className="team-operational-map" style={{ position: "relative" }}>
       <div ref={container} className="map-canvas" />
-      <MapEngineBadge engine={engine} />
+      {/* Huy hiệu thời tiết nổi đã gỡ: thời tiết + thương hiệu NDAMapVN hiển thị tĩnh trên dòng tiêu đề khối bản đồ. */}
       {!ready && <div className="map-loading"><span className="spinner" />Đang tải vị trí lực lượng…</div>}
       <div className="map-toolbar">
         <button onClick={() => zoomBy(1)} aria-label="Phóng to bản đồ"><Plus size={16} /></button>
@@ -145,6 +148,7 @@ export default function TeamOperationalMap({
         <span><i className="marker-key other"><ShieldCheck size={10} /></i>Đội khác</span>
         <span><i className="marker-key incident"><Siren size={10} /></i>Sự cố</span>
         <span><i className="marker-key task"><ListTodo size={10} /></i>Nhiệm vụ</span>
+        <span><i className="wx-key" />Nền nhiệt ECMWF</span>
       </div>
       <div className="map-attribution">© OpenFreeMap · © OpenStreetMap</div>
     </div>

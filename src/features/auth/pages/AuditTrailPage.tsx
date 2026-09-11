@@ -1,6 +1,6 @@
 import { PageSectionHeader, Input } from "@/components/ui";
 import { Select as UiSelect } from "@/components/ui/Select";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -30,6 +30,20 @@ export function AuditTrailPage({
   const [query, setQuery] = useState("");
   const [result, setResult] = useState("all");
   const [action, setAction] = useState("all");
+
+  // Mở trang = đã đọc tới hiện tại → sidebar hết huy hiệu đỏ.
+  const viewerId = store.currentUser?.id;
+  useEffect(() => {
+    if (!viewerId) return;
+    try {
+      localStorage.setItem(
+        `vndms_audit_seen_${viewerId}`,
+        new Date().toISOString(),
+      );
+    } catch {
+      /* bỏ qua */
+    }
+  }, [viewerId]);
   const actions = [
     ...new Set(store.securityAuditEvents.map((item) => item.action)),
   ];
@@ -62,10 +76,12 @@ export function AuditTrailPage({
         icon={ShieldCheck}
         className="admin-page-header"
         actions={
-          <button onClick={() => navigate("/admin/users")}>
-            <ArrowLeft size={15} />
-            Người dùng
-          </button>
+          store.can("user_manage") ? (
+            <button onClick={() => navigate("/admin/users")}>
+              <ArrowLeft size={15} />
+              Người dùng
+            </button>
+          ) : undefined
         }
       />
       <div className="audit-notice">

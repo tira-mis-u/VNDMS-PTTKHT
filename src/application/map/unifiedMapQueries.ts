@@ -34,6 +34,11 @@ export interface UnifiedMapPoint {
   coordinates: [number, number];
   /** Route canonical tới trang chi tiết. */
   detailPath: string;
+  /**
+   * ID người tạo — hiện chỉ populate cho SOS để canvas vẽ icon hình người
+   * cho SOS của chính người đang đăng nhập.
+   */
+  ownerUserId?: string | null;
 }
 
 export interface UnifiedMapDetail {
@@ -61,6 +66,16 @@ export const UNIFIED_MAP_LAYER_CONFIG: {
 const KIND_LABEL: Record<UnifiedMapKind, string> = Object.fromEntries(
   UNIFIED_MAP_LAYER_CONFIG.map((l) => [l.key, l.label]),
 ) as Record<UnifiedMapKind, string>;
+
+/**
+ * Màu chuẩn theo loại đối tượng — MỌI bản đồ (tác nghiệp, mini điều hành,
+ * chi tiết sự cố/SOS/nhiệm vụ/đội/điểm sơ tán) đều phải dùng bảng này để
+ * người dùng nhìn màu là biết loại, không bị mỗi nơi một màu.
+ */
+export const UNIFIED_MAP_KIND_COLORS: Record<UnifiedMapKind, string> =
+  Object.fromEntries(
+    UNIFIED_MAP_LAYER_CONFIG.map((l) => [l.key, l.color]),
+  ) as Record<UnifiedMapKind, string>;
 
 const CLOSED = (status: string) =>
   ["Đã đóng", "Đã kiểm soát", "Hủy", "Đã hủy", "Từ chối"].includes(status);
@@ -125,6 +140,7 @@ export function getUnifiedMapPoints(
       tone: severityTone(severity),
       coordinates: sos.location.coordinates,
       detailPath: `/sos/${sos.id}`,
+      ownerUserId: sos.ownerUserId,
     });
   }
 

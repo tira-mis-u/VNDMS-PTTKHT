@@ -870,6 +870,8 @@
   .team-context {
     grid-area: context;
     position: static;
+    max-height: none;
+    overflow-y: visible;
   }
   .team-detail-header {
     margin-left: 0;

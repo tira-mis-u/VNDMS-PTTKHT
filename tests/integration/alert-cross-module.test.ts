@@ -1,7 +1,7 @@
 /*
  * V2 (4 vai) — tích hợp cảnh báo liên module.
  *  - Gỡ test Simulation và Trợ lý AI (module đã xóa thật); control state boundary rỗng.
- *  - Actor ack là Cán bộ PCTT (nguyentrung) — admin V2 không có alert_acknowledge.
+ *  - Actor ack là Cán bộ PCTT (nguyentrung) hoặc Quản trị viên (thuantq) — cả hai đều có alert_acknowledge.
  *  - Test geography dùng cán bộ thu hẹp scope tỉnh Lào Cai; test role dùng công dân
  *    (minhtri) và admin; rescue_unit chỉ huy toàn lực lượng nên ack được alert mọi đội.
  *  - Kịch bản Yagi 2024: alert bắt buộc xác nhận TSK-YAGI-02 task_high_priority_unassigned
@@ -225,17 +225,15 @@ test("authorization tại mutation boundary: geography, ownership, role", () => 
   assert.equal(h.state().snapshot.alertInteractions.length, 0, "không được ghi gì khi bị từ chối");
   // Công dân (đội viên cũ) không có alert_view → bị chặn ở bước đọc nguồn
   assert.throws(() => acknowledgeCommand(h, "minhtri", KEY), /không được cấp quyền/);
-  // Admin V2 đọc được alert nhưng không có alert_acknowledge
-  assert.throws(
-    () => acknowledgeCommand(h, "thuantq", KEY),
-    /không được cấp quyền alert_acknowledge/,
-  );
+  // Quản trị viên toàn quyền → ack được alert như cán bộ
+  acknowledgeCommand(h, "thuantq", KEY);
+  assert.equal(h.state().snapshot.alertInteractions.length, 1);
   // Đơn vị cứu hộ chỉ huy toàn lực lượng → ack được alert nhiệm vụ của bất kỳ đội nào
   acknowledgeCommand(h, "phamhieu", "task:Task:TSK-YAGI-03:task_overdue");
   assert.equal(h.state().snapshot.alertInteractions[0].acknowledgement?.actor, "Phạm Trung Hiếu");
   // Cán bộ scope Lào Cai được ack alert trong Lào Cai
   acknowledgeCommand(h, laoCaiOfficer(), "incident:Incident:INC-YAGI-01:incident_critical_active");
-  assert.equal(h.state().snapshot.alertInteractions.length, 2);
+  assert.equal(h.state().snapshot.alertInteractions.length, 3);
 });
 
 test("alert mà entity vượt scope thì không lộ qua derive từ authorized view", () => {

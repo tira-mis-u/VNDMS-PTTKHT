@@ -34,7 +34,7 @@ function personnel<const T extends Pick<PersonnelIdentity, "id" | "displayName" 
 
 export const PERSONNEL = {
   // ── 7 tài khoản demo — ID/username giữ nguyên, vai trò theo mô hình 4 vai (V2) ──
-  COMMANDER: personnel({ id: "USR-CMD-001", displayName: "Trần Quốc Thuận", role: "admin", roleLabel: "Quản trị hệ thống", title: "Quản trị hệ thống", organization: "Ban Chỉ huy Phòng, chống thiên tai và Tìm kiếm cứu nạn", geographicScope: { level: "national", code: "VN", name: "Toàn quốc" }, kind: "account" }),
+  COMMANDER: personnel({ id: "USR-CMD-001", displayName: "Trần Quốc Thuận", role: "admin", roleLabel: "Quản trị viên", title: "Quản trị viên", organization: "Ban Chỉ huy Phòng, chống thiên tai và Tìm kiếm cứu nạn", geographicScope: { level: "national", code: "VN", name: "Toàn quốc" }, kind: "account" }),
   OPERATOR: personnel({ id: "USR-OPS-001", displayName: "Nguyễn Quốc Trung", role: "disaster_officer", roleLabel: "Cán bộ phòng chống thiên tai", title: "Cán bộ điều hành phòng chống thiên tai", organization: "Ban Chỉ huy Phòng, chống thiên tai và Tìm kiếm cứu nạn", geographicScope: { level: "national", code: "VN", name: "Toàn quốc" }, kind: "account" }),
   LOCAL_OFFICER: personnel({ id: "USR-LOC-001", displayName: "Phạm Văn Đam", role: "citizen", roleLabel: "Công dân", title: "Công dân", organization: "UBND quận Tây Hồ", geographicScope: { level: "district", code: "HN-TAYHO", name: "Tây Hồ, Hà Nội" }, kind: "account" }),
   RESCUE_LEADER: personnel({ id: "USR-RSL-001", displayName: "Phạm Trung Hiếu", role: "rescue_unit", roleLabel: "Đơn vị cứu hộ", title: "Chỉ huy lực lượng cứu hộ", organization: "Lực lượng cứu hộ Hà Nội", geographicScope: { level: "national", code: "VN", name: "Toàn quốc" }, kind: "account" }),

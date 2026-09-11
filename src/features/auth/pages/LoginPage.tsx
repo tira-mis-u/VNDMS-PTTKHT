@@ -83,11 +83,11 @@ function LoginForm({
         </span>
       </label>
 
-      <label className="auth-field-label">
+      <div className="auth-field-label">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-          <span className="label-text">
+          <label htmlFor="login-password" className="label-text" style={{ cursor: "pointer" }}>
             Mật khẩu <b className="req">*</b>
-          </span>
+          </label>
           <button
             type="button"
             onClick={onForgot}
@@ -123,7 +123,7 @@ function LoginForm({
             {show ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </span>
-      </label>
+      </div>
 
       <button
         id="login-submit-btn"

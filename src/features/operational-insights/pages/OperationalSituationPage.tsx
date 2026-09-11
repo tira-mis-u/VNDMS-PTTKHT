@@ -1,4 +1,4 @@
-import { ArrowRight, Clock3, Database, MapPinned, Waves } from "lucide-react";
+import { ArrowRight, Database, MapPinned, Waves } from "lucide-react";
 import { PageSectionHeader } from "@/components/ui";
 import { getOperationalSituation, type OperationalInsightsData } from "@/application/operations/operationalInsightsQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
@@ -29,22 +29,17 @@ export function OperationalSituationPage({ navigate }: { navigate: (path: string
           ))}
         </div>
       </section>
-      <div className="insights-columns">
-        <section className="insights-card" aria-labelledby="area-title">
-          <div className="insights-section-head"><div><h2 id="area-title">Tình hình theo địa bàn</h2><p>Địa danh lấy trực tiếp từ hồ sơ nghiệp vụ; không dựng vùng địa lý mới.</p></div><MapPinned size={18} /></div>
-          <div className="area-list">
-            {situation.areas.map((area) => <button key={area.area} onClick={() => navigate(area.incidentPath)}><span><b>{area.area}</b><small>{area.activeIncidents} sự cố · {area.urgentSos} SOS khẩn cấp · {area.pendingReports} phản ánh chờ đánh giá</small></span><ArrowRight size={15} /></button>)}
-            {!situation.areas.length && <p className="insights-empty">Chưa có bản ghi tác nghiệp theo địa bàn trong phạm vi hiện tại.</p>}
-          </div>
-        </section>
-        <section className="insights-card" aria-labelledby="event-title">
-          <div className="insights-section-head"><div><h2 id="event-title">Diễn biến gần nhất</h2><p>Chỉ hiển thị sự kiện có dấu thời gian hợp lệ.</p></div><Clock3 size={18} /></div>
-          <ol className="situation-events">
-            {situation.events.map((event, index) => <li key={`${event.entityId}-${event.timestamp}-${index}`}><button onClick={() => navigate(event.path)}><time>{event.timestamp}</time><b>{event.entityType} · {event.entityId}</b><p>{event.message}</p><small>{event.source}</small></button></li>)}
-            {!situation.events.length && <li className="insights-empty">Chưa có diễn biến hợp lệ trong nguồn dữ liệu hiện tại.</li>}
-          </ol>
-        </section>
-      </div>
+      {/* Card "Diễn biến gần nhất" đã bỏ: dòng thời gian tác nghiệp sống trong
+          Sổ trực ban (dòng hệ thống) — một nguồn diễn biến duy nhất, không nuôi
+          hai feed trùng nhau. Giữ lại "Theo địa bàn" (góc nhìn không gian mà sổ
+          trực ban không có). */}
+      <section className="insights-card" aria-labelledby="area-title">
+        <div className="insights-section-head"><div><h2 id="area-title">Tình hình theo địa bàn</h2><p>Địa danh lấy trực tiếp từ hồ sơ nghiệp vụ; không dựng vùng địa lý mới.</p></div><MapPinned size={18} /></div>
+        <div className="area-list">
+          {situation.areas.map((area) => <button key={area.area} onClick={() => navigate(area.incidentPath)}><span><b>{area.area}</b><small>{area.activeIncidents} sự cố · {area.urgentSos} SOS khẩn cấp · {area.pendingReports} phản ánh chờ đánh giá</small></span><ArrowRight size={15} /></button>)}
+          {!situation.areas.length && <p className="insights-empty">Chưa có bản ghi tác nghiệp theo địa bàn trong phạm vi hiện tại.</p>}
+        </div>
+      </section>
       {/* Quan trắc thật (mưa ECMWF-IFS + dòng chảy GloFAS) thay cho khối
           "chưa có dữ liệu" trước đây. */}
       <HydrologyPanel />

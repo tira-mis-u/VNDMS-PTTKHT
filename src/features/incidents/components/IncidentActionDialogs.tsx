@@ -191,6 +191,19 @@ function TaskForm({
     </DialogFrame>
   );
 }
+/**
+ * Khoảng cách đội ghi dạng "2,4 km" (phẩy thập phân kiểu Việt Nam).
+ * Điều phối luôn xếp đội gần hiện trường nhất lên đầu để cán bộ bấm
+ * "Điều động" là trúng đội gần nhất; đội mất liên lạc/không khả dụng chìm
+ * xuống cuối và không bao giờ nhận nhãn "Gần nhất".
+ */
+function distanceKm(raw: string): number {
+  const value = Number.parseFloat(raw.replace(",", "."));
+  return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY;
+}
+
+const UNAVAILABLE_TEAM_STATUS = new Set(["Mất liên lạc", "Không khả dụng"]);
+
 function DispatchForm({
   incident,
   onClose,
@@ -200,6 +213,14 @@ function DispatchForm({
 }) {
   const { teams, dispatchTeam } = useOperationalState();
   const [selected, setSelected] = useState(incident.assignedTeamId ?? "");
+  const ordered = [...teams].sort((a, b) => {
+    const rank = (t: (typeof teams)[number]) =>
+      UNAVAILABLE_TEAM_STATUS.has(t.status) ? 1 : 0;
+    return rank(a) - rank(b) || distanceKm(a.distance) - distanceKm(b.distance);
+  });
+  const nearestId = ordered.find(
+    (t) => !UNAVAILABLE_TEAM_STATUS.has(t.status),
+  )?.id;
   const submit = () => {
     if (selected) dispatchTeam(incident.id, selected);
     onClose();
@@ -220,12 +241,16 @@ function DispatchForm({
         </>
       }
     >
+      <p className="form-hint">
+        Danh sách xếp đội sẵn sàng gần hiện trường nhất lên đầu.
+      </p>
       <div className="dispatch-team-list">
-        {teams.map((team) => (
+        {ordered.map((team) => (
           <TeamOption
             key={team.id}
             team={team}
             selected={selected === team.id}
+            nearest={team.id === nearestId}
             onSelect={() => setSelected(team.id)}
           />
         ))}
@@ -236,10 +261,12 @@ function DispatchForm({
 function TeamOption({
   team,
   selected,
+  nearest,
   onSelect,
 }: {
   team: RescueTeam;
   selected: boolean;
+  nearest: boolean;
   onSelect: () => void;
 }) {
   return (
@@ -250,6 +277,11 @@ function TeamOption({
       <span>
         <b>
           {team.id} · {team.name}
+          {nearest && (
+            <Badge tone="green">
+              Gần nhất · {team.distance}
+            </Badge>
+          )}
         </b>
         <small>
           {team.capability} · {team.distance}

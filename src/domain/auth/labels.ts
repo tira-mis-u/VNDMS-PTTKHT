@@ -1,6 +1,6 @@
 import type { Role } from "./types";
 export const roleLabels: Record<Role, string> = {
-  admin: "Quản trị hệ thống",
+  admin: "Quản trị viên",
   disaster_officer: "Cán bộ phòng chống thiên tai",
   rescue_unit: "Đơn vị cứu hộ",
   citizen: "Công dân",
@@ -23,7 +23,7 @@ const auditActionLabels: Record<string, string> = {
   USER_ROLE_CHANGED: "Thay đổi vai trò",
   USER_SCOPE_CHANGED: "Thay đổi phạm vi địa bàn",
   ROLE_MODEL_MIGRATED: "Chuyển đổi mô hình vai trò (V2)",
-  PANIC_ALERT_TRIGGERED: "Bật cảnh báo 1 chạm (SOS Panic)",
+  PANIC_ALERT_TRIGGERED: "Phát tín hiệu SOS (SOS Panic)",
   LIVE_BEACON_TOGGLED: "Bật/Tắt phát định vị Realtime",
 };
 const auditResultLabels: Record<string, string> = {

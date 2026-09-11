@@ -6,15 +6,11 @@ import type { Incident } from "@/domain/incidents/types";
 import type { IncidentTask } from "@/domain/tasks/types";
 import type { RescueTeam } from "@/domain/teams/types";
 import type { Shelter } from "@/domain/shelters/types";
-import { useDualMapEngine, MapEngineBadge } from "@/infrastructure/gis/useDualMapEngine";
+import { useDualMapEngine } from "@/infrastructure/gis/useDualMapEngine";
+import { UNIFIED_MAP_KIND_COLORS } from "@/application/map/unifiedMapQueries";
+import { attachDetailMapStationPills, attachDetailMapTemperature } from "@/infrastructure/weather/detailMapTemperature";
 
-const KIND_COLORS: Record<string, string> = {
-  sos: "#d92d20",
-  incident: "#b42318",
-  task: "#d97706",
-  team: "#1570ef",
-  shelter: "#079455",
-};
+const KIND_COLORS: Record<string, string> = { ...UNIFIED_MAP_KIND_COLORS };
 
 export default function SosOperationalMap({
   sos,
@@ -41,6 +37,18 @@ export default function SosOperationalMap({
 
   // Google Maps: markers
   const gmarkersRef = useRef<google.maps.Marker[]>([]);
+
+  // Nền nhiệt ECMWF như Bản đồ tác nghiệp (chỉ maplibre).
+  useEffect(() => {
+    if (engine !== "maplibre" || !ready || !mlMapRef.current) return;
+    const detachTemp = attachDetailMapTemperature(mlMapRef.current);
+    const detachPills = attachDetailMapStationPills(mlMapRef.current, sos.location.coordinates);
+    return () => {
+      detachTemp();
+      detachPills();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engine, ready]);
 
   useEffect(() => {
     if (!ready) return;
@@ -94,7 +102,7 @@ export default function SosOperationalMap({
   return (
     <div className="sos-operational-map" style={{ position: "relative" }}>
       <div ref={container} className="map-canvas" />
-      <MapEngineBadge engine={engine} />
+      {/* Huy hiệu thời tiết nổi đã gỡ: thời tiết + thương hiệu NDAMapVN hiển thị tĩnh trên dòng tiêu đề khối bản đồ. */}
       {!ready && (
         <div className="map-loading">
           <span className="spinner" />
@@ -114,6 +122,7 @@ export default function SosOperationalMap({
         <span><i className="sos-key" />SOS</span>
         <span><i className="team-key" />Đội cứu hộ</span>
         <span><i className="shelter-key-dot" />Điểm sơ tán</span>
+        <span><i className="wx-key" />Nền nhiệt ECMWF</span>
       </div>
       <div className="map-attribution">© OpenFreeMap · © OpenStreetMap</div>
     </div>

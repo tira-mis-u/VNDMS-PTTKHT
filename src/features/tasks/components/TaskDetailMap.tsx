@@ -4,14 +4,11 @@ import type { Incident } from "@/domain/incidents/types";
 import type { IncidentTask } from "@/domain/tasks/types";
 import type { RescueTeam } from "@/domain/teams/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { useDualMapEngine, MapEngineBadge } from "@/infrastructure/gis/useDualMapEngine";
+import { useDualMapEngine } from "@/infrastructure/gis/useDualMapEngine";
+import { UNIFIED_MAP_KIND_COLORS } from "@/application/map/unifiedMapQueries";
+import { attachDetailMapStationPills, attachDetailMapTemperature } from "@/infrastructure/weather/detailMapTemperature";
 
-const KIND_COLOR: Record<string, string> = {
-  task: "#d92d20",
-  incident: "#f79009",
-  team: "#1570ef",
-  shelter: "#079455",
-};
+const KIND_COLOR: Record<string, string> = { ...UNIFIED_MAP_KIND_COLORS };
 
 export default function TaskDetailMap({
   task,
@@ -34,6 +31,9 @@ export default function TaskDetailMap({
     zoom: 13,
     seaLabelPrefix: "task",
     onMapLibreLoad(map) {
+      // Nền nhiệt ECMWF như Bản đồ tác nghiệp.
+      attachDetailMapTemperature(map);
+      attachDetailMapStationPills(map, task.coordinates);
       const features = [
         { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: task.coordinates }, properties: { kind: "task", label: task.id } },
         ...(incident ? [{ type: "Feature" as const, geometry: { type: "Point" as const, coordinates: incident.location.coordinates }, properties: { kind: "incident", label: incident.id } }] : []),
@@ -46,7 +46,7 @@ export default function TaskDetailMap({
         id: "task-points", type: "circle", source: "task-points",
         paint: {
           "circle-radius": ["match", ["get", "kind"], "task", 8, 6],
-          "circle-color": ["match", ["get", "kind"], "task", "#d92d20", "incident", "#f79009", "team", "#1570ef", "shelter", "#079455", "#667085"] as never,
+          "circle-color": ["match", ["get", "kind"], "task", UNIFIED_MAP_KIND_COLORS.task, "incident", UNIFIED_MAP_KIND_COLORS.incident, "team", UNIFIED_MAP_KIND_COLORS.team, "shelter", UNIFIED_MAP_KIND_COLORS.shelter, "#667085"] as never,
           "circle-stroke-width": 2, "circle-stroke-color": "#fff",
         },
       });
@@ -98,7 +98,7 @@ export default function TaskDetailMap({
   return (
     <div className="task-detail-map" style={{ position: "relative" }}>
       <div ref={container} className="map-canvas" />
-      <MapEngineBadge engine={engine} />
+      {/* Huy hiệu thời tiết nổi đã gỡ: thời tiết + thương hiệu NDAMapVN hiển thị tĩnh trên dòng tiêu đề khối bản đồ. */}
       {!ready && <div className="map-loading"><span className="spinner" />Đang tải bản đồ nhiệm vụ…</div>}
       <div className="map-toolbar">
         <button onClick={() => zoomBy(1)} aria-label="Phóng to bản đồ"><Plus size={16} /></button>
@@ -111,6 +111,7 @@ export default function TaskDetailMap({
         <span><i className="map-dot team" />Đội</span>
         <span><i className="map-dot shelter" />Điểm sơ tán</span>
         <span><i className="map-line route" />Tuyến tác nghiệp</span>
+        <span><i className="wx-key" />Nền nhiệt ECMWF</span>
       </div>
       <div className="map-attribution">© OpenFreeMap · © OpenStreetMap</div>
     </div>

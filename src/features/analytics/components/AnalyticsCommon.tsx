@@ -1,4 +1,4 @@
-import { PageSectionHeader, Input } from "@/components/ui";
+import { PageSectionHeader, DateField } from "@/components/ui";
 import { Select as UiSelect } from "@/components/ui/Select";
 import type { ReactNode } from "react";
 import {
@@ -88,31 +88,19 @@ export function AnalyticsFilters({
       <label>
         <CalendarDays size={14} />
         <span>Từ ngày</span>
-        <Input
-          type="text"
-          inputMode="numeric"
-          placeholder="dd/mm/yyyy"
-          aria-label="Từ ngày, định dạng ngày tháng năm"
-          pattern="\d{2}/\d{2}/\d{4}"
-          value={value.from ?? ""}
-          onChange={(event) =>
-            onChange({ ...value, from: event.target.value || undefined })
-          }
+        <DateField
+          aria-label="Từ ngày"
+          value={value.from}
+          onChange={(dmy) => onChange({ ...value, from: dmy })}
         />
       </label>
       <label>
         <CalendarDays size={14} />
         <span>Đến ngày</span>
-        <Input
-          type="text"
-          inputMode="numeric"
-          placeholder="dd/mm/yyyy"
-          aria-label="Đến ngày, định dạng ngày tháng năm"
-          pattern="\d{2}/\d{2}/\d{4}"
-          value={value.to ?? ""}
-          onChange={(event) =>
-            onChange({ ...value, to: event.target.value || undefined })
-          }
+        <DateField
+          aria-label="Đến ngày"
+          value={value.to}
+          onChange={(dmy) => onChange({ ...value, to: dmy })}
         />
       </label>
       <label>

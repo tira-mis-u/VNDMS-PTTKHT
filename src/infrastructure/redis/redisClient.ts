@@ -31,7 +31,13 @@ export interface LiveLocationPing {
   heading?: number;
   speed?: number;
   accuracy?: number;
-  isPanicSOS?: boolean; // Cảnh báo 1 chạm khẩn cấp
+  isPanicSOS?: boolean; // Tín hiệu SOS khẩn cấp (SOS Panic)
+  /**
+   * Phạm vi chia sẻ do chủ beacon chỉ định (danh sách user ID). null/undefined
+   * = mọi người được phân quyền đều thấy; ping SOS khẩn cấp luôn để trống để
+   * lực lượng cứu hộ nào cũng thấy.
+   */
+  visibleTo?: string[] | null;
   timestamp: number;
 }
 

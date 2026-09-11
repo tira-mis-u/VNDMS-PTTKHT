@@ -1,5 +1,5 @@
 import { Select as UiSelect } from "@/components/ui/Select";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   CalendarDays,
   ChevronRight,
@@ -14,6 +14,7 @@ import type { TaskPriority } from "@/domain/tasks/types";
 import { isTaskOverdue, taskPriorityRank } from "@/domain/tasks/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { DialogBackdrop, Badge, Button, PageSectionHeader, Progress, Input, Textarea } from "@/components/ui";
+import { getDutyLog, linkDutyEntryToTask } from "@/infrastructure/duty/dutyLogStore";
 
 const tabs = [
   "Tất cả",
@@ -50,9 +51,32 @@ export function TaskListPage({
   const [search, setSearch] = useState("");
   const [priority, setPriority] = useState("Tất cả ưu tiên");
   const [team, setTeam] = useState("Tất cả đội");
-  const [incident, setIncident] = useState("Tất cả sự cố");
-  const [area, setArea] = useState("Tất cả khu vực");
   const [open, setOpen] = useState(false);
+  /**
+   * Tạo nhiệm vụ TỪ MỘT MỤC CHỈ ĐẠO trong sổ trực ban (?fromDuty=DUTY-...):
+   * mở sẵn form, điền tiêu đề theo nội dung chỉ đạo; tạo xong thì gắn link
+   * 2 chiều duty↔task và đánh dấu chỉ đạo đã xong.
+   */
+  const [dutyEntryId, setDutyEntryId] = useState<string | null>(() =>
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("fromDuty"),
+  );
+  const dutyPrefillTitle = useMemo(() => {
+    if (!dutyEntryId) return "";
+    const entry = getDutyLog().find((item) => item.id === dutyEntryId);
+    if (!entry) return "";
+    const firstLine = entry.text.split("\n")[0].trim();
+    return firstLine.length > 90 ? `${firstLine.slice(0, 90)}…` : firstLine;
+  }, [dutyEntryId]);
+  useEffect(() => {
+    if (dutyEntryId) setOpen(true);
+  }, [dutyEntryId]);
+  // TINH GIẢN dropdown (4→2): bỏ "Sự cố" + "Khu vực" — tên sự cố mẹ và địa
+  // bàn đã gộp vào ô tìm kiếm; trang chi tiết sự cố vẫn liệt kê nhiệm vụ của
+  // nó. Chỉ giữ Ưu tiên + Đội (2 câu hỏi lọc thật sự khác nhau).
+  const incidentTitle = (incidentId: string) =>
+    incidents.find((item) => item.id === incidentId)?.title ?? "";
   const filtered = useMemo(
     () =>
       tasks
@@ -61,13 +85,11 @@ export function TaskListPage({
           return (
             (tab === "Tất cả" || task.status === tab) &&
             (!q ||
-              `${task.id} ${task.title} ${task.location}`
+              `${task.id} ${task.title} ${task.location} ${incidentTitle(task.incidentId)}`
                 .toLowerCase()
                 .includes(q)) &&
             (priority === "Tất cả ưu tiên" || task.priority === priority) &&
-            (team === "Tất cả đội" || task.teamId === team) &&
-            (incident === "Tất cả sự cố" || task.incidentId === incident) &&
-            (area === "Tất cả khu vực" || task.location.includes(area))
+            (team === "Tất cả đội" || task.teamId === team)
           );
         })
         .sort(
@@ -75,7 +97,8 @@ export function TaskListPage({
             Number(isTaskOverdue(b)) - Number(isTaskOverdue(a)) ||
             taskPriorityRank[b.priority] - taskPriorityRank[a.priority],
         ),
-    [tasks, tab, search, priority, team, incident, area],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tasks, tab, search, priority, team, incidents],
   );
   return (
     <div className="workspace-content tasks-page">
@@ -112,7 +135,7 @@ export function TaskListPage({
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm mã, tên nhiệm vụ hoặc khu vực…"
+              placeholder="Tìm mã, tên nhiệm vụ, tên sự cố hoặc khu vực…"
             />
             {search && (
               <button onClick={() => setSearch("")}>
@@ -134,22 +157,12 @@ export function TaskListPage({
           <TaskSelect
             value={team}
             setValue={setTeam}
-            options={["Tất cả đội", ...teams.map((t) => t.id)]}
-          />
-          <TaskSelect
-            value={incident}
-            setValue={setIncident}
-            options={["Tất cả sự cố", ...incidents.map((i) => i.id)]}
-          />
-          <TaskSelect
-            value={area}
-            setValue={setArea}
             options={[
-              "Tất cả khu vực",
-              "Tây Hồ",
-              "Hoàn Kiếm",
-              "Long Biên",
-              "Ba Đình",
+              "Tất cả đội",
+              ...teams.map((t) => ({
+                value: t.id,
+                label: `${t.id} — ${t.name}`,
+              })),
             ]}
           />
           <span className="filter-chip" aria-label="Phạm vi thời gian 24 giờ gần nhất">
@@ -224,9 +237,21 @@ export function TaskListPage({
       </section>
       {open && (
         <CreateTaskDialog
-          onClose={() => setOpen(false)}
+          initialTitle={dutyPrefillTitle}
+          dutySource={dutyEntryId ? (getDutyLog().find((item) => item.id === dutyEntryId)?.text ?? "") : ""}
+          onClose={() => {
+            setOpen(false);
+            setDutyEntryId(null);
+            if (typeof window !== "undefined") {
+              const url = new URL(window.location.href);
+              url.searchParams.delete("fromDuty");
+              window.history.replaceState({}, "", url.pathname + url.search);
+            }
+          }}
           onCreate={(data) => {
             const id = createTask(data);
+            if (dutyEntryId) linkDutyEntryToTask(dutyEntryId, id);
+            setDutyEntryId(null);
             setOpen(false);
             navigate(`/tasks/${id}`);
           }}
@@ -235,6 +260,8 @@ export function TaskListPage({
     </div>
   );
 }
+export type TaskFilterOption = string | { value: string; label: string };
+
 function TaskSelect({
   value,
   setValue,
@@ -242,18 +269,25 @@ function TaskSelect({
 }: {
   value: string;
   setValue: (value: string) => void;
-  options: string[];
+  options: TaskFilterOption[];
 }) {
+  const first = options[0];
   return (
     <label className="filter-select">
       <UiSelect
-        aria-label={options[0]}
+        aria-label={typeof first === "string" ? first : first.label}
         value={value}
         onChange={(e) => setValue(e.target.value)}
       >
-        {options.map((option) => (
-          <option key={option}>{option}</option>
-        ))}
+        {options.map((option) =>
+          typeof option === "string" ? (
+            <option key={option}>{option}</option>
+          ) : (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ),
+        )}
       </UiSelect>
     </label>
   );
@@ -261,8 +295,12 @@ function TaskSelect({
 function CreateTaskDialog({
   onClose,
   onCreate,
+  initialTitle,
+  dutySource,
 }: {
   onClose: () => void;
+  initialTitle?: string;
+  dutySource?: string;
   onCreate: (data: {
     incidentId: string;
     title: string;
@@ -276,7 +314,7 @@ function CreateTaskDialog({
   }) => void;
 }) {
   const { incidents, teams } = useOperationalState();
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initialTitle ?? "");
   const [type, setType] = useState("Cứu hộ");
   const [incidentId, setIncident] = useState(incidents[0]?.id ?? "");
   const [priority, setPriority] = useState<TaskPriority>("Cao");
@@ -313,6 +351,11 @@ function CreateTaskDialog({
           </button>
         </header>
         <div className="incident-form-body">
+          {dutySource ? (
+            <p className="duty-source-banner" title={dutySource}>
+              Tạo từ mục chỉ đạo trong sổ trực ban: “{dutySource.length > 120 ? `${dutySource.slice(0, 120)}…` : dutySource}”
+            </p>
+          ) : null}
           <label className="field field-full">
             <span>Tên nhiệm vụ *</span>
             <Input

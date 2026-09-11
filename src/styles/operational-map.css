@@ -263,23 +263,13 @@ html[data-theme="dark"] .om-map-zone {
   background: #f4f6f9;
 }
 
-/* Cột chú giải góc dưới trái: các khối xếp chồng,
-không khối nào đè khối nào. */
-.om-legend-stack {
-  position: absolute;
-  left: 12px;
-  /* chừa chỗ cho trục thời gian nằm ở đáy khung bản đồ */
-  bottom: 70px;
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  max-width: calc(100% - 120px);
-  pointer-events: none;
-}
-.om-legend-stack > * {
-  pointer-events: auto;
+/* Chú giải nằm TRONG LUỒNG: dưới khung bản đồ, trên trục thời gian dự
+   báo — không đè lên địa hình, không cần chừa chỗ absolute. */
+.om-canvas-shell > .om-legend {
+  flex: 0 0 auto;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0;
+  max-width: none;
 }
 .om-legend {
   position: relative;
@@ -684,6 +674,9 @@ html[data-theme="dark"] .om-drawer-close {
 html[data-theme="dark"] .om-toolbar button:hover,
 html[data-theme="dark"] .om-drawer-close:hover {
   background: #212b39;
+}
+html[data-theme="dark"] .om-canvas-shell > .om-legend {
+  border-top-color: #334155;
 }
 html[data-theme="dark"] .om-legend {
   background: rgba(17, 24, 33, 0.94);
@@ -1502,4 +1495,73 @@ html[data-theme="dark"] .om-storm-strip {
   background: #082f49;
   border-color: #0369a1;
   color: #bae6fd;
+}
+
+/* ── Popup tra cứu tỉnh thành + thời tiết (chế độ xem thông tin tỉnh thành) ── */
+.om-province-popup-wrap .maplibregl-popup-content {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #dbe3ec;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.18);
+  font-size: 12.5px;
+  color: #0f172a;
+  line-height: 1.5;
+}
+.om-province-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 200px;
+}
+.om-province-name {
+  font-size: 14px;
+  color: #1d4ed8;
+}
+.om-province-sub {
+  font-size: 11.5px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.om-province-wx-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 10px;
+  margin: 4px 0;
+  padding: 6px 8px;
+  background: #f1f5f9;
+  border-radius: 7px;
+}
+.om-province-wx-grid span {
+  white-space: nowrap;
+}
+.om-province-wx-src {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ── Marker vị trí của người dân trên bản đồ tác nghiệp ── */
+.om-gps-highlight {
+  position: relative;
+  width: 26px;
+  height: 26px;
+}
+.om-gps-highlight .om-gps-dot {
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 2.5px solid #fff;
+  box-shadow: 0 1px 5px rgba(37, 99, 235, 0.6);
+}
+.om-gps-highlight .om-gps-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.35);
+  animation: om-gps-ping 1.8s ease-out infinite;
+}
+@keyframes om-gps-ping {
+  0% { transform: scale(0.45); opacity: 0.9; }
+  80% { transform: scale(1.05); opacity: 0; }
+  100% { transform: scale(1.05); opacity: 0; }
 }

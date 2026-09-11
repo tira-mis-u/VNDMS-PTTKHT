@@ -25,17 +25,30 @@ export type TeamDialog =
 export function TeamActionDialogs({
   mode,
   team,
+  navigate,
   onClose,
+  onSwitchMode,
 }: {
   mode: TeamDialog;
   team: RescueTeam;
+  navigate: (path: string) => void;
   onClose: () => void;
+  onSwitchMode?: (mode: TeamDialog) => void;
 }) {
   if (!mode) return null;
   return (
     <>
       <DialogBackdrop onClick={onClose} />
-      {mode === "dispatch" && <Dispatch team={team} onClose={onClose} />}{" "}
+      {mode === "dispatch" && (
+        <Dispatch
+          team={team}
+          navigate={navigate}
+          onClose={onClose}
+          onRequestStatus={
+            onSwitchMode ? () => onSwitchMode("status") : undefined
+          }
+        />
+      )}{" "}
       {mode === "status" && <Status team={team} onClose={onClose} />}{" "}
       {mode === "location" && <Location team={team} onClose={onClose} />}{" "}
       {mode === "edit" && <EditProfile team={team} onClose={onClose} />}{" "}
@@ -91,12 +104,76 @@ function ErrorMessage({ message }: { message: string }) {
 
 function Dispatch({
   team,
+  navigate,
   onClose,
+  onRequestStatus,
 }: {
   team: RescueTeam;
+  navigate: (path: string) => void;
   onClose: () => void;
+  onRequestStatus?: () => void;
 }) {
   const { incidents, tasks, dispatchTeamToTask } = useOperationalState();
+  // Đội chưa đủ điều kiện: KHÔNG dựng form chết — giải thích lý do và đưa
+  // nút đi tiếp (đồng bộ điều kiện với nút "Điều phối đội" ngoài trang).
+  const blockedStatus = ["Mất liên lạc", "Không khả dụng", "Tạm nghỉ"].includes(team.status)
+    ? team.status
+    : team.communicationStatus === "Mất liên lạc"
+      ? "mất liên lạc (kênh liên lạc)"
+      : null;
+  const blockedTask = !blockedStatus && team.currentTask ? team.currentTask : null;
+  if (blockedStatus || blockedTask) {
+    const task = blockedTask
+      ? tasks.find((item) => item.id === blockedTask)
+      : undefined;
+    return (
+      <Frame
+        title="Chưa thể điều phối đội này"
+        eyebrow={`${team.id} · ${team.name}`}
+        onClose={onClose}
+        footer={
+          <Button variant="secondary" onClick={onClose}>
+            Đóng
+          </Button>
+        }
+      >
+        <div className="dispatch-team-context">
+          <AlertTriangle size={16} />
+          <div>
+            <b>
+              {blockedTask
+                ? `Đội đang thực hiện nhiệm vụ ${blockedTask}`
+                : `Đội đang ở trạng thái “${blockedStatus}”`}
+            </b>
+            <span>
+              {blockedTask
+                ? `Hoàn thành hoặc báo xong “${task?.title ?? blockedTask}” để giải phóng đội.`
+                : "Chuyển đội sang “Sẵn sàng” trước khi điều phối."}
+            </span>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
+          {blockedTask ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                onClose();
+                navigate(`/tasks/${blockedTask}`);
+              }}
+            >
+              Mở {blockedTask}
+            </Button>
+          ) : (
+            onRequestStatus && (
+              <Button size="sm" onClick={onRequestStatus}>
+                Cập nhật trạng thái đội
+              </Button>
+            )
+          )}
+        </div>
+      </Frame>
+    );
+  }
   const [error, setError] = useState("");
   const openIncidents = incidents.filter(
     (incident) => incident.status !== "Đã đóng",

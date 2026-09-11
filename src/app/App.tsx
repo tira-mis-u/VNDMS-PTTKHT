@@ -23,6 +23,16 @@ const CitizenPortal = lazy(() =>
     default: module.CitizenPortal,
   })),
 );
+const CitizenMapPage = lazy(() =>
+  import("@/features/citizen").then((module) => ({
+    default: module.CitizenMapPage,
+  })),
+);
+const CitizenRequestsPage = lazy(() =>
+  import("@/features/citizen").then((module) => ({
+    default: module.CitizenRequestsPage,
+  })),
+);
 const OperationalMapWorkspacePage = lazy(() =>
   import("@/features/operational-map").then((module) => ({
     default: module.OperationalMapWorkspacePage,
@@ -68,19 +78,17 @@ const ShelterDetailPage = lazy(() =>
     default: module.ShelterDetailPage,
   })),
 );
-const SosListPage = lazy(() =>
-  import("@/features/sos").then((module) => ({ default: module.SosListPage })),
+const IntakeQueuePage = lazy(() =>
+  import("@/features/intake").then((module) => ({
+    default: module.IntakeQueuePage,
+  })),
 );
 const SosDetailPage = lazy(() =>
   import("@/features/sos").then((module) => ({
     default: module.SosDetailPage,
   })),
 );
-const CitizenReportListPage = lazy(() =>
-  import("@/features/reports").then((module) => ({
-    default: module.CitizenReportListPage,
-  })),
-);
+
 const OperationalAnalyticsPage = lazy(() =>
   import("@/features/analytics").then((module) => ({
     default: module.OperationalAnalyticsPage,
@@ -161,6 +169,10 @@ function requiredPermission(route: AppRoute): Permission {
     return "view";
   if (route.name.startsWith("task")) return "task_view";
   if (route.name.startsWith("team")) return "team_view";
+  // Trang riêng của Cổng công dân — mọi tài khoản đăng nhập đều mở được
+  // (nội bộ mở sẽ thấy phiên bản nội bộ tương ứng).
+  if (route.name === "citizen-map" || route.name === "citizen-requests")
+    return "sos_create";
   // Điểm sơ tán là danh mục tra cứu chung cho mọi vai (kể cả công dân).
   if (route.name.startsWith("shelter")) return "published_alert_view";
   if (route.name.startsWith("sos")) return "sos_view";
@@ -247,11 +259,28 @@ export default function App() {
   else if (route.name === "shelter-detail")
     content = <ShelterDetailPage id={route.id} navigate={navigate} />;
   else if (route.name === "sos-list")
-    content = <SosListPage navigate={navigate} />;
+    content = <IntakeQueuePage navigate={navigate} />;
   else if (route.name === "sos-detail")
     content = <SosDetailPage id={route.id} navigate={navigate} />;
+  // Deep-link /reports cũ vẫn sống: mở hàng đợi chung ở sẵn tab phản ánh.
   else if (route.name === "report-list")
-    content = <CitizenReportListPage navigate={navigate} />;
+    content = <IntakeQueuePage navigate={navigate} initialType="report" />;
+  // /map + /my-requests: công dân thấy trang công dân, nội bộ thấy bản đồ
+  // tác nghiệp / hàng đợi tiếp nhận tương ứng.
+  else if (route.name === "citizen-map")
+    content =
+      store.currentUser.role === "citizen" ? (
+        <CitizenMapPage navigate={navigate} />
+      ) : (
+        <OperationalMapWorkspacePage navigate={navigate} focus={null} />
+      );
+  else if (route.name === "citizen-requests")
+    content =
+      store.currentUser.role === "citizen" ? (
+        <CitizenRequestsPage />
+      ) : (
+        <IntakeQueuePage navigate={navigate} />
+      );
   else if (route.name === "analytics-operations")
     content = <OperationalAnalyticsPage navigate={navigate} />;
   else if (route.name === "analytics-incidents")
@@ -288,7 +317,7 @@ export default function App() {
       <AppHeader openMobile={() => setMobileOpen(true)} navigate={navigate} />
       <div className="app-body">
         <AppSidebar
-          active={activeNavigationLabel(route)}
+          active={activeNavigationLabel(route, store.currentUser.role)}
           onSelect={selectModule}
           mobileOpen={mobileOpen}
           closeMobile={() => setMobileOpen(false)}

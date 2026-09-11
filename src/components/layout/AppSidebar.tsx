@@ -22,6 +22,29 @@ export function AppSidebar({
   const unreadAlerts = store.alerts.filter(
     (alert) => alert.status === "Chưa đọc",
   ).length;
+  // Sự kiện bảo mật MỚI kể từ lần mở trang nhật ký gần nhất (mỗi tài khoản
+  // nhớ mốc riêng). Lần đầu chưa có mốc thì coi như đã đọc tới hiện tại để
+  // huy hiệu chỉ đếm sự kiện mới phát sinh, không đếm dữ liệu cũ.
+  const auditSeenAt = (() => {
+    const userId = store.currentUser?.id;
+    if (!userId) return 0;
+    try {
+      const raw = localStorage.getItem(`vndms_audit_seen_${userId}`);
+      if (!raw) {
+        const now = new Date().toISOString();
+        localStorage.setItem(`vndms_audit_seen_${userId}`, now);
+        return Date.parse(now);
+      }
+      const ms = Date.parse(raw);
+      return Number.isNaN(ms) ? 0 : ms;
+    } catch {
+      return 0;
+    }
+  })();
+  const unreadAudits = store.securityAuditEvents.filter((event) => {
+    const ms = Date.parse(event.timestamp);
+    return !Number.isNaN(ms) && ms > auditSeenAt;
+  }).length;
   const groups = visibleNavigationGroups(
     (permission) => store.can(permission),
     store.role,
@@ -106,9 +129,15 @@ export function AppSidebar({
                                   {unreadAlerts}
                                 </span>
                               )
-                            : item.badge && (
-                                <span className="nav-count">{item.badge}</span>
-                              )}
+                            : item.label === "Nhật ký bảo mật"
+                              ? unreadAudits > 0 && (
+                                  <span className="nav-count">
+                                    {unreadAudits}
+                                  </span>
+                                )
+                              : item.badge && (
+                                  <span className="nav-count">{item.badge}</span>
+                                )}
                         </button>
                       );
                     })}

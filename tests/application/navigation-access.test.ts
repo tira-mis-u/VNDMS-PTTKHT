@@ -80,28 +80,28 @@ test("mọi permission của mục điều hướng đều tồn tại trong ma 
 /* V2 (4 vai): các test theo vai cũ (commander/warehouse_staff/operator/relief_worker/
  * rescue_member) chuyển sang admin/disaster_officer/rescue_unit/citizen. */
 
-test("cán bộ PCTT nhìn thấy toàn bộ mục nghiệp vụ; admin thấy Phân quyền và chỉ đọc Phản ánh", () => {
+test("cán bộ PCTT nhìn thấy toàn bộ mục nghiệp vụ; Quản trị viên thấy Phân quyền và toàn quyền tiếp nhận", () => {
   const officer = visibleNavigationGroups(canFor("disaster_officer"));
   const officerLabels = officer.flatMap((group) => group.items.map((item) => item.label));
-  for (const label of ["Trung tâm điều hành", "Bản đồ tác nghiệp", "Cảnh báo", "Sự cố", "SOS", "Nhiệm vụ", "Đội cứu hộ", "Phản ánh", "Điểm sơ tán"])
+  for (const label of ["Trung tâm điều hành", "Bản đồ tác nghiệp", "Cảnh báo", "Sự cố", "Tiếp nhận yêu cầu", "Nhiệm vụ", "Đội cứu hộ", "Điểm sơ tán"])
     assert.ok(officerLabels.includes(label), `disaster_officer thiếu mục ${label}`);
   assert.ok(!officerLabels.includes("Phân quyền"), "cán bộ không có user_manage");
   const admin = visibleNavigationGroups(canFor("admin"));
   const adminLabels = admin.flatMap((group) => group.items.map((item) => item.label));
   assert.ok(adminLabels.includes("Phân quyền"));
   assert.ok(adminLabels.includes("Nhật ký bảo mật"));
-  // Admin đọc được danh sách Phản ánh (report_view) nhưng không có report_review.
-  assert.ok(adminLabels.includes("Phản ánh"));
-  assert.ok(!canFor("admin")("report_review"));
+  // Quản trị viên thấy hàng đợi tiếp nhận chung và có đủ quyền xử lý.
+  assert.ok(adminLabels.includes("Tiếp nhận yêu cầu"));
+  assert.ok(canFor("admin")("report_review"));
+  assert.ok(canFor("admin")("sos_verify"));
   assert.ok(adminLabels.includes("Điểm sơ tán"));
 });
 
 test("đơn vị cứu hộ chỉ thấy đúng các module được phân quyền", () => {
   const groups = visibleNavigationGroups(canFor("rescue_unit"));
   const labels = groups.flatMap((group) => group.items.map((item) => item.label));
-  for (const label of ["SOS", "Nhiệm vụ", "Đội cứu hộ", "Điểm sơ tán", "Cảnh báo"])
+  for (const label of ["Tiếp nhận yêu cầu", "Nhiệm vụ", "Đội cứu hộ", "Điểm sơ tán", "Cảnh báo"])
     assert.ok(labels.includes(label), `rescue_unit thiếu mục ${label}`);
-  assert.ok(!labels.includes("Phản ánh"));
   assert.ok(groups.every((group) => group.label !== "Quản trị"));
 });
 
@@ -109,7 +109,7 @@ test("công dân dùng nhóm điều hướng riêng của Cổng công dân", (
   const groups = visibleNavigationGroups(canFor("citizen"), "citizen");
   assert.deepEqual(
     groups.flatMap((group) => group.items.map((item) => item.label)),
-    ["Trang chủ & Bản đồ", "Điểm sơ tán an toàn", "Cảnh báo thiên tai", "Hồ sơ & Địa bàn"],
+    ["Trang chủ", "Bản đồ tác nghiệp", "Yêu cầu của tôi", "Điểm sơ tán an toàn", "Cảnh báo thiên tai", "Hồ sơ & Địa bàn"],
   );
 });
 
@@ -137,4 +137,25 @@ test("nhãn hai quần đảo do nền bản đồ quốc gia cung cấp, không
   assert.match(source, /Hoàng Sa/);
   assert.match(source, /Trường Sa/);
   assert.doesNotMatch(source, /VIETNAM_SEA_LABELS/);
+});
+
+test("cổng công dân tách trang riêng: /map và /my-requests", () => {
+  assert.deepEqual(parseRoute("/map"), { name: "citizen-map" });
+  assert.deepEqual(parseRoute("/my-requests"), { name: "citizen-requests" });
+  // Nhãn active trùng đúng mục sidebar công dân để mục được tô sáng.
+  assert.equal(activeNavigationLabel(parseRoute("/map"), "citizen"), "Bản đồ tác nghiệp");
+  assert.equal(activeNavigationLabel(parseRoute("/my-requests"), "citizen"), "Yêu cầu của tôi");
+  assert.equal(activeNavigationLabel(parseRoute("/my-requests"), "admin"), "Tiếp nhận yêu cầu");
+  assert.equal(activeNavigationLabel(parseRoute("/"), "citizen"), "Trang chủ");
+});
+
+test("highlight sidebar theo đúng vai: công dân và nội bộ khác nhãn", () => {
+  // Cùng một route nhưng nhãn active khác nhau theo vai.
+  assert.equal(activeNavigationLabel(parseRoute("/shelters"), "citizen"), "Điểm sơ tán an toàn");
+  assert.equal(activeNavigationLabel(parseRoute("/shelters")), "Điểm sơ tán");
+  assert.equal(activeNavigationLabel(parseRoute("/alerts"), "citizen"), "Cảnh báo thiên tai");
+  assert.equal(activeNavigationLabel(parseRoute("/alerts")), "Cảnh báo");
+  assert.equal(activeNavigationLabel(parseRoute("/profile"), "citizen"), "Hồ sơ & Địa bàn");
+  assert.equal(activeNavigationLabel(parseRoute("/profile")), "Hồ sơ cá nhân");
+  assert.equal(activeNavigationLabel(parseRoute("/")), "Trung tâm điều hành");
 });

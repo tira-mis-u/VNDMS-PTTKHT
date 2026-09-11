@@ -45,37 +45,29 @@ export function TeamListPage({
 }: {
   navigate: (path: string) => void;
 }) {
-  const { teams, tasks } = useOperationalState();
+  const { teams } = useOperationalState();
   const [tab, setTab] = useState<TeamListFilters["tab"]>("Tất cả");
   const [search, setSearch] = useState("");
-  const [status, setStatus] =
-    useState<TeamListFilters["status"]>("Tất cả trạng thái");
-  const [type, setType] = useState("Tất cả loại đội");
+  // TINH GIẢN dropdown (4→1): chỉ giữ Năng lực (kỹ năng điều phối cần).
+  // - Loại đội: trùng năng lực + đã hiện trên thẻ đội → bỏ.
+  // - Khu vực: ô tìm kiếm đã khớp khu vực → bỏ.
+  // - Phân công: suy được từ tab trạng thái (Đang điều động/thực hiện ⇔ có
+  //   nhiệm vụ) → bỏ. Giá trị mặc định vẫn truyền xuống bộ lọc.
   const [capability, setCapability] = useState("Tất cả năng lực");
-  const [region, setRegion] = useState("Tất cả khu vực");
-  const [assignment, setAssignment] = useState("Tất cả phân công");
   const [sort, setSort] = useState<TeamSortMode>("Ưu tiên vận hành");
-  const types = useMemo(
-    () => [...new Set(teams.map((team) => team.type))].sort(),
-    [teams],
-  );
-  const regions = useMemo(
-    () => [...new Set(teams.map((team) => team.region.split(",")[0]))].sort(),
-    [teams],
-  );
   const filtered = useMemo(
     () =>
       filterAndSortTeams(teams, {
         tab,
         search,
-        status,
-        type,
+        status: "Tất cả trạng thái",
+        type: "Tất cả loại đội",
         capability,
-        region,
-        assignment,
+        region: "Tất cả khu vực",
+        assignment: "Tất cả phân công",
         sort,
       }),
-    [teams, tab, search, status, type, capability, region, assignment, sort],
+    [teams, tab, search, capability, sort],
   );
   const ready = teams.filter((team) => team.status === "Sẵn sàng").length;
   const active = teams.filter((team) =>
@@ -143,35 +135,11 @@ export function TeamListPage({
               </button>
             )}
           </label>
-          <Select
-            value={status}
-            setValue={(value) => setStatus(value as TeamListFilters["status"])}
-            options={["Tất cả trạng thái", ...tabs.slice(1)]}
-          />
-          <Select
-            value={type}
-            setValue={setType}
-            options={["Tất cả loại đội", ...types]}
-          />
+
           <Select
             value={capability}
             setValue={setCapability}
             options={["Tất cả năng lực", ...capabilityOptions]}
-          />
-          <Select
-            value={region}
-            setValue={setRegion}
-            options={["Tất cả khu vực", ...regions]}
-          />
-          <Select
-            value={assignment}
-            setValue={setAssignment}
-            options={[
-              "Tất cả phân công",
-              "Đang có nhiệm vụ",
-              "Chưa có nhiệm vụ",
-              ...tasks.map((task) => task.id),
-            ]}
           />
           <label className="filter-select team-sort">
             <ArrowUpDown size={12} />

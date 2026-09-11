@@ -137,48 +137,6 @@
 }
 
 /* ─────────────── Citizen Interactive Map ─────────────── */
-.citizen-map-section {
-  overflow: hidden;
-}
-
-.citizen-map-wrapper {
-  position: relative;
-  width: 100%;
-  height: 560px;
-  min-height: 480px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1.5px solid #cbd5e1;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
-}
-
-html[data-theme="dark"] .citizen-map-wrapper {
-  border-color: #334155;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
-}
-
-.citizen-map-container {
-  width: 100%;
-  height: 100%;
-}
-
-.citizen-map-legend {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(6px);
-  padding: 6px 12px;
-  border-radius: 8px;
-  display: flex;
-  gap: 12px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #334155;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  z-index: 10;
-}
-
 /* Map Markers */
 .citizen-gps-marker {
   position: relative;
@@ -776,42 +734,6 @@ html[data-theme="dark"] .citizen-map-wrapper {
   100% { transform: scale(2); opacity: 0; }
 }
 
-.citizen-map-legend {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-wrap: wrap;
-  padding: 10px 14px;
-  background: var(--surface-card, #fff);
-  border-top: 1px solid var(--border-color, #e2e8f0);
-  font-size: 12.5px;
-  color: var(--text-secondary, #475467);
-}
-.citizen-map-legend > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.legend-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
-}
-.legend-dot.red {
-  background: #dc2626;
-  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
-}
-.legend-dot.green {
-  background: #16a34a;
-  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
-}
-.legend-dot.amber {
-  background: #d97706;
-  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
-}
-
 /* ─────────────── DARK MODE: Citizen Portal ─────────────── */
 html[data-theme="dark"] .citizen-stat-card {
   background: #1a2435;
@@ -906,11 +828,6 @@ html[data-theme="dark"] .citizen-guide-content h5 {
 html[data-theme="dark"] .citizen-guide-content p {
   color: #8da4be;
 }
-html[data-theme="dark"] .citizen-map-legend {
-  background: rgba(17, 24, 39, 0.92);
-  border-color: #253145;
-  color: #e2eaf5;
-}
 html[data-theme="dark"] .citizen-sos-modal {
   background: #1a2435;
   border: 1px solid #253145;
@@ -934,3 +851,128 @@ html[data-theme="dark"] .citizen-sos-modal-footer {
   border-top-color: #253145;
 }
 
+
+/* ── Thanh hoàn tác 5 giây sau SOS 1 chạm ── */
+.citizen-undo-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #7f1d1d;
+}
+.citizen-undo-track {
+  flex: 1;
+  height: 6px;
+  min-width: 60px;
+  background: #fee2e2;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.citizen-undo-track i {
+  display: block;
+  height: 100%;
+  background: #dc2626;
+  border-radius: 4px;
+  transition: width 1s linear;
+}
+.citizen-undo-bar button {
+  flex: none;
+  padding: 5px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.citizen-undo-bar button:hover {
+  background: #b91c1c;
+}
+
+/* ── Bộ lọc dòng thời gian SOS + phản ánh ── */
+.citizen-request-filters {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 0;
+  flex-wrap: wrap;
+}
+.citizen-request-filters button {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.citizen-request-filters button:hover {
+  border-color: #94a3b8;
+}
+.citizen-request-filters button.active {
+  background: #175cd3;
+  border-color: #175cd3;
+  color: #fff;
+}
+
+/* ── Thẻ điểm đang chọn trên bản đồ tác nghiệp (cổng dân) ── */
+.citizen-map-selected {
+  position: absolute;
+  top: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 140px);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid #dbe3ec;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
+  padding: 8px 8px 8px 14px;
+  font-size: 12.5px;
+  color: #0f172a;
+}
+.citizen-map-selected > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.citizen-map-selected small {
+  color: #64748b;
+}
+.citizen-map-selected button {
+  flex: none;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #175cd3;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.citizen-map-selected button:hover {
+  background: #eff6ff;
+}
+.citizen-map-selected button[aria-label="Đóng"] {
+  border: none;
+  color: #64748b;
+  padding: 5px;
+  display: grid;
+  place-items: center;
+}
+
+.citizen-legend-hint {
+  color: #64748b;
+  font-weight: 500;
+}

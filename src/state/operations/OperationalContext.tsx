@@ -98,6 +98,11 @@ import { createAuthorizedOperationalView } from "../../application/authorization
 import { createOperationalResourceContext } from "../../application/authorization/operationalResourceContext";
 import { createOperationalTimeline } from "../../application/operations/operationalTimeline";
 import { inMemoryOperationalRepository } from "../../infrastructure/persistence/inMemoryOperationalRepository";
+import {
+  appendSystemDutyEntry,
+  type DutyLink,
+} from "../../infrastructure/duty/dutyLogStore";
+import { roleLabels } from "../../domain/auth/labels";
 
 import { OperationalStateContext } from "./OperationalStateContext";
 import { useAtomicOperationalState } from "./useAtomicOperationalState";
@@ -172,6 +177,25 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       setShelterEvents,
       setSosEvents,
     });
+  /**
+   * SỔ TRỰC BAN TỰ GHI (system entries): mỗi thao tác nghiệp vụ lớn bên dưới
+   * để lại 1 dòng tóm tắt + link hồ sơ gốc. Bọc try/catch để sổ không bao giờ
+   * làm vỡ nghiệp vụ; thao tác sổ (ký nhận/thu hồi/đánh dấu) không gọi ngược
+   * lại đây nên không có vòng lặp.
+   */
+  const logDutySystem = (text: string, link?: DutyLink) => {
+    try {
+      appendSystemDutyEntry({
+        actor: actorName,
+        actorRole: roleLabels[role] ?? role,
+        actorId: currentUser?.id ?? undefined,
+        text,
+        ...(link ? { link } : {}),
+      });
+    } catch {
+      /* bỏ qua: sổ trực không được chặn nghiệp vụ */
+    }
+  };
   const syncIncidentProgress = (
     incidentId: string,
     nextTasks: IncidentTask[],
@@ -192,11 +216,15 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       { type: "Incident", id: "new", geographicScope: data.location.name },
     ]);
     const number =
-      Math.max(...incidents.map((item) => Number(item.id.split("-")[1]))) + 1;
+      Math.max(
+        240,
+        ...incidents.map((item) => Number(item.id.replace(/\D/g, "")) || 0),
+      ) + 1;
     const id = `INC-${String(number).padStart(4, "0")}`;
     const incident = createIncidentEntity(id, data, actorName, now());
     setIncidents((current) => [incident, ...current]);
     pushEvent(id, `Tạo sự cố ${id}: ${data.title}`, "created");
+    logDutySystem(`Tạo sự cố ${id}: ${data.title}`, { kind: "incident", id, code: id });
     return id;
   };
   const updateStatus = (id: string, status: IncidentStatus) => {
@@ -211,6 +239,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Chuyển trạng thái sự cố sang ${status.toUpperCase()}`,
       "status",
     );
+    logDutySystem(`Sự cố ${id} chuyển sang ${status}`, { kind: "incident", id, code: id });
   };
   const updateSeverity = (id: string, severity: IncidentSeverity) => {
     enforcePermission("severity", [incidentResource(id)]);
@@ -266,6 +295,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Điều phối ${teamId} tới sự cố ${incidentId}`,
       "dispatch",
     );
+    logDutySystem(`Điều đội ${teamId} tới sự cố ${incidentId}`, { kind: "incident", id: incidentId, code: incidentId });
   };
 
   const createTask = (data: NewTaskInput) => {
@@ -309,6 +339,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Tạo nhiệm vụ ${id}: ${data.title}${data.teamId ? ` và giao cho ${data.teamId}` : ""}`,
       "task",
     );
+    logDutySystem(`Tạo nhiệm vụ ${id}: ${data.title}${data.teamId ? `, giao cho ${data.teamId}` : ""}`, { kind: "task", id, code: id });
     return id;
   };
   const assignTaskTeam = (taskId: string, teamId: string) => {
@@ -369,6 +400,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Đã điều phối ${teamId} cho nhiệm vụ ${taskId}`,
       "task_assignment",
     );
+    logDutySystem(`Giao nhiệm vụ ${taskId} cho đội ${teamId}`, { kind: "task", id: taskId, code: taskId });
   };
 
   const transitionTask = (taskId: string, status: TaskStatus) => {
@@ -417,6 +449,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "task_status",
       task.teamId || actorName,
     );
+    logDutySystem(`${taskId} chuyển sang ${status}`, { kind: "task", id: taskId, code: taskId });
     const linkedSos = sosRequests.find((item) => item.linkedTaskId === taskId);
     if (linkedSos) {
       if (status === "Đang thực hiện") {
@@ -639,6 +672,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const message = `Điều phối ${teamId} thực hiện ${taskId} tới ${destination}${note ? `: ${note}` : ""}`;
     pushTeamEvent(teamId, message, "dispatch");
     pushEvent(incidentId, message, "team_dispatch");
+    logDutySystem(message, { kind: "task", id: taskId, code: taskId });
   };
   const updateTeamStatus = (teamId: string, status: TeamStatus) => {
     enforcePermission("team_update_status", [teamResource(teamId)]);
@@ -653,6 +687,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Chuyển trạng thái đội sang ${status.toUpperCase()}`,
       "status",
     );
+    logDutySystem(`Đội ${teamId} chuyển sang trạng thái ${status}`, { kind: "team", id: teamId, code: teamId });
   };
   const updateTeamLocation = (teamId: string, location: TeamLocation) => {
     enforcePermission("team_update_location", [teamResource(teamId)]);
@@ -754,6 +789,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Gỡ ${teamId} khỏi nhiệm vụ ${task.id}`,
       "team_release",
     );
+    logDutySystem(`Thu hồi đội ${teamId} khỏi nhiệm vụ ${task.id}`, { kind: "task", id: task.id, code: task.id });
     syncIncidentProgress(task.incidentId, next);
   };
   const updateShelterCapacity = (
@@ -810,6 +846,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       open ? "Mở điểm sơ tán để tiếp nhận" : "Tạm đóng điểm sơ tán",
       open ? "open" : "close",
     );
+    logDutySystem(`${open ? "Mở tiếp nhận" : "Tạm đóng"} điểm ${shelterId} — ${shelter.name}`, { kind: "shelter", id: shelterId, code: shelterId });
   };
   const updateShelterResources = (
     shelterId: string,
@@ -838,6 +875,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       current.map((item) => (item.id === sosId ? changed : item)),
     );
     pushSosEvent(sosId, "Hoàn tất xác minh thông tin SOS", "verified");
+    logDutySystem(`Xác minh SOS ${sosId}`, { kind: "sos", id: sosId, code: sosId });
   };
   const rejectSos = (sosId: string) => {
     enforcePermission("sos_verify", [sosResource(sosId)]);
@@ -848,6 +886,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       current.map((item) => (item.id === sosId ? changed : item)),
     );
     pushSosEvent(sosId, "Từ chối SOS sau xác minh", "rejected");
+    logDutySystem(`Từ chối SOS ${sosId} sau xác minh`, { kind: "sos", id: sosId, code: sosId });
   };
   const linkSosToIncident = (sosId: string, incidentId: string) => {
     enforcePermission("sos_assign_incident", [
@@ -867,6 +906,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Liên kết yêu cầu ${sosId}: ${sos.description}`,
       "sos",
     );
+    logDutySystem(`Gắn SOS ${sosId} vào sự cố ${incidentId}`, { kind: "sos", id: sosId, code: sosId });
   };
   const createIncidentFromSos = (sosId: string) => {
     enforcePermission("sos_assign_incident", [sosResource(sosId)]);
@@ -898,6 +938,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Sự cố được tạo từ ${sosId}, ${sos.peopleAtRisk} người gặp nguy hiểm`,
       "sos",
     );
+    logDutySystem(`Lập sự cố ${id} từ SOS ${sosId} (${sos.peopleAtRisk} người gặp nguy hiểm)`, { kind: "sos", id: sosId, code: sosId });
     return id;
   };
   const createRescueTaskFromSos = (sosId: string, teamId: string) => {
@@ -1014,6 +1055,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       current.map((item) => (item.id === sosId ? changed : item)),
     );
     pushSosEvent(sosId, `Đánh dấu đã xử lý: ${summary}`, "resolved");
+    logDutySystem(`Xử lý xong SOS ${sosId}`, { kind: "sos", id: sosId, code: sosId });
   };
   const cancelSos = (sosId: string) => {
     enforcePermission("sos_cancel", [sosResource(sosId)]);
@@ -1028,6 +1070,25 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "Hủy yêu cầu SOS theo quyết định điều hành",
       "cancelled",
     );
+    logDutySystem(`Hủy SOS ${sosId} theo quyết định điều hành`, { kind: "sos", id: sosId, code: sosId });
+  };
+  /**
+   * Người gửi rút lại chính SOS của mình (dùng cho nút Hoàn tác 5 giây sau
+   * SOS 1 chạm). Không yêu cầu quyền điều hành `sos_cancel` — thay vào đó
+   * ràng buộc chặt: đúng chủ sở hữu + trạng thái còn cho phép hủy. Khi SOS đã
+   * đi xa trong quy trình (đang cứu hộ/đã xử lý), transitionSos sẽ chặn và
+   * người gửi phải liên hệ cán bộ.
+   */
+  const cancelOwnSos = (sosId: string) => {
+    const sos = sosRequests.find((item) => item.id === sosId);
+    if (!sos) throw new Error("Không tìm thấy yêu cầu SOS vừa gửi.");
+    if (sos.ownerUserId == null || sos.ownerUserId !== currentUser?.id)
+      throw new Error("Chỉ người gửi mới được rút lại yêu cầu SOS này.");
+    const changed = transitionSos(sos, "Hủy", now());
+    setSosRequests((current) =>
+      current.map((item) => (item.id === sosId ? changed : item)),
+    );
+    pushSosEvent(sosId, "Người gửi đã rút lại yêu cầu SOS", "cancelled");
   };
   const closeSos = (sosId: string) => {
     enforcePermission("sos_close", [sosResource(sosId)]);
@@ -1038,6 +1099,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       current.map((item) => (item.id === sosId ? changed : item)),
     );
     pushSosEvent(sosId, "Xác nhận kết quả và đóng SOS", "closed");
+    logDutySystem(`Đóng SOS ${sosId}`, { kind: "sos", id: sosId, code: sosId });
   };
   /* ── V2: đơn vị báo xong → chờ xác nhận; cán bộ xác nhận; phân công lại có lý do ── */
   const reportTaskDone = (taskId: string, note: string) => {
@@ -1070,6 +1132,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "task_status",
       task.teamId || actorName,
     );
+    logDutySystem(`Đơn vị báo hoàn thành ${taskId} — chờ xác nhận`, { kind: "task", id: taskId, code: taskId });
   };
   const reviewTaskResult = (taskId: string, accepted: boolean, note: string) => {
     enforcePermission("task_review", taskResources(taskId), "xác nhận kết quả nhiệm vụ");
@@ -1109,6 +1172,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Cán bộ từ chối kết quả ${taskId}: ${note.trim()}`,
       "task_status",
     );
+    logDutySystem(`Cán bộ từ chối kết quả ${taskId}, yêu cầu làm tiếp`, { kind: "task", id: taskId, code: taskId });
   };
   const reassignTask = (taskId: string, teamId: string, reason: string) => {
     enforcePermission(
@@ -1172,6 +1236,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Phân công lại ${taskId}: ${task.teamId || "chưa có đội"} → ${teamId}. Lý do: ${reason.trim()}`,
       "task_assignment",
     );
+    logDutySystem(`Phân công lại ${taskId} sang đội ${teamId}`, { kind: "task", id: taskId, code: taskId });
   };
 
   /* ── V2: Phản ánh của người dân ── */
@@ -1294,6 +1359,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       current.map((a) => (a.id === alertId ? published : a)),
     );
     pushPublishedAlertEvent(alertId, "published", `Công bố cảnh báo tới người dân: ${alert.title}`);
+    logDutySystem(`Công bố cảnh báo tới người dân: ${alert.title}`);
   };
   const withdrawPublishedAlert = (alertId: string, reason: string) => {
     enforcePermission("published_alert_manage", [publishedAlertResource(alertId)], "thu hồi cảnh báo");
@@ -1348,6 +1414,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         ),
       );
     pushEvent(id, `Đóng sự cố ${id} và ghi nhận hoàn tất xử lý`, "closed");
+    logDutySystem(`Đóng sự cố ${id} và ghi nhận hoàn tất xử lý`, { kind: "incident", id, code: id });
   };
   const findDerivedAlert = (alertKey: string) => {
     const snapshot = currentOperationalSnapshot();
@@ -1503,6 +1570,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     resolveSos: atomic(resolveSos),
     closeSos: atomic(closeSos),
     cancelSos: atomic(cancelSos),
+    cancelOwnSos: atomic(cancelOwnSos),
     reportTaskDone: atomic(reportTaskDone),
     reviewTaskResult: atomic(reviewTaskResult),
     reassignTask: atomic(reassignTask),

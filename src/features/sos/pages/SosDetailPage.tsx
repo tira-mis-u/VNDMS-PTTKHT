@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, SectionHeader } from "@/components/ui";
+import { Badge, Button, SectionHeader , DetailMapWeather } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   SosActionDialogs,
@@ -347,7 +347,13 @@ export function SosDetailPage({
           <section className="incident-detail-section">
             <SectionHeader
               title="Bản đồ tác nghiệp"
-              description="SOS, sự cố, nhiệm vụ, đội cứu hộ và điểm sơ tán liên quan"
+              description={
+                <>
+                  SOS, sự cố, nhiệm vụ, đội cứu hộ và điểm sơ tán liên quan ·
+                  Bản đồ số NDAMapVN
+                  <DetailMapWeather center={sos.location.coordinates} />
+                </>
+              }
             />
             <Suspense
               fallback={

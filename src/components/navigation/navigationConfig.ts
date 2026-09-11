@@ -9,7 +9,6 @@ import {
   ListTodo,
   LockKeyhole,
   MapPinned,
-  MessageSquareWarning,
   Radio,
   Siren,
   UserRound,
@@ -52,13 +51,15 @@ export const navigationGroups: NavGroup[] = [
   {
     label: "Ứng phó",
     items: [
-      // SOS đứng đầu: đây là mục duy nhất mà độ trễ tính bằng mạng người.
-      { label: "SOS", icon: Radio, path: "/sos", permission: "sos_view" },
+      // SOS + Phản ánh GỘP MỘT hàng đợi tiếp nhận: cùng người gửi, cùng vị trí,
+      // cùng vòng đời tiếp nhận → xác minh → điều phối. Tách hai mục khiến cán
+      // bộ trực phải đảo qua lại và dễ sót phản ánh đang leo thang thành SOS.
+      // Đứng đầu nhóm vì đây là mục duy nhất mà độ trễ tính bằng mạng người.
+      { label: "Tiếp nhận yêu cầu", icon: Radio, path: "/sos", permission: "sos_view" },
       { label: "Nhiệm vụ", icon: ListTodo, badge: "9", path: "/tasks", permission: "task_view" },
       { label: "Đội cứu hộ", icon: LifeBuoy, path: "/teams", permission: "team_view" },
-      // Phản ánh của người dân: cán bộ đánh giá Hợp lệ / Không hợp lệ / Trùng.
-      { label: "Phản ánh", icon: MessageSquareWarning, path: "/reports", permission: "report_view" },
-      // Điểm sơ tán là danh mục tra cứu dùng chung (phân hệ Sơ tán đã gỡ ở V2).
+      // Điểm sơ tán GIỮ MỤC RIÊNG (quyết định sau tranh luận — xem ghi chú cuối
+      // file): nó là danh mục tra cứu, không phải hàng đợi cần xử lý.
       { label: "Điểm sơ tán", icon: Building2, path: "/shelters", permission: "shelter_view" },
     ],
   },
@@ -75,7 +76,9 @@ export const citizenNavigationGroups: NavGroup[] = [
   {
     label: "Cổng thông tin công dân",
     items: [
-      { label: "Trang chủ & Bản đồ", icon: Home, path: "/", permission: "sos_create" },
+      { label: "Trang chủ", icon: Home, path: "/", permission: "sos_create" },
+      { label: "Bản đồ tác nghiệp", icon: MapPinned, path: "/map", permission: "sos_create" },
+      { label: "Yêu cầu của tôi", icon: Radio, path: "/my-requests", permission: "sos_create" },
       { label: "Điểm sơ tán an toàn", icon: Building2, path: "/shelters", permission: "published_alert_view" },
       { label: "Cảnh báo thiên tai", icon: Bell, path: "/alerts", permission: "published_alert_view" },
       { label: "Hồ sơ & Địa bàn", icon: UserRound, path: "/profile", permission: "sos_create" },
@@ -131,3 +134,19 @@ export function landingPathForRole(
   if (preferred && can(preferred.permission)) return preferred.path;
   return firstAccessibleNavPath(can);
 }
+
+/**
+ * TRANH LUẬN: ĐIỂM SƠ TÁN ĐẶT Ở ĐÂU SAU KHI GỘP SOS + PHẢN ÁNH?
+ * ─────────────────────────────────────────────────────────────
+ * - Phương án A (gộp vào hàng đợi tiếp nhận): ❌ loại. Hàng đợi là nơi "việc
+ *   đang chờ xử lý" (tiếp nhận → xác minh → điều phối); điểm sơ tán là danh
+ *   mục tra cứu tĩnh (mở/đóng/sức chứa). Trộn hai nhịp khác nhau vào một danh
+ *   sách sẽ làm cán bộ lẫn lộn "cái nào cần làm ngay".
+ * - Phương án B (nhét vào Cổng công dân, bỏ mục riêng): ❌ loại. Lực lượng cần
+ *   tra cứu nhanh điểm còn chỗ khi điều phối SOS; giấu trong cổng dân thì mỗi
+ *   lần điều phối phải thoát vai — thêm thao tác trong lúc khẩn cấp.
+ * - Phương án C (giữ mục riêng trong nhóm Ứng phó): ✅ chọn. Điểm sơ tán là
+ *   "hạ tầng của pha ứng phó" (nơi nhận người từ SOS/nhiệm vụ), đặt cạnh Đội
+ *   cứu hộ là đúng nhịp công việc: tiếp nhận → giao nhiệm vụ → điều đội → đưa
+ *   dân tới điểm. Không thêm nhóm mới, không phá thói quen điều hướng cũ.
+ */

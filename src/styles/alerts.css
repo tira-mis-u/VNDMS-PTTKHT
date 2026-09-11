@@ -917,3 +917,52 @@ html[data-theme="dark"] .alert-popover-summary,
 html[data-theme="dark"] .alert-popover-card-footer { border-color: #344151; }
 html[data-theme="dark"] .alert-popover-summary b { color: #dfe7f1; }
 html[data-theme="dark"] .alert-popover-actions button { background: #202a37; border-color: #3a4859; color: #bdc8d6; }
+
+/* ── Hàng đợi tiếp nhận chung SOS + phản ánh ── */
+.intake-type-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 0;
+  flex-wrap: wrap;
+}
+.intake-type-tabs button {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.intake-type-tabs button:hover {
+  border-color: #94a3b8;
+}
+.intake-type-tabs button.active {
+  background: #175cd3;
+  border-color: #175cd3;
+  color: #fff;
+}
+.intake-open-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.intake-open-toggle input {
+  width: 15px;
+  height: 15px;
+  accent-color: #175cd3;
+  cursor: pointer;
+}
+.alert-row-meta .waiting {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b54708;
+  font-weight: 600;
+}

@@ -9,6 +9,10 @@ import {
   MAP_MIN_ZOOM,
   applyVietnameseMapLabels,
 } from "@/infrastructure/gis/mapConfig";
+import {
+  nearestDetailWeather,
+  type DetailWeather,
+} from "@/infrastructure/weather/detailMapTemperature";
 
 export type MapEngine = "google" | "maplibre";
 
@@ -89,8 +93,40 @@ export function useDualMapEngine(
   return { engine, ready, mlMapRef, gmapRef, zoomBy, flyTo };
 }
 
-/** Badge hiển thị loại engine bản đồ */
-export function MapEngineBadge(_props: { engine?: "google" | "maplibre" | null }) {
+/**
+ * Badge góc bản đồ: nguồn bản đồ + (nếu có tâm điểm) thời tiết trạm ECMWF
+ * gần nhất, TẤT CẢ GỘP TRÊN CÙNG 1 DÒNG, cùng kiểu pill trắng — không dùng
+ * huy hiệu neon rời che bản đồ.
+ */
+export function MapEngineBadge({
+  weatherCenter,
+}: {
+  engine?: "google" | "maplibre" | null;
+  /** Tâm điểm cần đọc thời tiết (bản đồ chi tiết SOS/Nhiệm vụ/Đội/Shelter). */
+  weatherCenter?: [number, number];
+}) {
+  const [wx, setWx] = useState<DetailWeather | null>(null);
+  const key = weatherCenter ? `${weatherCenter[0].toFixed(4)},${weatherCenter[1].toFixed(4)}` : "";
+
+  useEffect(() => {
+    if (!weatherCenter) {
+      setWx(null);
+      return;
+    }
+    let live = true;
+    nearestDetailWeather(weatherCenter)
+      .then((result) => {
+        if (live) setWx(result);
+      })
+      .catch(() => {
+        if (live) setWx(null);
+      });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
   return (
     <div style={{
       position: "absolute",
@@ -106,8 +142,15 @@ export function MapEngineBadge(_props: { engine?: "google" | "maplibre" | null }
       boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
       zIndex: 10,
       pointerEvents: "none",
+      whiteSpace: "nowrap",
     }}>
       Bản đồ số NDAMapVN
+      {wx && (
+        <span style={{ fontWeight: 500, color: "#64748b" }}>
+          {" "}· {wx.temperature.toFixed(1)}°C · {wx.rain.toFixed(1)} mm/h ·{" "}
+          {wx.windSpeed.toFixed(0)} km/h · {wx.stationName}
+        </span>
+      )}
     </div>
   );
 }

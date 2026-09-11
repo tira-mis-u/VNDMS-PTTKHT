@@ -116,26 +116,21 @@ test("progress và completion/release trả đội về khả dụng", () => {
   assert.equal(released.currentEvacuationOperation, null);
   assert.equal(released.status, "Sẵn sàng");
 });
-test("query ưu tiên quá tải và lọc theo occupancy/accessibility", () => {
+test("query ưu tiên quá tải, gần đầy lên đầu khi sắp xếp vận hành", () => {
   const rows = filterAndSortShelters(
     clone(initialShelters),
     clone(initialEvacuationOperations),
     {
       search: "",
       status: "Tất cả trạng thái",
-      readiness: "Tất cả mức sẵn sàng",
       area: "Tất cả khu vực",
-      capacity: "Tất cả sức chứa",
-      occupancy: "Từ 85%",
-      accessibility: "Tất cả khả năng tiếp cận",
       medical: "Tất cả năng lực y tế",
-      evacuation: "Tất cả hoạt động",
-      availability: "Tất cả khả dụng",
+      routedSos: "Tất cả SOS điều phối",
       sort: "Ưu tiên vận hành",
     },
   );
   assert.deepEqual(
-    rows.map((item) => item.id),
+    rows.slice(0, 2).map((item) => item.id),
     ["TH-03", "TH-02"],
   );
 });

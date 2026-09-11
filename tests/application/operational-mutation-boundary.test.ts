@@ -189,15 +189,15 @@ test("ownership failure causes no partial state (rescue_unit trên Task chưa ph
   );
 });
 
-test("admin không mặc định có quyền xác minh/điều phối/chấp nhận kết quả", () => {
+test("Quản trị viên có toàn quyền xác minh/điều phối/chấp nhận kết quả", () => {
   for (const permission of ["sos_verify", "sos_dispatch", "task_review", "report_review", "published_alert_manage"] as const)
     assert.equal(
       authorizeResources(user("thuantq"), {
         permission,
         resources: [{ type: "Task", id: TASK_ASSIGNED, assignedTeamId: TEAM }],
       }).allowed,
-      false,
-      `admin không được có ${permission}`,
+      true,
+      `Quản trị viên phải có ${permission}`,
     );
   assert.equal(
     authorizeResources(user("nguyentrung"), {

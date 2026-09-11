@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, Clock3, Route, Users } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import {
   getIncidentAnalytics,
   getTaskAnalytics,
@@ -41,7 +41,7 @@ export function IncidentAnalyticsPage({
         active="/analytics/incidents"
         navigate={navigate}
         title="Phân tích sự cố & đáp ứng"
-        description="Thời gian phản ứng được tính từ mốc thời gian sự cố, nhật ký và nhiệm vụ đã ghi nhận."
+        description="Các mốc thời gian lấy từ nhật ký xử lý của từng sự cố và nhiệm vụ."
       />
       <AnalyticsFilters
         value={filter}
@@ -72,20 +72,20 @@ export function IncidentAnalyticsPage({
               : undefined
           }
           basis="Dẫn xuất"
-          description="Tạo sự cố → ghi nhận đánh giá hoặc xác nhận"
+          description="Từ lúc tạo sự cố đến khi có người xác nhận"
         />
         <MetricCard
           label="Điều phối trung bình"
           value={incident.averageDispatchMinutes ?? "Chưa đủ dữ liệu"}
           unit={incident.averageDispatchMinutes !== null ? " phút" : undefined}
           basis="Dẫn xuất"
-          description="Xác nhận → event điều phối đầu tiên"
+          description="Từ lúc xác nhận đến khi điều đội đầu tiên"
         />
         <MetricCard
           label="Sự cố quá hạn"
           value={incident.overdueCount}
           basis="Dẫn xuất"
-          description="Đang mở quá ngưỡng 120 phút"
+          description="Sự cố đã mở quá 2 giờ mà chưa đóng"
         />
         <MetricCard
           label="Tỷ lệ nhiệm vụ hoàn thành"
@@ -108,7 +108,7 @@ export function IncidentAnalyticsPage({
       </div>
       <Section
         title="Thời gian xử lý sự cố"
-        description="Dấu 'Dẫn xuất' cho biết số liệu được tính từ nhật ký; dấu thời gian thiếu được hiển thị ‘—’."
+        description="Số có dấu “Dẫn xuất” là số hệ thống tự tính từ nhật ký; ô nào thiếu dữ liệu hiện “—”."
         action={<Basis value="Dẫn xuất" />}
       >
         <div className="analytics-table-wrap">
@@ -147,7 +147,7 @@ export function IncidentAnalyticsPage({
                     {item.overdue ? (
                       <StatusPill value="Quá hạn" />
                     ) : (
-                      <span className="muted-cell">Trong ngưỡng</span>
+                      <span className="muted-cell">Đúng hạn</span>
                     )}
                   </td>
                 </tr>
@@ -156,63 +156,25 @@ export function IncidentAnalyticsPage({
           </table>
         </div>
       </Section>
-      <div className="analytics-layout-2">
-        <Section
-          title="Khối lượng nhiệm vụ theo sự cố"
-          description="Mở chi tiết sự cố trong dữ liệu nghiệp vụ."
-        >
-          <div className="analytics-list-rows">
-            {task.byIncident.map((item) => (
-              <button
-                key={item.incidentId}
-                onClick={() => navigate(`/incidents/${item.incidentId}`)}
-              >
-                <div>
-                  <b>
-                    {item.code} · {item.title}
-                  </b>
-                  <span>{item.total} nhiệm vụ</span>
-                </div>
-                <span>
-                  <strong>{item.open}</strong> đang mở
-                </span>
-                <span className={item.overdue ? "danger-text" : ""}>
-                  <strong>{item.overdue}</strong> quá hạn
-                </span>
-              </button>
-            ))}
-          </div>
-        </Section>
-        <Section
-          title="Phân bố tiến độ nhiệm vụ"
-          description="Giá trị tiến độ ghi nhận trên nhiệm vụ."
-        >
-          <Distribution rows={task.progressBands} />
-          <div className="analytics-inline-facts">
-            <span>
-              <Users size={15} />
-              <b>{task.unassignedCount}</b> chưa giao đội
-            </span>
-            <span>
-              <Clock3 size={15} />
-              <b>{task.averageCompletionMinutes ?? "—"}</b> phút hoàn thành TB
-            </span>
-            <span>
-              <Route size={15} />
-              <b>{task.dispatchToStartMinutes ?? "—"}</b> phút tới cập nhật đầu
-              tiên
-            </span>
-          </div>
-        </Section>
-      </div>
+      <Section
+        title="Phân bố tiến độ nhiệm vụ"
+        description="Theo % tiến độ từng nhiệm vụ báo về. Khối lượng nhiệm vụ theo từng sự cố xem ở tab “Nguồn lực”."
+        action={
+          <EntityLink path="/analytics/resources" navigate={navigate}>
+            Sang tab Nguồn lực
+          </EntityLink>
+        }
+      >
+        <Distribution rows={task.progressBands} />
+      </Section>
       {incident.overdueCount > 0 && (
         <div className="analytics-method-note">
           <AlertTriangle size={16} />
           <div>
             <b>Lưu ý phương pháp</b>
             <p>
-              Ngưỡng quá hạn sự cố trong phân tích là quy ước báo cáo 120 phút,
-              không thay đổi vòng đời hay trạng thái sự cố.
+              Trang này tạm coi sự cố mở quá 2 giờ là quá hạn để tiện theo dõi;
+              cách tính này không làm đổi trạng thái thật của sự cố.
             </p>
           </div>
         </div>

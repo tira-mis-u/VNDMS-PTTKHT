@@ -397,7 +397,7 @@ test("Xử lý SOS: verify SOS chưa xác minh; điều đội theo lifecycle; t
 
 /* --- Authorization giống hệt boundary (cùng resource context với provider) --- */
 
-test("cán bộ PCTT được phép; admin/công dân bị từ chối đúng resource", () => {
+test("cán bộ PCTT và Quản trị viên được phép; công dân bị từ chối đúng resource", () => {
   const snapshot = source();
   const resources = createOperationalResourceContext(() => snapshot);
   const officer = account("nguyentrung");
@@ -416,8 +416,8 @@ test("cán bộ PCTT được phép; admin/công dân bị từ chối đúng re
     );
     assert.equal(
       authorizeResources(admin, { permission, resources: [resource as never] }).allowed,
-      false,
-      `admin V2 không mặc định có ${permission}`,
+      true,
+      `Quản trị viên phải có ${permission}`,
     );
   }
   const citizen = { ...officer, id: "USR-CITIZEN-TEST", role: "citizen" as const };

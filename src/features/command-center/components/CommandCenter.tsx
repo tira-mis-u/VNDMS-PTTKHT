@@ -11,7 +11,6 @@ import { ActionDialog } from "./ActionDialog";
 import { ActionQueue } from "./ActionQueue";
 import { DutyLog } from "./DutyLog";
 import { DetailDrawer } from "./DetailDrawer";
-import { OperationalAlerts } from "./OperationalAlerts";
 import { CommandCenterMap } from "./CommandCenterMap";
 import { QuickActions } from "./QuickActions";
 import { SituationSummary } from "./SituationSummary";
@@ -91,9 +90,8 @@ export function CommandCenter({
           onQuickAction={setDialogAction}
           onNavigate={navigate}
         />
-        <OperationalAlerts navigate={navigate} />
         <CommandCenterMap onNavigate={navigate} />
-        <DutyLog />
+        <DutyLog navigate={navigate} />
       </div>
       <DetailDrawer
         selected={selected}

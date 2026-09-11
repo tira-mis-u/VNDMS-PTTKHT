@@ -616,6 +616,8 @@
   .sos-context {
     grid-area: context;
     position: static;
+    max-height: none;
+    overflow-y: visible;
   }
   .sos-link-grid {
     grid-template-columns: 1fr 1fr;

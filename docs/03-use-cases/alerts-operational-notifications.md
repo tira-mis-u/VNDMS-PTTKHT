@@ -6,7 +6,7 @@ Trung tâm thông báo tác nghiệp của VNDMS. Mọi cảnh báo được **s
 
 | Actor | Quyền liên quan | Ghi chú |
 |---|---|---|
-| Quản trị hệ thống (admin) | `alert_view` | Toàn quốc, chỉ xem |
+| Quản trị viên (admin) | `alert_view` | Toàn quốc, chỉ xem |
 | Cán bộ PCTT (disaster_officer) | `alert_view`, `alert_acknowledge`, `published_alert_manage` | Toàn quốc |
 | Cán bộ địa phương (local_officer) | `alert_view`, `alert_acknowledge` | Chỉ trong phạm vi địa lý |
 | Đơn vị cứu hộ (rescue_unit) | `alert_view`, `alert_acknowledge` | Mọi đội |

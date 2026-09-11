@@ -17,6 +17,7 @@ import {
   type ShelterFilters,
 } from "@/application/shelters/shelterQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
+import { defaultScopedArea, scopeAreaOptions } from "@/application/areas/scopedAreas";
 import { ShelterSectionTabs } from "@/components/navigation/GroupedSectionTabs";
 import { Badge, PageSectionHeader, Progress, Input } from "@/components/ui";
 const tone = (status: string) =>
@@ -57,18 +58,23 @@ export function ShelterListPage({
 }: {
   navigate: (path: string) => void;
 }) {
-  const { shelters, sosRequests } = useOperationalState();
+  const { shelters, sosRequests, currentUser } = useOperationalState();
+  // Dropdown khu vực khoanh theo địa bàn trong hồ sơ (vd ở Tây Hồ thì chỉ
+  // liệt kê khu vực thuộc Tây Hồ); địa bàn chỉ còn 1 khu vực thì chọn sẵn.
+  const scopedAreas = useMemo(
+    () =>
+      scopeAreaOptions(
+        [...new Set(shelters.map((shelter) => shelter.administrativeArea.split(",")[0]))],
+        currentUser?.geographicScope,
+      ),
+    [shelters, currentUser?.geographicScope],
+  );
   const [filters, setFilters] = useState<ShelterFilters>({
     search: "",
     status: "Tất cả trạng thái",
-    readiness: "Tất cả mức sẵn sàng",
-    area: "Tất cả khu vực",
-    capacity: "Tất cả sức chứa",
-    occupancy: "Tất cả mức sử dụng",
-    accessibility: "Tất cả khả năng tiếp cận",
+    area: defaultScopedArea(scopedAreas),
     medical: "Tất cả năng lực y tế",
     routedSos: "Tất cả SOS điều phối",
-    availability: "Tất cả khả dụng",
     sort: "Ưu tiên vận hành",
   });
   const patch = <K extends keyof ShelterFilters>(
@@ -89,11 +95,7 @@ export function ShelterListPage({
     (sum, shelter) => sum + calculateShelterCapacity(shelter).availableCapacity,
     0,
   );
-  const areas = [
-    ...new Set(
-      shelters.map((shelter) => shelter.administrativeArea.split(",")[0]),
-    ),
-  ];
+  const areas = scopedAreas;
   return (
     <div className="workspace-content shelters-page">
       <PageSectionHeader
@@ -153,18 +155,7 @@ export function ShelterListPage({
               "Đang tiếp nhận",
               "Gần đầy",
               "Quá tải",
-              "Tạm đóng",
-              "Không thể tiếp cận",
-            ]}
-          />
-          <Select
-            value={filters.readiness}
-            onChange={(value) => patch("readiness", value)}
-            options={[
-              "Tất cả mức sẵn sàng",
-              "Sẵn sàng",
-              "Hạn chế",
-              "Không sẵn sàng",
+              "Ngưng tiếp nhận",
             ]}
           />
           <Select
@@ -172,46 +163,10 @@ export function ShelterListPage({
             onChange={(value) => patch("area", value)}
             options={["Tất cả khu vực", ...areas]}
           />
-          <Select
-            value={filters.capacity}
-            onChange={(value) => patch("capacity", value)}
-            options={["Tất cả sức chứa", "Từ 500 chỗ", "Dưới 500 chỗ"]}
-          />
-          <Select
-            value={filters.occupancy}
-            onChange={(value) => patch("occupancy", value)}
-            options={["Tất cả mức sử dụng", "Từ 85%", "50–84%", "Dưới 50%"]}
-          />
-          <Select
-            value={filters.accessibility}
-            onChange={(value) => patch("accessibility", value)}
-            options={[
-              "Tất cả khả năng tiếp cận",
-              "Tiếp cận bình thường",
-              "Tiếp cận hạn chế",
-              "Không thể tiếp cận",
-            ]}
-          />
-          <Select
-            value={filters.medical}
-            onChange={(value) => patch("medical", value)}
-            options={[
-              "Tất cả năng lực y tế",
-              "Có đội y tế",
-              "Sơ cứu cơ bản",
-              "Không có",
-            ]}
-          />
-          <Select
-            value={filters.routedSos}
-            onChange={(value) => patch("routedSos", value)}
-            options={["Tất cả SOS điều phối", "Có SOS điều phối", "Không có SOS"]}
-          />
-          <Select
-            value={filters.availability}
-            onChange={(value) => patch("availability", value)}
-            options={["Tất cả khả dụng", "Còn chỗ", "Đã hết chỗ"]}
-          />
+          {/* TINH GIẢN dropdown (4→2): bỏ "Năng lực y tế" (đã hiện ở cột Điều
+              kiện) và "SOS điều phối" (đã hiện ở cột SOS điều phối + dải tóm
+              tắt) — chỉ giữ Trạng thái + Khu vực. Giá trị mặc định giữ trong
+              state để bộ lọc không đổi. */}
           <label className="filter-select shelter-sort">
             <ArrowUpDown size={12} />
             <UiSelect

@@ -153,8 +153,8 @@ test("acknowledge cần alert_acknowledge + quyền đọc nguồn", () => {
     resources: [alertAuthorizationResource(alert)],
   });
   assert.equal(deniedBySourcePermission.allowed, false);
-  // Admin V2 không có alert_acknowledge; cán bộ và đơn vị cứu hộ có.
-  assert.equal(hasPermission("admin", "alert_acknowledge"), false);
+  // Quản trị viên, cán bộ và đơn vị cứu hộ đều có alert_acknowledge.
+  assert.equal(hasPermission("admin", "alert_acknowledge"), true);
   assert.equal(hasPermission("disaster_officer", "alert_acknowledge"), true);
   assert.equal(hasPermission("rescue_unit", "alert_acknowledge"), true);
 });

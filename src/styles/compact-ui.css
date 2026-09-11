@@ -937,6 +937,14 @@ button { font-size: var(--type-control); }
   }
 }
 
+/* Ô chọn ngày dùng chung: icon lịch của trình duyệt luôn thấy được. */
+input[type="date"].ui-input {
+  min-height: var(--control-height, 36px);
+}
+html[data-theme="dark"] input[type="date"].ui-input {
+  color-scheme: dark;
+}
+
 /* Shared accessible custom Select. */
 .ui-select {
   position: relative;
@@ -2257,37 +2265,23 @@ nhảy sang phải.
   border-right: 1px solid var(--border-subtle, #e4e7ec);
 }
 
-/* Dòng đếm cảnh báo ở Trung tâm điều hành (thay bảng liệt kê 5-của-44). */
-.cc-alert-counter {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* ================================================================
+   Ô tìm kiếm chiếm trọn 1 hàng riêng trên mọi trang danh sách.
+   Các công cụ lọc (dropdown, checkbox) rớt xuống hàng dưới — giao diện
+   thoáng và dễ bấm hơn trên cả desktop lẫn mobile.
+   ================================================================ */
+.incident-filters > .incident-search,
+.task-filters > .incident-search,
+.team-filters > .incident-search,
+.sos-filters > .incident-search,
+.relief-filters > .incident-search,
+.shelter-filters > .incident-search,
+.evac-toolbar > .incident-search,
+.analytics-filters > .incident-search,
+.alerts-toolbar > .incident-search,
+.alerts-toolbar > .alerts-search,
+.admin-filters > .input-with-icon {
+  flex: 1 1 100%;
   width: 100%;
-  padding: 9px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-  font-size: 12.5px;
-  color: #334155;
-  text-align: left;
-  cursor: pointer;
-}
-.cc-alert-counter:hover { border-color: #94a3b8; background: #f8fafc; }
-.cc-alert-counter-main { flex: 0 0 auto; }
-.cc-alert-counter-top {
-  flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding-left: 12px;
-  border-left: 1px solid #e2e8f0;
-  color: #64748b;
-}
-.cc-alert-counter-top.cc-severity-red { color: #b91c1c; font-weight: 600; }
-.cc-alert-counter-top.cc-severity-amber { color: #b45309; font-weight: 600; }
-html[data-theme="dark"] .cc-alert-counter {
-  background: #1e293b;
-  border-color: #334155;
-  color: #e2e8f0;
 }

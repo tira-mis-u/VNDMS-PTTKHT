@@ -63,14 +63,14 @@ Thanh điều hướng gom theo **nhịp công việc**, không theo sơ đồ t
 | | Cảnh báo | Cảnh báo **suy ra từ dữ liệu vận hành**, không phải bảng tin nhập tay |
 | | Sự cố | Vòng đời sự cố, mức độ, nhiệm vụ/đội liên quan, điều kiện đóng sự cố |
 | | Phân tích tác nghiệp | 4 tab: vận hành · nguồn lực · sự cố · báo cáo (có nút in) |
-| **Ứng phó** | SOS | Tiếp nhận, xác minh, phân loại ưu tiên, sinh nhiệm vụ, điều đội, kết thúc |
+| **Ứng phó** | Tiếp nhận yêu cầu | Một hàng đợi tiếp nhận chung: SOS (xác minh, phân loại ưu tiên, sinh nhiệm vụ, điều đội) + phản ánh của dân (Hợp lệ / Không hợp lệ / Trùng) |
 | | Nhiệm vụ | Giao – nhận – bắt đầu – cập nhật hiện trường – **đơn vị báo xong** – **cán bộ xác nhận/từ chối**; phân công lại phải có lý do và lưu lịch sử |
 | | Đội cứu hộ | Trạng thái, sẵn sàng, thành viên, vị trí |
-| | Phản ánh | Phản ánh của người dân (ngập, sạt lở, hư hỏng…) → cán bộ tiếp nhận / chuyển SOS / trùng / từ chối |
+
 | | Điểm sơ tán | Danh mục tra cứu điểm sơ tán (sức chứa, khả năng tiếp cận); không còn lệnh sơ tán |
 | **Quản trị** | Phân quyền · Nhật ký bảo mật | Ma trận quyền theo 4 vai, nhật ký migration vai trò và vết kiểm tra bảo mật |
 
-Ngoài sidebar còn có **Cổng công dân** (giao diện cho vai `citizen`: bản đồ, thời tiết, lấy vị trí, chạm SOS, theo dõi SOS của mình, gửi phản ánh, tra điểm sơ tán, cảnh báo đã công bố). Trang **Cảnh báo** có thêm khối **Cảnh báo công bố** (nháp → công bố → thu hồi) do cán bộ PCTT quản lý.
+Ngoài sidebar còn có **Cổng công dân** gồm 3 trang riêng (vai `citizen`): **Trang chủ** (`/`: SOS 1 chạm kèm hoàn tác 5 giây, thống kê, thời tiết, cảnh báo công bố, điểm sơ tán, đường dây nóng), **Bản đồ tác nghiệp** (`/map`: đúng bản đồ tác nghiệp của lực lượng nhưng chỉ thấy SOS của chính mình + điểm sơ tán, lấy vị trí GPS/chạm bản đồ) và **Yêu cầu của tôi** (`/my-requests`: dòng thời gian chung các yêu cầu của mình). Vị trí đã lấy được giữ nguyên khi chuyển trang. Công dân không thấy định vị live của người dùng khác (trừ ping được chia sẻ đích danh cho họ). Dropdown khu vực khoanh theo địa bàn trong hồ sơ; ô tìm kiếm chiếm trọn 1 hàng riêng trên mọi trang danh sách; nút **Phát định vị** mở modal chỉ định ai được thấy vị trí (tìm theo họ tên/tên đăng nhập). Trang **Cảnh báo** có thêm khối **Cảnh báo công bố** (nháp → công bố → thu hồi) do cán bộ PCTT quản lý.
 
 Các phân hệ **Cứu trợ/Kho/Chuyến hàng, Phương án ứng phó, Phục hồi & thẩm định, Mô phỏng, Trợ lý AI, Lệnh sơ tán** đã được **xóa thật** khỏi mã nguồn ở V2 (route, menu, form, command, seed, test), không chỉ ẩn.
 
@@ -125,7 +125,7 @@ Bốn vai: `admin`, `disaster_officer`, `rescue_unit`, `citizen`. Hệ thống k
 
 | Vai | Được | Không được |
 | --- | --- | --- |
-| `admin` | Quản lý người dùng, nhật ký bảo mật, xem toàn bộ dữ liệu tác nghiệp, quản lý đội/điểm sơ tán, gửi SOS/phản ánh | **Không mặc định** có quyền xác minh SOS, điều phối, chấp nhận kết quả nhiệm vụ, công bố cảnh báo |
+| `admin` (Quản trị viên) | **Toàn quyền**: mọi nghiệp vụ của cán bộ PCTT (xác minh/điều phối SOS, giao/duyệt nhiệm vụ, duyệt phản ánh, công bố cảnh báo…) + quản lý người dùng, phân quyền, nhật ký bảo mật, trên phạm vi toàn quốc | Không có — điều khiển toàn bộ hệ thống |
 | `disaster_officer` | Toàn bộ nghiệp vụ: tạo sự cố, xác minh/điều phối SOS, giao/phân công lại/xác nhận nhiệm vụ, duyệt phản ánh, công bố/thu hồi cảnh báo; xem nhật ký bảo mật (giữ từ vai `operator` cũ) | Quản lý người dùng |
 | `rescue_unit` | Nhận/bắt đầu/cập nhật/báo xong nhiệm vụ, cập nhật trạng thái & vị trí mọi đội, cập nhật hiện trường SOS, xác nhận cảnh báo tác nghiệp | Giao việc, chấp nhận kết quả, đóng SOS, công bố cảnh báo |
 | `citizen` | Gửi & theo dõi SOS của mình, gửi & theo dõi phản ánh của mình, xem cảnh báo công bố, điểm sơ tán, bản đồ/thời tiết/vị trí | Mọi dữ liệu tác nghiệp nội bộ |
@@ -174,7 +174,7 @@ Mật khẩu dùng chung: **`VNDMS@2026`**.
 
 | Tên đăng nhập | Họ tên | Vai trò | Phạm vi / ràng buộc |
 | --- | --- | --- | --- |
-| `thuantq` (`USR-CMD-001`) | Trần Quốc Thuận | `admin` — Quản trị hệ thống | Toàn quốc |
+| `thuantq` (`USR-CMD-001`) | Trần Quốc Thuận | `admin` — Quản trị viên | Toàn quốc |
 | `nguyentrung` (`USR-OPS-001`) | Nguyễn Quốc Trung | `disaster_officer` — Cán bộ PCTT | Toàn quốc |
 | `phamhieu` (`USR-RSL-001`) | Phạm Trung Hiếu | `rescue_unit` — Đơn vị cứu hộ (chỉ huy toàn bộ các đội) | Toàn quốc |
 | `phamdam` (`USR-LOC-001`) | Phạm Văn Đam | `citizen` — Công dân | Quận Tây Hồ, Hà Nội |

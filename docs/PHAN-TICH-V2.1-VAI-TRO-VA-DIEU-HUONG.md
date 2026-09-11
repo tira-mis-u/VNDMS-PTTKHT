@@ -15,12 +15,12 @@ Người dân phát hiện ──▶ Cán bộ PCTT quyết định ──▶ Đ
     (citizen)              (disaster_officer)           (rescue_unit)              (disaster_officer)
                                     ▲
                                     │ vận hành nền tảng, không can thiệp nghiệp vụ
-                              Quản trị hệ thống (admin)
+                              Quản trị viên (admin)
 ```
 
 Nguyên tắc phân tách: **ai tạo tín hiệu / ai ra quyết định / ai thực thi / ai giữ hệ thống chạy**. Không vai nào vừa ra quyết định vừa tự xác nhận kết quả của mình.
 
-### 1.2 Quản trị hệ thống (`admin`) — "giữ hệ thống chạy"
+### 1.2 Quản trị viên (`admin`) — "giữ hệ thống chạy"
 
 | Khía cạnh | Nội dung |
 | --- | --- |

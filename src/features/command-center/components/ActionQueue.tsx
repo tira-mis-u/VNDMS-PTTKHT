@@ -1,4 +1,4 @@
-import { ChevronRight, Clock3, MapPin } from "lucide-react";
+import { Clock3, MapPin } from "lucide-react";
 import {
   getCommandCenterActionQueue,
   type CommandCenterEntityRef,
@@ -105,14 +105,6 @@ export function ActionQueue({
             <div className="cc-action-buttons">
               <Button size="sm" onClick={() => open(item)}>
                 {item.action}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                title="Xem chi tiết"
-                onClick={() => open(item)}
-              >
-                <ChevronRight size={17} />
               </Button>
             </div>
           </article>

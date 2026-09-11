@@ -127,14 +127,8 @@ function PermissionNote({ value }: { value: boolean }) {
   );
 }
 
-/** Meta bắt buộc của một thao tác điều hành: actor, phạm vi tài khoản, lệnh canonical. */
-function ActionMeta({
-  command,
-  scope,
-}: {
-  command: string;
-  scope?: string;
-}) {
+/** Meta bắt buộc của một thao tác điều hành: người thực hiện và phạm vi phụ trách. */
+function ActionMeta({ scope }: { scope?: string }) {
   const store = useOperationalState();
   const user = store.currentUser;
   return (
@@ -142,12 +136,12 @@ function ActionMeta({
       <div>
         <dt>Người thực hiện</dt>
         <dd>
-          {user ? `${user.displayName} (${roleLabels[user.role]})` : "—"}
+          {user ? `${user.displayName} (${roleLabels[user.role]})` : "Chưa cập nhật"}
         </dd>
       </div>
       <div>
         <dt>Phạm vi tài khoản</dt>
-        <dd>{user?.geographicScope.name ?? "—"}</dd>
+        <dd>{user?.geographicScope.name ?? "Chưa cập nhật"}</dd>
       </div>
       {scope && (
         <div>
@@ -155,24 +149,16 @@ function ActionMeta({
           <dd>{scope}</dd>
         </div>
       )}
-      <div>
-        <dt>Lệnh nghiệp vụ chính thức</dt>
-        <dd>
-          <code>{command}</code> · qua OperationalMutationBoundary
-        </dd>
-      </div>
     </dl>
   );
 }
 
 function OutcomeView({
   outcome,
-  command,
   navigate,
   onClose,
 }: {
   outcome: CommandCenterActionOutcome;
-  command: string;
   navigate: (path: string) => void;
   onClose: () => void;
 }) {
@@ -204,9 +190,9 @@ function OutcomeView({
         <CheckCircle2 size={26} />
         <p>{outcome.message}</p>
         <small>
-          Thay đổi đã được ghi vào dữ liệu nghiệp vụ chính thức qua <code>{command}</code>;
-          nhật ký được lưu theo quy trình hiện hữu và mọi màn hình liên quan
-          tự động cập nhật.
+          Thay đổi đã được ghi vào dữ liệu nghiệp vụ chính thức; nhật ký được
+          lưu theo quy trình hiện hữu và mọi màn hình liên quan tự động cập
+          nhật.
         </small>
       </div>
     </Frame>
@@ -235,7 +221,6 @@ function CreateIncidentAction({
     return (
       <OutcomeView
         outcome={outcome}
-        command="createIncident"
         navigate={navigate}
         onClose={onClose}
       />
@@ -338,7 +323,7 @@ function CreateIncidentAction({
           onChange={(event) => setDescription(event.target.value)}
         />
       </label>
-      <ActionMeta command="createIncident" scope={area.trim() || undefined} />
+      <ActionMeta scope={area.trim() || undefined} />
       <PermissionNote value={canCreate} />
       <ErrorText value={error} />
     </Frame>
@@ -376,7 +361,6 @@ function CreateTaskAction({
     return (
       <OutcomeView
         outcome={outcome}
-        command="createTask"
         navigate={navigate}
         onClose={onClose}
       />
@@ -531,7 +515,6 @@ function CreateTaskAction({
         />
       </label>
       <ActionMeta
-        command="createTask"
         scope={incident?.affectedArea || incident?.location.name}
       />
       <PermissionNote value={canCreateTask} />
@@ -553,7 +536,6 @@ function AcknowledgeAlertAction({ onClose }: { onClose: () => void }) {
     return (
       <OutcomeView
         outcome={outcome}
-        command="acknowledgeAlert"
         navigate={() => {}}
         onClose={onClose}
       />
@@ -649,7 +631,6 @@ function AcknowledgeAlertAction({ onClose }: { onClose: () => void }) {
         </div>
       )}
       <ActionMeta
-        command="acknowledgeAlert"
         scope={alert?.geographicScope || undefined}
       />
       <PermissionNote value={canAcknowledge} />
@@ -690,7 +671,6 @@ function DispatchTeamAction({
     return (
       <OutcomeView
         outcome={outcome}
-        command={mode === "dispatch" ? "dispatchTeam" : "releaseTeamFromTask"}
         navigate={navigate}
         onClose={onClose}
       />
@@ -800,7 +780,34 @@ function DispatchTeamAction({
             description={
               !incidents.length
                 ? "Trong phạm vi phân quyền hiện tại không có sự cố nào chưa đóng."
-                : "Tất cả đội trong phạm vi hiện tại đang bận. Hãy thu hồi đội đang giữ nhiệm vụ ở hành động “Thu hồi đội” trước khi điều phối lại."
+                : recalls.length
+                  ? "Tất cả đội trong phạm vi hiện tại đang bận. Hãy thu hồi đội đang giữ nhiệm vụ ở hành động “Thu hồi đội” trước khi điều phối lại."
+                  : "Tất cả đội đang thực hiện nhiệm vụ dở dang nên chưa thu hồi được. Hoàn thành hoặc báo xong nhiệm vụ để giải phóng đội, hoặc điều chỉnh trạng thái đội sang “Sẵn sàng”."
+            }
+            action={
+              !incidents.length || recalls.length ? undefined : (
+                <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      onClose();
+                      navigate("/teams");
+                    }}
+                  >
+                    Mở danh sách đội
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      onClose();
+                      navigate("/tasks");
+                    }}
+                  >
+                    Mở danh sách nhiệm vụ
+                  </Button>
+                </div>
+              )
             }
           />
         ) : (
@@ -844,7 +851,6 @@ function DispatchTeamAction({
               </UiSelect>
             </label>
             <ActionMeta
-              command="dispatchTeam"
               scope={incident?.affectedArea || incident?.location.name}
             />
           </>
@@ -852,8 +858,21 @@ function DispatchTeamAction({
       {mode === "recall" &&
         (!recalls.length ? (
           <EmptyState
-            title="Không có đội đang giữ nhiệm vụ"
-            description="Trong phạm vi phân quyền hiện tại không có đội nào đang phụ trách nhiệm vụ để thu hồi."
+            title="Không có đội nào thu hồi được"
+            description="Chỉ thu hồi được đội đang giữ nhiệm vụ chưa tiếp nhận (“Chờ giao”/“Đã giao”). Các đội hiện đều đang thực hiện dở dang — hoàn thành hoặc báo xong nhiệm vụ để giải phóng đội."
+            action={
+              <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    onClose();
+                    navigate("/tasks");
+                  }}
+                >
+                  Mở danh sách nhiệm vụ
+                </Button>
+              </div>
+            }
           />
         ) : (
           <>
@@ -884,7 +903,6 @@ function DispatchTeamAction({
               </div>
             )}
             <ActionMeta
-              command="releaseTeamFromTask"
               scope={recall?.team.operatingScope || recall?.team.region}
             />
           </>
@@ -918,7 +936,10 @@ function SosTriageAction({
   const [sosId, setSosId] = useState(
     presetSosId && candidates.some((item) => item.id === presetSosId)
       ? presetSosId
-      : (candidates[0]?.id ?? ""),
+      : (
+          candidates.find((item) => item.verificationStatus !== "Đã xác minh") ??
+          candidates[0]
+        )?.id ?? "",
   );
   const [mode, setMode] = useState<SosTriageMode>("verify");
   const [priority, setPriority] = useState<SosPriority>(sosPriorityOptions[1]);
@@ -931,15 +952,6 @@ function SosTriageAction({
     return (
       <OutcomeView
         outcome={outcome}
-        command={
-          mode === "verify"
-            ? "verifySos"
-            : mode === "reject"
-              ? "rejectSos"
-              : mode === "priority"
-                ? "updateSosPriority"
-                : "createRescueTaskFromSos"
-        }
         navigate={navigate}
         onClose={onClose}
       />
@@ -1084,15 +1096,6 @@ function SosTriageAction({
           </div>
         ))}
       <ActionMeta
-        command={
-          mode === "verify"
-            ? "verifySos"
-            : mode === "reject"
-              ? "rejectSos"
-              : mode === "priority"
-                ? "updateSosPriority"
-                : "createRescueTaskFromSos"
-        }
         scope={sos?.location.administrativeArea}
       />
       <PermissionNote value={canAct} />

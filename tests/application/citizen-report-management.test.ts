@@ -68,7 +68,7 @@ test("quyền: công dân tạo/xem của mình; cán bộ đánh giá; admin ch
   assert.equal(hasPermission("citizen", "report_review"), false);
   assert.equal(hasPermission("disaster_officer", "report_review"), true);
   assert.equal(hasPermission("admin", "report_view"), true);
-  assert.equal(hasPermission("admin", "report_review"), false);
+  assert.equal(hasPermission("admin", "report_review"), true);
   assert.equal(hasPermission("rescue_unit", "report_review"), false);
   assert.equal(hasPermission("rescue_unit", "report_view"), false);
   const citizen = user("phamdam");

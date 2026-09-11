@@ -5,13 +5,9 @@ import type { Incident } from "@/domain/incidents/types";
 import type { RescueTeam } from "@/domain/teams/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { useDualMapEngine, MapEngineBadge } from "@/infrastructure/gis/useDualMapEngine";
+import { UNIFIED_MAP_KIND_COLORS } from "@/application/map/unifiedMapQueries";
 
-const KIND_COLOR: Record<string, string> = {
-  incident: "#d92d20",
-  sos: "#b42318",
-  team: "#1570ef",
-  shelter: "#079455",
-};
+const KIND_COLOR: Record<string, string> = { ...UNIFIED_MAP_KIND_COLORS };
 
 export default function IncidentDetailMap({
   incident,
@@ -66,7 +62,7 @@ export default function IncidentDetailMap({
         id: "incident-points", type: "circle", source: "incident-points",
         paint: {
           "circle-radius": ["match", ["get", "kind"], "incident", 8, "sos", 7, 6],
-          "circle-color": ["match", ["get", "kind"], "incident", "#d92d20", "sos", "#b42318", "team", "#1570ef", "shelter", "#079455", "#667085"] as never,
+          "circle-color": ["match", ["get", "kind"], "incident", UNIFIED_MAP_KIND_COLORS.incident, "sos", UNIFIED_MAP_KIND_COLORS.sos, "team", UNIFIED_MAP_KIND_COLORS.team, "shelter", UNIFIED_MAP_KIND_COLORS.shelter, "#667085"] as never,
           "circle-stroke-color": "#fff", "circle-stroke-width": 2,
         },
       });

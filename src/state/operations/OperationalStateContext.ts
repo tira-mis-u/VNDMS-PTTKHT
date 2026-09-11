@@ -168,6 +168,8 @@ export interface OperationalStore {
   resolveSos: (sosId: string, summary: string) => void;
   closeSos: (sosId: string) => void;
   cancelSos: (sosId: string) => void;
+  /** Người gửi rút lại chính SOS của mình khi còn ở trạng thái sớm (kèm nút Hoàn tác 5 giây). */
+  cancelOwnSos: (sosId: string) => void;
   /** Đơn vị cứu hộ báo xong — nhiệm vụ chuyển "Chờ xác nhận", KHÔNG tự đóng. */
   reportTaskDone: (taskId: string, note: string) => void;
   /** Cán bộ chấp nhận (→ Hoàn thành) hoặc từ chối (→ Đang thực hiện) kết quả. */

@@ -4,18 +4,20 @@ import {
   shelterOperationalRank,
 } from "../../domain/shelters/rules";
 import type { Shelter } from "../../domain/shelters/types";
+/**
+ * Bộ lọc trang Điểm sơ tán — chỉ giữ các chiều lọc độc lập, không suy ra
+ * được từ nhau: trạng thái vận hành (đã bao gồm đầy/còn chỗ, đóng/mở,
+ * tiếp cận được hay không), khu vực, năng lực y tế, SOS điều phối.
+ * Các dropdown trùng lắp đã bỏ: mức sẵn sàng, sức chứa, mức sử dụng (%),
+ * khả năng tiếp cận, còn chỗ (xem lịch sử git).
+ */
 export interface ShelterFilters {
   search: string;
   status: string;
-  readiness: string;
   area: string;
-  capacity: string;
-  occupancy: string;
-  accessibility: string;
   medical: string;
   /** SOS đang được điều phối tới điểm (canonical SosRequest.shelterDestinationId). */
   routedSos: string;
-  availability: string;
   sort: "Ưu tiên vận hành" | "Sức chứa khả dụng" | "Tên A–Z";
 }
 const OPEN_SOS_EXCLUDED = ["Đã đóng", "Từ chối", "Hủy"];
@@ -39,7 +41,6 @@ export function filterAndSortShelters(
   return shelters
     .filter((shelter) => {
       const q = filters.search.trim().toLowerCase();
-      const capacity = calculateShelterCapacity(shelter);
       const active = hasRouted(shelter.id);
       return (
         (!q ||
@@ -47,32 +48,16 @@ export function filterAndSortShelters(
             .toLowerCase()
             .includes(q)) &&
         (filters.status === "Tất cả trạng thái" ||
-          shelter.status === filters.status) &&
-        (filters.readiness === "Tất cả mức sẵn sàng" ||
-          shelter.readiness === filters.readiness) &&
+          shelter.status === filters.status ||
+          (filters.status === "Ngưng tiếp nhận" &&
+            (shelter.status === "Tạm đóng" ||
+              shelter.status === "Không thể tiếp cận"))) &&
         (filters.area === "Tất cả khu vực" ||
           shelter.administrativeArea.startsWith(filters.area)) &&
-        (filters.capacity === "Tất cả sức chứa" ||
-          (filters.capacity === "Từ 500 chỗ"
-            ? shelter.capacity >= 500
-            : shelter.capacity < 500)) &&
-        (filters.occupancy === "Tất cả mức sử dụng" ||
-          (filters.occupancy === "Từ 85%"
-            ? capacity.occupancyPercentage >= 85
-            : filters.occupancy === "50–84%"
-              ? capacity.occupancyPercentage >= 50 &&
-                capacity.occupancyPercentage < 85
-              : capacity.occupancyPercentage < 50)) &&
-        (filters.accessibility === "Tất cả khả năng tiếp cận" ||
-          shelter.accessibility === filters.accessibility) &&
         (filters.medical === "Tất cả năng lực y tế" ||
           shelter.medicalCapability === filters.medical) &&
         (filters.routedSos === "Tất cả SOS điều phối" ||
-          (filters.routedSos === "Có SOS điều phối" ? active : !active)) &&
-        (filters.availability === "Tất cả khả dụng" ||
-          (filters.availability === "Còn chỗ"
-            ? capacity.availableCapacity > 0
-            : capacity.availableCapacity === 0))
+          (filters.routedSos === "Có SOS điều phối" ? active : !active))
       );
     })
     .sort((a, b) =>

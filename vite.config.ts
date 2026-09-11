@@ -29,8 +29,14 @@ function getRedisClient(): RedisClientType | null {
   }
 }
 
+const DUTY_LOG_REDIS_KEY = 'vndms:dutylog'
+const DUTY_LOG_MAX = 200
+
 function redisVitePlugin(): Plugin {
   let redis: RedisClientType | null = null
+  // Bộ nhớ đệm trong tiến trình Vite — dùng khi chưa cấu hình REDIS_URL.
+  // (Mất khi restart dev server; bản sao localStorage ở client vẫn còn.)
+  let dutyLogMemory: any[] = []
 
   return {
     name: 'vndms-redis-plugin',
@@ -42,12 +48,123 @@ function redisVitePlugin(): Plugin {
         })
       }
 
+      // ── Sổ trực ban dùng chung: đọc/ghi qua Redis khi có, qua RAM khi không ──
+      const readDutyLog = async (): Promise<any[]> => {
+        if (redis) {
+          try {
+            const raw = await redis.lrange(DUTY_LOG_REDIS_KEY, 0, DUTY_LOG_MAX - 1)
+            const parsed = []
+            for (const item of raw) {
+              try {
+                parsed.push(JSON.parse(item))
+              } catch {
+                // ignore
+              }
+            }
+            return parsed
+          } catch {
+            // rớt xuống bộ nhớ RAM
+          }
+        }
+        return dutyLogMemory
+      }
+      const writeDutyLog = async (entries: any[]) => {
+        const capped = entries.slice(0, DUTY_LOG_MAX)
+        dutyLogMemory = capped
+        if (redis) {
+          try {
+            const pipe = redis.pipeline()
+            pipe.del(DUTY_LOG_REDIS_KEY)
+            if (capped.length > 0) {
+              pipe.rpush(DUTY_LOG_REDIS_KEY, ...capped.map((e) => JSON.stringify(e)))
+            }
+            await pipe.exec()
+          } catch {
+                // RAM đã cập nhật; Redis lỗi thì lần ghi sau thử lại
+          }
+        }
+      }
+      const readJsonBody = (req: any): Promise<any> =>
+        new Promise((resolve) => {
+          let body = ''
+          req.on('data', (chunk: any) => (body += chunk))
+          req.on('end', () => {
+            try {
+              resolve(JSON.parse(body))
+            } catch {
+              resolve(null)
+            }
+          })
+        })
+
       server.middlewares.use(async (req, res, next) => {
-        if (!req.url?.startsWith('/api/redis')) {
+        if (!req.url?.startsWith('/api/redis') && !req.url?.startsWith('/api/duty-log')) {
           return next()
         }
 
         res.setHeader('Content-Type', 'application/json')
+
+        // GET /api/duty-log — toàn bộ sổ trực ban dùng chung (mới nhất trước)
+        if (req.url === '/api/duty-log' && req.method === 'GET') {
+          try {
+            const entries = await readDutyLog()
+            res.end(JSON.stringify({ success: true, data: entries }))
+          } catch (err: any) {
+            res.end(JSON.stringify({ success: false, error: err.message, data: [] }))
+          }
+          return
+        }
+
+        // POST /api/duty-log — thêm một bản ghi (client đã tạo id/at).
+        // Upsert theo id: cùng id thì ghi đè (ký nhận bàn giao), trừ khi bản
+        // cũ đã thu hồi mà bản mới chưa — thu hồi luôn thắng như phía client.
+        if (req.url === '/api/duty-log' && req.method === 'POST') {
+          const entry = await readJsonBody(req)
+          if (!entry || typeof entry.id !== 'string' || typeof entry.text !== 'string') {
+            res.end(JSON.stringify({ success: false, error: 'Bản ghi thiếu id/text' }))
+            return
+          }
+          try {
+            const entries = await readDutyLog()
+            const at = entries.findIndex((e) => e && e.id === entry.id)
+            const retracted = (text: any) => String(text || '').startsWith('[Đã thu hồi')
+            if (at === -1) {
+              entries.unshift(entry)
+            } else if (!(retracted(entries[at].text) && !retracted(entry.text))) {
+              entries[at] = entry
+            }
+            entries.sort(
+              (a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime(),
+            )
+            await writeDutyLog(entries)
+            res.end(JSON.stringify({ success: true }))
+          } catch (err: any) {
+            res.end(JSON.stringify({ success: false, error: err.message }))
+          }
+          return
+        }
+
+        // POST /api/duty-log/retract — thu hồi (giữ dấu vết, giống client)
+        if (req.url === '/api/duty-log/retract' && req.method === 'POST') {
+          const payload = await readJsonBody(req)
+          if (!payload || typeof payload.id !== 'string' || typeof payload.actor !== 'string') {
+            res.end(JSON.stringify({ success: false, error: 'Thiếu id/actor' }))
+            return
+          }
+          try {
+            const entries = await readDutyLog()
+            const next = entries.map((e) =>
+              e && e.id === payload.id && !String(e.text || '').startsWith('[Đã thu hồi')
+                ? { ...e, text: `[Đã thu hồi bởi ${payload.actor}] ${e.text}` }
+                : e,
+            )
+            await writeDutyLog(next)
+            res.end(JSON.stringify({ success: true }))
+          } catch (err: any) {
+            res.end(JSON.stringify({ success: false, error: err.message }))
+          }
+          return
+        }
 
         // GET /api/redis/locations
         if (req.url === '/api/redis/locations' && req.method === 'GET') {
@@ -127,6 +244,17 @@ export default defineConfig({
   plugins: [react(), redisVitePlugin()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: { host: '0.0.0.0', allowedHosts: true },
+  preview: {
+    host: '0.0.0.0',
+    port: 5173,
+    allowedHosts: true,
+    // Chống browser dính bản cũ: index.html luôn hỏi lại server,
+    // các asset băm hash thì cache dài hạn bình thường.
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      Pragma: 'no-cache',
+    },
+  },
   optimizeDeps: { exclude: ['maplibre-gl'] },
 })
 

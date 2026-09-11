@@ -10,6 +10,7 @@ export type CitizenReportCategory =
   | "Cây đổ / công trình hư hại"
   | "Mất điện / mất nước"
   | "Giao thông chia cắt"
+  | "Đề nghị cứu trợ"
   | "Khác";
 
 export interface CitizenReportLocation {
@@ -52,5 +53,6 @@ export const citizenReportCategories: readonly CitizenReportCategory[] = [
   "Cây đổ / công trình hư hại",
   "Mất điện / mất nước",
   "Giao thông chia cắt",
+  "Đề nghị cứu trợ",
   "Khác",
 ];

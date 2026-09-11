@@ -1,6 +1,10 @@
+import type { UserRole } from "@/domain/shared/auth";
+
 export type AppRoute =
   | { name: "login" }
   | { name: "command-center" }
+  | { name: "citizen-map" }
+  | { name: "citizen-requests" }
   | { name: "incident-list" }
   | { name: "incident-detail"; id: string }
   | { name: "task-list" }
@@ -46,6 +50,9 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
   if (pathname === "/login") return { name: "login" };
   if (pathname === "/" || pathname === "/command")
     return { name: "command-center" };
+  // Trang riêng của Cổng công dân: bản đồ tác nghiệp + dòng thời gian yêu cầu.
+  if (pathname === "/map") return { name: "citizen-map" };
+  if (pathname === "/my-requests") return { name: "citizen-requests" };
   if (pathname === "/incidents") return { name: "incident-list" };
   const incident = pathname.match(/^\/incidents\/([^/]+)$/);
   if (incident)
@@ -99,28 +106,48 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
   }
   return { name: "not-found" };
 }
-export function activeNavigationLabel(route: AppRoute) {
+/**
+ * Nhãn mục sidebar đang mở — PHẢI khớp đúng nhãn trong navigationConfig thì
+ * mục mới được tô sáng (.nav-item.active). Vì nhãn của công dân khác nhãn nội
+ * bộ (vd "Trang chủ" thay vì "Trung tâm điều hành") nên hàm nhận thêm vai trò
+ * để trả nhãn đúng cho từng đối tượng.
+ */
+export function activeNavigationLabel(route: AppRoute, role?: UserRole) {
+  const citizen = role === "citizen";
   if (route.name.startsWith("incident")) return "Sự cố";
   if (route.name.startsWith("task")) return "Nhiệm vụ";
   if (route.name.startsWith("team")) return "Đội cứu hộ";
   // Điểm sơ tán là danh mục tra cứu; công dân thấy mục "Điểm sơ tán an toàn".
-  if (route.name.startsWith("shelter")) return "Điểm sơ tán";
-  if (route.name.startsWith("sos")) return "SOS";
-  if (route.name.startsWith("report")) return "Phản ánh";
-  if (route.name === "alert-detail" || route.name === "alert-list") return "Cảnh báo";
+  if (route.name.startsWith("shelter")) return citizen ? "Điểm sơ tán an toàn" : "Điểm sơ tán";
+  if (route.name.startsWith("sos")) return "Tiếp nhận yêu cầu";
+  if (route.name.startsWith("report")) return "Tiếp nhận yêu cầu";
+  if (route.name === "alert-detail" || route.name === "alert-list")
+    return citizen ? "Cảnh báo thiên tai" : "Cảnh báo";
   // Báo cáo là tab bên trong phân hệ Phân tích tác nghiệp, không còn là mục
   // điều hướng riêng nên vẫn highlight mục "Phân tích tác nghiệp" trên sidebar.
   if (route.name.startsWith("analytics")) return "Phân tích tác nghiệp";
   if (route.name === "operational-map") return "Bản đồ tác nghiệp";
-  if (route.name === "operational-situation") return "Tình hình thiên tai";
-  if (route.name === "operational-history") return "Lịch sử thiên tai";
-  if (route.name === "operational-trends") return "Xu hướng";
-  if (route.name === "profile") return "Hồ sơ cá nhân";
+  // "Tình hình thiên tai" là tab thứ hai BÊN TRONG Trung tâm điều hành (không
+  // còn mục sidebar riêng) nên phải highlight "Trung tâm điều hành".
+  if (route.name === "operational-situation")
+    return citizen ? "Trang chủ" : "Trung tâm điều hành";
+  if (route.name === "operational-history") return "Phân tích tác nghiệp";
+  if (route.name === "operational-trends") return "Phân tích tác nghiệp";
+  if (route.name === "profile") return citizen ? "Hồ sơ & Địa bàn" : "Hồ sơ cá nhân";
   if (route.name === "admin-audit") return "Nhật ký bảo mật";
   if (route.name === "admin-permissions") return "Phân quyền";
+  // /admin/users giữ nhãn "Người dùng" theo hợp đồng test (không có mục
+  // sidebar trùng tên nên trang này không highlight — đúng vì nó không nằm
+  // trong điều hướng; vào trang Phân quyền để thấy mục sáng).
   if (route.name === "system-configuration-blocked") return "Cấu hình";
   if (route.name.startsWith("admin")) return "Người dùng";
   if (route.name === "placeholder") return route.label;
+  // Trang riêng của Cổng công dân — nhãn trùng mục sidebar của công dân.
+  if (route.name === "citizen-map") return "Bản đồ tác nghiệp";
+  if (route.name === "citizen-requests")
+    return citizen ? "Yêu cầu của tôi" : "Tiếp nhận yêu cầu";
+  if (route.name === "command-center" || route.name === "login")
+    return citizen ? "Trang chủ" : "Trung tâm điều hành";
   return "Trung tâm điều hành";
 }
 export function placeholderPath(label: string) {

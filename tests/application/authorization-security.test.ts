@@ -22,11 +22,11 @@ const user = (username: string) => {
   if (!found) throw new Error(`demo user ${username} không tồn tại`);
   return structuredClone(found);
 };
-test("Cán bộ PCTT có broad permission và national scope; admin không có quyền nghiệp vụ", () => {
+test("Cán bộ PCTT có broad permission và national scope; Quản trị viên toàn quyền nghiệp vụ", () => {
   const officer = authorize(user("nguyentrung"), "task_review", "Bảo Yên, Lào Cai");
   assert.equal(officer.allowed, true);
   const admin = authorize(user("thuantq"), "task_review", "Bảo Yên, Lào Cai");
-  assert.equal(admin.allowed, false);
+  assert.equal(admin.allowed, true);
   assert.equal(authorize(user("thuantq"), "user_manage").allowed, true);
   assert.equal(authorize(user("nguyentrung"), "user_manage").allowed, false);
 });

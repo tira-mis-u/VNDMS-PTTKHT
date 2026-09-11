@@ -95,13 +95,13 @@ test("phân công lại bắt buộc lý do, ghi lịch sử from→to, đội m
   assert.throws(() => reassignTaskEntity(done, target, "Đổi", "x", LATER), /đã kết thúc/);
 });
 
-test("ma trận quyền: rescue_unit báo xong, disaster_officer duyệt/phân công lại, admin không", () => {
+test("ma trận quyền: rescue_unit báo xong, disaster_officer duyệt/phân công lại, Quản trị viên toàn quyền", () => {
   assert.equal(hasPermission("rescue_unit", "task_report_done"), true);
   assert.equal(hasPermission("rescue_unit", "task_review"), false);
   assert.equal(hasPermission("rescue_unit", "task_assign"), false);
   assert.equal(hasPermission("disaster_officer", "task_review"), true);
   assert.equal(hasPermission("disaster_officer", "task_assign"), true);
-  assert.equal(hasPermission("admin", "task_review"), false);
-  assert.equal(hasPermission("admin", "task_report_done"), false);
+  assert.equal(hasPermission("admin", "task_review"), true);
+  assert.equal(hasPermission("admin", "task_report_done"), true);
   assert.equal(hasPermission("citizen", "task_view"), false);
 });

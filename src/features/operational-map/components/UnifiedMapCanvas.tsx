@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Map as MapLibreMap,
   Marker,
@@ -7,8 +7,11 @@ import {
   type MapLayerMouseEvent,
 } from "maplibre-gl";
 
-import { Maximize2, Minimize2, Minus, Plus, Scan } from "lucide-react";
+import { Info, Maximize2, Minimize2, Minus, Plus, Scan } from "lucide-react";
 import { ForecastTimeline } from "./ForecastTimeline";
+import { useOperationalState } from "@/state/operations/OperationalStateContext";
+import { resolveAdministrativeLocation } from "@/infrastructure/gis/administrativeResolver";
+import provinceBoundaries from "@/data/gis/geoBoundaries-VNM-ADM1_simplified.json" with { type: "json" };
 import {
   getNdaMapBaseStyle,
   MAP_MIN_ZOOM,
@@ -61,6 +64,71 @@ function escapeHtml(value: string) {
   );
 }
 
+/** Khoảng cách mặt đất (km) giữa hai tọa độ — dùng tìm trạm khí tượng gần nhất. */
+function haversineKm(lng1: number, lat1: number, lng2: number, lat2: number) {
+  const rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad;
+  const dLng = (lng2 - lng1) * rad;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function nearestStation(stations: StationForecast[], lng: number, lat: number) {
+  let best: StationForecast | null = null;
+  let bestKm = Infinity;
+  for (const station of stations) {
+    const km = haversineKm(lng, lat, station.longitude, station.latitude);
+    if (km < bestKm) {
+      bestKm = km;
+      best = station;
+    }
+  }
+  return best ? { station: best, km: bestKm } : null;
+}
+
+/**
+ * Popup tra cứu tỉnh thành + thời tiết (chế độ xem thông tin tỉnh thành).
+ * Dòng đầu là tên tỉnh từ ranh giới hành chính ADM1; khối dưới là số liệu
+ * ECMWF-IFS của trạm gần điểm chuột nhất — đúng dữ liệu đang vẽ trên bản đồ.
+ */
+function provincePopupHtml(
+  placeLabel: string,
+  placeSub: string,
+  near: { station: StationForecast; km: number } | null,
+) {
+  const risk = near?.station.dailySummary[0]?.floodRiskLevel ?? null;
+  const riskColor =
+    risk === "Đặc biệt nghiêm trọng"
+      ? "#dc2626"
+      : risk === "Nguy cơ cao"
+        ? "#ea580c"
+        : risk === "Cảnh báo"
+          ? "#d97706"
+          : "#16a34a";
+  const weatherRows = near
+    ? `
+      <div><b>${escapeHtml(near.station.stationName)}</b> &middot; cách ${near.km < 1 ? `${Math.round(near.km * 1000)} m` : `${near.km.toFixed(0)} km`}</div>
+      <div class="om-province-wx-grid">
+        <span>Nhiệt độ <b>${near.station.current.temperature.toFixed(1)}&deg;C</b></span>
+        <span>Mưa 24h <b>${near.station.current.precipitation.toFixed(1)} mm</b></span>
+        <span>Gió giật <b>${near.station.current.windGusts.toFixed(0)} km/h</b></span>
+        <span>Dòng chảy <b>${near.station.current.runoff.toFixed(2)} mm</b></span>
+      </div>
+      <div>Nguy cơ lũ: <b style="color:${riskColor}">${escapeHtml(risk ?? "Bình thường")}</b></div>
+      <div class="om-province-wx-src">ECMWF-IFS &middot; ${escapeHtml(near.station.region)}</div>`
+    : `<div class="om-province-wx-src">Số liệu thời tiết đang tải&hellip;</div>`;
+  return `
+    <div class="om-province-popup">
+      <b class="om-province-name">${escapeHtml(placeLabel)}</b>
+      ${placeSub ? `<div class="om-province-sub">${escapeHtml(placeSub)}</div>` : ""}
+      ${weatherRows}
+    </div>
+  `;
+}
+
 /** Phân loại marker realtime để chọn màu và biểu tượng. */
 function liveMarkerVariant(ping: LiveLocationPing) {
   if (ping.isPanicSOS) return "panic-sos";
@@ -70,7 +138,7 @@ function liveMarkerVariant(ping: LiveLocationPing) {
 }
 
 /**
- * Biểu tượng nhỏ (16px) vẽ bằng SVG nội tuyến — cảnh báo 1 chạm, đội cứu hộ,
+ * Biểu tượng nhỏ (16px) vẽ bằng SVG nội tuyến — tín hiệu SOS, đội cứu hộ,
  * công dân hoặc cán bộ chỉ huy. Kích thước giữ nhỏ để không che nhãn địa danh.
  */
 function liveMarkerIcon(ping: LiveLocationPing) {
@@ -83,6 +151,14 @@ function liveMarkerIcon(ping: LiveLocationPing) {
   if (variant === "citizen")
     return `${open}<path d="M19 21v-2a5 5 0 0 0-5-5h-4a5 5 0 0 0-5 5v2"/><circle cx="12" cy="7" r="4"/></svg>`;
   return `${open}<path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5Z"/></svg>`;
+}
+
+/**
+ * Icon hình người (dạng fill đặc) — chỉ dùng cho vị trí live / SOS của CHÍNH
+ * người đang đăng nhập để phân biệt ngay với người khác trên bản đồ.
+ */
+function ownPersonIcon() {
+  return `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4.2"/><path d="M12 13.6c-4.4 0-7.6 2.3-7.6 5.2v1.1c0 .6.4 1.1 1.1 1.1h13c.6 0 1.1-.5 1.1-1.1v-1.1c0-2.9-3.2-5.2-7.6-5.2Z"/></svg>`;
 }
 
 function buildWeatherGeoJson(stations: StationForecast[], gridSamples: ForecastGridSample[] = []) {
@@ -355,7 +431,45 @@ function stormCentreElement(storm: StormTrack, point = storm.current) {
   return element;
 }
 
-function pointCollection(points: UnifiedMapPoint[], kind: UnifiedMapKind) {
+/**
+ * Vẽ glyph "người" 48px (đĩa đỏ + hình người trắng) để phủ lên điểm SOS
+ * của chính người đang đăng nhập.
+ */
+function createPersonImage(): ImageData {
+  const size = 48;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new ImageData(size, size);
+  ctx.clearRect(0, 0, size, size);
+  // Đĩa đỏ viền trắng
+  ctx.beginPath();
+  ctx.arc(24, 24, 21, 0, Math.PI * 2);
+  ctx.fillStyle = "#d92d20";
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#ffffff";
+  ctx.stroke();
+  // Đầu + thân người trắng
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(24, 16.5, 6.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(10.5, 38);
+  ctx.bezierCurveTo(10.5, 30, 16, 27, 24, 27);
+  ctx.bezierCurveTo(32, 27, 37.5, 30, 37.5, 38);
+  ctx.closePath();
+  ctx.fill();
+  return ctx.getImageData(0, 0, size, size);
+}
+
+function pointCollection(
+  points: UnifiedMapPoint[],
+  kind: UnifiedMapKind,
+  ownUserId?: string | null,
+) {
   return {
     type: "FeatureCollection" as const,
     features: points
@@ -369,6 +483,13 @@ function pointCollection(points: UnifiedMapPoint[], kind: UnifiedMapKind) {
           code: point.code,
           title: point.title,
           area: point.area,
+          // SOS của chính mình → lớp symbol phủ icon hình người lên trên
+          mine:
+            kind === "sos" &&
+            ownUserId != null &&
+            point.ownerUserId === ownUserId
+              ? 1
+              : 0,
         },
       })),
   };
@@ -402,6 +523,9 @@ export function UnifiedMapCanvas({
   compact = false,
   stormOverride = null,
   stormFocusKey = 0,
+  onPickLocation,
+  highlightLocation = null,
+  legend = null,
 }: {
   points: UnifiedMapPoint[];
   /** Chế độ gọn (nhúng trong Trung tâm điều hành): ẩn thanh mốc dự báo. */
@@ -417,6 +541,18 @@ export function UnifiedMapCanvas({
   onSelect: (ref: { kind: UnifiedMapKind; id: string }) => void;
   /** Tăng lên 1 để yêu cầu bản đồ bay tới cơn bão đang theo dõi. */
   stormFocusKey?: number;
+  /**
+   * Chạm bản đồ để đánh dấu vị trí (Cổng công dân): chỉ kích hoạt khi bấm vào
+   * vùng trống — bấm trúng điểm tác nghiệp vẫn mở chi tiết như cũ.
+   */
+  onPickLocation?: (coords: [number, number]) => void;
+  /** Vị trí GPS / vị trí đã đánh dấu cần tô sáng + bay tới (mỗi lần key đổi). */
+  highlightLocation?: { coords: [number, number]; key: number } | null;
+  /**
+   * Chú giải bản đồ — render DƯỚI khung bản đồ, TRÊN trục thời gian dự báo
+   * (không còn đè lên địa hình như trước). Trang gọi tự dựng nội dung.
+   */
+  legend?: ReactNode;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
@@ -443,6 +579,15 @@ export function UnifiedMapCanvas({
    * bản đồ còn quá ngắn để nhìn cả Biển Đông lẫn đồng bằng Bắc Bộ.
    */
   const [expanded, setExpanded] = useState(false);
+  /**
+   * Chế độ tra cứu tỉnh thành (toolbar, item thứ 5): hiện ranh giới hành chính
+   * ADM1; di chuột lên bản đồ sẽ thấy tên tỉnh + thời tiết trạm gần nhất.
+   */
+  const [provinceMode, setProvinceMode] = useState(false);
+  const provincePopupRef = useRef<Popup | null>(null);
+  const highlightMarkerRef = useRef<Marker | null>(null);
+
+  const { currentUser } = useOperationalState();
 
   useEffect(() => {
     stormFieldRef.current = stormField;
@@ -510,12 +655,36 @@ export function UnifiedMapCanvas({
 
   // Live Location Pings (Realtime fleet & citizens from Redis)
   const [liveLocations, setLiveLocations] = useState<LiveLocationPing[]>([]);
+  /**
+   * Lọc định vị live theo 2 lớp:
+   * 1. Phạm vi chia sẻ do chủ beacon chỉ định (visibleTo): null = mọi người
+   *    được phân quyền đều thấy; mảng = chỉ những người trong danh sách.
+   *    Bản thân chủ beacon luôn thấy ping của mình.
+   * 2. Công dân KHÔNG thấy live của người khác khi bật tất cả các lớp — trừ
+   *    ping được chia sẻ đích danh cho họ (có tên họ trong visibleTo).
+   */
+  const visibleLiveLocations = useMemo(() => {
+    if (!currentUser) return [];
+    return liveLocations.filter((ping) => {
+      const sharedWithMe =
+        ping.id === currentUser.id || !ping.visibleTo || ping.visibleTo.includes(currentUser.id);
+      if (!sharedWithMe) return false;
+      if (currentUser.role === "citizen")
+        return ping.id === currentUser.id || (ping.visibleTo?.includes(currentUser.id) ?? false);
+      return true;
+    });
+  }, [liveLocations, currentUser]);
   const liveMarkersRef = useRef<Marker[]>([]);
 
   const onSelectRef = useRef(onSelect);
   useEffect(() => {
     onSelectRef.current = onSelect;
   }, [onSelect]);
+
+  const onPickLocationRef = useRef(onPickLocation);
+  useEffect(() => {
+    onPickLocationRef.current = onPickLocation;
+  }, [onPickLocation]);
 
   // MapLibre references
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -747,6 +916,35 @@ export function UnifiedMapCanvas({
         firstRoadOrSymbolId // <-- CHÈN TRƯỚC HỆ THỐNG GIAO THÔNG VÀ SYMBOL CỦA NDMAPVN!
       );
 
+      // ── Ranh giới tỉnh thành ADM1 (ẩn mặc định, chỉ hiện ở chế độ tra cứu) ──
+      // Nằm trên nền nhiệt nhưng dưới toàn bộ ký hiệu tác nghiệp.
+      map.addSource("om-provinces", {
+        type: "geojson",
+        data: provinceBoundaries as never,
+      });
+      map.addLayer({
+        id: "om-province-lines",
+        type: "line",
+        source: "om-provinces",
+        layout: { visibility: "none" },
+        paint: {
+          "line-color": "#475569",
+          "line-width": 1,
+          "line-opacity": 0.6,
+        },
+      });
+      map.addLayer({
+        id: "om-province-hover",
+        type: "fill",
+        source: "om-provinces",
+        layout: { visibility: "none" },
+        filter: ["==", ["get", "shapeID"], "__none__"],
+        paint: {
+          "fill-color": "#2563eb",
+          "fill-opacity": 0.16,
+        },
+      });
+
       for (const layer of UNIFIED_MAP_LAYER_CONFIG) {
         map.addSource(`om-${layer.key}`, {
           type: "geojson",
@@ -794,6 +992,35 @@ export function UnifiedMapCanvas({
           map.getCanvas().style.cursor = "";
         });
       }
+
+      // ── Icon hình người phủ lên điểm SOS của CHÍNH người đang đăng nhập ──
+      // Lớp vẽ sau nên nằm trên vòng tròn đỏ; mine=1 được set ở setData.
+      if (!map.hasImage("om-person")) {
+        map.addImage("om-person", createPersonImage(), { pixelRatio: 2 });
+      }
+      map.addLayer({
+        id: "om-sos-own-person",
+        type: "symbol",
+        source: "om-sos",
+        filter: ["==", ["get", "mine"], 1],
+        layout: {
+          "icon-image": "om-person",
+          "icon-size": 0.62,
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+        },
+      });
+      map.on("click", "om-sos-own-person", (event: MapLayerMouseEvent) => {
+        const id = event.features?.[0]?.properties?.id;
+        if (!id) return;
+        onSelectRef.current({ kind: "sos", id: String(id) });
+      });
+      map.on("mouseenter", "om-sos-own-person", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "om-sos-own-person", () => {
+        map.getCanvas().style.cursor = "";
+      });
 
       // ── Bão & áp thấp nhiệt đới ECMWF-IFS ──
       // Thứ tự chèn: vùng gió mạnh → đường đi → mốc 6 giờ → nhãn giờ.
@@ -939,6 +1166,18 @@ export function UnifiedMapCanvas({
       // Lớp hạt gió động (Windy-like) nằm dưới toàn bộ ký hiệu tác nghiệp
       windLayerRef.current = new WindParticleLayer(map);
 
+      // Chạm vùng trống để đánh dấu vị trí (Cổng công dân). Bấm trúng điểm tác
+      // nghiệp thì bỏ qua — handler onSelect của lớp điểm đã xử lý.
+      map.on("click", (event) => {
+        const pick = onPickLocationRef.current;
+        if (!pick) return;
+        const hits = map.queryRenderedFeatures(event.point, {
+          layers: UNIFIED_MAP_LAYER_CONFIG.map((layer) => `om-${layer.key}-points`),
+        });
+        if (hits.length) return;
+        pick([event.lngLat.lng, event.lngLat.lat]);
+      });
+
       setReady(true);
     });
 
@@ -963,7 +1202,7 @@ export function UnifiedMapCanvas({
     if (!ready || !map) return;
     for (const layer of UNIFIED_MAP_LAYER_CONFIG) {
       const source = map.getSource(`om-${layer.key}`) as GeoJSONSource | undefined;
-      source?.setData(pointCollection(points, layer.key));
+      source?.setData(pointCollection(points, layer.key, currentUser?.id));
     }
 
     // Cập nhật dữ liệu trạm khí tượng & lưới dự báo khi fetch hoàn tất
@@ -974,7 +1213,7 @@ export function UnifiedMapCanvas({
       }
       temperatureShaderRef.current?.updateWeatherData(weatherStations, gridSamples);
     }
-  }, [points, ready, weatherStations, gridSamples]);
+  }, [points, ready, weatherStations, gridSamples, currentUser]);
 
   // ── Shader nhiệt độ luôn bật (không có toggle) ──
   // temperatureShaderRef.current is initialized visible=true at startup
@@ -989,22 +1228,25 @@ export function UnifiedMapCanvas({
     liveMarkersRef.current = [];
 
     // Vẽ markers mới
-    liveLocations.forEach((ping) => {
+    visibleLiveLocations.forEach((ping) => {
+      const isOwn = ping.id === currentUser?.id;
       const el = document.createElement("div");
-      el.className = `om-live-marker ${liveMarkerVariant(ping)}`;
+      el.className = `om-live-marker ${liveMarkerVariant(ping)}${isOwn ? " own" : ""}`;
       // Mặc định chỉ hiện icon nhỏ để không che nhãn tỉnh/thành phố hay quần
       // đảo; tên chỉ bung ra khi người dùng phóng to (xem LIVE_LABEL_ZOOM).
+      // Vị trí của chính mình luôn là hình người + nhãn "Bạn ·".
+      const label = `${isOwn ? "Bạn · " : ""}${ping.isPanicSOS ? "SOS · " : ""}${ping.name}`;
       el.innerHTML = `
         <span class="om-live-pulse" aria-hidden="true"></span>
-        <span class="om-live-icon" aria-hidden="true">${liveMarkerIcon(ping)}</span>
-        <span class="om-live-name">${escapeHtml(ping.isPanicSOS ? `SOS · ${ping.name}` : ping.name)}</span>
+        <span class="om-live-icon" aria-hidden="true">${isOwn ? ownPersonIcon() : liveMarkerIcon(ping)}</span>
+        <span class="om-live-name">${escapeHtml(label)}</span>
       `;
-      el.title = `${ping.isPanicSOS ? "[BÁO ĐỘNG 1 CHẠM] " : ""}${ping.name} (${ping.role})`;
+      el.title = `${isOwn ? "Vị trí của bạn · " : ""}${ping.isPanicSOS ? "[PHÁT TÍN HIỆU SOS] " : ""}${ping.name} (${ping.role})`;
 
       const popup = new Popup({ offset: 16, closeButton: false }).setHTML(`
         <div style="padding: 6px 10px; font-size: 12px; color: #0f172a; line-height: 1.4;">
           <b style="color: ${ping.isPanicSOS ? '#dc2626' : '#2563eb'}; display: block; font-size: 13px;">
-            ${ping.isPanicSOS ? ' CẢNH BÁO 1 CHẠM (SOS)' : ' Tín hiệu định vị Realtime'}
+            ${ping.isPanicSOS ? ' PHÁT TÍN HIỆU SOS' : ' Tín hiệu định vị Realtime'}
           </b>
           <div><b>Họ tên:</b> ${escapeHtml(ping.name)}</div>
           <div><b>Vai trò:</b> ${escapeHtml(ping.role)}</div>
@@ -1021,7 +1263,7 @@ export function UnifiedMapCanvas({
 
       liveMarkersRef.current.push(marker);
     });
-  }, [liveLocations, ready]);
+  }, [visibleLiveLocations, ready, currentUser]);
 
   // Ở chế độ gọn khung bản đồ thấp hơn nhiều so với trang đầy đủ, nên khung
   // nhìn mặc định (toàn quốc) rơi vào vùng không có đối tượng nào. Khi nhúng,
@@ -1174,6 +1416,93 @@ export function UnifiedMapCanvas({
 
 
 
+  // ── Chế độ tra cứu tỉnh thành: bật ranh giới + hover hiện tên tỉnh & thời tiết ──
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const linesId = "om-province-lines";
+    const hoverId = "om-province-hover";
+    const emptyFilter: never = ["==", ["get", "shapeID"], "__none__"] as never;
+    const visibility = provinceMode ? "visible" : "none";
+    if (map.getLayer(linesId)) map.setLayoutProperty(linesId, "visibility", visibility);
+    if (map.getLayer(hoverId)) map.setLayoutProperty(hoverId, "visibility", visibility);
+    const canvas = map.getCanvas();
+    if (!provinceMode) {
+      canvas.style.cursor = "";
+      if (map.getLayer(hoverId)) map.setFilter(hoverId, emptyFilter);
+      provincePopupRef.current?.remove();
+      provincePopupRef.current = null;
+      return;
+    }
+    canvas.style.cursor = "crosshair";
+    const popup = new Popup({
+      closeButton: false,
+      closeOnClick: false,
+      offset: 14,
+      maxWidth: "300px",
+      className: "om-province-popup-wrap",
+    });
+    provincePopupRef.current = popup;
+    const onMove = (event: MapLayerMouseEvent) => {
+      const { lng, lat } = event.lngLat;
+      const place = resolveAdministrativeLocation(lng, lat);
+      let label = "Vùng biển / ngoài đất liền";
+      let sub = "";
+      let shapeId: string | null = null;
+      if (place.type === "province" && place.province) {
+        label = place.province;
+        sub = "Tỉnh / thành phố trực thuộc trung ương";
+        shapeId = place.shapeId ?? null;
+      } else if (place.type === "boundary" && place.candidates) {
+        label = `Ranh giới ${place.candidates[0]} – ${place.candidates[1]}`;
+        sub = "Khu vực giáp ranh hai tỉnh";
+      }
+      if (map.getLayer(hoverId))
+        map.setFilter(
+          hoverId,
+          (["==", ["get", "shapeID"], shapeId ?? "__none__"] as unknown) as never,
+        );
+      const near = nearestStation(weatherStationsRef.current, lng, lat);
+      popup.setLngLat(event.lngLat).setHTML(provincePopupHtml(label, sub, near)).addTo(map);
+    };
+    const onLeave = () => {
+      if (map.getLayer(hoverId)) map.setFilter(hoverId, emptyFilter);
+      popup.remove();
+    };
+    map.on("mousemove", onMove);
+    const container = map.getContainer();
+    container.addEventListener("mouseleave", onLeave);
+    return () => {
+      map.off("mousemove", onMove);
+      container.removeEventListener("mouseleave", onLeave);
+      popup.remove();
+      if (provincePopupRef.current === popup) provincePopupRef.current = null;
+      canvas.style.cursor = "";
+    };
+  }, [provinceMode, ready]);
+
+  // ── Tô sáng vị trí GPS / vị trí người dân đã đánh dấu (Cổng công dân) ──
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    highlightMarkerRef.current?.remove();
+    highlightMarkerRef.current = null;
+    if (!highlightLocation) return;
+    const el = document.createElement("div");
+    el.className = "om-gps-highlight";
+    el.title = "Vị trí của bạn";
+    el.innerHTML = `<span class="om-gps-pulse" aria-hidden="true"></span><span class="om-gps-dot" aria-hidden="true"></span>`;
+    highlightMarkerRef.current = new Marker({ element: el })
+      .setLngLat(highlightLocation.coords)
+      .addTo(map);
+    map.flyTo({
+      center: highlightLocation.coords,
+      zoom: Math.max(map.getZoom(), 11.5),
+      duration: 800,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, highlightLocation?.key]);
+
   // Deep-link focus
   useEffect(() => {
     if (focusKey <= 0 || !focusTarget || !ready || !mapRef.current) return;
@@ -1295,7 +1624,6 @@ export function UnifiedMapCanvas({
           gap: "5px",
         }}
       >
-        <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#16a34a" }} />
         Bản đồ số Quốc gia NDAMapVN
       </div>
 
@@ -1309,6 +1637,20 @@ export function UnifiedMapCanvas({
         <button type="button" onClick={resetView} aria-label="Vừa khung dữ liệu">
           <Scan size={15} />
         </button>
+        <button
+          type="button"
+          onClick={() => setProvinceMode((value) => !value)}
+          aria-label="Xem thông tin tỉnh thành và thời tiết"
+          title={
+            provinceMode
+              ? "Tắt tra cứu tỉnh thành"
+              : "Bật tra cứu tỉnh thành: di chuột lên bản đồ để xem tên tỉnh và thời tiết"
+          }
+          aria-pressed={provinceMode}
+          className={provinceMode ? "active" : undefined}
+        >
+          <Info size={15} />
+        </button>
         {!compact && (
           <button
             type="button"
@@ -1321,6 +1663,9 @@ export function UnifiedMapCanvas({
         )}
       </div>
       </div>
+
+      {/* Chú giải: dưới bản đồ, trên trục thời gian dự báo */}
+      {legend}
 
       {/* Trục thời gian dự báo: NẰM DƯỚI bản đồ, không che địa hình */}
       {showTimeline && (

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { IncidentSeverity } from "@/domain/incidents/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
+import { defaultScopedArea, scopeAreaOptions } from "@/application/areas/scopedAreas";
 import { DialogBackdrop, Badge, Button, PageSectionHeader, Progress, Input, Textarea } from "@/components/ui";
 
 const tabs = ["Tất cả", "Mới", "Đang xử lý", "Khẩn cấp", "Đã kiểm soát"];
@@ -37,14 +38,33 @@ export function IncidentListPage({
 }: {
   navigate: (path: string) => void;
 }) {
-  const { incidents, teams, createIncident, can } = useOperationalState();
+  const { incidents, teams, createIncident, can, currentUser } = useOperationalState();
   const [activeTab, setActiveTab] = useState("Tất cả");
   const [search, setSearch] = useState("");
   const [severity, setSeverity] = useState("Tất cả mức độ");
   const [status, setStatus] = useState("Tất cả trạng thái");
-  const [area, setArea] = useState("Tất cả khu vực");
+  // Dropdown khu vực khoanh theo địa bàn trong hồ sơ (vd ở Tây Hồ thì chỉ
+  // liệt kê khu vực thuộc Tây Hồ); địa bàn chỉ còn 1 khu vực thì chọn sẵn.
+  const scopedAreas = useMemo(
+    () =>
+      scopeAreaOptions(
+        ["Tây Hồ", "Hoàn Kiếm", "Long Biên", "Ba Đình"],
+        currentUser?.geographicScope,
+      ),
+    [currentUser?.geographicScope],
+  );
+  const [area, setArea] = useState(() => defaultScopedArea(scopedAreas));
   const [team, setTeam] = useState("Tất cả đội");
   const [createOpen, setCreateOpen] = useState(false);
+  // Khu vực suy từ dữ liệu thật (tỉnh/thành sau dấu phẩy cuối) thay vì gán cứng.
+  const areaOptions = useMemo(
+    () => [
+      ...new Set(
+        incidents.map((item) => item.location.name.split(",").slice(-1)[0].trim()),
+      ),
+    ].sort(),
+    [incidents],
+  );
   const filtered = useMemo(
     () =>
       incidents.filter((item) => {
@@ -136,18 +156,18 @@ export function IncidentListPage({
           <FilterSelect
             value={area}
             setValue={setArea}
-            options={[
-              "Tất cả khu vực",
-              "Tây Hồ",
-              "Hoàn Kiếm",
-              "Long Biên",
-              "Ba Đình",
-            ]}
+options={["Tất cả khu vực", ...areaOptions]}
           />
           <FilterSelect
             value={team}
             setValue={setTeam}
-            options={["Tất cả đội", ...teams.map((item) => item.id)]}
+            options={[
+              "Tất cả đội",
+              ...teams.map((item) => ({
+                value: item.id,
+                label: `${item.id} — ${item.name}`,
+              })),
+            ]}
           />
           <span className="filter-chip" aria-label="Phạm vi thời gian 24 giờ gần nhất">
             <CalendarDays size={14} />
@@ -234,6 +254,8 @@ export function IncidentListPage({
   );
 }
 
+export type FilterOption = string | { value: string; label: string };
+
 function FilterSelect({
   value,
   setValue,
@@ -242,20 +264,27 @@ function FilterSelect({
 }: {
   value: string;
   setValue: (value: string) => void;
-  options: string[];
+  options: FilterOption[];
   icon?: React.ReactNode;
 }) {
+  const first = options[0];
   return (
     <label className="filter-select">
       {icon}
       <UiSelect
-        aria-label={options[0]}
+        aria-label={typeof first === "string" ? first : first.label}
         value={value}
         onChange={(event) => setValue(event.target.value)}
       >
-        {options.map((option) => (
-          <option key={option}>{option}</option>
-        ))}
+        {options.map((option) =>
+          typeof option === "string" ? (
+            <option key={option}>{option}</option>
+          ) : (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ),
+        )}
       </UiSelect>
     </label>
   );

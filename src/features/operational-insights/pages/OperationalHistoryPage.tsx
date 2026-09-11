@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, CalendarDays, Database, History, Search } from "lucide-react";
-import { Input, PageSectionHeader } from "@/components/ui";
+import { DateField, Input, PageSectionHeader } from "@/components/ui";
 import { Select as UiSelect } from "@/components/ui/Select";
 import { getOperationalHistory } from "@/application/operations/operationalInsightsQueries";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
@@ -18,8 +18,8 @@ export function OperationalHistoryPage({ navigate }: { navigate: (path: string) 
     <main className="workspace-content insights-page">
       <PageSectionHeader section="Phân tích" title="Lịch sử sự cố trong dữ liệu vận hành hiện tại" description={`Chỉ gồm sự cố đã đóng trong lát cắt dữ liệu hiện tại, không phải kho lịch sử thiên tai nhiều năm. Thời điểm dữ liệu: ${result.asOf}.`} icon={History} />
       <section className="insights-filters" aria-label="Bộ lọc lịch sử sự cố">
-        <label><span>Từ ngày</span><Input aria-label="Từ ngày lịch sử" inputMode="numeric" placeholder="dd/mm/yyyy" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
-        <label><span>Đến ngày</span><Input aria-label="Đến ngày lịch sử" inputMode="numeric" placeholder="dd/mm/yyyy" value={to} onChange={(event) => setTo(event.target.value)} /></label>
+        <label><span>Từ ngày</span><DateField aria-label="Từ ngày lịch sử" value={from || undefined} onChange={(dmy) => setFrom(dmy ?? "")} /></label>
+        <label><span>Đến ngày</span><DateField aria-label="Đến ngày lịch sử" value={to || undefined} onChange={(dmy) => setTo(dmy ?? "")} /></label>
         <label><span>Loại sự cố</span><UiSelect aria-label="Lọc loại sự cố" value={type} onChange={(event) => setType(event.target.value)}><option value="">Tất cả loại</option>{types.map((item) => <option key={item}>{item}</option>)}</UiSelect></label>
         <label><span>Mức độ</span><UiSelect aria-label="Lọc mức độ sự cố" value={severity} onChange={(event) => setSeverity(event.target.value)}><option value="">Tất cả mức độ</option>{["Khẩn cấp", "Cao", "Trung bình", "Thấp"].map((item) => <option key={item}>{item}</option>)}</UiSelect></label>
         <label className="history-area"><span>Địa bàn</span><div className="input-with-icon"><Search size={14} /><Input aria-label="Lọc địa bàn lịch sử" placeholder="Nhập địa danh" value={area} onChange={(event) => setArea(event.target.value)} /></div></label>

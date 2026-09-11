@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { calculateShelterCapacity } from "@/domain/shelters/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
+import { Badge, Button, Progress, SectionHeader , DetailMapWeather } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   ShelterActionDialogs,
@@ -352,7 +352,13 @@ export function ShelterDetailPage({
           <section className="incident-detail-section">
             <SectionHeader
               title="Bản đồ tác nghiệp"
-              description="Điểm sơ tán, sự cố liên quan và đội cứu hộ đang điều phối"
+              description={
+                <>
+                  Điểm sơ tán, sự cố liên quan và đội cứu hộ đang điều phối ·
+                  Bản đồ số NDAMapVN
+                  <DetailMapWeather center={shelter.coordinates} />
+                </>
+              }
             />
             <Suspense
               fallback={

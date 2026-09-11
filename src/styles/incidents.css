@@ -911,7 +911,12 @@
   border-radius: 8px;
   overflow: hidden;
   position: sticky;
-  top: 82px;
+  /* Dính sát dưới topbar (vùng cuộn là .workspace, không phải window nên top
+     lớn tạo khoảng trống chết phía trên). Panel cao hơn màn hình thì cuộn
+     trong thay vì bị cắt chân — khối phải luôn giữ nguyên khi cuộn trang. */
+  top: 12px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
 }
 .context-heading {
   height: 52px;
@@ -1074,6 +1079,8 @@
   .incident-context-panel {
     grid-area: context;
     position: static;
+    max-height: none;
+    overflow-y: visible;
   }
   .incident-context-panel dl {
     display: grid;

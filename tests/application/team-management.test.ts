@@ -124,10 +124,10 @@ test("query danh sách kết hợp tìm kiếm, loại đội, năng lực và p
   );
 });
 
-test("RBAC V2: công dân không quản lý đội; cán bộ PCTT giao đội; admin/đơn vị cứu hộ không giao đội", () => {
+test("RBAC V2: công dân không quản lý đội; cán bộ PCTT và Quản trị viên giao đội; đơn vị cứu hộ không giao đội", () => {
   assert.equal(hasPermission("citizen", "team_view"), false);
   assert.equal(hasPermission("disaster_officer", "team_assign"), true);
-  assert.equal(hasPermission("admin", "team_assign"), false);
+  assert.equal(hasPermission("admin", "team_assign"), true);
   assert.equal(hasPermission("rescue_unit", "team_assign"), false);
   assert.equal(hasPermission("rescue_unit", "team_update_location"), true);
   assert.throws(

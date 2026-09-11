@@ -6,6 +6,7 @@ import type {
 } from "react";
 import { forwardRef } from "react";
 export { PageSectionHeader } from "./PageSectionHeader";
+export { DetailMapWeather } from "./DetailMapWeather";
 import { ChevronRight } from "lucide-react";
 
 export function DialogBackdrop({
@@ -46,6 +47,54 @@ export const Input = forwardRef<
     <input ref={ref} className={`ui-input ${className}`.trim()} {...props} />
   );
 });
+
+/** "10/09/2026" -> "2026-09-10" cho <input type="date">; sai định dạng -> "". */
+export function dmyToIso(value: string): string {
+  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return "";
+  const day = +match[1];
+  const month = +match[2];
+  const year = +match[3];
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  )
+    return "";
+  return `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
+}
+
+/** "2026-09-10" -> "10/09/2026"; sai định dạng -> "". */
+export function isoToDmy(value: string): string {
+  const match = value.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!match) return "";
+  return `${match[3].padStart(2, "0")}/${match[2].padStart(2, "0")}/${match[1]}`;
+}
+
+/**
+ * Ô chọn ngày dùng chung: hiện bảng lịch của trình duyệt (không nhập tay).
+ * State vẫn là chuỗi dd/mm/yyyy để khớp tầng truy vấn hiện tại.
+ */
+export function DateField({
+  value,
+  onChange,
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type"> & {
+  value?: string;
+  onChange: (dmy: string | undefined) => void;
+}) {
+  return (
+    <Input
+      {...props}
+      type="date"
+      value={value ? dmyToIso(value) : ""}
+      onChange={(event) =>
+        onChange(event.target.value ? isoToDmy(event.target.value) : undefined)
+      }
+    />
+  );
+}
 
 export const Textarea = forwardRef<
   HTMLTextAreaElement,
@@ -163,7 +212,7 @@ export function SectionHeader({
   onAction,
 }: {
   title: string;
-  description?: string;
+  description?: ReactNode;
   action?: string;
   onAction?: () => void;
 }) {

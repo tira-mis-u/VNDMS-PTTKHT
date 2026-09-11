@@ -23,7 +23,7 @@ export class OperationalMutationBoundary<TSnapshot, TControl> {
   constructor(
     clone: (
       state: AtomicMutationState<TSnapshot, TControl>,
-    ) => AtomicMutationState<TSnapshot, TControl> = structuredClone,
+    ) => AtomicMutationState<TSnapshot, TControl> = (state) => structuredClone(state),
   ) {
     this.clone = clone;
   }

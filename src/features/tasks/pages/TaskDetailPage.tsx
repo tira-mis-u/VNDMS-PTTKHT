@@ -18,7 +18,7 @@ import {
   TASK_LIFECYCLE,
 } from "@/domain/tasks/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
+import { Badge, Button, Progress, SectionHeader , DetailMapWeather } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   TaskActionDialogs,
@@ -54,6 +54,10 @@ export function TaskDetailPage({
   const task = tasks.find((t) => t.id === id);
   const [dialog, setDialog] = useState<TaskDialog>(null);
   const [more, setMore] = useState(false);
+  const jump = (section: string) =>
+    document
+      .getElementById(section)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   const updates = useMemo(
     () => taskUpdates.filter((u) => u.taskId === id),
     [taskUpdates, id],
@@ -154,12 +158,16 @@ export function TaskDetailPage({
                         : primary}
                 </Button>
               )}
-            <Button variant="secondary" onClick={() => setDialog("progress")}>
-              Cập nhật tiến độ
-            </Button>
-            <Button variant="secondary" onClick={() => setDialog("update")}>
-              Thêm cập nhật
-            </Button>
+            {can("task_update") && (
+              <Button variant="secondary" onClick={() => setDialog("progress")}>
+                Cập nhật tiến độ
+              </Button>
+            )}
+            {can("task_update") && (
+              <Button variant="secondary" onClick={() => setDialog("update")}>
+                Thêm cập nhật
+              </Button>
+            )}
             <div className="more-wrap">
               <Button
                 variant="ghost"
@@ -206,18 +214,20 @@ export function TaskDetailPage({
           </div>
         </div>
         <nav className="incident-detail-tabs">
-          <button className="active">Tổng quan</button>
-          <button>Tiến độ</button>
-          <button>
+          <button onClick={() => jump("tong-quan")} className="active">
+            Tổng quan
+          </button>
+          <button onClick={() => jump("tien-do")}>Tiến độ</button>
+          <button onClick={() => jump("cap-nhat")}>
             Cập nhật hiện trường <span>{updates.length}</span>
           </button>
-          <button>Bản đồ</button>
-          <button>Kết quả</button>
+          <button onClick={() => jump("ban-do")}>Bản đồ</button>
+          <button onClick={() => jump("ket-qua")}>Kết quả</button>
         </nav>
       </header>
       <div className="task-detail-layout">
         <main className="task-detail-main">
-          <section className="incident-detail-section">
+          <section id="tong-quan" className="incident-detail-section">
             <SectionHeader title="Tổng quan nhiệm vụ" />
             <div className="task-overview">
               <p>{task.description}</p>
@@ -245,11 +255,12 @@ export function TaskDetailPage({
               </div>
             </div>
           </section>
-          <section className="incident-detail-section task-progress-section">
+          <section id="tien-do" className="incident-detail-section task-progress-section">
             <SectionHeader
               title="Tiến độ tác chiến"
               description="Tiến độ được dùng để tính lại tiến độ sự cố liên quan"
-              action="Cập nhật"
+              action={can("task_update") ? "Cập nhật" : undefined}
+              onAction={() => setDialog("progress")}
             />
             <div className="task-progress-body">
               <div>
@@ -270,11 +281,12 @@ export function TaskDetailPage({
               </div>
             </div>
           </section>
-          <section className="incident-detail-section">
+          <section id="cap-nhat" className="incident-detail-section">
             <SectionHeader
               title="Cập nhật hiện trường"
               description="Thông tin từ đội thực hiện và thiết bị hiện trường"
-              action="Thêm cập nhật"
+              action={can("task_update") ? "Thêm cập nhật" : undefined}
+              onAction={() => setDialog("update")}
             />
             <div className="field-update-list">
               {updates.map((update) => (
@@ -308,13 +320,15 @@ export function TaskDetailPage({
                 <p className="section-empty">Chưa có cập nhật hiện trường.</p>
               )}
             </div>
-            <button
-              className="add-event-row"
-              onClick={() => setDialog("update")}
-            >
-              <Plus size={14} />
-              Thêm cập nhật hiện trường
-            </button>
+            {can("task_update") && (
+              <button
+                className="add-event-row"
+                onClick={() => setDialog("update")}
+              >
+                <Plus size={14} />
+                Thêm cập nhật hiện trường
+              </button>
+            )}
           </section>
           <section className="incident-detail-section">
             <SectionHeader title="Nhật ký nhiệm vụ" />
@@ -350,7 +364,11 @@ export function TaskDetailPage({
             </div>
           </section>
           <section className="incident-detail-section task-team-section">
-            <SectionHeader title="Đội thực hiện" action="Điều phối" />
+            <SectionHeader
+              title="Đội thực hiện"
+              action={can("task_assign") ? "Điều phối" : undefined}
+              onAction={() => setDialog("assign")}
+            />
             {team ? (
               <div className="assigned-team-row">
                 <span className="team-emblem">
@@ -413,10 +431,16 @@ export function TaskDetailPage({
               </div>
             )}
           </section>
-          <section className="incident-detail-section task-map-section">
+          <section id="ban-do" className="incident-detail-section task-map-section">
             <SectionHeader
               title="Bản đồ tác nghiệp"
-              description="Nhiệm vụ, sự cố liên quan, đội thực hiện và tuyến tiếp cận"
+              description={
+                <>
+                  Nhiệm vụ, sự cố liên quan, đội thực hiện và tuyến tiếp cận ·
+                  Bản đồ số NDAMapVN
+                  <DetailMapWeather center={task.coordinates} />
+                </>
+              }
             />
             <Suspense
               fallback={
@@ -429,7 +453,7 @@ export function TaskDetailPage({
               <TaskDetailMap task={task} incident={incident} team={team} />
             </Suspense>
           </section>
-          <section className="incident-detail-section">
+          <section id="ket-qua" className="incident-detail-section">
             <SectionHeader title="Kết quả nhiệm vụ" />
             {task.status === "Hoàn thành" ? (
               <div className="task-result">
@@ -496,7 +520,6 @@ export function TaskDetailPage({
         <aside className="incident-context-panel task-context">
           <div className="context-heading">
             <span>Thông tin nhiệm vụ</span>
-            <button>Chỉnh sửa</button>
           </div>
           <dl>
             <Context label="Mức ưu tiên">

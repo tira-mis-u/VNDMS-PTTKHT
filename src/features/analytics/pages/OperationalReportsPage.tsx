@@ -182,39 +182,12 @@ export function OperationalReportsPage({
           </div>
         </ReportSection>
 
-        <ReportSection number="02" title="Tình hình chi tiết">
-          <div
-            className="report-table-wrap"
-            role="region"
-            aria-label="Bảng tình hình chi tiết"
-            tabIndex={0}
-          >
-            <table className="report-table">
-              <thead>
-                <tr>
-                  <th>Nội dung theo dõi</th>
-                  <th>Kết quả hiện tại</th>
-                  <th>Cơ sở dữ liệu</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.responseStatistics.map((item) => (
-                  <tr key={item.label}>
-                    <td>{item.label}</td>
-                    <td>{item.value}</td>
-                    <td>{item.basis}</td>
-                  </tr>
-                ))}
-                {report.resourceUtilization.map((item, index) => (
-                  <tr key={item}>
-                    <td>Nguồn lực và năng lực {index + 1}</td>
-                    <td>{item}</td>
-                    <td>Ghi nhận và dẫn xuất</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <ReportSection number="02" title="Nguồn lực và năng lực">
+          <ul className="report-resource-list">
+            {report.resourceUtilization.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
         </ReportSection>
 
         <ReportSection number="03" title="Vấn đề cần chỉ đạo">

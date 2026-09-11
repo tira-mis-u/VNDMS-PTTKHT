@@ -2,7 +2,6 @@ import { lazy, Suspense, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
-  BellRing,
   ChevronRight,
   ClipboardPlus,
   FileText,
@@ -118,13 +117,17 @@ export function IncidentDetailPage({
                 Điều phối
               </Button>
             )}
-            <Button onClick={() => setDialog("task")}>
-              <ClipboardPlus size={15} />
-              Giao nhiệm vụ
-            </Button>
-            <Button variant="secondary" onClick={() => setDialog("event")}>
-              Cập nhật
-            </Button>
+            {can("task_create") && (
+              <Button onClick={() => setDialog("task")}>
+                <ClipboardPlus size={15} />
+                Giao nhiệm vụ
+              </Button>
+            )}
+            {can("update") && (
+              <Button variant="secondary" onClick={() => setDialog("event")}>
+                Cập nhật
+              </Button>
+            )}
             <div className="more-wrap">
               <Button
                 variant="ghost"
@@ -136,26 +139,26 @@ export function IncidentDetailPage({
               </Button>
               {moreOpen && (
                 <div className="incident-more-menu">
-                  <button
-                    onClick={() => {
-                      setDialog("severity");
-                      setMoreOpen(false);
-                    }}
-                  >
-                    Cập nhật mức độ
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDialog("status");
-                      setMoreOpen(false);
-                    }}
-                  >
-                    Chuyển trạng thái
-                  </button>
-                  <button>
-                    <BellRing size={13} />
-                    Gửi cảnh báo
-                  </button>
+                  {can("severity") && (
+                    <button
+                      onClick={() => {
+                        setDialog("severity");
+                        setMoreOpen(false);
+                      }}
+                    >
+                      Cập nhật mức độ
+                    </button>
+                  )}
+                  {can("update") && (
+                    <button
+                      onClick={() => {
+                        setDialog("status");
+                        setMoreOpen(false);
+                      }}
+                    >
+                      Chuyển trạng thái
+                    </button>
+                  )}
                   {can("close") && incident.status !== "Đã đóng" && (
                     <button
                       className="danger"
@@ -196,7 +199,7 @@ export function IncidentDetailPage({
             id="tong-quan"
             className="incident-detail-section incident-overview-section"
           >
-            <SectionHeader title="Tổng quan sự cố" action="Chỉnh sửa" />
+            <SectionHeader title="Tổng quan sự cố" />
             <div className="incident-summary-copy">
               <p>{incident.description}</p>
               <div className="incident-impact-grid">
@@ -246,13 +249,15 @@ export function IncidentDetailPage({
                 </article>
               ))}
             </div>
-            <button
-              className="add-event-row"
-              onClick={() => setDialog("event")}
-            >
-              <Plus size={14} />
-              Thêm diễn biến thủ công
-            </button>
+            {can("update") && (
+              <button
+                className="add-event-row"
+                onClick={() => setDialog("event")}
+              >
+                <Plus size={14} />
+                Thêm diễn biến thủ công
+              </button>
+            )}
           </section>
           <section id="nhiem-vu" className="incident-detail-section">
             <SectionHeader
@@ -298,10 +303,12 @@ export function IncidentDetailPage({
                 <p className="section-empty">Chưa có nhiệm vụ liên quan.</p>
               )}
             </div>
-            <button className="add-event-row" onClick={() => setDialog("task")}>
-              <Plus size={14} />
-              Tạo nhiệm vụ
-            </button>
+            {can("task_create") && (
+              <button className="add-event-row" onClick={() => setDialog("task")}>
+                <Plus size={14} />
+                Tạo nhiệm vụ
+              </button>
+            )}
           </section>
           <section id="sos" className="incident-detail-section">
             <SectionHeader
@@ -359,7 +366,11 @@ export function IncidentDetailPage({
             </div>
           </section>
           <section id="doi-cuu-ho" className="incident-detail-section">
-            <SectionHeader title="Đội đang xử lý" action="Điều phối đội khác" />
+            <SectionHeader
+              title="Đội đang xử lý"
+              action={can("dispatch") ? "Điều phối đội khác" : undefined}
+              onAction={() => setDialog("dispatch")}
+            />
             {team ? (
               <div className="assigned-team-row">
                 <span className="team-emblem">
@@ -381,20 +392,24 @@ export function IncidentDetailPage({
                   <Badge tone="blue">{team.status}</Badge>
                   <small>Cách hiện trường {team.distance}</small>
                 </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setDialog("dispatch")}
-                >
-                  Thay đổi
-                </Button>
+                {can("dispatch") && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setDialog("dispatch")}
+                  >
+                    Thay đổi
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="unassigned-team">
                 <span>Chưa có đội phụ trách sự cố này.</span>
-                <Button size="sm" onClick={() => setDialog("dispatch")}>
-                  Điều phối đội
-                </Button>
+                {can("dispatch") && (
+                  <Button size="sm" onClick={() => setDialog("dispatch")}>
+                    Điều phối đội
+                  </Button>
+                )}
               </div>
             )}
           </section>
@@ -418,7 +433,7 @@ export function IncidentDetailPage({
             </Suspense>
           </section>
           <section id="bao-cao" className="incident-detail-section">
-            <SectionHeader title="Báo cáo hiện trường" action="Thêm báo cáo" />
+            <SectionHeader title="Báo cáo hiện trường" />
             <div className="field-report-list">
               <article>
                 <FileText size={17} />
@@ -442,7 +457,6 @@ export function IncidentDetailPage({
         <aside className="incident-context-panel">
           <div className="context-heading">
             <span>Thông tin điều hành</span>
-            <button>Chỉnh sửa</button>
           </div>
           <dl>
             <Context label="Mức độ">

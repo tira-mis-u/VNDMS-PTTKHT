@@ -7,7 +7,6 @@ import {
   Filter,
   MapPin,
   Search,
-  ShieldCheck,
   UserCog,
   UserX,
   X,
@@ -100,15 +99,9 @@ export function UserManagementPage({
       <PageSectionHeader
         section="Quản trị truy cập & Phân quyền"
         title={mode === "permissions" ? "Phân quyền người dùng" : "Quản lý người dùng"}
-        description="Hiển thị toàn bộ người dùng đã và đang sử dụng hệ thống. Quản trị hệ thống phân vai (4 vai) và kích hoạt tài khoản; không có quyền xác minh, điều phối hay chấp nhận kết quả nghiệp vụ."
+        description="Hiển thị toàn bộ người dùng đã và đang sử dụng hệ thống. Quản trị viên phân vai (4 vai), kích hoạt tài khoản và có toàn quyền điều khiển mọi phân hệ nghiệp vụ."
         icon={UserCog}
         className="admin-page-header"
-        actions={
-          <button onClick={() => navigate("/admin/audit")} className="btn-audit-nav">
-            <ShieldCheck size={15} />
-            Nhật ký bảo mật ({store.securityAuditEvents.length})
-          </button>
-        }
       />
 
       {feedback && (
@@ -188,7 +181,7 @@ export function UserManagementPage({
               <tr>
                 <th>Người dùng</th>
                 <th>Tên đăng nhập</th>
-                <th>Phân quyền vai trò (Quản trị hệ thống gán)</th>
+                <th>Phân quyền vai trò (Quản trị viên gán)</th>
                 <th>Phạm vi địa lý</th>
                 <th>Trạng thái</th>
                 <th>Cập nhật</th>

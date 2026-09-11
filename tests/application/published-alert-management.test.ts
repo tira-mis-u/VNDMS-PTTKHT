@@ -78,9 +78,10 @@ test("cập nhật: trước công bố giữ revision; sau công bố tăng rev
   assert.equal(updated.publishedAt, LATER);
 });
 
-test("quyền và tầm nhìn: chỉ cán bộ PCTT quản lý; mọi vai khác chỉ thấy bản Đã công bố", () => {
+test("quyền và tầm nhìn: cán bộ PCTT và Quản trị viên quản lý; các vai còn lại chỉ thấy bản Đã công bố", () => {
   assert.equal(hasPermission("disaster_officer", "published_alert_manage"), true);
-  for (const role of ["admin", "rescue_unit", "citizen"] as const) {
+  assert.equal(hasPermission("admin", "published_alert_manage"), true);
+  for (const role of ["rescue_unit", "citizen"] as const) {
     assert.equal(hasPermission(role, "published_alert_manage"), false, role);
     assert.equal(hasPermission(role, "published_alert_view"), true, role);
   }
@@ -90,12 +91,14 @@ test("quyền và tầm nhìn: chỉ cán bộ PCTT quản lý; mọi vai khác 
   source.publishedAlerts = [draft, { ...withdrawn, id: "PUB-WITHDRAWN", code: "PUB-WITHDRAWN" }, ...source.publishedAlerts];
   const seedPublic = source.publishedAlerts.filter(isPublicAlert).length;
   assert.ok(seedPublic > 0, "seed phải có bản tin Đã công bố");
-  for (const username of ["trantuan", "phamdam", "thuantq", "phamhieu"]) {
+  for (const username of ["trantuan", "phamdam", "phamhieu"]) {
     const view = createAuthorizedOperationalView(user(username), source);
     assert.equal(view.publishedAlerts.length, seedPublic, username);
     assert.ok(view.publishedAlerts.every(isPublicAlert), username);
   }
-  const officer = createAuthorizedOperationalView(user("nguyentrung"), source);
-  assert.equal(officer.publishedAlerts.length, source.publishedAlerts.length);
-  assert.ok(officer.publishedAlerts.some((item) => item.status === "Nháp"));
+  for (const username of ["nguyentrung", "thuantq"]) {
+    const view = createAuthorizedOperationalView(user(username), source);
+    assert.equal(view.publishedAlerts.length, source.publishedAlerts.length, username);
+    assert.ok(view.publishedAlerts.some((item) => item.status === "Nháp"), username);
+  }
 });

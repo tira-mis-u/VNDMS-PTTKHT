@@ -77,6 +77,7 @@ button:focus-visible {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 .brand-mark {
   width: 34px;
@@ -92,6 +93,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  min-width: 0;
 }
 .brand-copy strong {
   font-size: 18px;
@@ -101,6 +103,8 @@ button:focus-visible {
   font-size: 13.5px;
   color: var(--muted);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .topbar-center {
   display: flex;
@@ -136,6 +140,7 @@ button:focus-visible {
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 .connection {
   display: flex;
@@ -185,15 +190,24 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   text-align: left;
+  min-width: 0;
 }
 .account strong {
   font-size: 14.5px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 190px;
 }
 .account small {
   font-size: 13.5px;
   color: var(--muted);
   margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 190px;
 }
 .avatar {
   width: 30px;
@@ -563,6 +577,9 @@ button:focus-visible {
   display: flex;
   gap: 13px;
   align-items: flex-start;
+  min-width: 0;
+}
+.situation-main > div {
   min-width: 0;
 }
 .situation-icon {
@@ -1150,6 +1167,25 @@ button:focus-visible {
     padding-right: 22px;
   }
 }
+/* Màn hình laptop hẹp: bỏ dòng phụ thương hiệu để không đè lên chip
+   "dữ liệu …" và các nút tác nghiệp. */
+@media (max-width: 1200px) {
+  .brand-copy span {
+    display: none;
+  }
+  .topbar {
+    grid-template-columns: auto 1fr auto;
+  }
+}
+/* Tablet: chỉ giữ họ tên, ẩn dòng chức danh (vẫn xem được trong popover). */
+@media (max-width: 1100px) {
+  .account small {
+    display: none;
+  }
+  .account strong {
+    max-width: 150px;
+  }
+}
 @media (max-width: 900px) {
   .topbar {
     grid-template-columns: 1fr auto;
@@ -1232,6 +1268,37 @@ button:focus-visible {
   }
   .workspace-content {
     padding: 22px 18px 40px;
+  }
+}
+@media (max-width: 768px) {
+  .account strong {
+    max-width: 110px;
+  }
+  .topbar-actions .helper-btn {
+    display: none;
+  }
+}
+/* Dải "Tình hình hiện tại": màn hình hẹp thì xếp chồng khối chữ lên trên,
+   cụm số liệu xuống dòng 2×2 thay vì bóp chữ thành từng từ dọc. */
+@media (max-width: 1100px) {
+  .situation-band {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .situation-stats {
+    margin-left: 0;
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+  .situation-stats > div {
+    flex: 1 1 150px;
+    min-width: 140px;
+  }
+}
+@media (max-width: 480px) {
+  .topbar-actions .data-freshness {
+    display: none;
   }
 }
 @media (max-width: 640px) {

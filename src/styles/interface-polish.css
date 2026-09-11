@@ -320,11 +320,22 @@ html[data-theme="dark"] .nav-item svg {
   color: #8e9cad;
 }
 html[data-theme="dark"] .nav-item.active {
-  background: #1b3151;
-  color: #9fc2ff;
+  background: #1e3a63;
+  color: #cfe2ff;
+  font-weight: 600;
+  position: relative;
 }
 html[data-theme="dark"] .nav-item.active svg {
-  color: #76a9fa;
+  color: #8ab8ff;
+}
+html[data-theme="dark"] .nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 3px;
+  height: 18px;
+  background: #8ab8ff;
+  border-radius: 0 3px 3px 0;
 }
 html[data-theme="dark"] .nav-group-title {
   color: #758398;
@@ -2852,6 +2863,21 @@ html[data-theme="dark"] .btn-danger:hover {
 .tracking-toast-msg button:hover {
   color: #ffffff;
 }
+.tracking-toast-msg .tracking-toast-undo {
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.tracking-toast-msg .tracking-toast-undo:hover {
+  background: #b91c1c;
+  color: #fff;
+}
 
 /* Modal Giải thích phân biệt */
 .tracking-modal-backdrop {
@@ -2863,11 +2889,16 @@ html[data-theme="dark"] .btn-danger:hover {
   display: grid;
   place-items: center;
   padding: 16px;
+  overflow-y: auto;
 }
 .tracking-modal-content {
   background: var(--surface-card, #ffffff);
   color: var(--text-primary, #0f172a);
   width: min(580px, 100%);
+  max-height: calc(100vh - 32px);
+  margin: auto;
+  display: flex;
+  flex-direction: column;
   border-radius: 12px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   overflow: hidden;
@@ -2896,6 +2927,13 @@ html[data-theme="dark"] .btn-danger:hover {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+.tracking-modal-header,
+.tracking-modal-footer {
+  flex: none;
 }
 .mode-explain-card {
   padding: 14px 16px;
@@ -3066,3 +3104,367 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
 }
 /* Cảnh báo khẩn luôn hiện nhãn dù ở mức zoom nào */
 .om-live-marker.panic-sos .om-live-name { display: inline-block; }
+
+/* Vị trí live của CHÍNH người dùng: icon hình người nền đen + nhãn "Bạn ·" */
+.om-live-marker.own .om-live-icon { background: #111827; }
+.om-live-marker.own .om-live-name {
+  display: inline-block;
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+.om-live-marker.own .om-live-pulse {
+  background: rgba(17, 24, 39, 0.35);
+  animation: beaconPing 2.2s infinite;
+}
+.om-live-marker.own.panic-sos .om-live-icon {
+  background: #dc2626;
+  animation: panicPulse 1.2s infinite;
+}
+.om-live-marker.own.panic-sos .om-live-name {
+  background: #fef2f2;
+  color: #b42318;
+  border-color: #fecaca;
+}
+
+/* ================================================================
+   Modal chỉ định ai được thấy định vị (BeaconScopeModal)
+   ================================================================ */
+/* Swatch nền nhiệt ECMWF trong chú giải các bản đồ chi tiết. Đặc hiệu cao để
+   thắng quy tắc `legend i` (chấm tròn) của từng phân hệ. */
+.sos-map-legend i.wx-key,
+.task-map-legend i.wx-key,
+.team-map-legend i.wx-key,
+.shelter-map-legend i.wx-key {
+  display: inline-block;
+  width: 24px;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #3b82f6, #22c55e, #eab308, #ef4444);
+  border: 1px solid rgba(15, 23, 42, 0.25);
+  vertical-align: baseline;
+}
+
+
+
+/* Huy hiệu °C cắm tại vị trí trạm trên bản đồ. */
+.wx-temp-pill {
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  background: var(--wx-bg, #0284c7);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 9px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.beacon-scope-modal {
+  max-width: 520px;
+  width: calc(100vw - 32px);
+}
+.beacon-scope-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+.beacon-scope-sub {
+  display: block;
+  margin: 12px 0 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+.beacon-scope-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.beacon-scope-groups .beacon-scope-sub {
+  margin: 0 0 2px;
+}
+.beacon-scope-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.beacon-scope-group:hover {
+  border-color: #86c98f;
+  background: #f6fef9;
+}
+.beacon-scope-group input {
+  width: 16px;
+  height: 16px;
+  accent-color: #16a34a;
+  flex: none;
+  cursor: pointer;
+}
+.beacon-scope-group span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.beacon-scope-group b {
+  font-size: 13.5px;
+  color: #0f172a;
+}
+.beacon-scope-group small {
+  font-size: 12.5px;
+  color: #64748b;
+  white-space: nowrap;
+}
+.beacon-scope-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0 12px;
+  margin-top: 12px;
+  color: #64748b;
+  background: #fff;
+}
+.beacon-scope-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  height: 36px;
+  font-size: 13.5px;
+  background: transparent;
+  color: #0f172a;
+}
+.beacon-scope-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+}
+.beacon-scope-chips small {
+  color: #64748b;
+  margin-left: auto;
+}
+.beacon-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 999px;
+  padding: 3px 6px 3px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.beacon-scope-chip button {
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #166534;
+  padding: 2px;
+  border-radius: 999px;
+}
+.beacon-scope-chip button:hover {
+  background: #bbf7d0;
+}
+.beacon-scope-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+/* Khi có thanh cuộn custom: ẩn thanh native để khỏi 2 thanh chồng nhau. */
+.beacon-scope-list-custom {
+  scrollbar-width: none;
+}
+.beacon-scope-list-custom::-webkit-scrollbar {
+  display: none;
+}
+.beacon-scope-scrollwrap {
+  position: relative;
+  margin-top: 10px;
+}
+.beacon-scope-scrollwrap .beacon-scope-list {
+  margin-top: 0;
+  padding-right: 14px;
+}
+/* Rãnh + con trượt custom: luôn nhìn thấy, kéo được, bấm rãnh để nhảy. */
+.beacon-scope-track {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  right: 5px;
+  width: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  cursor: pointer;
+}
+.beacon-scope-thumb {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: 999px;
+  background: #64748b;
+  cursor: grab;
+  touch-action: none;
+}
+.beacon-scope-thumb:hover {
+  background: #475569;
+}
+.beacon-scope-thumb:active {
+  cursor: grabbing;
+}
+html[data-theme="dark"] .beacon-scope-track {
+  background: #334155;
+}
+html[data-theme="dark"] .beacon-scope-thumb {
+  background: #94a3b8;
+}
+.beacon-scope-list::-webkit-scrollbar {
+  width: 10px;
+}
+.beacon-scope-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 0 9px 9px 0;
+}
+.beacon-scope-list::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 8px;
+  border: 2px solid #f1f5f9;
+}
+.beacon-scope-list::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+html[data-theme="dark"] .beacon-scope-list {
+  scrollbar-color: #475569 #1e293b;
+}
+html[data-theme="dark"] .beacon-scope-list::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+html[data-theme="dark"] .beacon-scope-list::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-color: #1e293b;
+}
+/* Thân modal định vị: thanh cuộn mảnh nhưng nhìn thấy được khi tràn. */
+.tracking-modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
+.tracking-modal-body::-webkit-scrollbar {
+  width: 10px;
+}
+.tracking-modal-body::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+html[data-theme="dark"] .tracking-modal-body {
+  scrollbar-color: #475569 transparent;
+}
+html[data-theme="dark"] .tracking-modal-body::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+.beacon-scope-list li + li {
+  border-top: 1px solid #f1f5f9;
+}
+.beacon-scope-list label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.beacon-scope-list label:hover {
+  background: #f8fafc;
+}
+.beacon-scope-list input {
+  margin-top: 3px;
+  accent-color: #16a34a;
+}
+.beacon-scope-list span b {
+  font-size: 13.5px;
+  color: #0f172a;
+}
+.beacon-scope-list span i {
+  font-style: normal;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.beacon-scope-list span small {
+  display: block;
+  font-size: 12px;
+  color: #94a3b8;
+}
+.beacon-scope-empty {
+  padding: 14px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.beacon-scope-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.beacon-scope-footer .btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+html[data-theme="dark"] .beacon-scope-note {
+  color: #94a3b8;
+}
+html[data-theme="dark"] .beacon-scope-group:hover {
+  border-color: #14532d;
+  background: #16202f;
+}
+html[data-theme="dark"] .beacon-scope-group b {
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .beacon-scope-search {
+  border-color: #334155;
+  background: #0f172a;
+}
+html[data-theme="dark"] .beacon-scope-search input {
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .beacon-scope-list {
+  border-color: #334155;
+}
+html[data-theme="dark"] .beacon-scope-list li + li {
+  border-color: #1e293b;
+}
+html[data-theme="dark"] .beacon-scope-list label:hover {
+  background: #1e293b;
+}
+html[data-theme="dark"] .beacon-scope-list span b {
+  color: #e2e8f0;
+}

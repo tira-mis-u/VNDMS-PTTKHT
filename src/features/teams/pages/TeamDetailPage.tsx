@@ -15,7 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
+import { Badge, Button, Progress, SectionHeader , DetailMapWeather } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   TeamActionDialogs,
@@ -50,6 +50,10 @@ export function TeamDetailPage({
   } = useOperationalState();
   const team = teams.find((item) => item.id === id);
   const [dialog, setDialog] = useState<TeamDialog>(null);
+  const jump = (section: string) =>
+    document
+      .getElementById(section)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   const events = useMemo(
     () => teamEvents.filter((event) => event.teamId === id),
     [teamEvents, id],
@@ -118,8 +122,12 @@ export function TeamDetailPage({
             </Button>
             {can("team_assign") && (
               <Button
-                disabled={!canDispatch}
                 onClick={() => setDialog("dispatch")}
+                title={
+                  canDispatch
+                    ? undefined
+                    : "Đội chưa đủ điều kiện điều phối — bấm để xem lý do và cách xử lý"
+                }
               >
                 <Navigation size={15} />
                 Điều phối đội
@@ -138,21 +146,23 @@ export function TeamDetailPage({
           </div>
         </div>
         <nav className="incident-detail-tabs">
-          <button className="active">Tổng quan</button>
-          <button>Nhiệm vụ hiện tại</button>
-          <button>
+          <button onClick={() => jump("tong-quan")} className="active">
+            Tổng quan
+          </button>
+          <button onClick={() => jump("nhiem-vu")}>Nhiệm vụ hiện tại</button>
+          <button onClick={() => jump("nhan-su")}>
             Nhân sự <span>{team.members}</span>
           </button>
-          <button>Năng lực & phương tiện</button>
-          <button>Vị trí</button>
-          <button>
+          <button onClick={() => jump("nang-luc")}>Năng lực & phương tiện</button>
+          <button onClick={() => jump("vi-tri")}>Vị trí</button>
+          <button onClick={() => jump("nhat-ky")}>
             Nhật ký <span>{events.length}</span>
           </button>
         </nav>
       </header>
       <div className="team-detail-layout">
         <main className="team-detail-main">
-          <section className="incident-detail-section">
+          <section id="tong-quan" className="incident-detail-section">
             <SectionHeader title="Trạng thái tác chiến" />
             <div className="team-readiness">
               <div
@@ -184,7 +194,7 @@ export function TeamDetailPage({
               </div>
             </div>
           </section>
-          <section className="incident-detail-section">
+          <section id="nhiem-vu" className="incident-detail-section">
             <SectionHeader
               title="Nhiệm vụ hiện tại"
               description="Quan hệ hai chiều giữa đội, nhiệm vụ và sự cố"
@@ -257,7 +267,7 @@ export function TeamDetailPage({
               </div>
             )}
           </section>
-          <section className="incident-detail-section">
+          <section id="nhan-su" className="incident-detail-section">
             <SectionHeader
               title="Nhân sự đội"
               description="Thông tin tối thiểu phục vụ điều phối lực lượng"
@@ -304,7 +314,7 @@ export function TeamDetailPage({
               ))}
             </div>
           </section>
-          <section className="incident-detail-section">
+          <section id="nang-luc" className="incident-detail-section">
             <SectionHeader title="Năng lực và phương tiện" />
             <div className="team-assets">
               <div className="team-capabilities">
@@ -356,11 +366,18 @@ export function TeamDetailPage({
               </div>
             </div>
           </section>
-          <section className="incident-detail-section">
+          <section id="vi-tri" className="incident-detail-section">
             <SectionHeader
               title="Vị trí tác nghiệp"
-              description="Bản ghi định vị gần nhất và các đối tượng liên quan"
-              action="Cập nhật vị trí"
+              description={
+                <>
+                  Bản ghi định vị gần nhất và các đối tượng liên quan · Bản đồ
+                  số NDAMapVN
+                  <DetailMapWeather center={team.coordinates} />
+                </>
+              }
+              action={can("team_update_location") ? "Cập nhật vị trí" : undefined}
+              onAction={() => setDialog("location")}
             />
             <div className="gps-status-bar" tabIndex={0} aria-label="Trạng thái định vị của đội">
               <div>
@@ -404,7 +421,7 @@ export function TeamDetailPage({
               />
             </Suspense>
           </section>
-          <section className="incident-detail-section">
+          <section id="nhat-ky" className="incident-detail-section">
             <SectionHeader
               title="Nhật ký hoạt động"
               description="Điều phối, trạng thái, vị trí và cập nhật hiện trường"
@@ -483,7 +500,9 @@ export function TeamDetailPage({
       <TeamActionDialogs
         mode={dialog}
         team={team}
+        navigate={navigate}
         onClose={() => setDialog(null)}
+        onSwitchMode={setDialog}
       />
     </div>
   );

@@ -316,7 +316,8 @@ export function LiveTrackingQuickBar() {
 
         // Tự động kích hoạt hệ thống cứu nạn SOS chính thức
         const addr = `Tọa độ GPS khẩn cấp: ${coords[1].toFixed(5)}, ${coords[0].toFixed(5)} (${currentUser.geographicScope.name})`;
-        const sosId = await createSos({
+        const sosId = await createSos(
+          {
           reporter: {
             name: currentUser.displayName,
             contact: currentUser.phone || "Liên hệ qua hệ sinh thái VNDMS",
@@ -339,8 +340,12 @@ export function LiveTrackingQuickBar() {
           disabledCount: 0,
           severity: "Đe dọa tính mạng",
           communicationStatus: "Kết nối",
-          gpsCaptured: true,
-        });
+            gpsCaptured: true,
+          },
+          // Component tự ghi dòng PANIC_ALERT_TRIGGERED bên dưới → store bỏ
+          // dòng generic để MỘT lần bấm SOS = MỘT dòng nhật ký + MỘT thông báo.
+          { securityAudited: true },
+        );
 
         // Ghi nhật ký bảo mật hệ thống: tài khoản nào đã phát tín hiệu SOS
         recordSecurityAudit(

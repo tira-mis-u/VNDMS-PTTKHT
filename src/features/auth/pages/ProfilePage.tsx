@@ -193,7 +193,7 @@ export function ProfilePage() {
           onChange={chooseAvatar}
         />
         <div className="profile-avatar-controls">
-          <Button type="button" onClick={() => fileInput.current?.click()}>
+          <Button type="button" variant="secondary" onClick={() => fileInput.current?.click()}>
             <ImagePlus size={18} />
             Đổi ảnh đại diện
           </Button>

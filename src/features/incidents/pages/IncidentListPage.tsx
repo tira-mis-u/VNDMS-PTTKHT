@@ -15,7 +15,6 @@ import { useOperationalState } from "@/state/operations/OperationalStateContext"
 import { defaultScopedArea, scopeAreaOptions } from "@/application/areas/scopedAreas";
 import { DialogBackdrop, Badge, Button, PageSectionHeader, Progress, Input, Textarea } from "@/components/ui";
 
-const tabs = ["Tất cả", "Mới", "Đang xử lý", "Khẩn cấp", "Đã kiểm soát"];
 const severityTone = (severity: string) =>
   severity === "Khẩn cấp"
     ? "red"
@@ -39,7 +38,6 @@ export function IncidentListPage({
   navigate: (path: string) => void;
 }) {
   const { incidents, teams, createIncident, can, currentUser } = useOperationalState();
-  const [activeTab, setActiveTab] = useState("Tất cả");
   const [search, setSearch] = useState("");
   const [severity, setSeverity] = useState("Tất cả mức độ");
   const [status, setStatus] = useState("Tất cả trạng thái");
@@ -69,15 +67,7 @@ export function IncidentListPage({
     () =>
       incidents.filter((item) => {
         const query = search.toLowerCase();
-        const tabMatch =
-          activeTab === "Tất cả" ||
-          (activeTab === "Khẩn cấp"
-            ? item.severity === "Khẩn cấp"
-            : activeTab === "Đã kiểm soát"
-              ? ["Đã kiểm soát", "Đã đóng"].includes(item.status)
-              : item.status === activeTab);
         return (
-          tabMatch &&
           (!query ||
             `${item.id} ${item.title} ${item.location.name}`
               .toLowerCase()
@@ -88,7 +78,7 @@ export function IncidentListPage({
           (team === "Tất cả đội" || item.assignedTeamId === team)
         );
       }),
-    [incidents, activeTab, search, severity, status, area, team],
+    [incidents, search, severity, status, area, team],
   );
 
   return (
@@ -107,18 +97,6 @@ export function IncidentListPage({
           ) : undefined
         }
       />
-      <div className="incident-tabs" aria-label="Lọc nhanh sự cố">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            className={activeTab === tab ? "active" : ""}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
-            {tab === "Tất cả" && <span>{incidents.length}</span>}
-          </button>
-        ))}
-      </div>
       <section className="incident-worklist">
         <div className="incident-filters">
           <label className="ui-search incident-search">

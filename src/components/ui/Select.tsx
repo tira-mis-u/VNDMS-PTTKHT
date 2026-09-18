@@ -132,24 +132,47 @@ export function Select({
   }, [open]);
 
   const openMenu = () => {
+    if (options.length === 0) return;
     setActiveIndex(selectedIndex);
     const rect = trigger.current?.getBoundingClientRect();
     if (rect) {
+      // Menu đặt theo viewport (portal) nhưng KHÔNG được lọt thỏm/bay ra khỏi
+      // dialog chứa control: kẹp kích thước & vị trí vào trong box dialog khi
+      // trigger nằm trong dialog (role="dialog" hoặc các hộp thoại form dùng chung).
+      const dialogEl = trigger.current?.closest<HTMLElement>(
+        '[role="dialog"], .incident-form-dialog, .citizen-sos-modal, .shelter-form-dialog, .beacon-modal',
+      );
+      const dialog = dialogEl?.getBoundingClientRect();
+      const inset = 10;
+      const boundsLeft = dialog ? Math.max(12, dialog.left + inset) : 12;
+      const boundsRight = dialog
+        ? Math.min(window.innerWidth - 12, dialog.right - inset)
+        : window.innerWidth - 12;
+      const maxWidth = Math.max(140, boundsRight - boundsLeft);
+      // Popover mô phỏng <select> gốc: rộng đúng bằng trigger (chỉ kẹp khi
+      // trigger vượt hộp chứa), để select và danh sách options luôn cùng bề rộng.
       const width = Math.min(
-        Math.max(rect.width, 210),
-        Math.min(360, window.innerWidth - 24),
+        rect.width,
+        maxWidth,
+        Math.max(140, Math.min(360, window.innerWidth - 24)),
       );
       const left = Math.min(
-        Math.max(12, rect.left),
-        Math.max(12, window.innerWidth - width - 12),
+        Math.max(boundsLeft, rect.left),
+        Math.max(boundsLeft, boundsRight - width),
       );
       const estimatedMenuHeight = Math.min(
         options.length * 36 + 12,
         window.innerHeight * 0.45,
         312,
       );
-      const spaceBelow = window.innerHeight - rect.bottom - 12;
-      const spaceAbove = rect.top - 12;
+      const spaceBelow =
+        (dialog ? Math.min(window.innerHeight - 12, dialog.bottom - inset) : window.innerHeight - 12) -
+        rect.bottom -
+        6;
+      const spaceAbove =
+        rect.top -
+        (dialog ? Math.max(12, dialog.top + inset) : 12) -
+        6;
       // Chọn phía còn đủ chỗ theo chính số option thay vì ngưỡng cố định;
       // menu dài ở cuối trang mobile vì vậy không tràn viewport.
       const shouldOpenUp =
@@ -172,6 +195,14 @@ export function Select({
   const choose = (index: number) => {
     const option = options[index];
     if (!option || option.disabled) return;
+    // Theo đúng ngữ nghĩa native <select>: chọn lại đúng giá trị hiện tại KHÔNG
+    // phải là một thay đổi → không phát onChange. Đây là gốc của lỗi "chỉnh
+    // trùng quyền vẫn sinh dòng nhật ký bảo mật + thông báo" (owner 2026-09).
+    if (option.value === currentValue) {
+      setOpen(false);
+      requestAnimationFrame(() => trigger.current?.focus());
+      return;
+    }
     if (value === undefined) setUncontrolledValue(option.value);
     onChange?.({
       target: { value: option.value, name },
@@ -218,11 +249,17 @@ export function Select({
     }
     if (event.key === "Escape" && open) {
       event.preventDefault();
+      // Đừng để Escape "chạm" tới handler của dialog chứa ngoài: khi menu đang
+      // mở, Escape chỉ đóng menu — người dùng không mất form đang điền dở.
+      event.stopPropagation();
       setOpen(false);
     }
   };
 
-  const label = ariaLabel ?? accessibleLabel ?? "Chọn một giá trị";
+  // Không có option nào: trigger vẫn hiển thị (kèm hint) nhưng không mở rỗng,
+  // tránh tình huống "bấm dropdown mà không thấy gì" như lỗi đã gặp ở dialog SOS.
+  const isEmpty = options.length === 0;
+  const label = ariaLabel ?? accessibleLabel ?? (isEmpty ? "Chưa có lựa chọn nào" : "Chọn một giá trị");
   return (
     <>
       <div
@@ -254,9 +291,14 @@ export function Select({
           aria-label={label}
           aria-haspopup="listbox"
           aria-expanded={open}
+          aria-disabled={isEmpty || undefined}
           aria-controls={listboxId}
           aria-activedescendant={open ? `${listboxId}-${activeIndex}` : undefined}
-          onClick={() => (open ? setOpen(false) : openMenu())}
+          onClick={() => {
+            if (isEmpty) return;
+            if (open) setOpen(false);
+            else openMenu();
+          }}
           onKeyDown={onKeyDown}
         >
           <span>{selected?.label ?? label}</span>

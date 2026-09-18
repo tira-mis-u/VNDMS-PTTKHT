@@ -16,6 +16,8 @@ const auditActionLabels: Record<string, string> = {
   SESSION_EXPIRED: "Phiên làm việc hết hạn",
   SESSION_RESTORED: "Khôi phục phiên làm việc",
   MUTATION_AUTHORIZED: "Cập nhật thông tin tài khoản",
+  OPERATIONAL_MUTATION: "Thao tác nghiệp vụ",
+  ALERT_INTERACTION: "Tương tác hàng đợi cảnh báo",
   PERMISSION_DENIED: "Từ chối quyền thao tác",
   USER_REGISTERED: "Đăng ký tài khoản mới",
   USER_ACTIVATED: "Kích hoạt tài khoản",
@@ -34,13 +36,48 @@ const auditResultLabels: Record<string, string> = {
 const auditResourceLabels: Record<string, string> = {
   Session: "Phiên làm việc",
   User: "Tài khoản",
+  Security: "An ninh phiên",
+  RoleModel: "Mô hình vai trò",
+  PermissionBoundary: "Ranh giới phân quyền",
+  System: "Hệ thống",
+  Resource: "Tài nguyên",
+  // Nghiệp vụ điều hành / ứng phó
+  Incident: "Sự cố",
+  Task: "Nhiệm vụ",
+  TaskReview: "Kết quả nhiệm vụ",
+  Team: "Đội cứu hộ",
+  Shelter: "Điểm sơ tán",
+  SOS: "Yêu cầu SOS",
+  SosRequest: "Yêu cầu SOS",
+  CitizenReport: "Phản ánh hiện trường",
+  PublishedAlert: "Cảnh báo công bố",
+  OperationalAlert: "Cảnh báo tác nghiệp",
+  DutyLog: "Sổ trực ban",
+  // Module mở rộng (dữ liệu nghiệp vụ khác)
+  ReliefRequest: "Yêu cầu cứu trợ",
+  Warehouse: "Kho cứu trợ",
+  Shipment: "Chuyến hàng cứu trợ",
+  EvacuationOperation: "Ca trực",
+  RecoveryProject: "Dự án phục hồi",
+  DamageAssessment: "Đánh giá thiệt hại",
+  Playbook: "Kịch bản vận hành",
+  PlaybookExecution: "Thực thi kịch bản",
+  Simulation: "Mô phỏng",
 };
+/** Mã hành động lạ hiển thị nguyên vẹn — nhật ký không được ẩn hành vi sau nhãn chung. */
 export const auditActionLabel = (value: string) =>
-  auditActionLabels[value] ?? "Hành động hệ thống";
+  auditActionLabels[value] ?? value;
 export const auditResultLabel = (value: string) =>
   auditResultLabels[value] ?? "Chưa xác định";
+/**
+ * resourceType có thể là chuỗi ghép nhiều loại ("Incident+Team") do
+ * authorizeResources; tách từng loại để dịch, không gộp về nhãn chung.
+ */
 export const auditResourceLabel = (value: string) =>
-  auditResourceLabels[value] ?? "Dữ liệu nghiệp vụ";
+  value
+    .split("+")
+    .map((part) => auditResourceLabels[part] ?? part)
+    .join(" + ") || "Dữ liệu nghiệp vụ";
 export const auditTimestampLabel = (value: string) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString("vi-VN");

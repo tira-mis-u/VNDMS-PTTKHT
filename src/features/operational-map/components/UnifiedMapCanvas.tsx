@@ -1244,15 +1244,15 @@ export function UnifiedMapCanvas({
       el.title = `${isOwn ? "Vị trí của bạn · " : ""}${ping.isPanicSOS ? "[PHÁT TÍN HIỆU SOS] " : ""}${ping.name} (${ping.role})`;
 
       const popup = new Popup({ offset: 16, closeButton: false }).setHTML(`
-        <div style="padding: 6px 10px; font-size: 12px; color: #0f172a; line-height: 1.4;">
-          <b style="color: ${ping.isPanicSOS ? '#dc2626' : '#2563eb'}; display: block; font-size: 13px;">
+        <div style="padding: 2px 2px 0; font-size: 12px; line-height: 1.4;">
+          <b style="color: ${ping.isPanicSOS ? 'var(--danger-fg)' : 'var(--primary)'}; display: block; font-size: 13px;">
             ${ping.isPanicSOS ? ' PHÁT TÍN HIỆU SOS' : ' Tín hiệu định vị Realtime'}
           </b>
           <div><b>Họ tên:</b> ${escapeHtml(ping.name)}</div>
           <div><b>Vai trò:</b> ${escapeHtml(ping.role)}</div>
           ${ping.phone ? `<div><b>SĐT:</b> ${escapeHtml(ping.phone)}</div>` : ''}
           <div><b>Tọa độ:</b> ${ping.coordinates[1].toFixed(5)}, ${ping.coordinates[0].toFixed(5)}</div>
-          <div style="color: #64748b; font-size: 11px; margin-top: 4px;">Cập nhật: ${new Date(ping.timestamp).toLocaleTimeString()}</div>
+          <div style="color: var(--muted); font-size: 11px; margin-top: 4px;">Cập nhật: ${new Date(ping.timestamp).toLocaleTimeString()}</div>
         </div>
       `);
 
@@ -1609,13 +1609,13 @@ export function UnifiedMapCanvas({
           position: "absolute",
           top: "10px",
           left: "10px",
-          background: "rgba(255,255,255,0.95)",
+          background: "var(--map-overlay-bg)",
           backdropFilter: "blur(4px)",
           padding: "4px 10px",
           borderRadius: "6px",
           fontSize: "11.5px",
           fontWeight: 650,
-          color: "#0f172a",
+          color: "var(--text-primary)",
           boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
           zIndex: 10,
           pointerEvents: "none",

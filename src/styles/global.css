@@ -1,5 +1,5 @@
 html {
-  background: #f4f6f8;
+  background: var(--surface-app);
   height: 100%;
   font-size: 13px;
 }

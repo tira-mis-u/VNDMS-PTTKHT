@@ -25,10 +25,10 @@ import { useOperationalState } from "@/state/operations/OperationalStateContext"
 import { AccessDeniedPage } from "./AccessDeniedPage";
 
 const ROLE_COLORS: Record<Role, { bg: string; color: string; border: string }> = {
-  admin: { bg: "#fef3f2", color: "#b42318", border: "#fecdca" },
-  disaster_officer: { bg: "#eff8ff", color: "#175cd3", border: "#b2ddff" },
-  rescue_unit: { bg: "#fffaeb", color: "#b54708", border: "#fedf89" },
-  citizen: { bg: "#f8fafc", color: "#475467", border: "#e2e8f0" },
+  admin: { bg: "var(--danger-surface)", color: "var(--danger-fg)", border: "var(--danger-border)" },
+  disaster_officer: { bg: "var(--info-surface)", color: "var(--info-fg)", border: "var(--info-border)" },
+  rescue_unit: { bg: "var(--warning-surface)", color: "var(--warning-fg)", border: "var(--warning-border)" },
+  citizen: { bg: "var(--chip-surface)", color: "var(--chip-fg)", border: "var(--chip-border)" },
 };
 
 export function UserManagementPage({
@@ -65,7 +65,15 @@ export function UserManagementPage({
 
   const handleRoleChange = (userId: string, newRole: Role) => {
     const targetUser = store.users.find((u) => u.id === userId);
-    store.updateUserRole(userId, newRole);
+    try {
+      store.updateUserRole(userId, newRole);
+    } catch (error) {
+      setFeedback(
+        error instanceof Error ? error.message : "Không thể thay đổi vai trò.",
+      );
+      setTimeout(() => setFeedback(null), 4000);
+      return;
+    }
     setFeedback(
       `Đã phân quyền tài khoản "${targetUser?.displayName || userId}" thành "${roleLabels[newRole]}".`,
     );
@@ -226,10 +234,18 @@ export function UserManagementPage({
                     {/* Ô có control riêng: chặn bubble để không mở drawer ngoài ý muốn */}
                     <td onClick={(event) => event.stopPropagation()}>
                       {isAdmin ? (
-                        <div className="direct-role-picker">
+                        <div
+                          className="direct-role-picker"
+                          title={
+                            isSelf
+                              ? "Quản trị viên không thể tự đổi vai trò của chính mình"
+                              : undefined
+                          }
+                        >
                           <UiSelect
                             className="role-inline-select"
                             value={user.role}
+                            disabled={isSelf}
                             style={{
                               backgroundColor: badgeStyle.bg,
                               color: badgeStyle.color,

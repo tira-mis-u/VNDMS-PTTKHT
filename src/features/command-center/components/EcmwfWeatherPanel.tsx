@@ -89,7 +89,7 @@ export function EcmwfWeatherPanel() {
       <header className="cc-panel-header">
         <div>
           <span>
-            <CloudRain size={16} color="#0284c7" />
+            <CloudRain size={16} color="var(--wx-rain-fg)" />
             Dự báo Khí tượng & Thủy văn ECMWF Toàn quốc (10 Ngày)
           </span>
           <small>
@@ -98,18 +98,9 @@ export function EcmwfWeatherPanel() {
           {weatherMeta && (
             <div style={{ marginTop: "4px" }}>
               <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  padding: "2px 8px",
-                  borderRadius: "4px",
-                  background: weatherMeta.isFallback ? "#fef3c7" : weatherMeta.source === "cache" ? "#f1f5f9" : "#dcfce7",
-                  color: weatherMeta.isFallback ? "#92400e" : weatherMeta.source === "cache" ? "#334155" : "#166534",
-                  border: `1px solid ${weatherMeta.isFallback ? "#fde68a" : weatherMeta.source === "cache" ? "#cbd5e1" : "#bbf7d0"}`,
-                }}
+                className={`weather-source-chip ${
+                  weatherMeta.isFallback ? "is-fallback" : weatherMeta.source === "cache" ? "is-cache" : "is-fresh"
+                }`}
               >
                 {weatherMeta.statusText}
               </span>
@@ -142,19 +133,8 @@ export function EcmwfWeatherPanel() {
           <button
             key={reg}
             type="button"
+            className={`weather-region-btn ${selectedRegion === reg ? "is-active" : ""}`}
             onClick={() => setSelectedRegion(reg)}
-            style={{
-              border: 0,
-              borderRadius: "5px",
-              padding: "4px 9px",
-              fontSize: "12px",
-              fontWeight: 600,
-              cursor: "pointer",
-              background: selectedRegion === reg ? "#0284c7" : "transparent",
-              color: selectedRegion === reg ? "#ffffff" : "#475467",
-              whiteSpace: "nowrap",
-              transition: "all 0.15s ease",
-            }}
           >
             {reg}
           </button>
@@ -192,7 +172,7 @@ export function EcmwfWeatherPanel() {
       </div>
 
       {loading ? (
-        <div style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>
+        <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)" }}>
           Đang tải dữ liệu mô hình ECMWF-IFS từ Open-Meteo API…
         </div>
       ) : currentStation ? (
@@ -200,7 +180,7 @@ export function EcmwfWeatherPanel() {
           {/* Current Observation Metric Grid */}
           <div className="weather-metric-grid">
             <div className="weather-metric-card">
-              <div className="metric-icon-wrap" style={{ background: "#fef3c7", color: "#d97706" }}>
+              <div className="metric-icon-wrap tint-amber">
                 <Thermometer size={16} />
               </div>
               <div>
@@ -210,7 +190,7 @@ export function EcmwfWeatherPanel() {
             </div>
 
             <div className="weather-metric-card">
-              <div className="metric-icon-wrap" style={{ background: "#e0f2fe", color: "#0284c7" }}>
+              <div className="metric-icon-wrap tint-sky">
                 <CloudRain size={16} />
               </div>
               <div>
@@ -220,7 +200,7 @@ export function EcmwfWeatherPanel() {
             </div>
 
             <div className="weather-metric-card">
-              <div className="metric-icon-wrap" style={{ background: "#f1f5f9", color: "#475467" }}>
+              <div className="metric-icon-wrap tint-slate">
                 <Wind size={16} />
               </div>
               <div>
@@ -232,7 +212,7 @@ export function EcmwfWeatherPanel() {
             </div>
 
             <div className="weather-metric-card">
-              <div className="metric-icon-wrap" style={{ background: "#ede9fe", color: "#7c3aed" }}>
+              <div className="metric-icon-wrap tint-violet">
                 <Gauge size={16} />
               </div>
               <div>
@@ -242,7 +222,7 @@ export function EcmwfWeatherPanel() {
             </div>
 
             <div className="weather-metric-card">
-              <div className="metric-icon-wrap" style={{ background: "#f0fdf4", color: "#16a34a" }}>
+              <div className="metric-icon-wrap tint-emerald">
                 <Droplets size={16} />
               </div>
               <div>
@@ -252,7 +232,7 @@ export function EcmwfWeatherPanel() {
             </div>
 
             <div className="weather-metric-card">
-              <div className="metric-icon-wrap" style={{ background: "#fef2f2", color: "#dc2626" }}>
+              <div className="metric-icon-wrap tint-red">
                 <Compass size={16} />
               </div>
               <div>
@@ -276,7 +256,7 @@ export function EcmwfWeatherPanel() {
                     <small>{day.minTemp.toFixed(0)}°</small>
                   </div>
                   <div className="day-rain" title={`Mưa: ${day.totalRain.toFixed(1)} mm`}>
-                    <CloudRain size={12} color="#0284c7" />
+                    <CloudRain size={12} color="var(--wx-rain-fg)" />
                     <span>{day.totalRain.toFixed(1)}mm</span>
                   </div>
                   <Badge tone={getRiskTone(day.floodRiskLevel)}>

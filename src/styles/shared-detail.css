@@ -8,22 +8,22 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #728094;
+  color: var(--muted);
   font-size: 16px;
   margin-bottom: 5px;
 }
 
 .breadcrumbs b {
-  color: #344054;
+  color: var(--text-secondary);
 }
 
 .text-action {
   display: flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid #d6dce5;
-  background: #fff;
-  color: #254b75;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+  color: var(--primary-soft-fg);
   border-radius: 6px;
   padding: 8px 11px;
   font-weight: 650;
@@ -49,7 +49,7 @@
   gap: 6px;
   border: 0;
   background: none;
-  color: #49627c;
+  color: var(--text-secondary);
   font-weight: 650;
   cursor: pointer;
 }
@@ -61,8 +61,8 @@
 }
 
 .detail-section {
-  background: #fff;
-  border: 1px solid #dfe4eb;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
   border-radius: 7px;
   padding: 16px;
 }
@@ -70,7 +70,7 @@
 .detail-section > h2,
 .section-heading h2 {
   font-size: 18px;
-  color: #253248;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -82,7 +82,7 @@
 
 .section-heading p {
   margin: 4px 0 0;
-  color: #667085;
+  color: var(--muted);
   font-size: 14.5px;
 }
 
@@ -93,10 +93,10 @@
 }
 
 .linked-request-list button {
-  border: 1px solid #e1e6ed;
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 11px;
-  background: #fff;
+  background: var(--surface-card);
 }
 
 .linked-request-list button {
@@ -115,7 +115,7 @@
 
 .linked-request-list small {
   font-size: 14.5px;
-  color: #667085;
+  color: var(--muted);
   margin-top: 3px;
 }
 
@@ -157,13 +157,13 @@
 }
 
 .detail-timeline small {
-  color: #667085;
+  color: var(--muted);
   margin-top: 3px;
 }
 
 .form-hint {
   font-size: 14.5px;
-  color: #667085;
+  color: var(--muted);
   margin-top: 4px;
 }
 

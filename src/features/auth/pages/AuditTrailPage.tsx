@@ -18,6 +18,7 @@ import {
   auditTimestampLabel,
   roleLabels,
 } from "@/domain/auth/labels";
+import { permissionLabel } from "@/lib/permissions/labels";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { AccessDeniedPage } from "./AccessDeniedPage";
 
@@ -32,24 +33,38 @@ export function AuditTrailPage({
   const [action, setAction] = useState("all");
 
   // Mở trang = đã đọc tới hiện tại → sidebar hết huy hiệu đỏ.
+  // Mốc "đã xem" cũ được giữ lại trong phiên để đóng dấu các dòng mới
+  // (người dùng biết sự kiện nào vừa phát sinh, dòng nào mới nhất).
   const viewerId = store.currentUser?.id;
-  useEffect(() => {
-    if (!viewerId) return;
+  // Mốc "đã xem" trước khi mở trang — đọc một lần lúc render, trước khi
+  // effect dưới đây đóng dấu mới. Các dòng phát sinh sau mốc này được gắn
+  // nhãn "Mới"/"Mới nhất" để người dùng nhận ra sự kiện vừa diễn ra.
+  const seenKey = viewerId ? `vndms_audit_seen_${viewerId}` : null;
+  const newSinceMs = useMemo(() => {
+    if (!seenKey) return null;
     try {
-      localStorage.setItem(
-        `vndms_audit_seen_${viewerId}`,
-        new Date().toISOString(),
-      );
+      const raw = localStorage.getItem(seenKey);
+      if (!raw) return null;
+      const ms = Date.parse(raw);
+      return Number.isNaN(ms) ? null : ms;
+    } catch {
+      return null;
+    }
+  }, [seenKey]);
+  useEffect(() => {
+    if (!seenKey) return;
+    try {
+      localStorage.setItem(seenKey, new Date().toISOString());
     } catch {
       /* bỏ qua */
     }
-  }, [viewerId]);
+  }, [seenKey]);
   const actions = [
     ...new Set(store.securityAuditEvents.map((item) => item.action)),
   ];
   const rows = useMemo(
-    () =>
-      store.securityAuditEvents.filter(
+    () => {
+      const base = store.securityAuditEvents.filter(
         (item) =>
           (!query ||
             `${item.actorName} ${item.action} ${item.resourceType} ${item.resourceId ?? ""}`
@@ -57,9 +72,57 @@ export function AuditTrailPage({
               .includes(query.toLowerCase())) &&
           (result === "all" || item.result === result) &&
           (action === "all" || item.action === action),
-      ),
+      );
+      // Một thao tác quản trị User ghi 2 dòng: quyền duyệt chung
+      // (MUTATION_AUTHORIZED) và dòng nghiệp vụ cụ thể. Trên trang nhật ký,
+      // gộp hiển thị về 1 block — dòng cụ thể thắng, dòng trùng bị ẩn.
+      const specific = new Set([
+        "USER_ROLE_CHANGED",
+        "USER_SCOPE_CHANGED",
+        "USER_ACTIVATED",
+        "USER_DEACTIVATED",
+      ]);
+      const drop = new Set<string>();
+      base.forEach((item, index) => {
+        if (item.action !== "MUTATION_AUTHORIZED" || item.resourceType !== "User")
+          return;
+        for (
+          let j = Math.max(0, index - 2);
+          j <= Math.min(base.length - 1, index + 2);
+          j += 1
+        ) {
+          if (j === index) continue;
+          const other = base[j];
+          if (
+            specific.has(other.action) &&
+            other.resourceId === item.resourceId &&
+            other.actorId === item.actorId &&
+            Math.abs(Date.parse(other.timestamp) - Date.parse(item.timestamp)) <= 2000
+          ) {
+            drop.add(item.id);
+            break;
+          }
+        }
+      });
+      return drop.size ? base.filter((item) => !drop.has(item.id)) : base;
+    },
     [store.securityAuditEvents, query, result, action],
   );
+  const latestFreshId =
+    newSinceMs != null
+      ? rows.find((item) => Date.parse(item.timestamp) > newSinceMs)?.id
+      : undefined;
+  // Sự kiện trên tài khoản hiển thị theo tên đăng nhập (@username) thay vì mã
+  // nội bộ USR-… cho dễ đọc (owner request 2026-09); tài khoản đã xóa thì
+  // fallback về mã để không mất dấu vết kiểm toán.
+  const resourceHandle = (event: (typeof rows)[number]) => {
+    if (!event.resourceId) return "—";
+    if (event.resourceType === "User") {
+      const target = store.users.find((user) => user.id === event.resourceId);
+      if (target) return `@${target.username}`;
+    }
+    return event.resourceId;
+  };
   if (!store.can("audit_view"))
     return (
       <AccessDeniedPage
@@ -72,7 +135,7 @@ export function AuditTrailPage({
       <PageSectionHeader
         section="Quản trị truy cập"
         title="Nhật ký bảo mật"
-        description="Nhật ký tập trung cho xác thực, phiên, quyết định quyền và quản trị tài khoản."
+        description="Nhật ký tập trung cho xác thực, phiên, quyết định quyền, thao tác nghiệp vụ điều hành/ứng phó và quản trị tài khoản."
         icon={ShieldCheck}
         className="admin-page-header"
         actions={
@@ -150,12 +213,24 @@ export function AuditTrailPage({
               </tr>
             </thead>
             <tbody>
-              {rows.map((event) => (
-                <tr key={event.id}>
+              {rows.map((event) => {
+                const isFresh =
+                  newSinceMs != null &&
+                  Date.parse(event.timestamp) > newSinceMs;
+                return (
+                <tr
+                  key={event.id}
+                  className={isFresh ? "audit-row-new" : undefined}
+                >
                   <td>
                     <span className="audit-time">
                       <Clock3 size={12} />
                       {auditTimestampLabel(event.timestamp)}
+                      {isFresh && (
+                        <span className="audit-new-tag">
+                          {event.id === latestFreshId ? "Mới nhất" : "Mới"}
+                        </span>
+                      )}
                     </span>
                   </td>
                   <td>
@@ -166,11 +241,15 @@ export function AuditTrailPage({
                   </td>
                   <td>
                     <b>{auditActionLabel(event.action)}</b>
-                    {event.permission && <small>Quyền nghiệp vụ liên quan</small>}
+                    {event.permission && (
+                      <small>
+                        Quyền: {permissionLabel(event.permission)}
+                      </small>
+                    )}
                   </td>
                   <td>
                     {auditResourceLabel(event.resourceType)}
-                    <small>{event.resourceId ?? "—"}</small>
+                    <small>{resourceHandle(event)}</small>
                   </td>
                   <td>{event.geographicScope}</td>
                   <td>
@@ -187,7 +266,8 @@ export function AuditTrailPage({
                   </td>
                   <td>{event.reason}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
           {!rows.length && (

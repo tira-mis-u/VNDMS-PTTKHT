@@ -53,7 +53,7 @@ export function CitizenMapPage({ navigate }: { navigate: (path: string) => void 
           header: (
             <div className="citizen-card-header">
               <h2>
-                <Compass size={18} color="#175cd3" />
+                <Compass size={18} color="var(--primary)" />
                 Bản đồ tác nghiệp & điểm sơ tán
               </h2>
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -66,7 +66,7 @@ export function CitizenMapPage({ navigate }: { navigate: (path: string) => void 
                   <LocateFixed size={14} />
                   {locating ? "Đang dò GPS…" : "Lấy vị trí GPS của tôi"}
                 </Button>
-                <small style={{ color: "#64748b", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                <small style={{ color: "var(--muted)", display: "inline-flex", alignItems: "center", gap: "3px" }}>
                   <MapPin size={13} /> {userScope}
                   {locationSource === "gps"
                     ? " · GPS thiết bị"

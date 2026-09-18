@@ -145,7 +145,7 @@ body {
 .sidebar-tools {
   height: 42px;
   padding: 6px 10px;
-  border-bottom: 1px solid #dce3eb;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .sidebar-tools .collapse-btn {
   height: 29px;
@@ -208,7 +208,7 @@ html[data-theme="dark"] .sidebar-collapsed .nav-item .nav-count {
   height: 1px;
   margin: 7px auto 9px;
   padding: 0;
-  border-top-color: #dce3eb;
+  border-top-color: var(--border-subtle);
 }
 html[data-theme="dark"] .sidebar-tools,
 html[data-theme="dark"] .sidebar-collapsed .nav-group-title {
@@ -368,7 +368,7 @@ consistent module headings and safe tables. */
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #175cd3;
+  color: var(--primary);
   font-size: 13px;
   font-weight: 750;
   line-height: 1.3;
@@ -393,7 +393,7 @@ consistent module headings and safe tables. */
 .simulation-header p {
   margin: 0;
   max-width: 780px;
-  color: #667085;
+  color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -429,6 +429,11 @@ but labels must never overlap columns. */
 .team-list-table,
 .data-table-wrap,
 .admin-table-wrap { overflow-x: auto; }
+/* Scroll container phải giữ nguyên chiều rộng card; CHÍNH row/head mới mang
+   min-width bằng tổng min thực của grid (876 + gap 70 + padding 26 ≈ 972px).
+   Nếu chỉ grid tự tràn, box nền của row vẫn dừng ở biên card → hở vùng trống
+   bên phải khi cuộn hết cỡ, cột cuối + mũi tên "bay" khỏi hàng (owner 2026-09). */
+.team-list-table :is(.team-list-head, .team-list-row) { min-width: 972px; }
 .incident-list-head,
 .incident-list-row {
   min-width: 1120px;
@@ -520,7 +525,7 @@ fixed composer. */
 .ai-header-state {
   border-radius: 12px;
   background: linear-gradient(135deg, #f7faff, #eef4ff);
-  border-color: #cdddf7;
+  border-color: var(--primary-soft-border);
 }
 .ai-layout { grid-template-columns: minmax(0, 1fr) 330px; gap: 18px; }
 .ai-conversation {
@@ -528,13 +533,13 @@ fixed composer. */
   padding: 0;
   overflow: hidden;
   border-radius: 14px;
-  background: #f7f9fc;
+  background: var(--surface-muted);
   box-shadow: 0 5px 18px rgba(16, 24, 40, 0.055);
 }
 .ai-context-strip {
   margin: 0;
   padding: 12px 16px;
-  background: #fff;
+  background: var(--surface-card);
   font-size: var(--type-metadata, 13px);
 }
 .ai-welcome {
@@ -548,10 +553,10 @@ fixed composer. */
 .ai-starters button {
   min-height: 42px;
   border-radius: 10px;
-  background: #fff;
-  border-color: #d9e2ef;
+  background: var(--surface-card);
+  border-color: var(--border-subtle);
 }
-.ai-starters button:hover { border-color: #84adff; background: #f5f8ff; }
+.ai-starters button:hover { border-color: #84adff; background: var(--surface-hover); }
 .ai-response {
   margin: 20px 20px 8px;
   overflow: visible;
@@ -574,22 +579,22 @@ fixed composer. */
 .ai-statement-list,
 .ai-actions {
   margin-left: 0;
-  background: #fff;
+  background: var(--surface-card);
 }
 .ai-answer-head {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-bottom: 0;
   border-radius: 14px 14px 0 0;
   padding: 16px;
 }
 .ai-statement-list {
-  border-inline: 1px solid #e2e8f0;
+  border-inline: 1px solid var(--border);
   padding: 0 16px 16px;
 }
 .ai-statement { border-radius: 8px; }
 .ai-actions {
-  border: 1px solid #e2e8f0;
-  border-top-color: #edf0f3;
+  border: 1px solid var(--border);
+  border-top-color: var(--border-subtle);
   border-radius: 0 0 14px 14px;
 }
 .ai-composer {
@@ -597,9 +602,9 @@ fixed composer. */
   z-index: 3;
   margin: 18px;
   padding: 10px;
-  border: 1px solid #d8e1ec;
+  border: 1px solid var(--border-subtle);
   border-radius: 14px;
-  background: #fff;
+  background: var(--surface-card);
   box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
 }
 .ai-composer > label { display: none; }
@@ -735,13 +740,13 @@ button { font-size: var(--type-control); }
 .login-card > label > .input-with-icon > button {
   border: 0;
   background: transparent;
-  color: #667085;
+  color: var(--muted);
   display: grid;
   place-items: center;
   padding: 3px;
   cursor: pointer;
 }
-.login-card > label > .input-with-icon > button:hover { color: #175cd3; }
+.login-card > label > .input-with-icon > button:hover { color: var(--primary); }
 /* Outer standalone input trong .login-card (không nằm trong wrapper) giữ
    border riêng và tôn trọng shared focus ring. */
 .login-card input:not(.input-with-icon input) {
@@ -770,7 +775,7 @@ button { font-size: var(--type-control); }
 .workspace input::placeholder,
 .workspace textarea::placeholder,
 .login-card input::placeholder {
-  color: #7c8799;
+  color: var(--text-muted);
   font-size: var(--type-control);
   opacity: 1;
 }
@@ -782,7 +787,7 @@ button { font-size: var(--type-control); }
   border-color: var(--control-focus);
   box-shadow: 0 0 0 3px rgba(47, 111, 208, 0.16);
 }
-.workspace :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea):disabled { background: #f2f4f7; color: #98a2b3; cursor: not-allowed; }
+.workspace :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea):disabled { background: var(--chip-surface); color: var(--text-muted); cursor: not-allowed; }
 
 /* Search/filter wrappers use the exact same control height as Select. */
 .incident-search,
@@ -898,6 +903,11 @@ button { font-size: var(--type-control); }
 }
 .admin-filters label:has(.ui-select) > svg { display: none; }
 .admin-filters label .ui-select { width: 100%; }
+/* Admin filter selects hug their content instead of a fixed 220px box:
+   label and chevron sat too far apart (owner request 2026-09). */
+.admin-filters label:has(.ui-select) { flex: 0 0 auto; }
+.admin-filters label:has(.ui-select) .ui-select { width: auto; }
+.admin-filters > .ui-select { flex: 0 0 auto; width: auto; }
 @media (max-width: 640px) {
   .analytics-tabs {
     flex-wrap: wrap;
@@ -951,7 +961,7 @@ html[data-theme="dark"] input[type="date"].ui-input {
   display: inline-block;
   min-width: 150px;
   height: var(--control-height);
-  color: #1d2939;
+  color: var(--text-primary);
   font-size: var(--type-control);
   line-height: 1.4;
   vertical-align: middle;
@@ -969,8 +979,8 @@ html[data-theme="dark"] input[type="date"].ui-input {
   padding: 0 11px 0 12px;
   border: 1px solid var(--control-border);
   border-radius: var(--control-radius);
-  background: #fff;
-  color: #344054;
+  background: var(--surface-card);
+  color: var(--text-secondary);
   font-size: var(--type-control);
   font-weight: 500;
   line-height: 1.3;
@@ -985,25 +995,28 @@ html[data-theme="dark"] input[type="date"].ui-input {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ui-select-trigger svg { flex: none; color: #667085; transition: transform 0.15s ease; }
+.ui-select-trigger svg { flex: none; color: var(--muted); transition: transform 0.15s ease; }
 .ui-select.is-open .ui-select-trigger {
   border-color: var(--control-focus);
   box-shadow: 0 0 0 3px rgba(47, 111, 208, 0.16);
 }
 .ui-select.is-open .ui-select-trigger svg { transform: rotate(180deg); }
-.ui-select-trigger:hover:not(:disabled) { border-color: #8996a8; background: #fbfcfe; }
-.ui-select-trigger:disabled { background: #f2f4f7; color: #98a2b3; cursor: not-allowed; }
+.ui-select-trigger:hover:not(:disabled) { border-color: var(--border-strong); background: var(--surface-raised); }
+.ui-select-trigger:disabled { background: var(--surface-muted); color: var(--text-muted); cursor: not-allowed; }
 .ui-select-popover {
   position: absolute;
-  z-index: 120;
+  /* Popover được portal ra <body>; phải nằm TRÊN mọi dialog (140/150) và drawer (130),
+     dưới toast (9999) — nếu thấp hơn dialog, menu bị kẹt phía sau hộp thoại
+     ("dropdown không có option / bay ra khỏi dialog"). */
+  z-index: 9500;
   top: calc(100% + 6px);
   left: 0;
   min-width: 0;
   max-width: min(360px, calc(100vw - 24px));
   padding: 5px;
-  border: 1px solid #d7dee8;
+  border: 1px solid var(--border-default);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface-card);
   box-shadow: 0 14px 34px rgba(16, 24, 40, 0.16), 0 2px 6px rgba(16, 24, 40, 0.06);
   animation: select-popover-in 0.12s ease-out;
 }
@@ -1026,49 +1039,31 @@ html[data-theme="dark"] input[type="date"].ui-input {
   gap: 12px;
   padding: 7px 9px;
   border-radius: 7px;
-  color: #344054;
+  color: var(--text-secondary);
   font-size: var(--type-control);
   line-height: 1.35;
   cursor: pointer;
 }
-.ui-select-popover li.is-active { background: #f0f5ff; color: #1849a9; }
+.ui-select-popover li.is-active { background: var(--primary-soft); color: var(--primary-soft-fg); }
 .ui-select-popover li.is-selected { font-weight: 650; }
-.ui-select-popover li.is-disabled { color: #98a2b3; cursor: not-allowed; }
-.ui-select-popover li svg { flex: none; color: #175cd3; }
+.ui-select-popover li.is-disabled { color: var(--text-muted); cursor: not-allowed; }
+.ui-select-popover li.is-empty { color: var(--text-muted); cursor: default; justify-content: center; font-style: italic; }
+.ui-select-popover li.is-empty:hover { background: none; }
+.ui-select-popover li svg { flex: none; color: var(--primary); }
 
-html[data-theme="dark"] {
-  --control-border: #3c4a5d;
-  --control-focus: #78a9f5;
-}
-html[data-theme="dark"] .ui-select { color: #e6ebf2; }
-html[data-theme="dark"] .ui-select-trigger,
-html[data-theme="dark"] .ui-select-popover {
-  background: #17212d;
-  border-color: #3c4a5d;
-  color: #e6ebf2;
-}
-html[data-theme="dark"] .ui-select-trigger:hover:not(:disabled) { background: #202c3a; border-color: #617086; }
-html[data-theme="dark"] .ui-select-popover li { color: #dce4ee; }
-html[data-theme="dark"] .ui-select-popover li.is-active { background: #203a60; color: #b9d2ff; }
-html[data-theme="dark"] .ui-select-trigger:disabled { background: #111821; color: #718096; }
 html[data-theme="dark"] .workspace :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):not([type="file"]), textarea),
 html[data-theme="dark"] .ai-drawer input,
 html[data-theme="dark"] .ai-drawer textarea,
 html[data-theme="dark"] .login-card input {
-  background: #111821;
+  background: var(--surface-muted);
   border-color: var(--control-border);
-  color: #e6ebf2;
+  color: var(--foreground);
 }
 html[data-theme="dark"] :where(.incident-search, .input-with-icon, .filter-select, .date-filter) {
-  background: #111821;
+  background: var(--surface-muted);
   border-color: var(--control-border);
-  color: #e6ebf2;
+  color: var(--foreground);
 }
-html[data-theme="dark"] .workspace input::placeholder,
-html[data-theme="dark"] .workspace textarea::placeholder,
-html[data-theme="dark"] .login-card input::placeholder { color: #8f9daf; }
-html[data-theme="dark"] .workspace :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea):disabled { background: #111821; color: #718096; }
-html[data-theme="dark"] .app-shell .app-body .workspace .analytics-primary { color: #fff; }
 
 /* The only intentionally tiny value is the collapsed navigation counter. */
 .sidebar:not(.sidebar-collapsed) :where(.nav-group-title, .nav-count),
@@ -1132,7 +1127,8 @@ html[data-theme="dark"] .app-shell .app-body .workspace .analytics-primary { col
   gap: var(--space-2);
   min-width: 0;
 }
-.page-section-actions > button {
+.page-section-actions
+  > :where(button, .btn):not(.btn-primary):not(.btn-danger):not(.btn-success):not(.analytics-primary) {
   min-height: var(--control-height);
   padding: 0 var(--space-3);
   border: 1px solid var(--control-border);
@@ -1148,11 +1144,7 @@ html[data-theme="dark"] .app-shell .app-body .workspace .analytics-primary { col
   gap: var(--space-2);
   cursor: pointer;
 }
-html[data-theme="dark"] .page-section-actions > button {
-  background: #17202b;
-  border-color: #465466;
-  color: #e7edf5;
-}
+/* dark pair bỏ: base đã dùng token (surface-raised/control-border/foreground) */
 @media (max-width: 760px) {
   .page-section-header {
     min-height: 0;
@@ -1176,10 +1168,10 @@ html[data-theme="dark"] .shelter-contact span {
   color: #b9c5d4;
 }
 .account-session-context small {
-  color: #667085;
+  color: var(--muted);
 }
 .om-result-area {
-  color: #5b6b82;
+  color: var(--text-muted);
 }
 html[data-theme="dark"] .app-shell .app-body .workspace .save-scope {
   color: #ffffff;
@@ -1205,22 +1197,113 @@ html[data-theme="dark"] .app-shell .app-body .workspace .save-scope {
   --weight-semibold: 600;
   --weight-bold: 700;
 
+  /* NỀN — mọi surface dùng qua token, không hard-code màu trắng/xám. */
   --surface-app: #f5f7fa;
+  --surface-shell: #f3f6fa;
   --surface-card: #ffffff;
   --surface-raised: #ffffff;
   --surface-muted: #f7f9fc;
   --surface-hover: #f1f5f9;
+  /* Alias tương thích ngược: các stylesheet cũ tham chiếu tên ngắn
+     (--surface, --card, --background...). Định nghĩa ở đây nên chúng
+     tự đảo màu theo theme thay vì rơi về fallback hard-code. */
+  --surface: var(--surface-card);
+  --surface-alt: var(--surface-raised);
+  --surface-subtle: #f8fafc;
+  --card: var(--surface-card);
+  --background: var(--surface-app);
+  /* Overlay đặt trên bản đồ: nền mờ theo theme (light trắng, dark sẫm). */
+  --map-overlay-bg: rgba(255, 255, 255, 0.9);
+  --map-overlay-border: #d6dee8;
+
+  /* CHỮ */
+  --text-primary: #172033;
+  --text-secondary: #526174;
+  --text-muted: #7c8799;
+  --foreground: var(--text-primary);
+  --text: var(--text-primary);
+  --muted-foreground: var(--text-secondary);
+  --text-warning: #9f5200;
+  --text-inverse: #ffffff;
+
+  /* VIỀN */
+  --border: #e4e7ec;
+  --muted: #667085;
+  --subtle: #f8fafc;
   --border-subtle: #e6eaf0;
   --border-default: #cbd4df;
   --border-strong: #94a3b8;
   --border-focus: #2563c9;
   --border-danger: #d92d20;
   --border-warning: #dc8a00;
-  --text-warning: #9f5200;
   --ring-focus: rgba(37, 99, 201, 0.18);
+  --focus-ring: rgba(46, 112, 210, 0.2);
+
+  /* NHÃN TRẠNG THÁI — cặp surface + foreground + border đạt tương phản
+     ở cả hai theme. Component chỉ việc dùng var(), không tự chế màu. */
+  --danger-surface: #fef3f2;
+  --danger-fg: #b42318;
+  --danger-border: #fecdca;
+  --warning-surface: #fffaeb;
+  --warning-fg: #b54708;
+  --warning-border: #fedf89;
+  --success-surface: #ecfdf3;
+  --success-fg: #067647;
+  --success-border: #abefc6;
+  --info-surface: #eef4ff;
+  --info-fg: #175cd3;
+  --info-border: #c7d9f7;
+  --chip-surface: #f2f4f7;
+  --chip-fg: #475467;
+  --chip-border: #e4e7ec;
+
+  /* BIỂN BÁO KHÍ TƯỢNG/TRÊN BẢN ĐỒ — màu dữ liệu nhưng vẫn cần cặp
+     nền/chữ đọc được trên cả hai theme. */
+  --wx-temp-fg: #c2410c;
+  --wx-rain-fg: #0284c7;
+  --wx-wind-fg: #334155;
+  --wx-press-fg: #6d28d9;
+  --wx-humid-fg: #15803d;
+  --wx-flow-fg: #b54708;
+  --tint-amber: #fef3c7;
+  --tint-sky: #e0f2fe;
+  --tint-slate: #f1f5f9;
+  --tint-violet: #ede9fe;
+  --tint-emerald: #f0fdf4;
+  --tint-cyan: #ecfeff;
+  --tint-blue: #eff6ff;
+  --tint-red: #fef2f2;
+  --tint-green: #ecfdf5;
+  --tint-cyan-fg: #0e7490;
+  --tint-green-fg: #067647;
+  --tint-blue-fg: #175cd3;
+  --tint-red-fg: #b42318;
+  --tooltip-bg: #101828;
+  --tooltip-fg: #ffffff;
+  --tooltip-border: #1f2a3a;
+
+  /* THƯƠNG HIỆU & LIÊN KẾT */
+  --primary: #175cd3;
+  --primary-hover: #1849a9;
+  --primary-on: #ffffff;
+  --primary-soft: #eff8ff;
+  --primary-soft-fg: #1849a9;
+  --primary-soft-border: #b2ccff;
+  --blue: #155eef;
+  --color-primary: #175cd3;
+  --color-primary-contrast: #ffffff;
+  --color-on-primary: #ffffff;
+  --storm-color: #dc2626;
+  --wx-bg: #0284c7;
+
+  /* KÍCH THƯỚC — không đảo theo theme. */
   --radius-control: 8px;
   --radius-surface: 12px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
   --shadow-surface: 0 1px 3px rgba(16, 24, 40, 0.055);
+  --shadow-card: 0 2px 8px rgba(16, 24, 40, 0.055);
+  --font-family-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
 
   --control-height: 42px;
   --control-radius: var(--radius-control);
@@ -1235,6 +1318,7 @@ html[data-theme="dark"] .app-shell .app-body .workspace .save-scope {
   --type-secondary: var(--font-size-body-small);
   --type-label: var(--font-size-label);
   --type-metadata: var(--font-size-meta);
+  --type-meta: var(--font-size-meta);
   --type-control: var(--font-size-body);
   --type-badge: var(--font-size-caption);
   --font-body: var(--font-size-body);
@@ -1242,19 +1326,85 @@ html[data-theme="dark"] .app-shell .app-body .workspace .save-scope {
   --font-control: var(--font-size-body);
 }
 html[data-theme="dark"] {
+  color-scheme: dark;
   --surface-app: #0f151d;
+  --surface-shell: #151e29;
   --surface-card: #17212d;
   --surface-raised: #1b2633;
   --surface-muted: #121b25;
   --surface-hover: #22303f;
+  --surface-subtle: #101821;
+  --map-overlay-bg: rgba(13, 19, 27, 0.92);
+  --map-overlay-border: #31405446;
+
+  --text-primary: #edf2f8;
+  --text-secondary: #bdc8d6;
+  --text-muted: #8f9daf;
+  --text-warning: #fec84b;
+
+  --border: #2a3544;
+  --muted: #9aa7b8;
+  --subtle: #1a2330;
   --border-subtle: #293646;
   --border-default: #3c4a5d;
   --border-strong: #64748b;
   --border-focus: #78a9f5;
   --border-danger: #f97066;
   --border-warning: #fdb022;
-  --text-warning: #fec84b;
   --ring-focus: rgba(120, 169, 245, 0.24);
+  --focus-ring: rgba(108, 164, 244, 0.28);
+
+  --danger-surface: #351d22;
+  --danger-fg: #ff9b91;
+  --danger-border: #71343b;
+  --warning-surface: #342818;
+  --warning-fg: #fec84b;
+  --warning-border: #5a3c10;
+  --success-surface: #163126;
+  --success-fg: #75e0a7;
+  --success-border: #286246;
+  --info-surface: #152238;
+  --info-fg: #9fc2ff;
+  --info-border: #2b4166;
+  --chip-surface: #223044;
+  --chip-fg: #c8d4e3;
+  --chip-border: #34445c;
+
+  --wx-temp-fg: #fdba74;
+  --wx-rain-fg: #7dd3fc;
+  --wx-wind-fg: #cbd5e1;
+  --wx-press-fg: #c4b5fd;
+  --wx-humid-fg: #86efac;
+  --wx-flow-fg: #fde68a;
+  --tint-amber: #33260a;
+  --tint-sky: #0c2a3d;
+  --tint-slate: #223044;
+  --tint-violet: #241f3f;
+  --tint-emerald: #14301f;
+  --tint-cyan: #082f34;
+  --tint-blue: #12233f;
+  --tint-red: #35201f;
+  --tint-green: #122e20;
+  --tint-cyan-fg: #67e8f9;
+  --tint-green-fg: #75e0a7;
+  --tint-blue-fg: #9fc2ff;
+  --tint-red-fg: #fda29b;
+  --tooltip-bg: #1c2734;
+  --tooltip-fg: #e6ebf2;
+  --tooltip-border: #34445c;
+
+  --primary: #78a9f5;
+  --primary-hover: #a0c4fa;
+  --primary-on: #0b1220;
+  --primary-soft: #203a60;
+  --primary-soft-fg: #b9d2ff;
+  --primary-soft-border: #3d6fb4;
+  --blue: #6ea8ff;
+  --color-primary: #78a9f5;
+  --color-primary-contrast: #0b1220;
+  --color-on-primary: #0b1220;
+  --shadow-surface: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 html,
 body,
@@ -1336,7 +1486,7 @@ radius and focus language for interactive controls. */
 .workspace :where(input, textarea)::placeholder,
 .login-card input::placeholder,
 .ai-drawer :where(input, textarea)::placeholder {
-  color: #6b7789;
+  color: var(--muted);
   opacity: 1;
 }
 html[data-theme="dark"] .workspace :where(input, textarea)::placeholder,
@@ -1358,7 +1508,7 @@ not an invisible input on a toolbar. */
   border: 1px solid var(--border-default);
   border-radius: var(--radius-control);
   background: var(--surface-raised);
-  color: #667085;
+  color: var(--muted);
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
@@ -1389,7 +1539,7 @@ not an invisible input on a toolbar. */
 .incident-search > svg,
 .input-with-icon > svg {
   flex: none;
-  color: #667085;
+  color: var(--muted);
 }
 .incident-search > button {
   width: 28px;
@@ -1401,7 +1551,7 @@ not an invisible input on a toolbar. */
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #667085;
+  color: var(--muted);
 }
 .incident-search > button:hover { background: var(--surface-hover); }
 
@@ -1426,7 +1576,7 @@ not an invisible input on a toolbar. */
   height: 18px;
   flex: 0 0 18px;
   padding-left: 2px;
-  color: #667085;
+  color: var(--muted);
   border-left: 1px solid var(--border-subtle);
   box-sizing: content-box;
 }
@@ -1445,7 +1595,7 @@ not an invisible input on a toolbar. */
   padding: 8px 10px;
   border-radius: 7px;
 }
-.ui-select-popover li.is-active { background: var(--surface-hover); }
+/* is-active hợp nhất về định nghĩa chuẩn ở khối Select (primary-soft) */
 
 /* A non-interactive filter state is visually distinct from Button and Select. */
 .filter-chip {
@@ -1504,16 +1654,16 @@ html[data-theme="dark"] .ui-select-trigger,
 html[data-theme="dark"] .ui-select-popover {
   background: var(--surface-raised);
   border-color: var(--border-default);
-  color: #e6ebf2;
+  color: var(--foreground);
 }
 html[data-theme="dark"] .ui-select-trigger > svg {
-  color: #aab7c7;
+  color: var(--text-muted);
   border-left-color: var(--border-subtle);
 }
 html[data-theme="dark"] .filter-chip {
   background: var(--surface-muted);
   border-color: var(--border-subtle);
-  color: #bdc8d6;
+  color: var(--text-secondary);
 }
 
 /* Accessible shared muted copy for empty and missing-record states. */
@@ -1589,256 +1739,6 @@ button:hover svg.lucide-chevron-up,
 .ui-select-trigger:hover svg {
   color: var(--color-primary, #175cd3) !important;
   opacity: 1 !important;
-}
-
-/* ─────────────── Comprehensive Dark Mode High-Specificity Seal ─────────────── */
-html[data-theme="dark"] body,
-html[data-theme="dark"] .app-shell,
-html[data-theme="dark"] .workspace,
-html[data-theme="dark"] .workspace-content {
-  background: #0f172a !important;
-  color: #e2eaf5 !important;
-}
-
-html[data-theme="dark"] .content-section,
-html[data-theme="dark"] .side-section,
-html[data-theme="dark"] .cc-panel,
-html[data-theme="dark"] .report-card,
-html[data-theme="dark"] .summary-card,
-html[data-theme="dark"] .detail-card,
-html[data-theme="dark"] .detail-section,
-html[data-theme="dark"] .action-dialog,
-html[data-theme="dark"] .filter-bar,
-html[data-theme="dark"] .table-card,
-html[data-theme="dark"] .ui-select-popover,
-html[data-theme="dark"] .ui-select-trigger {
-  background: #1a2435 !important;
-  border-color: #253145 !important;
-  color: #e2eaf5 !important;
-}
-
-html[data-theme="dark"] .section-heading,
-html[data-theme="dark"] .cc-panel-header,
-html[data-theme="dark"] .dialog-header,
-html[data-theme="dark"] .action-dialog header {
-  background: #151e2d !important;
-  border-bottom-color: #253145 !important;
-  color: #e2eaf5 !important;
-}
-
-html[data-theme="dark"] .section-heading h2,
-html[data-theme="dark"] .cc-panel-header h2,
-html[data-theme="dark"] .cc-panel-header > div > span,
-html[data-theme="dark"] h1,
-html[data-theme="dark"] h2,
-html[data-theme="dark"] h3,
-html[data-theme="dark"] h4,
-html[data-theme="dark"] h5,
-html[data-theme="dark"] b:not(.req),
-html[data-theme="dark"] strong {
-  color: #f1f5f9 !important;
-}
-
-/* Preserve red required field indicator in dark mode */
-html[data-theme="dark"] b.req,
-html[data-theme="dark"] .req {
-  color: #f87171 !important;
-}
-
-html[data-theme="dark"] p,
-html[data-theme="dark"] span,
-html[data-theme="dark"] td,
-html[data-theme="dark"] dd,
-html[data-theme="dark"] label {
-  color: #cbd5e1;
-}
-
-html[data-theme="dark"] small,
-html[data-theme="dark"] dt,
-html[data-theme="dark"] time,
-html[data-theme="dark"] .meta,
-html[data-theme="dark"] .hint,
-html[data-theme="dark"] .helper {
-  color: #8da4be !important;
-}
-
-html[data-theme="dark"] input,
-html[data-theme="dark"] textarea,
-html[data-theme="dark"] select,
-html[data-theme="dark"] .ui-input,
-html[data-theme="dark"] .ui-textarea,
-html[data-theme="dark"] .ui-select-trigger {
-  background: #111827 !important;
-  border-color: #2a3c52 !important;
-  color: #f1f5f9 !important;
-}
-
-html[data-theme="dark"] input::placeholder,
-html[data-theme="dark"] textarea::placeholder {
-  color: #4a6279 !important;
-}
-
-html[data-theme="dark"] table {
-  border-color: #253145 !important;
-}
-
-html[data-theme="dark"] th {
-  background: #151e2d !important;
-  color: #8da4be !important;
-  border-bottom-color: #253145 !important;
-}
-
-html[data-theme="dark"] td {
-  border-bottom-color: #1f2d3d !important;
-}
-
-html[data-theme="dark"] tr:hover td {
-  background: #1f2d3d !important;
-}
-
-html[data-theme="dark"] .btn-secondary {
-  background: #1e293b !important;
-  border-color: #334155 !important;
-  color: #e2e8f5 !important;
-}
-
-html[data-theme="dark"] .btn-secondary:hover {
-  background: #283548 !important;
-  border-color: #475569 !important;
-}
-
-html[data-theme="dark"] .filter-chip {
-  background: #1e293b !important;
-  border-color: #334155 !important;
-  color: #cbd5e1 !important;
-}
-
-html[data-theme="dark"] .ui-select-popover li {
-  color: #e2eaf5 !important;
-}
-
-html[data-theme="dark"] .ui-select-popover li:hover,
-html[data-theme="dark"] .ui-select-popover li.is-active {
-  background: #253145 !important;
-  color: #60a5fa !important;
-}
-
-/* ─────────────── ECMWF Weather Panel Dark Mode ─────────────── */
-html[data-theme="dark"] .ecmwf-weather-panel {
-  background: #1a2435 !important;
-  border-color: #253145 !important;
-}
-
-html[data-theme="dark"] .weather-station-tabs {
-  background: #111827;
-  border-bottom-color: #253145;
-}
-
-html[data-theme="dark"] .weather-station-tab {
-  color: #8da4be;
-  background: transparent;
-  border-color: transparent;
-}
-
-html[data-theme="dark"] .weather-station-tab.active {
-  background: #1a2435;
-  color: #60a5fa;
-  border-color: #3b82f6;
-}
-
-html[data-theme="dark"] .weather-station-tab:hover:not(.active) {
-  background: #1f2d3d;
-  color: #c3d4e8;
-}
-
-html[data-theme="dark"] .weather-metric-card {
-  background: #111827 !important;
-  border-color: #1f2d3d !important;
-}
-
-html[data-theme="dark"] .metric-lbl {
-  color: #8da4be !important;
-}
-
-html[data-theme="dark"] .metric-val {
-  color: #e2eaf5 !important;
-}
-
-html[data-theme="dark"] .metric-icon-wrap {
-  opacity: 0.85;
-}
-
-/* ─────────────── Universal Dark Mode Tables & Rows ─────────────── */
-html[data-theme="dark"] :is(
-  .shelter-worklist,
-  .admin-table-wrap,
-  .data-table-wrap,
-  .shelter-summary,
-  .admin-summary
-) {
-  background: #111827 !important;
-  border-color: #1f2d3d !important;
-}
-
-html[data-theme="dark"] :is(
-  .shelter-table-head,
-  .admin-table thead th,
-  .data-table thead th
-) {
-  background: #162032 !important;
-  border-bottom-color: #1f2d3d !important;
-  color: #94a3b8 !important;
-}
-
-html[data-theme="dark"] .shelter-primary b,
-html[data-theme="dark"] .shelter-capacity b,
-html[data-theme="dark"] .shelter-condition b,
-html[data-theme="dark"] .shelter-officer b,
-html[data-theme="dark"] .shelter-operation b,
-html[data-theme="dark"] .admin-table b {
-  color: #f1f5f9 !important;
-}
-
-html[data-theme="dark"] .shelter-primary small,
-html[data-theme="dark"] .shelter-capacity small,
-html[data-theme="dark"] .shelter-condition small,
-html[data-theme="dark"] .shelter-officer small,
-html[data-theme="dark"] .shelter-operation small,
-html[data-theme="dark"] .admin-table small {
-  color: #8da4be !important;
-}
-
-html[data-theme="dark"] .username-tag {
-  background: #1e293b !important;
-  color: #94a3b8 !important;
-  border: 1px solid #334155 !important;
-}
-
-html[data-theme="dark"] .direct-role-picker .ui-select-trigger {
-  background: #1e293b !important;
-  border-color: #334155 !important;
-  color: #f1f5f9 !important;
-}
-
-html[data-theme="dark"] .weather-day-card {
-  background: #111827 !important;
-  border-color: #1f2d3d !important;
-}
-
-html[data-theme="dark"] .day-date {
-  color: #8da4be !important;
-}
-
-html[data-theme="dark"] .day-temps b {
-  color: #e2eaf5 !important;
-}
-
-html[data-theme="dark"] .day-temps small {
-  color: #8da4be !important;
-}
-
-html[data-theme="dark"] .weather-forecast-timeline h4 {
-  color: #8da4be !important;
 }
 
 /* ─────────────── Global specificity exceptions ─────────────── */
@@ -1982,16 +1882,7 @@ nền trong suốt đồng bộ */
   outline: 0 !important;
 }
 
-/* Nền và viền dark mode đồng bộ cho Search và Input wrapper */
-html[data-theme="dark"] .app-shell .workspace :where(.incident-search, .input-with-icon) {
-  background: #1a2435 !important;
-  border-color: #2e3d52 !important;
-  color: #e2eaf5 !important;
-}
-html[data-theme="dark"] .app-shell .workspace :where(.incident-search, .input-with-icon) input {
-  background: transparent !important;
-  color: #f1f5f9 !important;
-}
+/* (đãxóa: base input dùng token nên wrapper tự theo theme) */
 
 /* Bỏ bộ lọc tối / filter làm mờ bản đồ trong dark mode — bản đồ sắc nét,
 sáng rõ */
@@ -2095,9 +1986,9 @@ html[data-theme="dark"] .badge-blue {
   color: #93c5fd !important;
 }
 html[data-theme="dark"] .badge-neutral {
-  background: #1a2435 !important;
+  background: var(--surface-card) !important;
   border-color: #2e3d52 !important;
-  color: #bdc8d6 !important;
+  color: var(--text-secondary) !important;
 }
 
 /* Status dots: must keep their semantic color (red/amber/green/blue) */
@@ -2136,56 +2027,6 @@ html[data-theme="dark"] .priority-blue { background: #3b82f6 !important; }
 html[data-theme="dark"] .timeline-dot.blue { color: #60a5fa !important; background: #60a5fa !important; }
 html[data-theme="dark"] .timeline-dot.green { color: #34d399 !important; background: #34d399 !important; }
 html[data-theme="dark"] .timeline-dot.amber { color: #fbbf24 !important; background: #fbbf24 !important; }
-
-/* ================================================================
-   OPERATIONAL MAP — Dark Mode Surfaces
-   om-panel and om-map-zone had no dark mode treatment.
-   ================================================================ */
-html[data-theme="dark"] .om-panel {
-  background: var(--surface-card) !important;
-  border-color: var(--border-subtle) !important;
-  color: var(--foreground, #e2eaf5) !important;
-}
-html[data-theme="dark"] .om-panel-header {
-  background: var(--surface-muted) !important;
-  border-bottom-color: var(--border-subtle) !important;
-}
-html[data-theme="dark"] .om-panel-results {
-  background: var(--surface-card) !important;
-}
-html[data-theme="dark"] .om-result-area {
-  color: #8da4be !important;
-}
-html[data-theme="dark"] .om-data-stamp {
-  color: #8da4be !important;
-}
-
-/* ================================================================
-   LIGHT MODE — Map toolbar protection (hard-coded white in shell.css)
-   Already correct for light mode; ensure dark mode overrides stay clean.
-   ================================================================ */
-html[data-theme="dark"] .map-toolbar,
-html[data-theme="dark"] .map-toolbar button {
-  background: #1a2435 !important;
-  border-color: #334155 !important;
-  color: #e2eaf5 !important;
-}
-html[data-theme="dark"] .map-toolbar button:hover {
-  background: #253145 !important;
-}
-html[data-theme="dark"] .map-toolbar span {
-  background: #334155 !important;
-}
-html[data-theme="dark"] .map-layers {
-  background: #1a2435 !important;
-  border-color: #334155 !important;
-  color: #e2eaf5 !important;
-}
-html[data-theme="dark"] .map-legend {
-  background: rgba(26, 36, 53, 0.95) !important;
-  border-color: #334155 !important;
-  color: #e2eaf5 !important;
-}
 
 /* ================================================================
    FILTER TOOLBAR BASELINE — nhãn bọc Select phải cao đúng bằng chính
@@ -2284,4 +2125,97 @@ nhảy sang phải.
   flex: 1 1 100%;
   width: 100%;
   min-width: 0;
+}
+
+/* ================================================================
+   FIX DARK-MODE: "tờ giấy báo cáo" .operational-report
+   Quét màu !important ở trên (h1..h5/b/strong/small/th/…) biến tiêu đề
+   trong trang in thành chữ gần-trắng trên nền giấy trắng → ratio ~1.1
+   ("flashbang" thật sự). Kẹp lại màu tài liệu GIẤY TRẮNG-CHỮ TỐI cho
+   cả hai theme; @media print bên dưới analytics.css vẫn in đúng giấy.
+   ================================================================ */
+html[data-theme="dark"] .operational-report h1,
+html[data-theme="dark"] .operational-report h2,
+html[data-theme="dark"] .operational-report h3,
+html[data-theme="dark"] .operational-report h4,
+html[data-theme="dark"] .operational-report h5,
+html[data-theme="dark"] .operational-report b,
+html[data-theme="dark"] .operational-report strong {
+  color: #101828 !important;
+}
+html[data-theme="dark"] .operational-report small,
+html[data-theme="dark"] .operational-report dt,
+html[data-theme="dark"] .operational-report time,
+html[data-theme="dark"] .operational-report .meta,
+html[data-theme="dark"] .operational-report .hint,
+html[data-theme="dark"] .operational-report .helper {
+  color: #667085 !important;
+}
+html[data-theme="dark"] .operational-report th {
+  background: #f2f4f7 !important;
+  color: #475467 !important;
+  border-bottom-color: #e4e7ec !important;
+}
+html[data-theme="dark"] .operational-report td {
+  color: #344054 !important;
+  border-bottom-color: #edf0f3 !important;
+}
+html[data-theme="dark"] .operational-report .metric-basis.recorded {
+  background: #ecfdf3 !important;
+  color: #067647 !important;
+}
+html[data-theme="dark"] .operational-report .metric-basis.derived {
+  background: #eef4ff !important;
+  color: #175cd3 !important;
+}
+html[data-theme="dark"] .operational-report .analytics-status {
+  color: #475467 !important;
+}
+html[data-theme="dark"] .operational-report .report-subject,
+html[data-theme="dark"] .operational-report .report-summary,
+html[data-theme="dark"] .operational-report .report-block p,
+html[data-theme="dark"] .operational-report .report-block li,
+html[data-theme="dark"] .operational-report .report-document-state {
+  color: #3f4b5e !important;
+}
+html[data-theme="dark"] .operational-report .report-kpi-grid > div {
+  background: var(--text-primary) !important;
+  color: #172033;
+}
+html[data-theme="dark"] .operational-report .report-masthead {
+  color: #101828 !important;
+}
+
+/* FIX DARK-MODE: màu nhãn/lien kết trong "giấy trắng" báo cáo tác nghiệp
+   phải theo giấy, không theo quét-text tối chung của workspace. */
+html[data-theme="dark"] .operational-report .analytics-entity-link,
+html[data-theme="dark"] .operational-report .analytics-status,
+html[data-theme="dark"] .operational-report .report-link {
+  color: #175cd3 !important;
+}
+html[data-theme="dark"] .operational-report .analytics-status.warning {
+  background: #fffaeb !important;
+  color: #9a3e07 !important;
+}
+html[data-theme="dark"] .operational-report .analytics-status.success {
+  background: #ecfdf3 !important;
+  color: #067647 !important;
+}
+html[data-theme="dark"] .operational-report .analytics-status.danger {
+  background: #fef3f2 !important;
+  color: #b42318 !important;
+}
+html[data-theme="dark"] .operational-report .analytics-status.neutral {
+  background: #f2f4f7 !important;
+  color: #475467 !important;
+}
+/* Ngoài giấy báo cáo (panel tối), chip trạng thái phải dùng tông tối
+   thay vì nền pastel sáng — quét-text tối đặt chữ nhạt lên pastel → 1.9:1. */
+html[data-theme="dark"] .analytics-status.warning {
+  background: var(--warning-surface, #342818);
+  color: #fec84b;
+}
+html[data-theme="dark"] .analytics-status.danger {
+  background: var(--danger-surface, #351d22);
+  color: #ff9b91;
 }

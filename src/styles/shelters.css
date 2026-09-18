@@ -4,7 +4,7 @@
 .shelter-summary {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 16px;
@@ -16,8 +16,8 @@
   align-items: center;
   gap: 7px;
   padding: 0 18px;
-  border-right: 1px solid #e4e7ec;
-  color: #475467;
+  border-right: 1px solid var(--border);
+  color: var(--text-secondary);
 }
 .shelter-summary > div:first-child {
   padding-left: 2px;
@@ -30,20 +30,37 @@
 }
 .shelter-summary b {
   font-size: 14.5px;
-  color: #344054;
+  color: var(--text-secondary);
 }
 .shelter-summary .danger,
 .shelter-summary .danger b {
   color: #d92d20;
 }
 .shelter-worklist {
-  background: #fff;
+  background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: 9px;
-  overflow-x: auto;
+  /* worklist chỉ là khung card bo tròn — quyền cuộn ngang thuộc khối bảng
+     phía dưới (pattern thống nhất với .incident-list-table/.team-list-table,
+     spec 2026-09: scrollbar phải thuộc phần tử chứa trọn bảng, thanh lọc
+     không nằm trong vùng cuộn nữa nên không cần sticky). */
+  overflow: hidden;
 }
 .shelter-table {
-  min-width: 980px;
+  overflow-x: auto;
+}
+/* Scrollbar thuộc khối bảng; row/head mang min-width bằng tổng min thực của
+   grid (210+145+180+85+140+130+115+20 + 7 gap×14 + padding 32 ≈ 1155px) —
+   nền/hover/border row phủ đủ chiều rộng nội dung, không hở vùng trắng bên
+   phải khi cuộn hết cỡ, cột cuối (SOS + ">") luôn nằm trong bảng (owner
+   request 2026-09). */
+.shelter-table-head,
+.shelter-row {
+  min-width: 1155px;
+}
+.shelter-table-head > *,
+.shelter-row > * {
+  min-width: 0;
 }
 .shelter-table-head,
 .shelter-row {
@@ -65,7 +82,7 @@
   padding: 0 16px;
   border-bottom: 1px solid var(--border);
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
   font-weight: 600;
 }
 .shelter-row {
@@ -73,14 +90,14 @@
   min-height: 76px;
   padding: 10px 16px;
   border: 0;
-  border-bottom: 1px solid #edf0f2;
-  background: #fff;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-card);
   text-align: left;
   cursor: pointer;
   transition: background 0.12s ease;
 }
 .shelter-row:hover {
-  background: #f8fafc;
+  background: var(--surface-subtle);
 }
 .shelter-row .badge {
   white-space: nowrap;
@@ -99,12 +116,12 @@
 }
 .shelter-primary b {
   font-size: 13.5px;
-  color: #1d2939;
+  color: var(--text-primary);
 }
 .shelter-primary small,
 .shelter-row small {
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .shelter-primary small:last-child {
   display: flex;
@@ -114,7 +131,7 @@
 .shelter-capacity b,
 .shelter-row > span:nth-child(4) b {
   font-size: 13.5px;
-  color: #344054;
+  color: var(--text-secondary);
 }
 .shelter-capacity .progress-track {
   margin: 0;
@@ -126,15 +143,15 @@
 .shelter-officer b,
 .shelter-operation b {
   font-size: var(--type-metadata, 13px);
-  color: #344054;
+  color: var(--text-secondary);
 }
 .shelter-operation b {
-  color: #175cd3;
+  color: var(--primary);
 }
 .shelter-detail-header {
   margin: 0 0 20px;
   padding: 20px 30px;
-  background: #fff;
+  background: var(--surface-card);
   border-bottom: 1px solid var(--border);
 }
 .shelter-detail-layout {
@@ -156,7 +173,7 @@
 }
 .capacity-overview > div {
   padding: 3px 15px;
-  border-right: 1px solid #e4e7ec;
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -170,11 +187,11 @@
 .capacity-overview span,
 .capacity-overview small {
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 .capacity-overview b {
   font-size: 22.5px;
-  color: #344054;
+  color: var(--text-secondary);
 }
 .capacity-overview .danger b {
   color: #d92d20;
@@ -187,9 +204,9 @@
   padding: 9px 11px;
   display: flex;
   gap: 8px;
-  border: 1px solid #fecdca;
+  border: 1px solid var(--danger-border);
   border-radius: 6px;
-  background: #fff6f5;
+  background: var(--danger-surface);
   color: #d92d20;
 }
 .shelter-alert span {
@@ -197,10 +214,10 @@
   flex-direction: column;
   gap: 2px;
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 .shelter-alert b {
-  color: #b42318;
+  color: var(--danger-fg);
 }
 .section-inline-actions {
   display: flex;
@@ -217,8 +234,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border-right: 1px solid #edf0f2;
-  border-bottom: 1px solid #edf0f2;
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 .shelter-readiness-grid > div:nth-child(4n) {
   border-right: 0;
@@ -232,8 +249,8 @@
   display: grid;
   place-items: center;
   border-radius: 6px;
-  background: #f2f4f7;
-  color: #667085;
+  background: var(--chip-surface);
+  color: var(--muted);
 }
 .shelter-readiness-grid > div > div {
   display: flex;
@@ -242,11 +259,11 @@
 }
 .shelter-readiness-grid small {
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .shelter-readiness-grid b {
   font-size: var(--type-metadata, 13px);
-  color: #344054;
+  color: var(--text-secondary);
 }
 .evacuation-list {
   display: flex;
@@ -254,7 +271,7 @@
 }
 .evacuation-list article {
   padding: 14px 17px;
-  border-bottom: 1px solid #edf0f2;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .evacuation-list article:last-child {
   border: 0;
@@ -289,12 +306,12 @@
 .evacuation-body span,
 .evacuation-body small {
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .evacuation-body b,
 .evacuation-body button {
   font-size: var(--type-metadata, 13px);
-  color: #344054;
+  color: var(--text-secondary);
 }
 .evacuation-body button {
   width: max-content;
@@ -303,7 +320,7 @@
   border: 0;
   background: transparent;
   padding: 0;
-  color: #175cd3;
+  color: var(--primary);
   font-weight: 600;
   cursor: pointer;
 }
@@ -319,14 +336,14 @@
 }
 .evacuation-progress span {
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 .blocked-route-note {
   display: flex;
   align-items: center;
   gap: 5px;
   margin: 8px 0 0;
-  color: #b42318;
+  color: var(--danger-fg);
   font-size: var(--type-metadata, 13px);
 }
 .shelter-facility-table > div {
@@ -336,14 +353,14 @@
   align-items: center;
   min-height: 44px;
   padding: 7px 15px;
-  border-bottom: 1px solid #edf0f2;
+  border-bottom: 1px solid var(--border-subtle);
   font-size: var(--type-metadata, 13px);
-  color: #475467;
+  color: var(--text-secondary);
 }
 .shelter-facility-table > div:first-child {
   min-height: 32px;
-  background: #fafbfc;
-  color: #667085;
+  background: var(--surface-muted);
+  color: var(--muted);
 }
 .shelter-facility-table > div > span:first-child {
   display: flex;
@@ -352,12 +369,12 @@
 }
 .shelter-facility-table small {
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .shelter-operational-map {
   height: 430px;
   position: relative;
-  background: #edf1f4;
+  background: var(--surface-muted);
 }
 .shelter-map-marker {
   width: 25px;
@@ -373,7 +390,7 @@
   height: 7px;
   margin: 7px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface-card);
 }
 .shelter-map-marker.primary {
   width: 32px;
@@ -401,9 +418,9 @@
   display: flex;
   gap: 10px;
   padding: 7px 9px;
-  border: 1px solid #d0d5dd;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--map-overlay-bg);
 }
 .shelter-map-legend span {
   display: flex;
@@ -429,10 +446,10 @@
 }
 .shelter-contact {
   padding: 12px 14px;
-  border-top: 1px solid #edf0f2;
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   gap: 8px;
-  color: #667085;
+  color: var(--muted);
 }
 .shelter-contact > div {
   display: flex;
@@ -444,11 +461,11 @@
 }
 .shelter-contact span {
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 .shelter-linked {
   padding: 12px 14px;
-  border-top: 1px solid #edf0f2;
+  border-top: 1px solid var(--border-subtle);
 }
 .shelter-linked h3 {
   margin: 0 0 8px;
@@ -472,11 +489,11 @@
 }
 .shelter-linked b {
   font-size: var(--type-metadata, 13px);
-  color: #175cd3;
+  color: var(--primary);
 }
 .shelter-linked small {
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 .shelter-form-dialog {
   width: min(590px, calc(100vw - 24px));
@@ -501,7 +518,7 @@
     border-right: 0;
   }
   .shelter-readiness-grid > div:nth-last-child(-n + 4) {
-    border-bottom: 1px solid #edf0f2;
+    border-bottom: 1px solid var(--border-subtle);
   }
   .shelter-readiness-grid > div:nth-last-child(-n + 2) {
     border-bottom: 0;
@@ -584,7 +601,7 @@
   }
   .capacity-overview > div {
     padding: 7px 10px !important;
-    border-right: 1px solid #e4e7ec !important;
+    border-right: 1px solid var(--border) !important;
   }
   .capacity-overview > div:nth-child(2n) {
     border-right: 0 !important;
@@ -594,7 +611,7 @@
   }
   .shelter-readiness-grid > div {
     border-right: 0 !important;
-    border-bottom: 1px solid #edf0f2 !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
   }
   .evacuation-body {
     grid-template-columns: 1fr;

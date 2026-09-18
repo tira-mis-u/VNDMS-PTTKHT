@@ -353,8 +353,8 @@ export function CitizenPortal() {
               width: "36px",
               height: "36px",
               borderRadius: "8px",
-              background: "#e0f2fe",
-              color: "#0284c7",
+              background: "var(--tint-sky)",
+              color: "var(--wx-rain-fg)",
               display: "grid",
               placeItems: "center",
             }}>
@@ -410,7 +410,7 @@ export function CitizenPortal() {
                 </div>
               ))}
               {!activeAlerts.length && (
-                <p style={{ color: "#64748b", padding: "16px 20px", margin: 0 }}>
+                <p style={{ color: "var(--muted)", padding: "16px 20px", margin: 0 }}>
                   Hiện tại không có cảnh báo nguy hiểm khẩn cấp nào trên địa bàn.
                 </p>
               )}
@@ -444,7 +444,7 @@ export function CitizenPortal() {
                       </span>
                     </div>
                     {shelter.responsibleOfficer && (
-                      <small style={{ color: "#64748b", marginTop: "4px" }}>
+                      <small style={{ color: "var(--muted)", marginTop: "4px" }}>
                         Quản lý: {shelter.responsibleOfficer.name} ({shelter.responsibleOfficer.phone})
                       </small>
                     )}

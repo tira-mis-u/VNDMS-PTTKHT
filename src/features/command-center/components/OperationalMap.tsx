@@ -404,121 +404,60 @@ export function OperationalMap({
         height: "620px",
         borderRadius: "12px",
         overflow: "hidden",
-        border: "1.5px solid #cbd5e1",
-        boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.08)",
+        border: "1.5px solid var(--map-overlay-border)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <div ref={container} className="cc-map-canvas" style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }} />
 
       {/* Map attribution badge */}
-      <div
-        style={{
-          position: "absolute",
-          top: "12px",
-          left: "12px",
-          background: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(6px)",
-          padding: "5px 12px",
-          borderRadius: "7px",
-          fontSize: "12px",
-          fontWeight: 650,
-          color: "#0f172a",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-          border: "1px solid #e2e8f0",
-          zIndex: 10,
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          pointerEvents: "none",
-        }}
-      >
-        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#16a34a" }} />
+      <div className="cc-map-attribution">
+        <span className="cc-map-attribution-dot" />
         <span>Bản đồ số Quốc gia NDAMapVN · Vector Tiles</span>
       </div>
 
       {/* Interactive ECMWF Weather Popup on Map (Đồng bộ theme tối cao cấp, không bị nền trắng chữ trắng) */}
       {selectedWeatherStation && (
-        <div
-          className="ecmwf-map-popup-card"
-          style={{
-            position: "absolute",
-            bottom: "16px",
-            left: "16px",
-            width: "360px",
-            maxWidth: "calc(100% - 32px)",
-            background: "#0f172a",
-            borderRadius: "12px",
-            border: "1.5px solid #2563eb",
-            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.6)",
-            zIndex: 20,
-            padding: "16px",
-            color: "#f8fafc",
-            animation: "fadeIn 0.2s ease-out",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+        <div className="ecmwf-map-popup-card">
+          <div className="wx-pop-head">
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <CloudRain size={17} color="#38bdf8" />
-                <b style={{ fontSize: "15px", color: "#ffffff", fontWeight: 700 }}>{selectedWeatherStation.stationName}</b>
+              <div className="wx-pop-title">
+                <CloudRain size={17} color="var(--wx-rain-fg)" />
+                <b>{selectedWeatherStation.stationName}</b>
               </div>
-              <small style={{ color: "#94a3b8", fontSize: "12px" }}>
-                Mô hình ECMWF-IFS · Vùng {selectedWeatherStation.region}
-              </small>
+              <small>Mô hình ECMWF-IFS · Vùng {selectedWeatherStation.region}</small>
             </div>
-            <button
-              type="button"
-              onClick={() => setSelectedWeatherStation(null)}
-              style={{ border: 0, background: "transparent", color: "#94a3b8", cursor: "pointer", padding: "3px", borderRadius: "4px" }}
-              aria-label="Đóng"
-            >
+            <button type="button" className="wx-pop-close" onClick={() => setSelectedWeatherStation(null)} aria-label="Đóng">
               <X size={17} />
             </button>
           </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", margin: "10px 0" }}>
-            <div style={{ background: "#1e293b", padding: "9px", borderRadius: "8px", border: "1px solid #334155" }}>
-              <span style={{ fontSize: "11.5px", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }}>
-                <Thermometer size={13} color="#f87171" /> Nhiệt độ
-              </span>
-              <b style={{ fontSize: "16px", color: "#f87171" }}>{selectedWeatherStation.current.temperature.toFixed(1)}°C</b>
+          <div className="wx-pop-grid">
+            <div className="wx-pop-cell tone-temp">
+              <span><Thermometer size={13} /> Nhiệt độ</span>
+              <b>{selectedWeatherStation.current.temperature.toFixed(1)}°C</b>
             </div>
-
-            <div style={{ background: "#1e293b", padding: "9px", borderRadius: "8px", border: "1px solid #334155" }}>
-              <span style={{ fontSize: "11.5px", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }}>
-                <CloudRain size={13} color="#38bdf8" /> Mưa / Giờ
-              </span>
-              <b style={{ fontSize: "16px", color: "#38bdf8" }}>{selectedWeatherStation.current.rain.toFixed(1)} mm</b>
+            <div className="wx-pop-cell tone-rain">
+              <span><CloudRain size={13} /> Mưa / Giờ</span>
+              <b>{selectedWeatherStation.current.rain.toFixed(1)} mm</b>
             </div>
-
-            <div style={{ background: "#1e293b", padding: "9px", borderRadius: "8px", border: "1px solid #334155" }}>
-              <span style={{ fontSize: "11.5px", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }}>
-                <Wind size={13} color="#cbd5e1" /> Gió & Giật
-              </span>
-              <b style={{ fontSize: "14px", color: "#e2e8f0" }}>
-                {selectedWeatherStation.current.windSpeed.toFixed(0)} ({selectedWeatherStation.current.windGusts.toFixed(0)}) km/h
-              </b>
+            <div className="wx-pop-cell tone-wind">
+              <span><Wind size={13} /> Gió & Giật</span>
+              <b>{selectedWeatherStation.current.windSpeed.toFixed(0)} ({selectedWeatherStation.current.windGusts.toFixed(0)}) km/h</b>
             </div>
-
-            <div style={{ background: "#1e293b", padding: "9px", borderRadius: "8px", border: "1px solid #334155" }}>
-              <span style={{ fontSize: "11.5px", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }}>
-                <Compass size={13} color="#fbbf24" /> Dòng chảy lũ
-              </span>
-              <b style={{ fontSize: "14px", color: "#fbbf24" }}>{selectedWeatherStation.current.runoff.toFixed(2)} mm</b>
+            <div className="wx-pop-cell tone-flow">
+              <span><Compass size={13} /> Dòng chảy lũ</span>
+              <b>{selectedWeatherStation.current.runoff.toFixed(2)} mm</b>
             </div>
           </div>
-
-          <div style={{ borderTop: "1px solid #334155", paddingTop: "10px" }}>
-            <span style={{ fontSize: "12px", color: "#94a3b8", fontWeight: 600, display: "block", marginBottom: "6px" }}>
-              Xu thế 3 ngày tới:
-            </span>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
+          <div className="wx-pop-days">
+            <span className="wx-pop-days-title">Xu thế 3 ngày tới:</span>
+            <div className="wx-pop-days-grid">
               {selectedWeatherStation.dailySummary.slice(0, 3).map((day) => (
-                <div key={day.date} style={{ textAlign: "center", background: "#1e293b", padding: "7px 5px", borderRadius: "7px", fontSize: "11px", border: "1px solid #334155" }}>
-                  <div style={{ color: "#94a3b8", fontWeight: 500 }}>{day.date.slice(5)}</div>
-                  <div style={{ fontWeight: 700, color: "#ffffff", margin: "2px 0" }}>{day.maxTemp.toFixed(0)}° / {day.minTemp.toFixed(0)}°</div>
-                  <div style={{ color: "#38bdf8", display: "inline-flex", alignItems: "center", gap: "2px", justifyContent: "center" }}>
-                    <Droplets size={11} color="#38bdf8" />
+                <div key={day.date} className="wx-pop-day">
+                  <div className="wx-pop-day-date">{day.date.slice(5)}</div>
+                  <div className="wx-pop-day-temp">{day.maxTemp.toFixed(0)}° / {day.minTemp.toFixed(0)}°</div>
+                  <div className="wx-pop-day-rain">
+                    <Droplets size={11} />
                     {day.totalRain.toFixed(0)}mm
                   </div>
                   <div style={{ marginTop: "3px" }}>

@@ -94,7 +94,7 @@ function LoginForm({
             style={{
               background: "none",
               border: 0,
-              color: "#2563eb",
+              color: "var(--primary)",
               fontSize: "13px",
               fontWeight: 600,
               cursor: "pointer",
@@ -181,8 +181,8 @@ function ForgotPasswordForm({
           width: "56px",
           height: "56px",
           borderRadius: "50%",
-          background: "#ecfdf3",
-          color: "#16a34a",
+          background: "var(--success-surface)",
+          color: "var(--success-fg)",
           display: "grid",
           placeItems: "center",
           margin: "0 auto 16px"
@@ -208,7 +208,7 @@ function ForgotPasswordForm({
   return (
     <form className="login-form-inner" onSubmit={submit} id="forgot-password-form">
       <header className="auth-form-header">
-        <span style={{ background: "#fef3c7", color: "#d97706" }}>
+        <span style={{ background: "var(--tint-amber)", color: "var(--warning-fg)" }}>
           <KeyRound size={20} />
         </span>
         <div>
@@ -305,7 +305,7 @@ function ForgotPasswordForm({
           style={{
             background: "none",
             border: 0,
-            color: "#64748b",
+            color: "var(--muted)",
             fontSize: "13.5px",
             fontWeight: 600,
             cursor: "pointer",

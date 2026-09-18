@@ -164,6 +164,9 @@ export interface OperationalStore {
   markSosNoContact: (sosId: string) => void;
   createSos: (
     input: import("@/application/sos/sosUseCases").NewSosInput,
+    /** Caller đã tự ghi dòng nhật ký chuyên biệt (SOS Panic) → store bỏ dòng
+     * generic, MỘT hành động = MỘT dòng audit (owner request 2026-09). */
+    options?: { securityAudited?: boolean },
   ) => string;
   resolveSos: (sosId: string, summary: string) => void;
   closeSos: (sosId: string) => void;

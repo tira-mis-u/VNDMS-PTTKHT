@@ -291,6 +291,23 @@ export function DutyLog({ navigate }: { navigate: (path: string) => void }) {
   const isOwn = (entry: DutyLogEntry) =>
     entry.actorId ? entry.actorId === user.id : entry.actor === actor;
 
+  /**
+   * Mọi thao tác trên sổ trực cũng phải vào Nhật ký bảo mật (tương đương các
+   * lệnh nghiệp vụ khác) — trước đây chỉ có login/logout + lệnh store được ghi.
+   */
+  const auditDuty = (title: string, entryId?: string) => {
+    try {
+      store.recordSecurityAudit(
+        "OPERATIONAL_MUTATION",
+        `Sổ trực ban — ${title}`,
+        "DutyLog",
+        entryId ?? null,
+      );
+    } catch {
+      /* nhật ký không bao giờ được chặn thao tác nghiệp vụ */
+    }
+  };
+
   const submit = () => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -304,6 +321,7 @@ export function DutyLog({ navigate }: { navigate: (path: string) => void }) {
       ...(kind === "Chỉ đạo" ? { status: "open" as const } : {}),
       ...(linkSel ? { link: linkSel } : {}),
     });
+    auditDuty(`Ghi mục "${kind}": ${trimmed.slice(0, 80)}`);
     setText("");
     setLinkSel(null);
     setLinkQuery("");
@@ -321,6 +339,7 @@ export function DutyLog({ navigate }: { navigate: (path: string) => void }) {
       text: `Bàn giao ca cho ${to}.`,
       handover: { toName: to, pending: handoverDraft.trim() || "Không có việc tồn đọng được ghi nhận." },
     });
+    auditDuty(`Bàn giao ca trực cho ${to}`);
     setHandoverTo("");
     setHandoverDraft("");
     setHandoverOpen(false);
@@ -449,7 +468,7 @@ export function DutyLog({ navigate }: { navigate: (path: string) => void }) {
               <li key={entry.id}>
                 <span className="duty-kind">Theo dõi</span>
                 <span className="duty-out-text">{entry.text}</span>
-                <button type="button" onClick={() => toggleDutyFollowUp(entry.id)} title="Bỏ cờ theo dõi">
+                <button type="button" onClick={() => { toggleDutyFollowUp(entry.id); auditDuty(entry.followUp ? "Bỏ cờ theo dõi bản ghi" : "Cắm cờ theo dõi bản ghi", entry.id); }} title="Bỏ cờ theo dõi">
                   <Flag size={12} /> Bỏ cờ
                 </button>
               </li>
@@ -715,7 +734,7 @@ export function DutyLog({ navigate }: { navigate: (path: string) => void }) {
                       <button
                         type="button"
                         className="duty-order-btn"
-                        onClick={() => markDutyEntryDone(entry.id)}
+                        onClick={() => { markDutyEntryDone(entry.id); auditDuty(`Đánh dấu chỉ đạo đã hoàn tất`, entry.id); }}
                         title="Đánh dấu chỉ đạo đã hoàn tất (không qua nhiệm vụ)"
                       >
                         <CheckCheck size={12} /> Đánh dấu xong
@@ -725,7 +744,7 @@ export function DutyLog({ navigate }: { navigate: (path: string) => void }) {
                       <button
                         type="button"
                         className={`duty-order-btn${entry.followUp ? " flagged" : ""}`}
-                        onClick={() => toggleDutyFollowUp(entry.id)}
+                        onClick={() => { toggleDutyFollowUp(entry.id); auditDuty(entry.followUp ? "Bỏ cờ theo dõi bản ghi" : "Cắm cờ theo dõi bản ghi", entry.id); }}
                         title={entry.followUp ? "Bỏ cờ theo dõi" : "Cắm cờ để ca sau theo dõi"}
                       >
                         <Flag size={12} /> {entry.followUp ? "Bỏ cờ" : "Cắm cờ"}
@@ -735,7 +754,7 @@ export function DutyLog({ navigate }: { navigate: (path: string) => void }) {
                       <button
                         type="button"
                         className="duty-confirm"
-                        onClick={() => confirmDutyHandover(entry.id, actor)}
+                        onClick={() => { confirmDutyHandover(entry.id, actor); auditDuty(`Xác nhận đã nhận ca bàn giao`, entry.id); }}
                       >
                         <CheckCheck size={12} /> Xác nhận đã nhận ca
                       </button>
@@ -746,7 +765,7 @@ export function DutyLog({ navigate }: { navigate: (path: string) => void }) {
                   <button
                     className="duty-retract"
                     title="Thu hồi bản ghi (vẫn lưu dấu vết)"
-                    onClick={() => retractDutyEntry(entry.id, actor)}
+                    onClick={() => { retractDutyEntry(entry.id, actor); auditDuty(`Thu hồi bản ghi sổ trực`, entry.id); }}
                   >
                     <Undo2 size={12} />
                   </button>
@@ -762,6 +781,7 @@ export function DutyLog({ navigate }: { navigate: (path: string) => void }) {
                     onClick={() => {
                       if (confirmDeleteId === entry.id) {
                         deleteDutyEntry(entry.id, user.id);
+                        auditDuty("Xóa vĩnh viễn bản ghi sổ trực", entry.id);
                         setConfirmDeleteId(null);
                       } else {
                         setConfirmDeleteId(entry.id);

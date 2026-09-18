@@ -105,7 +105,7 @@ export function CitizenRequestsPage() {
         {createdSosId && (
           <div
             className="admin-feedback-toast"
-            style={{ margin: "10px 16px 0", backgroundColor: "#fef2f2", borderColor: "#fecaca", color: "#991b1b" }}
+            style={{ margin: "10px 16px 0", backgroundColor: "var(--danger-surface)", borderColor: "var(--danger-border)", color: "var(--danger-fg)" }}
           >
             <Info size={16} />
             <span>
@@ -159,7 +159,7 @@ export function CitizenRequestsPage() {
                 <div className="citizen-sos-head">
                   <div>
                     <Badge tone="red">SOS</Badge>{" "}
-                    <b>Mã cứu nạn: {row.sos.id}</b> · <small style={{ color: "#64748b" }}>{row.sos.receivedAt}</small>
+                    <b>Mã cứu nạn: {row.sos.id}</b> · <small style={{ color: "var(--muted)" }}>{row.sos.receivedAt}</small>
                   </div>
                   <Badge tone={row.sos.status === "Đã xử lý" || row.sos.status === "Đã đóng" ? "green" : "red"}>
                     {row.sos.status}
@@ -186,7 +186,7 @@ export function CitizenRequestsPage() {
                 <div className="citizen-sos-head">
                   <div>
                     <Badge tone="amber">Phản ánh</Badge>{" "}
-                    <b>Mã phản ánh: {row.report.code}</b> · <small style={{ color: "#64748b" }}>{row.report.createdAt}</small>
+                    <b>Mã phản ánh: {row.report.code}</b> · <small style={{ color: "var(--muted)" }}>{row.report.createdAt}</small>
                   </div>
                   <Badge
                     tone={
@@ -220,9 +220,9 @@ export function CitizenRequestsPage() {
             ),
           )}
           {!myRequests.length && (
-            <div style={{ textAlign: "center", padding: "28px", color: "#64748b" }}>
+            <div style={{ textAlign: "center", padding: "28px", color: "var(--muted)" }}>
               <ShieldCheck size={36} color="#16a34a" style={{ margin: "0 auto 8px" }} />
-              <b style={{ display: "block", color: "#334155" }}>
+              <b style={{ display: "block", color: "var(--text-primary)" }}>
                 {requestFilter === "all"
                   ? "Bạn chưa gửi yêu cầu nào."
                   : requestFilter === "sos"

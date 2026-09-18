@@ -25,13 +25,13 @@
 
 .alert-popover-summary {
   font-size: 16px;
-  color: #475467;
+  color: var(--text-secondary);
   margin: 6px 0 4px;
 }
 
 .alert-popover-empty {
   font-size: 16px;
-  color: #475467;
+  color: var(--text-secondary);
   line-height: 1.55;
   margin: 8px 0 4px;
 }
@@ -121,7 +121,7 @@
 
 .alert-popover-actions button {
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface-card);
   border-radius: 6px;
   width: 24px;
   height: 24px;
@@ -129,11 +129,11 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #475467;
+  color: var(--text-secondary);
 }
 
 .alert-popover-actions button:hover {
-  background: #f2f4f7;
+  background: var(--chip-surface);
 }
 
 .alert-popover-actions .alert-ack-action {
@@ -141,7 +141,7 @@
   padding: 0 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #175cd3;
+  color: var(--primary);
 }
 
 .alert-popover-footer {
@@ -183,8 +183,8 @@
 }
 
 .alert-summary-card.danger {
-  border-color: #fda29b;
-  background: #fffbfa;
+  border-color: var(--danger-border);
+  background: var(--danger-surface);
 }
 
 .alert-summary-icon {
@@ -198,18 +198,18 @@
 }
 
 .alert-summary-icon.tone-blue {
-  background: #eaf2ff;
-  color: #1849a9;
+  background: var(--info-surface);
+  color: var(--primary-soft-fg);
 }
 
 .alert-summary-icon.tone-amber {
-  background: #fef4e6;
-  color: #b54708;
+  background: var(--warning-surface);
+  color: var(--warning-fg);
 }
 
 .alert-summary-icon.tone-red {
-  background: #feeceb;
-  color: #b42318;
+  background: var(--danger-surface);
+  color: var(--danger-fg);
 }
 
 .alert-summary-card small {
@@ -245,6 +245,20 @@
   gap: 8px;
 }
 
+/* Alerts center: tách hai khối queue/public khỏi nhau và cho item thở
+   khỏi border của block cha (owner request 2026-09). */
+.alerts-page .content-section + .content-section {
+  margin-top: 26px;
+}
+.alerts-page .alert-queue .alert-list {
+  padding: 12px 14px 14px;
+  gap: 10px;
+}
+.alerts-page .alert-queue .alert-row {
+  padding: 10px 12px;
+}
+
+
 .alert-row {
   display: flex;
   gap: 12px;
@@ -257,7 +271,7 @@
 }
 
 .alert-row.alert-unread {
-  background: #f8faff;
+  background: var(--surface-hover);
 }
 
 .alert-severity-critical {
@@ -292,7 +306,7 @@
 .alert-row-category {
   font-size: 14.5px;
   font-weight: 600;
-  color: #344054;
+  color: var(--text-secondary);
 }
 
 .alert-row-condition {
@@ -314,7 +328,7 @@
 
 .alert-row-main p {
   font-size: 16px;
-  color: #475467;
+  color: var(--text-secondary);
   line-height: 1.55;
   margin: 0;
 }
@@ -355,7 +369,7 @@
 .alert-detail-message p {
   font-size: 17px;
   line-height: 1.7;
-  color: #344054;
+  color: var(--text-secondary);
   margin: 0 0 10px;
 }
 
@@ -414,7 +428,7 @@
 
 .alert-detail-facts dd {
   margin: 0;
-  color: #344054;
+  color: var(--text-secondary);
   word-break: break-word;
 }
 
@@ -512,15 +526,15 @@
 
 .cc-alert-chip {
   font-size: 14.5px;
-  color: #344054;
+  color: var(--text-secondary);
   border: 1px solid var(--border);
-  background: #f8fafc;
+  background: var(--surface-subtle);
   border-radius: 999px;
   padding: 3px 9px;
 }
 
 .cc-alert-chip b {
-  color: #101828;
+  color: var(--text-primary);
 }
 
 .cc-alert-list {
@@ -590,7 +604,7 @@
 
 .cc-alert-item-actions button {
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface-card);
   border-radius: 6px;
   width: 24px;
   height: 24px;
@@ -598,11 +612,11 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #475467;
+  color: var(--text-secondary);
 }
 
 .cc-alert-item-actions button:hover {
-  background: #f2f4f7;
+  background: var(--chip-surface);
 }
 
 .cc-alerts-empty {
@@ -613,9 +627,9 @@
 
 .alert-error {
   margin-bottom: 12px;
-  border: 1px solid #fda29b;
-  background: #fffbfa;
-  color: #b42318;
+  border: 1px solid var(--danger-border);
+  background: var(--danger-surface);
+  color: var(--danger-fg);
   font-size: 16px;
   border-radius: 8px;
   padding: 9px 12px;
@@ -623,7 +637,7 @@
 
 .alert-popover-error {
   font-size: 14.5px;
-  color: #b42318;
+  color: var(--danger-fg);
   margin: 4px 0;
 }
 
@@ -633,10 +647,10 @@ html[data-theme="dark"] .notification-count {
   border-color: #19222e;
 }
 
-html[data-theme="dark"] .alert-popover-list > li,
+/* .alert-row và card popover đã token hóa ở base (surface/border + stripe
+   severity ở border-left) — loại khỏi group override để không đè màu ngữ nghĩa. */
 html[data-theme="dark"] .cc-alert-chip,
 html[data-theme="dark"] .cc-alert-item,
-html[data-theme="dark"] .alert-row,
 html[data-theme="dark"] .alert-summary-card,
 html[data-theme="dark"] .alert-detail-hero {
   background: #171f2a;
@@ -727,7 +741,7 @@ html[data-theme="dark"] .alert-summary-icon.tone-red {
   top: 48px;
   padding: 0;
   overflow: hidden;
-  border: 1px solid #d8e0ea;
+  border: 1px solid var(--border-subtle);
   border-radius: 14px;
   box-shadow: 0 18px 48px rgba(16, 24, 40, 0.17), 0 2px 7px rgba(16, 24, 40, 0.07);
 }
@@ -742,33 +756,33 @@ html[data-theme="dark"] .alert-summary-icon.tone-red {
   font-size: 13px;
 }
 .alert-popover .popover-title button:hover {
-  background: #f2f4f7;
-  color: #344054;
+  background: var(--chip-surface);
+  color: var(--text-secondary);
 }
 .alert-popover-summary {
   margin: 0;
   padding: 0 18px 13px;
-  color: #667085;
+  color: var(--muted);
   font-size: var(--type-metadata, 13px);
-  border-bottom: 1px solid #e9edf2;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .alert-popover-summary b {
-  color: #344054;
+  color: var(--text-secondary);
 }
 .alert-popover-error {
   margin: 10px 12px 0 !important;
   padding: 8px 10px;
-  border: 1px solid #fecdca;
+  border: 1px solid var(--danger-border);
   border-radius: 7px;
-  background: #fef3f2;
-  color: #b42318 !important;
+  background: var(--danger-surface);
+  color: var(--danger-fg) !important;
   font-size: 13px !important;
 }
 .alert-popover-list {
   margin: 0;
   padding: 8px;
   gap: 5px;
-  background: #f8fafc;
+  background: var(--surface-subtle);
 }
 .alert-popover-list > li.alert-popover-card {
   position: relative;
@@ -776,36 +790,38 @@ html[data-theme="dark"] .alert-summary-icon.tone-red {
   grid-template-columns: 30px minmax(0, 1fr);
   gap: 9px;
   padding: 10px;
-  border: 1px solid #e4e9ef;
+  border: 1px solid var(--border-subtle);
   border-left: 3px solid #98a2b3;
   border-radius: 9px;
-  background: #fff;
+  background: var(--surface-card);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 .alert-popover-list > li.alert-popover-card:hover {
-  border-color: #cbd5e1;
+  border-top-color: var(--border-default);
+  border-right-color: var(--border-default);
+  border-bottom-color: var(--border-default);
   box-shadow: 0 4px 12px rgba(16, 24, 40, 0.07);
   transform: translateY(-1px);
 }
 .alert-popover-list > li.alert-popover-card.is-unread {
-  background: #f7faff;
+  background: var(--surface-hover);
 }
 .alert-popover-list > li.severity-critical { border-left-color: #d92d20; }
 .alert-popover-list > li.severity-high { border-left-color: #f79009; }
 .alert-popover-list > li.severity-medium { border-left-color: #2e90fa; }
-.alert-popover-list > li.severity-low { border-left-color: #98a2b3; }
+.alert-popover-list > li.severity-low { border-left-color: var(--text-muted); }
 .alert-popover-severity-icon {
   width: 30px;
   height: 30px;
   display: grid;
   place-items: center;
   border-radius: 8px;
-  background: #f2f4f7;
-  color: #667085;
+  background: var(--chip-surface);
+  color: var(--muted);
 }
-.severity-critical .alert-popover-severity-icon { background: #feeceb; color: #b42318; }
-.severity-high .alert-popover-severity-icon { background: #fff4e5; color: #b54708; }
-.severity-medium .alert-popover-severity-icon { background: #eaf2ff; color: #175cd3; }
+.severity-critical .alert-popover-severity-icon { background: var(--danger-surface); color: var(--danger-fg); }
+.severity-high .alert-popover-severity-icon { background: var(--warning-surface); color: var(--warning-fg); }
+.severity-medium .alert-popover-severity-icon { background: var(--primary-soft); color: var(--primary); }
 .alert-popover-card-content { min-width: 0; }
 .alert-popover-item {
   width: 100%;
@@ -831,7 +847,7 @@ html[data-theme="dark"] .alert-summary-icon.tone-red {
 }
 .alert-popover-title {
   gap: 6px;
-  color: #1d2939;
+  color: var(--text-primary);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -844,7 +860,7 @@ html[data-theme="dark"] .alert-summary-icon.tone-red {
 .alert-popover-message {
   display: -webkit-box;
   overflow: hidden;
-  color: #667085;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
   -webkit-box-orient: vertical;
@@ -857,7 +873,7 @@ html[data-theme="dark"] .alert-summary-icon.tone-red {
   gap: 8px;
   margin-top: 8px;
   padding-top: 7px;
-  border-top: 1px solid #edf0f3;
+  border-top: 1px solid var(--border-subtle);
 }
 .alert-popover-source {
   min-width: 0;
@@ -882,20 +898,20 @@ html[data-theme="dark"] .alert-summary-icon.tone-red {
   gap: 4px;
   border-color: #d5dce5;
   border-radius: 6px;
-  color: #475467;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
 }
 .alert-popover-actions button { display: inline-flex; }
 .alert-popover-actions .alert-ack-action {
-  background: #eff4ff;
-  border-color: #b2ccff;
-  color: #1849a9;
+  background: var(--info-surface);
+  border-color: var(--info-border);
+  color: var(--primary-soft-fg);
 }
 .alert-popover-footer {
   margin: 0;
   padding: 11px 16px;
-  background: #fff;
+  background: var(--surface-card);
 }
 .alert-popover-footer .popover-link {
   font-size: 13px;
@@ -907,12 +923,8 @@ html[data-theme="dark"] .alert-popover-footer {
   border-color: #344151;
 }
 html[data-theme="dark"] .alert-popover-list { background: #111821; }
-html[data-theme="dark"] .alert-popover-list > li.alert-popover-card {
-  background: #1b2633;
-  border-color: #344151;
-}
-html[data-theme="dark"] .alert-popover-list > li.alert-popover-card.is-unread { background: #18283d; }
-html[data-theme="dark"] .alert-popover-title { color: #edf2f8; }
+/* dark: base token (--surface-card/--border-subtle/--surface-hover) đã tự cân bằng —
+   không patch nền/card ở đây để giữ stripe màu mức độ cảnh báo. */html[data-theme="dark"] .alert-popover-title { color: #edf2f8; }
 html[data-theme="dark"] .alert-popover-summary,
 html[data-theme="dark"] .alert-popover-card-footer { border-color: #344151; }
 html[data-theme="dark"] .alert-popover-summary b { color: #dfe7f1; }
@@ -928,9 +940,9 @@ html[data-theme="dark"] .alert-popover-actions button { background: #202a37; bor
 .intake-type-tabs button {
   padding: 6px 16px;
   border-radius: 20px;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #475569;
+  border: 1px solid var(--border-default);
+  background: var(--surface-card);
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -949,20 +961,20 @@ html[data-theme="dark"] .alert-popover-actions button { background: #202a37; bor
   gap: 7px;
   font-size: 13px;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-secondary);
   cursor: pointer;
   white-space: nowrap;
 }
 .intake-open-toggle input {
   width: 15px;
   height: 15px;
-  accent-color: #175cd3;
+  accent-color: var(--primary);
   cursor: pointer;
 }
 .alert-row-meta .waiting {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #b54708;
+  color: var(--warning-fg);
   font-weight: 600;
 }

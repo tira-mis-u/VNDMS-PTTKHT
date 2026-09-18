@@ -9,7 +9,7 @@
   margin-bottom: 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface-card);
 }
 .sos-queue-summary > div {
   height: 28px;
@@ -17,8 +17,8 @@
   align-items: center;
   gap: 7px;
   padding: 0 17px;
-  border-right: 1px solid #e4e7ec;
-  color: #475467;
+  border-right: 1px solid var(--border);
+  color: var(--text-secondary);
 }
 .sos-queue-summary > div:first-child {
   padding-left: 2px;
@@ -28,7 +28,7 @@
 }
 .sos-queue-summary b {
   font-size: 14.5px;
-  color: #344054;
+  color: var(--text-secondary);
 }
 .sos-queue-summary .danger,
 .sos-queue-summary .danger b {
@@ -37,13 +37,13 @@
 .sos-queue-summary p {
   margin-left: auto;
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .sos-worklist {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 9px;
-  background: #fff;
+  background: var(--surface-card);
 }
 .sos-filters {
   border-bottom: 1px solid var(--border);
@@ -62,20 +62,20 @@
   padding: 0 13px;
   border-bottom: 1px solid var(--border);
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 .sos-row {
   width: 100%;
   min-height: 82px;
   padding: 9px 13px;
   border: 0;
-  border-bottom: 1px solid #edf0f2;
-  background: #fff;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-card);
   text-align: left;
   cursor: pointer;
 }
 .sos-row:hover {
-  background: #fafcff;
+  background: var(--surface-hover);
 }
 .sos-row.sos-critical {
   border-left: 3px solid #d92d20;
@@ -95,12 +95,12 @@
 }
 .sos-primary b {
   font-size: 13.5px;
-  color: #1d2939;
+  color: var(--text-primary);
 }
 .sos-primary small,
 .sos-row small {
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .sos-primary small:nth-child(2) {
   display: flex;
@@ -114,14 +114,14 @@
   max-width: 100%;
 }
 .sos-priority small {
-  color: #667085;
+  color: var(--muted);
   line-height: 1.35;
 }
 .sos-row .waiting {
   display: flex;
   align-items: center;
   gap: 3px;
-  color: #b54708;
+  color: var(--warning-fg);
 }
 .sos-people {
   display: grid;
@@ -130,25 +130,25 @@
 }
 .sos-people svg {
   grid-row: 1/3;
-  color: #667085;
+  color: var(--muted);
 }
 .sos-people b {
   font-size: 14.5px;
-  color: #344054;
+  color: var(--text-secondary);
 }
 .sos-verification b,
 .sos-links b,
 .sos-time b {
   font-size: var(--type-metadata, 13px);
-  color: #344054;
+  color: var(--text-secondary);
 }
 .sos-links b {
-  color: #175cd3;
+  color: var(--primary);
 }
 .sos-detail-header {
   margin: 0 0 20px;
   padding: 20px 30px;
-  background: #fff;
+  background: var(--surface-card);
   border-bottom: 1px solid var(--border);
 }
 .sos-detail-layout {
@@ -176,18 +176,18 @@
   place-items: center;
   flex: none;
   border-radius: 8px;
-  background: #edf4ff;
-  color: #175cd3;
+  background: var(--info-surface);
+  color: var(--primary);
   font-size: 19px;
   font-weight: 700;
 }
 .priority-block.p1 {
-  background: #fff1f0;
+  background: var(--danger-surface);
   color: #d92d20;
 }
 .priority-block.p2 {
-  background: #fffaeb;
-  color: #b54708;
+  background: var(--warning-surface);
+  color: var(--warning-fg);
 }
 .sos-emergency-heading > div {
   display: flex;
@@ -196,23 +196,23 @@
 }
 .sos-emergency-heading small {
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .sos-emergency-heading h2 {
   margin: 0;
   font-size: 16px;
-  color: #1d2939;
+  color: var(--text-primary);
 }
 .sos-emergency-heading p {
   margin: 2px 0 0;
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 .sos-immediate-grid,
 .sos-reporter-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  border-top: 1px solid #edf0f2;
+  border-top: 1px solid var(--border-subtle);
 }
 .sos-reporter-grid {
   grid-template-columns: repeat(3, 1fr);
@@ -224,8 +224,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  border-right: 1px solid #edf0f2;
-  border-bottom: 1px solid #edf0f2;
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 .sos-immediate-grid > div:last-child,
 .sos-reporter-grid > div:nth-child(3n) {
@@ -234,12 +234,12 @@
 .sos-immediate-grid span,
 .sos-reporter-grid span {
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .sos-immediate-grid b,
 .sos-reporter-grid b {
   font-size: var(--type-metadata, 13px);
-  color: #344054;
+  color: var(--text-secondary);
 }
 .triage-panel {
   padding: 14px 17px;
@@ -251,7 +251,7 @@
 }
 .triage-panel > div > span {
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 .triage-panel ul {
   display: grid;
@@ -266,13 +266,13 @@
   align-items: center;
   gap: 6px;
   padding: 8px;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: var(--type-metadata, 13px);
-  color: #475467;
+  color: var(--text-secondary);
 }
 .triage-panel li svg {
-  color: #b54708;
+  color: var(--warning-fg);
 }
 .affected-people-grid {
   display: grid;
@@ -283,7 +283,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  border-right: 1px solid #edf0f2;
+  border-right: 1px solid var(--border-subtle);
 }
 .affected-people-grid > div:last-child {
   border: 0;
@@ -295,28 +295,33 @@
 }
 .affected-people-grid small {
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .affected-people-grid b {
   font-size: 17px;
-  color: #344054;
+  color: var(--text-secondary);
 }
 .affected-people-grid svg {
-  color: #667085;
+  color: var(--muted);
 }
 .sos-link-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* minmax(0,1fr): 1fr trần không nhỏ hơn min-content → 4 cột 122px chèn ép
+     tràn khối (50px bị section overflow:hidden cắt không cuộn được ở 1024px).
+     Cho phép cột co dưới min-content; nhãn dài xuống dòng thay vì biến mất
+     (spec horizontal-overflow 2026-09). */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .sos-link-grid > button {
+  min-width: 0;
   min-height: 94px;
   padding: 13px;
   display: flex;
   align-items: flex-start;
   gap: 8px;
   border: 0;
-  border-right: 1px solid #edf0f2;
-  background: #fff;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--surface-card);
   text-align: left;
   cursor: pointer;
 }
@@ -333,27 +338,28 @@
   place-items: center;
   flex: none;
   border-radius: 6px;
-  background: #f2f4f7;
-  color: #667085;
+  background: var(--chip-surface);
+  color: var(--muted);
 }
 .sos-link-grid > button > div {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 .sos-link-grid small {
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .sos-link-grid b {
   font-size: 13px;
-  color: #175cd3;
+  color: var(--primary);
 }
 .sos-link-grid p {
   margin: 0;
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
   line-height: 1.4;
 }
 .resolution-panel {
@@ -361,7 +367,7 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  color: #079455;
+  color: var(--success-fg);
 }
 .resolution-panel > div {
   display: flex;
@@ -370,20 +376,20 @@
 }
 .resolution-panel b {
   font-size: 13px;
-  color: #344054;
+  color: var(--text-secondary);
 }
 .resolution-panel p {
   margin: 0;
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 .sos-contact,
 .sos-location-note {
   padding: 12px 14px;
-  border-top: 1px solid #edf0f2;
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   gap: 8px;
-  color: #667085;
+  color: var(--muted);
 }
 .sos-contact > div,
 .sos-location-note > div {
@@ -394,17 +400,17 @@
 .sos-contact b,
 .sos-location-note b {
   font-size: var(--type-metadata, 13px);
-  color: #344054;
+  color: var(--text-secondary);
 }
 .sos-contact span,
 .sos-location-note span {
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 .sos-operational-map {
   height: 430px;
   position: relative;
-  background: #edf1f4;
+  background: var(--surface-muted);
 }
 .sos-map-marker {
   width: 27px;
@@ -441,9 +447,9 @@
   display: flex;
   gap: 10px;
   padding: 7px 9px;
-  border: 1px solid #d0d5dd;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--map-overlay-bg);
 }
 .sos-map-legend span {
   display: flex;
@@ -483,20 +489,20 @@
   display: flex;
   gap: 9px;
   padding: 12px;
-  border: 1px solid #fedf89;
+  border: 1px solid var(--warning-border);
   border-radius: 7px;
-  background: #fffaeb;
-  color: #b54708;
+  background: var(--warning-surface);
+  color: var(--warning-fg);
 }
 .sos-confirm p {
   margin: 0;
   font-size: var(--type-metadata, 13px);
   line-height: 1.5;
-  color: #475467;
+  color: var(--text-secondary);
 }
 .sos-confirm.danger {
-  border-color: #fecdca;
-  background: #fff6f5;
+  border-color: var(--danger-border);
+  background: var(--danger-surface);
   color: #d92d20;
 }
 .eligible-team-list {
@@ -511,13 +517,13 @@
   align-items: center;
   gap: 9px;
   padding: 8px 10px;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
 }
 .eligible-team-list label.selected {
   border-color: #84adff;
-  background: #f5f8ff;
+  background: var(--surface-hover);
 }
 .eligible-team-list label > span {
   flex: 1;
@@ -530,12 +536,12 @@
 }
 .eligible-team-list small {
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 .eligible-team-list i {
   font-style: normal;
   font-size: var(--type-metadata, 13px);
-  color: #079455;
+  color: var(--success-fg);
 }
 .triage-reasons {
   grid-column: 1/-1;
@@ -549,9 +555,9 @@
 .triage-reasons span {
   padding: 6px 8px;
   border-left: 2px solid #f79009;
-  background: #fffcf5;
+  background: var(--warning-surface);
   font-size: var(--type-metadata, 13px);
-  color: #667085;
+  color: var(--muted);
 }
 @media (max-width: 1150px) {
   .sos-table-head,
@@ -570,7 +576,7 @@
     border-right: 0;
   }
   .affected-people-grid > div:nth-child(-n + 3) {
-    border-bottom: 1px solid #edf0f2;
+    border-bottom: 1px solid var(--border-subtle);
   }
 }
 @media (max-width: 900px) {
@@ -626,7 +632,7 @@
     border-right: 0;
   }
   .sos-link-grid > button:nth-child(-n + 2) {
-    border-bottom: 1px solid #edf0f2;
+    border-bottom: 1px solid var(--border-subtle);
   }
 }
 @media (max-width: 640px) {
@@ -664,7 +670,7 @@
     grid-template-columns: 1fr 1fr;
   }
   .affected-people-grid > div:nth-child(odd) {
-    border-right: 1px solid #edf0f2;
+    border-right: 1px solid var(--border-subtle);
   }
   .affected-people-grid > div:nth-child(even) {
     border-right: 0;
@@ -674,7 +680,7 @@
   }
   .sos-link-grid > button {
     border-right: 0;
-    border-bottom: 1px solid #edf0f2;
+    border-bottom: 1px solid var(--border-subtle);
   }
   .sos-operational-map {
     height: 340px;
@@ -693,7 +699,7 @@
 .sos-affected-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid #edf0f2;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .sos-affected-list > div {
@@ -702,8 +708,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 13px;
-  border-right: 1px solid #edf0f2;
-  border-bottom: 1px solid #edf0f2;
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .sos-affected-list > div:nth-child(2n) {
@@ -718,13 +724,13 @@
 
 .sos-affected-list b {
   font-size: 13px;
-  color: #344054;
+  color: var(--text-secondary);
 }
 
 .sos-affected-list small {
   margin-top: 3px;
   font-size: var(--type-metadata, 13px);
-  color: #98a2b3;
+  color: var(--text-muted);
 }
 
 @media (max-width: 640px) {

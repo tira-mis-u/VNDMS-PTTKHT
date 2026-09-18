@@ -23,6 +23,12 @@ import {
   resetUserPassword,
   setUserActive,
 } from "@/application/auth/authUseCases";
+import {
+  auditActionForMutation,
+  operationalAuditReason,
+} from "@/application/auth/auditPresentation";
+import { permissionLabel } from "@/lib/permissions/labels";
+import { roleLabels } from "@/domain/auth/labels";
 
 /** Authentication/session/audit mechanics used by the sole OperationalProvider. */
 export function useOperationalSecurity() {
@@ -120,27 +126,46 @@ export function useOperationalSecurity() {
     permission: Permission,
     resources: readonly AuthorizationResource[],
     sensitiveOperation?: string,
+    options?: { logGranted?: boolean },
   ) => {
     const decision = authorizeResources(currentUser, {
       permission,
       resources,
       sensitiveOperation,
     });
-    appendSecurityAudit(
-      createSecurityAudit({
-        actorId: currentUser?.id ?? null,
-        actorName,
-        role: currentUser?.role ?? null,
-        action: decision.allowed ? "MUTATION_AUTHORIZED" : "PERMISSION_DENIED",
-        resourceType: decision.resourceType,
-        resourceId: decision.resourceId,
-        timestamp: new Date().toISOString(),
-        geographicScope: currentScopeName,
-        result: decision.allowed ? "SUCCESS" : "DENIED",
-        reason: decision.reason,
-        permission,
-      }),
-    );
+    // Mặc định mọi thao tác ghi để lại một dòng nhật ký quyền (dù denial vẫn
+    // PERMISSION_DENIED). Nhóm quản trị User tự ghi dòng nghiệp vụ riêng
+    // (auditUserAdmin) nên truyền logGranted:false để MỘT hành động = MỘT block
+    // + MỘT thông báo (owner request 2026-09).
+    const logGranted = options?.logGranted !== false;
+    const operationTitle =
+      (sensitiveOperation || "").trim() || permissionLabel(permission);
+    if (decision.allowed ? logGranted : true) {
+      appendSecurityAudit(
+        createSecurityAudit({
+          actorId: currentUser?.id ?? null,
+          actorName,
+          role: currentUser?.role ?? null,
+          action: decision.allowed
+            ? auditActionForMutation(decision.resourceType)
+            : "PERMISSION_DENIED",
+          resourceType: decision.resourceType,
+          resourceId: decision.resourceId,
+          timestamp: new Date().toISOString(),
+          geographicScope: currentScopeName,
+          result: decision.allowed ? "SUCCESS" : "DENIED",
+          reason: decision.allowed
+            ? operationalAuditReason({
+                operation: sensitiveOperation,
+                permissionLabel: permissionLabel(permission),
+                decisionReason: decision.reason,
+                resources,
+              })
+            : `${operationTitle} — ${decision.reason}`,
+          permission,
+        }),
+      );
+    }
     if (!decision.allowed) throw new Error(decision.reason);
     return decision;
   };
@@ -216,7 +241,34 @@ export function useOperationalSecurity() {
       }),
     );
   const updateUserActive = (userId: string, active: boolean) => {
-    enforcePermission("user_manage", [{ type: "User", id: userId }]);
+    // Tự khóa tài khoản của mình cũng bị chặn ở tầng logic (giữ nguyên như
+    // quy tắc tự đổi vai trò: admin chỉ quản trị người khác).
+    if (!active && currentUser?.id === userId) {
+      appendSecurityAudit(
+        createSecurityAudit({
+          actorId: currentUser.id,
+          actorName,
+          role: currentUser.role,
+          action: "PERMISSION_DENIED",
+          resourceType: "User",
+          resourceId: userId,
+          timestamp: new Date().toISOString(),
+          geographicScope: currentScopeName,
+          result: "DENIED",
+          reason: "Không thể tự vô hiệu hóa tài khoản của chính mình.",
+          permission: "user_manage",
+        }),
+      );
+      throw new Error("Không thể tự vô hiệu hóa tài khoản của chính mình.");
+    }
+    enforcePermission("user_manage", [{ type: "User", id: userId }], undefined, {
+      logGranted: false,
+    });
+    // No-op guard: đặt lại đúng vai trò/scope/trạng thái hiện có thì KHÔNG ghi
+    // gì cả — một hành động trùng giá trị không được sinh dòng nhật ký bảo mật
+    // hay badge thông báo (owner request 2026-09).
+    const targetUser = users.find((user) => user.id === userId);
+    if (!targetUser || targetUser.active === active) return;
     if (!currentUser) return;
     const next = setUserActive(
       users,
@@ -236,7 +288,36 @@ export function useOperationalSecurity() {
       setCurrentUser(next.find((item) => item.id === userId) ?? null);
   };
   const updateUserRole = (userId: string, nextRole: Role) => {
-    enforcePermission("user_manage", [{ type: "User", id: userId }]);
+    // Triệt để ở tầng logic (không chỉ disabled trên UI): admin không thể tự
+    // đổi vai trò của chính mình — kể cả khi gọi thẳng vào store. Vẫn đổi được
+    // vai trò của admin khác.
+    if (currentUser?.id === userId) {
+      appendSecurityAudit(
+        createSecurityAudit({
+          actorId: currentUser.id,
+          actorName,
+          role: currentUser.role,
+          action: "PERMISSION_DENIED",
+          resourceType: "User",
+          resourceId: userId,
+          timestamp: new Date().toISOString(),
+          geographicScope: currentScopeName,
+          result: "DENIED",
+          reason: "Không thể tự thay đổi vai trò của chính mình.",
+          permission: "user_manage",
+        }),
+      );
+      throw new Error("Không thể tự thay đổi vai trò của chính mình.");
+    }
+    enforcePermission("user_manage", [{ type: "User", id: userId }], undefined, {
+      logGranted: false,
+    });
+    // No-op guard: chọn lại đúng vai trò hiện tại (vd. đã là Công dân mà vẫn
+    // bấm Công dân) KHÔNG được sinh dòng nhật ký + thông báo (owner 2026-09).
+    // Select component giờ cũng chặn phát onChange khi trùng giá trị — đây là
+    // lớp phòng thủ thứ hai ngay tại store cho mọi nơi gọi khác (AI actions…).
+    const roleTarget = users.find((user) => user.id === userId);
+    if (!roleTarget || roleTarget.role === nextRole) return;
     const next = changeUserRole(
       users,
       userId,
@@ -248,13 +329,24 @@ export function useOperationalSecurity() {
     auditUserAdmin(
       "USER_ROLE_CHANGED",
       userId,
-      `Đổi vai trò thành ${nextRole}.`,
+      `Đổi vai trò thành ${roleLabels[nextRole] ?? nextRole}.`,
     );
     if (session?.userId === userId)
       setCurrentUser(next.find((item) => item.id === userId) ?? null);
   };
   const updateUserScope = (userId: string, scope: GeographicScope) => {
-    enforcePermission("user_manage", [{ type: "User", id: userId }]);
+    enforcePermission("user_manage", [{ type: "User", id: userId }], undefined, {
+      logGranted: false,
+    });
+    // No-op guard cùng loại với vai trò: scope không đổi → không ghi nhật ký.
+    const scopeTarget = users.find((user) => user.id === userId);
+    if (
+      !scopeTarget ||
+      (scopeTarget.geographicScope.level === scope.level &&
+        scopeTarget.geographicScope.code === scope.code &&
+        scopeTarget.geographicScope.name === scope.name)
+    )
+      return;
     const next = changeUserScope(
       users,
       userId,
@@ -278,6 +370,18 @@ export function useOperationalSecurity() {
   }) => {
     if (!currentUser) return;
     const nowStr = new Date().toISOString();
+    // No-op guard: lưu hồ sơ y nguyên giá trị cũ (mở modal → bấm Lưu không sửa
+    // gì) không được sinh dòng nhật ký bảo mật (owner request 2026-09).
+    const sameProfile =
+      (!input.displayName?.trim() ||
+        input.displayName.trim() === currentUser.displayName) &&
+      (input.organization === undefined ||
+        input.organization === currentUser.organization) &&
+      (!input.geographicScope ||
+        (input.geographicScope.level === currentUser.geographicScope.level &&
+          input.geographicScope.code === currentUser.geographicScope.code &&
+          input.geographicScope.name === currentUser.geographicScope.name));
+    if (sameProfile) return;
     const next = users.map((u) =>
       u.id === currentUser.id
         ? {

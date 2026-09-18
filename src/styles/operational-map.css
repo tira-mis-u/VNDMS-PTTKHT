@@ -19,8 +19,8 @@
   gap: 8px;
   padding: 10px 14px;
   margin-bottom: 12px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1.5px solid #e2e8f0;
+  background: var(--map-overlay-bg);
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
   width: 100%;
@@ -71,7 +71,7 @@ html[data-theme="dark"] .om-filter-bar {
 
 .om-filter-count-badge {
   font-size: 13px;
-  color: #64748b;
+  color: var(--muted);
   white-space: nowrap;
   margin-left: auto;
   flex-shrink: 0;
@@ -79,16 +79,16 @@ html[data-theme="dark"] .om-filter-bar {
   align-items: center;
   height: 36px;
   padding: 0 12px;
-  background: rgba(241, 245, 249, 0.8);
-  border: 1px solid #e2e8f0;
+  /* Container phụ (muted), số = high-emphasis, nhãn = secondary —
+     cả hai theme cùng một phân cấp. */
+  background: var(--chip-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
 }
 .om-filter-count-badge b {
-  color: #0f172a;
+  color: var(--text-primary);
 }
-html[data-theme="dark"] .om-filter-count-badge b {
-  color: #f8fafc;
-}
+
 
 .om-filter-bar-bottom {
   display: flex;
@@ -97,7 +97,7 @@ html[data-theme="dark"] .om-filter-count-badge b {
   width: 100%;
   flex-wrap: wrap;
   padding-top: 6px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--surface-hover);
 }
 html[data-theme="dark"] .om-filter-bar-bottom {
   border-top-color: #334155;
@@ -108,7 +108,7 @@ html[data-theme="dark"] .om-filter-bar-bottom {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #64748b;
+  color: var(--muted);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -129,9 +129,9 @@ html[data-theme="dark"] .om-filter-bar-bottom {
   gap: 5px;
   padding: 4px 10px;
   border-radius: 20px;
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
-  color: #334155;
+  border: 1px solid var(--border-default);
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -140,14 +140,14 @@ html[data-theme="dark"] .om-filter-bar-bottom {
   user-select: none;
 }
 .om-layer-chip:hover {
-  border-color: #93c5fd;
-  background: #eff6ff;
-  color: #1d4ed8;
+  border-color: var(--info-border);
+  background: var(--info-surface);
+  color: var(--primary);
 }
 .om-layer-chip.active {
-  background: #eff6ff;
+  background: var(--info-surface);
   border-color: #3b82f6;
-  color: #1d4ed8;
+  color: var(--primary);
   font-weight: 600;
 }
 .om-layer-chip.empty {
@@ -161,7 +161,7 @@ html[data-theme="dark"] .om-filter-bar-bottom {
 }
 .om-layer-chip .om-chip-count {
   background: rgba(37, 99, 235, 0.12);
-  color: #1d4ed8;
+  color: var(--primary);
   border-radius: 999px;
   padding: 1px 6px;
   font-size: 10.5px;
@@ -190,7 +190,7 @@ html[data-theme="dark"] .om-layer-chip.active {
   align-items: center;
   gap: 7px;
   font-size: 13px;
-  color: #566579;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 .om-data-stamp i {
@@ -217,11 +217,11 @@ html[data-theme="dark"] .om-layer-chip.active {
 
 .om-map-zone {
   position: relative;
-  border: 1.5px solid #cbd5e1;
+  border: 1.5px solid var(--border-default);
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
   border-radius: 12px;
   overflow: hidden;
-  background: #eef1f4;
+  background: var(--surface-muted);
   height: 100% !important;
   min-height: 430px !important;
   width: 100%;
@@ -237,6 +237,7 @@ html[data-theme="dark"] .om-map-zone {
 .om-canvas {
   position: absolute;
   inset: 0;
+  background: var(--surface-subtle);
 }
 .om-toolbar {
   position: absolute;
@@ -251,23 +252,23 @@ html[data-theme="dark"] .om-map-zone {
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  border: 1px solid #d5dbe3;
-  background: #fff;
-  color: #3b4a5f;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+  color: var(--text-secondary);
   display: grid;
   place-items: center;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12);
 }
 .om-toolbar button:hover {
-  background: #f4f6f9;
+  background: var(--surface-hover);
 }
 
 /* Chú giải nằm TRONG LUỒNG: dưới khung bản đồ, trên trục thời gian dự
    báo — không đè lên địa hình, không cần chừa chỗ absolute. */
 .om-canvas-shell > .om-legend {
   flex: 0 0 auto;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border);
   border-radius: 0;
   max-width: none;
 }
@@ -279,11 +280,11 @@ html[data-theme="dark"] .om-map-zone {
   gap: 6px 12px;
   max-width: 100%;
   padding: 8px 12px;
-  border: 1px solid #d5dbe3;
+  border: 1px solid var(--border-subtle);
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--map-overlay-bg);
   font-size: 13px;
-  color: #3c4a60;
+  color: var(--text-secondary);
 }
 .om-legend span {
   display: inline-flex;
@@ -333,7 +334,7 @@ html[data-theme="dark"] .om-map-zone {
   display: flex;
   justify-content: space-between;
   margin-top: 3px;
-  color: #64748b;
+  color: var(--muted);
   font-size: 10.5px;
   font-weight: 500;
 }
@@ -350,9 +351,9 @@ html[data-theme="dark"] .om-map-zone {
   gap: 8px;
   padding: 16px 22px;
   border-radius: 10px;
-  border: 1px solid #d5dbe3;
-  background: rgba(255, 255, 255, 0.96);
-  color: #566579;
+  border: 1px solid var(--border-subtle);
+  background: var(--map-overlay-bg);
+  color: var(--text-secondary);
   font-size: 13.5px;
   text-align: center;
   box-shadow: 0 6px 24px rgba(16, 24, 40, 0.1);
@@ -369,7 +370,7 @@ html[data-theme="dark"] .om-map-zone {
   border: 1.5px solid rgba(203, 213, 225, 0.6);
   box-shadow: 0 8px 32px -4px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15,23,42,0.08);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.93);
+  background: var(--map-overlay-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   display: flex;
@@ -386,7 +387,7 @@ html[data-theme="dark"] .om-panel {
 
 .om-panel-section {
   padding: 14px 16px;
-  border-bottom: 1px solid #eef0f4;
+  border-bottom: 1px solid var(--border-subtle);
 }
 html[data-theme="dark"] .om-panel-section {
   border-bottom-color: #334155;
@@ -399,7 +400,7 @@ html[data-theme="dark"] .om-panel-section {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #5b6b82;
+  color: var(--text-muted);
   margin: 0 0 10px;
   display: flex;
   justify-content: space-between;
@@ -435,10 +436,10 @@ html[data-theme="dark"] .om-panel-section h2 {
   border-radius: 8px;
   cursor: pointer;
   font-size: 14.5px;
-  color: #243040;
+  color: var(--text-primary);
 }
 .om-layer-row:hover {
-  background: #f4f7fa;
+  background: var(--surface-hover);
 }
 html[data-theme="dark"] .om-layer-row {
   color: #f1f5f9;
@@ -449,7 +450,7 @@ html[data-theme="dark"] .om-layer-row:hover {
 .om-layer-row input {
   width: 16px;
   height: 16px;
-  accent-color: #175cd3;
+  accent-color: var(--primary);
 }
 .om-layer-row i {
   width: 11px;
@@ -465,8 +466,8 @@ html[data-theme="dark"] .om-layer-row:hover {
 .om-layer-count {
   font-size: 13px;
   font-weight: 700;
-  color: #55677e;
-  background: #eef2f6;
+  color: var(--text-secondary);
+  background: var(--chip-surface);
   border-radius: 999px;
   padding: 2px 9px;
 }
@@ -475,12 +476,12 @@ html[data-theme="dark"] .om-layer-count {
   background: #334155;
 }
 .om-layer-row.is-empty .om-layer-name {
-  color: #8e99aa;
+  color: var(--text-muted);
 }
 .om-layer-empty {
   margin: 0 0 6px 40px;
   font-size: 13px;
-  color: #8e99aa;
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -504,7 +505,7 @@ html[data-theme="dark"] .om-panel-results::-webkit-scrollbar-thumb {
 }
 .om-panel-none {
   font-size: 13.5px;
-  color: #7d8ba0;
+  color: var(--text-muted);
   margin: 4px 0 8px;
 }
 .om-result-list {
@@ -518,9 +519,9 @@ html[data-theme="dark"] .om-panel-results::-webkit-scrollbar-thumb {
 .om-result-row {
   width: 100%;
   text-align: left;
-  border: 1px solid #e4e9ef;
+  border: 1px solid var(--border-subtle);
   border-radius: 9px;
-  background: #fff;
+  background: var(--surface-card);
   padding: 9px 11px;
   cursor: pointer;
   display: flex;
@@ -529,8 +530,8 @@ html[data-theme="dark"] .om-panel-results::-webkit-scrollbar-thumb {
   font-family: var(--font-family-ui);
 }
 .om-result-row:hover {
-  border-color: #9fbbf2;
-  background: #f7faff;
+  border-color: var(--info-border);
+  background: var(--surface-hover);
 }
 .om-result-row.active {
   border-color: #2c72e4;
@@ -544,16 +545,16 @@ html[data-theme="dark"] .om-panel-results::-webkit-scrollbar-thumb {
 }
 .om-result-head b {
   font-size: 13.5px;
-  color: #1d2939;
+  color: var(--text-primary);
 }
 .om-result-title {
   font-size: 14px;
   font-weight: 600;
-  color: #243040;
+  color: var(--text-primary);
 }
 .om-result-area {
   font-size: 13px;
-  color: #66758c;
+  color: var(--text-secondary);
 }
 
 /* ---- Entity drawer ---- */
@@ -565,9 +566,9 @@ html[data-theme="dark"] .om-panel-results::-webkit-scrollbar-thumb {
   width: min(360px, calc(100% - 24px));
   max-height: calc(100% - 24px);
   overflow-y: auto;
-  border: 1px solid #dfe4ea;
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface-card);
   box-shadow: 0 12px 36px rgba(16, 24, 40, 0.18);
   display: flex;
   flex-direction: column;
@@ -578,39 +579,39 @@ html[data-theme="dark"] .om-panel-results::-webkit-scrollbar-thumb {
   justify-content: space-between;
   gap: 10px;
   padding: 14px 16px 12px;
-  border-bottom: 1px solid #eef0f4;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .om-drawer-kind {
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #66758c;
+  color: var(--text-secondary);
 }
 .om-drawer-head h3 {
   margin: 5px 0 3px;
   font-size: 17px;
-  color: #131e2e;
+  color: var(--text-primary);
 }
 .om-drawer-head p {
   margin: 0;
   font-size: 13.5px;
-  color: #66758c;
+  color: var(--text-secondary);
 }
 .om-drawer-close {
   flex: none;
   width: 32px;
   height: 32px;
-  border: 1px solid #d5dbe3;
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: #fff;
-  color: #3b4a5f;
+  background: var(--surface-card);
+  color: var(--text-secondary);
   display: grid;
   place-items: center;
   cursor: pointer;
 }
 .om-drawer-close:hover {
-  background: #f4f6f9;
+  background: var(--surface-hover);
 }
 .om-drawer-body {
   padding: 8px 16px;
@@ -623,18 +624,18 @@ html[data-theme="dark"] .om-panel-results::-webkit-scrollbar-thumb {
   justify-content: space-between;
   gap: 12px;
   padding: 9px 0;
-  border-bottom: 1px solid #f1f3f6;
+  border-bottom: 1px solid var(--border-subtle);
   font-size: 14px;
 }
 .om-drawer-body dl > div:last-child {
   border-bottom: 0;
 }
 .om-drawer-body dt {
-  color: #66758c;
+  color: var(--text-secondary);
 }
 .om-drawer-body dd {
   margin: 0;
-  color: #1d2939;
+  color: var(--text-primary);
   font-weight: 600;
   text-align: right;
 }
@@ -642,7 +643,7 @@ html[data-theme="dark"] .om-panel-results::-webkit-scrollbar-thumb {
   display: flex;
   gap: 9px;
   padding: 12px 16px 14px;
-  border-top: 1px solid #eef0f4;
+  border-top: 1px solid var(--border-subtle);
 }
 .om-drawer-actions .btn-primary {
   flex: 1;
@@ -834,9 +835,9 @@ tránh che địa hình.
 .om-weather-board {
   margin-top: 16px;
   padding: 14px 16px;
-  border: 1px solid #d5dbe3;
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface-card);
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
 }
 .om-weather-board-head {
@@ -847,7 +848,7 @@ tránh che địa hình.
   gap: 6px 14px;
   padding-bottom: 10px;
   margin-bottom: 12px;
-  border-bottom: 1px solid #e6eaf0;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .om-weather-board-title {
   display: inline-flex;
@@ -855,14 +856,14 @@ tránh che địa hình.
   gap: 7px;
   font-size: 13.5px;
   font-weight: 600;
-  color: #1d2939;
+  color: var(--text-primary);
 }
 .om-weather-board-meta {
   font-size: 11.5px;
-  color: #667085;
+  color: var(--muted);
 }
 .om-weather-board-meta.is-fallback {
-  color: #b45309;
+  color: var(--warning-fg);
   font-weight: 500;
 }
 .om-weather-board-grid {
@@ -873,9 +874,9 @@ tránh che địa hình.
 .om-weather-card {
   min-width: 0;
   padding: 11px 13px;
-  border: 1px solid #e6eaf0;
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  background: #f9fafb;
+  background: var(--surface-muted);
 }
 .om-weather-card h4 {
   display: flex;
@@ -884,7 +885,7 @@ tránh che địa hình.
   margin: 0 0 9px;
   font-size: 12px;
   font-weight: 600;
-  color: #344054;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
@@ -892,7 +893,7 @@ tránh che địa hình.
   margin: 8px 0 0;
   font-size: 10.8px;
   line-height: 1.5;
-  color: #667085;
+  color: var(--muted);
 }
 .om-weather-list,
 .om-weather-symbols {
@@ -909,7 +910,7 @@ tránh che địa hình.
   gap: 7px;
   font-size: 11.8px;
   line-height: 1.45;
-  color: #3c4a60;
+  color: var(--text-secondary);
 }
 .om-weather-list i {
   flex: none;
@@ -920,7 +921,7 @@ tránh che địa hình.
 }
 .om-weather-list b {
   font-weight: 600;
-  color: #1d2939;
+  color: var(--text-primary);
 }
 .om-weather-symbols li {
   display: grid;
@@ -929,11 +930,11 @@ tránh che địa hình.
   gap: 8px;
   font-size: 11.5px;
   line-height: 1.45;
-  color: #3c4a60;
+  color: var(--text-secondary);
 }
 .om-weather-symbols b {
   font-weight: 600;
-  color: #1d2939;
+  color: var(--text-primary);
 }
 
 html[data-theme="dark"] .om-weather-board {
@@ -1011,8 +1012,8 @@ và cho phép
   align-items: center;
   gap: 14px;
   padding: 9px 14px 11px;
-  border-top: 1px solid #d7dee8;
-  background: linear-gradient(180deg, #fbfcfe 0%, #f4f7fb 100%);
+  border-top: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, var(--surface-card) 0%, var(--surface-muted) 100%);
 }
 .om-timeline-play {
   flex: 0 0 auto;
@@ -1021,14 +1022,14 @@ và cho phép
   display: grid;
   place-items: center;
   border-radius: 50%;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #175cd3;
+  border: 1px solid var(--border-default);
+  background: var(--surface-card);
+  color: var(--primary);
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1);
 }
 .om-timeline-play:hover {
-  background: #eff6ff;
+  background: var(--info-surface);
 }
 .om-timeline-readout {
   flex: 0 0 auto;
@@ -1039,15 +1040,15 @@ và cho phép
 }
 .om-timeline-readout b {
   font-size: 13px;
-  color: #0f172a;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
 .om-timeline-readout span {
   font-size: 11px;
-  color: #64748b;
+  color: var(--muted);
 }
 .om-timeline-readout span.is-now {
-  color: #15803d;
+  color: var(--success-fg);
   font-weight: 600;
 }
 .om-timeline-track {
@@ -1059,7 +1060,7 @@ và cho phép
   position: relative;
   height: 8px;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: var(--border-subtle);
   cursor: pointer;
   touch-action: none;
 }
@@ -1102,7 +1103,7 @@ và cho phép
   left: 3px;
   font-style: normal;
   font-size: 10.5px;
-  color: #64748b;
+  color: var(--muted);
   white-space: nowrap;
 }
 .om-timeline-now i {
@@ -1121,7 +1122,7 @@ và cho phép
   font-style: normal;
   font-size: 10px;
   font-weight: 600;
-  color: #15803d;
+  color: var(--success-fg);
   white-space: nowrap;
 }
 .om-timeline-now {
@@ -1171,7 +1172,7 @@ và cho phép
 }
 .om-timeline-provenance {
   font-size: 10.5px;
-  color: #64748b;
+  color: var(--muted);
   text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1181,7 +1182,7 @@ và cho phép
 .om-timeline-storm {
   font-size: 11px;
   font-weight: 600;
-  color: #b42318;
+  color: var(--danger-fg);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1192,9 +1193,9 @@ và cho phép
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #0f172a;
+  border: 1px solid var(--border-default);
+  background: var(--surface-card);
+  color: var(--text-primary);
   border-radius: 7px;
   padding: 6px 10px;
   font-size: 11.5px;
@@ -1203,7 +1204,7 @@ và cho phép
   white-space: nowrap;
 }
 .om-timeline-reset:hover {
-  background: #f1f5f9;
+  background: var(--surface-hover);
 }
 html[data-theme="dark"] .om-timeline {
   background: linear-gradient(180deg, #131c2c 0%, #0f172a 100%);
@@ -1244,12 +1245,12 @@ html[data-theme="dark"] .om-timeline-past {
   white-space: nowrap;
 }
 .om-legend-quiet {
-  color: #15803d;
+  color: var(--success-fg);
   font-weight: 600;
 }
 .om-legend-storm {
   font-weight: 700;
-  color: #b42318;
+  color: var(--danger-fg);
   white-space: nowrap;
 }
 html[data-theme="dark"] .om-legend-sep {
@@ -1267,20 +1268,20 @@ html[data-theme="dark"] .om-legend-sep {
   gap: 6px;
   height: 32px;
   padding: 0 12px;
-  border: 1px solid #d7dee8;
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface-card);
   font-size: 12.5px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-secondary);
   cursor: pointer;
   white-space: nowrap;
 }
-.om-replay-btn:hover { border-color: #94a3b8; }
+.om-replay-btn:hover { border-color: var(--text-muted); }
 .om-replay-btn.active {
-  background: #fff7ed;
-  border-color: #fdba74;
-  color: #9a3412;
+  background: var(--warning-surface);
+  border-color: var(--warning-border);
+  color: var(--danger-fg);
 }
 .om-replay-spin { animation: om-replay-rotate 1s linear infinite; }
 @keyframes om-replay-rotate { to { transform: rotate(360deg); } }
@@ -1291,19 +1292,19 @@ html[data-theme="dark"] .om-legend-sep {
   gap: 10px;
   margin: 0 0 8px;
   padding: 8px 12px;
-  border: 1px solid #fdba74;
+  border: 1px solid var(--warning-border);
   border-left: 4px solid #ea580c;
   border-radius: 8px;
-  background: #fff7ed;
-  color: #7c2d12;
+  background: var(--warning-surface);
+  color: var(--danger-fg);
   font-size: 12.5px;
   line-height: 1.45;
 }
 .om-replay-banner.is-error {
-  border-color: #fca5a5;
+  border-color: var(--danger-border);
   border-left-color: #dc2626;
-  background: #fef2f2;
-  color: #7f1d1d;
+  background: var(--danger-surface);
+  color: var(--danger-fg);
 }
 .om-replay-banner button {
   margin-left: auto;
@@ -1312,8 +1313,8 @@ html[data-theme="dark"] .om-legend-sep {
   padding: 0 10px;
   border: 1px solid #ea580c;
   border-radius: 6px;
-  background: #fff;
-  color: #9a3412;
+  background: var(--surface-card);
+  color: var(--danger-fg);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -1324,7 +1325,7 @@ html[data-theme="dark"] .om-legend-sep {
   position: fixed;
   inset: 0;
   z-index: 4000;
-  background: #fff;
+  background: var(--surface-card);
   padding: 8px;
   border-radius: 0;
 }
@@ -1467,11 +1468,11 @@ nó đẩy bản đồ xuống ~52px — trừ đi
   gap: 10px;
   margin: 0 0 8px;
   padding: 8px 12px;
-  border: 1px solid #bae6fd;
+  border: 1px solid var(--info-border);
   border-left: 4px solid #0284c7;
   border-radius: 8px;
-  background: #f0f9ff;
-  color: #075985;
+  background: var(--info-surface);
+  color: var(--info-fg);
   font-size: 12.5px;
   line-height: 1.45;
 }
@@ -1482,8 +1483,8 @@ nó đẩy bản đồ xuống ~52px — trừ đi
   padding: 0 10px;
   border: 1px solid #0284c7;
   border-radius: 6px;
-  background: #fff;
-  color: #075985;
+  background: var(--surface-card);
+  color: var(--info-fg);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -1501,10 +1502,10 @@ html[data-theme="dark"] .om-storm-strip {
 .om-province-popup-wrap .maplibregl-popup-content {
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid #dbe3ec;
+  border: 1px solid var(--border-subtle);
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.18);
   font-size: 12.5px;
-  color: #0f172a;
+  color: var(--text-primary);
   line-height: 1.5;
 }
 .om-province-popup {
@@ -1515,11 +1516,11 @@ html[data-theme="dark"] .om-storm-strip {
 }
 .om-province-name {
   font-size: 14px;
-  color: #1d4ed8;
+  color: var(--primary);
 }
 .om-province-sub {
   font-size: 11.5px;
-  color: #64748b;
+  color: var(--muted);
   margin-bottom: 4px;
 }
 .om-province-wx-grid {
@@ -1528,7 +1529,7 @@ html[data-theme="dark"] .om-storm-strip {
   gap: 1px 10px;
   margin: 4px 0;
   padding: 6px 8px;
-  background: #f1f5f9;
+  background: var(--surface-hover);
   border-radius: 7px;
 }
 .om-province-wx-grid span {
@@ -1536,7 +1537,7 @@ html[data-theme="dark"] .om-storm-strip {
 }
 .om-province-wx-src {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 /* ── Marker vị trí của người dân trên bản đồ tác nghiệp ── */

@@ -5,8 +5,8 @@
 }
 .topbar {
   height: 86px;
-  background: #f3f6fa;
-  border-bottom-color: #dce2e9;
+  background: var(--surface-shell);
+  border-bottom-color: var(--border-subtle);
   padding: 0 24px;
 }
 .app-body {
@@ -21,13 +21,13 @@
   overscroll-behavior: contain;
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
-  background: #f7f8fa;
+  background: var(--surface-app);
 }
 .sidebar {
   top: 86px;
   height: calc(100vh - 86px);
-  background: #fcfdff;
-  border-right-color: #dde3ea;
+  background: var(--surface-card);
+  border-right-color: var(--border-subtle);
 }
 .sidebar-scroll {
   flex: 1;
@@ -49,8 +49,8 @@
   border-radius: 6px;
 }
 .sidebar-tools .collapse-btn:hover {
-  background: #eef3f8;
-  color: #344054;
+  background: var(--surface-hover);
+  color: var(--text-secondary);
 }
 .sidebar-collapsed .sidebar-tools {
   justify-content: center;
@@ -121,7 +121,7 @@
   right: 0;
   top: 51px;
   width: 245px;
-  background: #fff;
+  background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 6px;
@@ -133,7 +133,7 @@
   align-items: center;
   padding: 9px 8px 12px;
   margin-bottom: 4px;
-  border-bottom: 1px solid #edf0f2;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .account-popover-head > span {
   display: flex;
@@ -145,7 +145,7 @@
 }
 .account-popover-head small {
   font-size: 13px;
-  color: #7c8799;
+  color: var(--text-muted);
 }
 .account-popover > button {
   width: 100%;
@@ -161,11 +161,11 @@
   cursor: pointer;
 }
 .account-popover > button:hover {
-  background: #f2f4f7;
+  background: var(--chip-surface);
 }
 .account-popover > button.logout {
-  color: #b42318;
-  border-top: 1px solid #edf0f2;
+  color: var(--danger-fg);
+  border-top: 1px solid var(--border-subtle);
   border-radius: 0;
   margin-top: 4px;
 }
@@ -282,13 +282,7 @@
   line-height: 1.35;
 }
 
-/* Dark theme */
-html[data-theme="dark"] {
-  --border: #2a3544;
-  --muted: #9aa7b8;
-  --subtle: #1a2330;
-  color: #e6ebf2;
-}
+/* Dark theme: màu nền/chữ gốc lấy từ design tokens nền (compact-ui.css). */
 html[data-theme="dark"] body,
 html[data-theme="dark"] .app-shell {
   background: #0f141b;
@@ -308,11 +302,7 @@ html[data-theme="dark"] .workspace {
 html[data-theme="dark"] .sidebar-tools {
   border-color: #26313f;
 }
-html[data-theme="dark"] .sidebar-tools .collapse-btn:hover,
-html[data-theme="dark"] .nav-item:hover {
-  background: #1c2633;
-  color: #eef3f8;
-}
+/* (bỏ: base token --surface-hover/--surface-raised/--chip-surface/--surface-app đã tự handle hover cả hai theme) */
 html[data-theme="dark"] .nav-item {
   color: #aeb9c8;
 }
@@ -348,11 +338,7 @@ html[data-theme="dark"] .account-popover {
   border-color: #344151;
   color: #e5ebf3;
 }
-html[data-theme="dark"] .account:hover,
-html[data-theme="dark"] .btn-ghost:hover,
-html[data-theme="dark"] .account-popover > button:hover {
-  background: #253140;
-}
+/* (bỏ: base token --surface-hover/--surface-raised/--chip-surface/--surface-app đã tự handle hover cả hai theme) */
 html[data-theme="dark"] .topbar-divider,
 html[data-theme="dark"] .account-popover-head,
 html[data-theme="dark"] .account-popover > button.logout {
@@ -391,13 +377,7 @@ html[data-theme="dark"] .incident-task-list article {
   background: #171f2a;
   border-color: #273240;
 }
-html[data-theme="dark"] .cc-action-item:hover,
-html[data-theme="dark"] .cc-incident-row:hover,
-html[data-theme="dark"] .incident-list-row:hover,
-html[data-theme="dark"] .task-list-row:hover,
-html[data-theme="dark"] .team-list-row:hover {
-  background: #1b2531;
-}
+/* (bỏ: base token --surface-hover/--surface-raised/--chip-surface/--surface-app đã tự handle hover cả hai theme) */
 html[data-theme="dark"] .incident-result-bar,
 html[data-theme="dark"] .incident-list-head,
 html[data-theme="dark"] .task-list-head,
@@ -470,17 +450,7 @@ html[data-theme="dark"] .progress-track {
 html[data-theme="dark"] .map-canvas {
   filter: brightness(0.78) contrast(1.08) saturate(0.82);
 }
-html[data-theme="dark"] .map-toolbar,
-html[data-theme="dark"] .map-toolbar button,
-html[data-theme="dark"] .map-legend,
-html[data-theme="dark"] .team-map-legend,
-html[data-theme="dark"] .incident-map-legend,
-html[data-theme="dark"] .cc-layer-control,
-html[data-theme="dark"] .incident-map-layers {
-  background: #202a37;
-  border-color: #3a4656;
-  color: #e6ebf2;
-}
+
 html[data-theme="dark"] .badge-neutral {
   background: #202a37;
   border-color: #3b4757;
@@ -755,13 +725,13 @@ profile menu and visual identity */
 }
 .account-popover-head small {
   font-size: 15px;
-  color: #475467;
+  color: var(--text-secondary);
 }
 .account-popover-head em {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #7c8799;
+  color: var(--text-muted);
   font-size: 14px;
   font-style: normal;
 }
@@ -909,7 +879,7 @@ profile menu and visual identity */
 }
 .cc-panel {
   overflow: hidden;
-  background: #fff;
+  background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: 11px;
   box-shadow: var(--shadow-card);
@@ -922,7 +892,7 @@ profile menu and visual identity */
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px 18px;
-  border-bottom: 1px solid #edf0f3;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .cc-panel-header > div {
   display: flex;
@@ -930,11 +900,11 @@ profile menu and visual identity */
   gap: 3px;
 }
 .cc-panel-header > div > span {
-  color: #101828;
+  color: var(--text-primary);
   font-weight: 700;
 }
 .cc-panel-header small {
-  color: #667085;
+  color: var(--muted);
 }
 .cc-panel-header > button {
   min-height: 36px;
@@ -945,13 +915,13 @@ profile menu and visual identity */
   border-radius: 7px;
   padding: 0 9px;
   background: transparent;
-  color: #175cd3;
+  color: var(--primary);
   font-size: 16px;
   font-weight: 650;
   cursor: pointer;
 }
 .cc-panel-header > button:hover {
-  background: #eff5ff;
+  background: var(--surface-hover);
 }
 .progress-track {
   height: 6px;
@@ -968,8 +938,8 @@ profile menu and visual identity */
   display: grid;
   grid-template-columns: minmax(300px, 0.78fr) minmax(420px, 1.22fr);
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #dfe4ea;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
   border-radius: 13px;
   box-shadow: 0 8px 28px rgba(16, 24, 40, 0.07);
 }
@@ -979,8 +949,8 @@ profile menu and visual identity */
   align-items: center;
   flex-direction: column;
   text-align: center;
-  background: linear-gradient(180deg, #f7faff 0%, #fff 100%);
-  border-right: 1px solid #e6eaf0;
+  background: linear-gradient(180deg, var(--surface-muted) 0%, var(--surface-card) 100%);
+  border-right: 1px solid var(--border-subtle);
 }
 .profile-avatar-wrap {
   position: relative;
@@ -1007,12 +977,12 @@ profile menu and visual identity */
 }
 .profile-avatar-panel h2 {
   margin: 18px 0 4px;
-  color: #101828;
+  color: var(--text-primary);
   font-size: 26px;
 }
 .profile-avatar-panel > div:nth-child(2) p {
   margin: 0;
-  color: #667085;
+  color: var(--muted);
   font-size: 17px;
 }
 .profile-file-input {
@@ -1028,14 +998,14 @@ profile menu and visual identity */
 }
 .profile-avatar-panel > small {
   margin-top: 12px;
-  color: #7c8799;
+  color: var(--text-muted);
 }
 .profile-message {
   margin: 14px 0 0;
   padding: 9px 11px;
   border-radius: 7px;
-  background: #eff8ff;
-  color: #175cd3;
+  background: var(--info-surface);
+  color: var(--primary);
   font-size: 15px;
 }
 .profile-details {
@@ -1047,11 +1017,11 @@ profile menu and visual identity */
   align-items: flex-start;
   justify-content: space-between;
   padding-bottom: 20px;
-  border-bottom: 1px solid #edf0f3;
-  color: #175cd3;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--primary);
 }
 .profile-details > header span {
-  color: #667085;
+  color: var(--muted);
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1059,7 +1029,7 @@ profile menu and visual identity */
 }
 .profile-details > header h2 {
   margin: 5px 0 0;
-  color: #101828;
+  color: var(--text-primary);
   font-size: 22.5px;
 }
 .profile-details dl {
@@ -1071,10 +1041,10 @@ profile menu and visual identity */
   grid-template-columns: 150px minmax(0, 1fr);
   align-items: center;
   gap: 18px;
-  border-bottom: 1px solid #edf0f3;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .profile-details dt {
-  color: #667085;
+  color: var(--muted);
   font-size: 16px;
 }
 .profile-details dd {
@@ -1082,12 +1052,12 @@ profile menu and visual identity */
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #253248;
+  color: var(--text-primary);
   font-size: 17px;
   font-weight: 650;
 }
 .profile-details dd svg {
-  color: #667085;
+  color: var(--muted);
 }
 .profile-security-note {
   margin-top: 22px;
@@ -1095,10 +1065,10 @@ profile menu and visual identity */
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  border: 1px solid #cfe0f4;
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: #f5f9ff;
-  color: #315f87;
+  background: var(--surface-hover);
+  color: var(--info-fg);
 }
 .profile-security-note svg {
   flex: none;
@@ -1184,7 +1154,7 @@ html[data-theme="dark"] .profile-security-note {
   }
   .profile-avatar-panel {
     border-right: 0;
-    border-bottom: 1px solid #e6eaf0;
+    border-bottom: 1px solid var(--border-subtle);
   }
 }
 @media (max-width: 640px) {
@@ -1575,41 +1545,8 @@ calmer login form */
 
 /* Final select normalization after feature-level shorthand declarations */
 
-/* Session panel,
-profile and theme hardening */
-:root {
-  --surface-app: #f7f8fa;
-  --surface-shell: #f3f6fa;
-  --surface-card: #ffffff;
-  --surface-raised: #ffffff;
-  --surface-muted: #f7f9fc;
-  --surface-hover: #f2f5f8;
-  --text-primary: #172033;
-  --text-secondary: #526174;
-  --text-muted: #7c8799;
-  --control-border: #cfd6df;
-  --focus-ring: rgba(46, 112, 210, 0.2);
-  --danger-surface: #fef3f2;
-  --warning-surface: #fffaeb;
-  --success-surface: #ecfdf3;
-}
-html[data-theme="dark"] {
-  --surface-app: #0e141c;
-  --surface-shell: #151e29;
-  --surface-card: #17212d;
-  --surface-raised: #1c2734;
-  --surface-muted: #121b25;
-  --surface-hover: #222f3e;
-  --text-primary: #edf2f8;
-  --text-secondary: #bdc8d6;
-  --text-muted: #8f9daf;
-  --control-border: #3a4859;
-  --focus-ring: rgba(108, 164, 244, 0.28);
-  --danger-surface: #351d22;
-  --warning-surface: #342818;
-  --success-surface: #163126;
-  color-scheme: dark;
-}
+/* Session panel, profile and theme hardening —
+   token light/dark hợp nhất về khối nền trong compact-ui.css. */
 
 .topbar {
   grid-template-columns: minmax(320px, 1fr) auto;
@@ -1664,7 +1601,7 @@ html[data-theme="dark"] {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #067647;
+  color: var(--success-fg);
   font-size: 14px;
   font-style: normal;
   font-weight: 650;
@@ -1698,8 +1635,8 @@ html[data-theme="dark"] {
   display: grid;
   place-items: center;
   border-radius: 8px;
-  background: #edf4ff;
-  color: #175cd3;
+  background: var(--info-surface);
+  color: var(--primary);
 }
 .account-session-context > div > span:last-child {
   min-width: 0;
@@ -1745,7 +1682,7 @@ html[data-theme="dark"] {
   margin-top: 4px;
   border-top: 1px solid var(--border);
   border-radius: 0 0 8px 8px;
-  color: #b42318;
+  color: var(--danger-fg);
 }
 html[data-theme="dark"] .account-active-state {
   color: #75e0a7;
@@ -1776,9 +1713,9 @@ html[data-theme="dark"] .account-popover-actions > button.logout {
 .profile-avatar-wrap > .avatar {
   width: 124px;
   height: 124px;
-  background: #eaf2ff;
+  background: var(--primary-soft);
   border: 4px solid var(--surface-card);
-  color: #1849a9;
+  color: var(--primary-soft-fg);
   font-size: 36.5px;
 }
 .profile-avatar-wrap > .profile-avatar-camera {
@@ -1802,7 +1739,7 @@ html[data-theme="dark"] .account-popover-actions > button.logout {
   padding: 3px 8px;
   border-radius: 6px;
   background: var(--success-surface);
-  color: #067647;
+  color: var(--success-fg);
   font-size: 14px;
   font-weight: 700;
 }
@@ -1863,14 +1800,14 @@ html[data-theme="dark"] .account-popover-actions > button.logout {
   font-size: 16px;
 }
 .profile-message.success {
-  border-color: #abefc6;
+  border-color: var(--success-border);
   background: var(--success-surface);
-  color: #067647;
+  color: var(--success-fg);
 }
 .profile-message.error {
-  border-color: #fecdca;
+  border-color: var(--danger-border);
   background: var(--danger-surface);
-  color: #b42318;
+  color: var(--danger-fg);
 }
 .profile-information {
   margin-top: 20px;
@@ -1888,7 +1825,7 @@ html[data-theme="dark"] .account-popover-actions > button.logout {
   gap: 20px;
   padding: 24px 30px;
   border-bottom: 1px solid var(--border);
-  color: #175cd3;
+  color: var(--primary);
 }
 .profile-information > header span {
   color: var(--text-muted);
@@ -1947,7 +1884,7 @@ html[data-theme="dark"] .account-popover-actions > button.logout {
   color: var(--text-muted);
 }
 .profile-information-grid .profile-active-value {
-  color: #067647;
+  color: var(--success-fg);
 }
 .profile-information > .profile-security-note {
   margin: 22px 30px 28px;
@@ -2151,12 +2088,9 @@ html[data-theme="dark"] .cc-header-controls > button:not(.btn) {
 }
 html[data-theme="dark"] .workspace .text-action {
   background: transparent;
-  color: #9fc2ff;
+  color: var(--info-fg);
 }
-html[data-theme="dark"] .map-attribution {
-  background: rgba(23, 33, 45, 0.88);
-  color: var(--text-muted);
-}
+
 
 /* WCAG contrast hardening confirmed by rendered route audit */
 html:not([data-theme="dark"]) .nav-group-title > span,
@@ -2178,62 +2112,9 @@ html:not([data-theme="dark"]) .sos-location-note span {
 html:not([data-theme="dark"]) .cc-action-rank {
   color: #667085;
 }
-html[data-theme="dark"] .collapse-btn > span,
-html[data-theme="dark"]
-  .app-shell
-  .app-body
-  .workspace
-  :where(p, span, small, dt, dd, td, th, label, button) {
-  color: #b9c5d4;
-}
-html[data-theme="dark"]
-  .app-shell
-  .app-body
-  .workspace
-  :where(h1, h2, h3, h4, h5, h6, strong, b) {
-  color: #f0f4fa;
-}
-html[data-theme="dark"]
-  .app-shell
-  .app-body
-  .workspace
-  :where(
-    .text-action,
-    .analytics-entity-link,
-    .back-link,
-    .context-heading > button,
-    .incident-tabs > .active,
-    .incident-detail-tabs > .active,
-    .admin-page-header > div > span
-  ) {
-  color: #9fc2ff;
-}
 html[data-theme="dark"] .audit-notice {
   background: #332c18;
   border-color: #6f5b20;
-}
-html[data-theme="dark"]
-  .app-shell
-  .app-body
-  .workspace
-  :where(.badge-green, .audit-result.success, .account-state.active) {
-  color: #75e0a7;
-}
-html[data-theme="dark"] .app-shell .app-body .workspace :where(.badge-amber) {
-  color: #fec84b;
-}
-html[data-theme="dark"]
-  .app-shell
-  .app-body
-  .workspace
-  :where(.badge-blue, .badge-neutral) {
-  color: #9fc2ff;
-}
-html[data-theme="dark"] .app-shell .app-body .workspace :where(time, li) {
-  color: #b9c5d4;
-}
-html[data-theme="dark"] .app-shell .app-body .workspace .btn-primary {
-  color: #fff;
 }
 html[data-theme="dark"] .priority-block.p1 {
   background: #4a201f;
@@ -2278,7 +2159,7 @@ html:not([data-theme="dark"])
     .sos-queue-summary > p,
     .profile-information > header span
   ) {
-  color: #5d6879;
+  color: var(--muted);
 }
 html:not([data-theme="dark"]) .priority-block.p1 {
   color: #a92920;
@@ -2292,7 +2173,7 @@ html:not([data-theme="dark"])
     .field-update-list article > div > span,
     .sos-reporter-grid > div > span
   ) {
-  color: #5d6879;
+  color: var(--muted);
 }
 html[data-theme="dark"] .login-context > span {
   color: #9fc2ff;
@@ -2300,18 +2181,6 @@ html[data-theme="dark"] .login-context > span {
 html[data-theme="dark"] .analytics-status.neutral {
   background: #253140;
   color: #c5d0dd;
-}
-html[data-theme="dark"] .app-shell .workspace .shelter-row,
-html[data-theme="dark"] .app-shell .workspace .sos-row {
-  background: #17212d;
-}
-html[data-theme="dark"] .app-shell .workspace .shelter-row *,
-html[data-theme="dark"] .app-shell .workspace .sos-row * {
-  color: #c5d0dd;
-}
-html[data-theme="dark"] .app-shell .workspace .shelter-row :where(b, strong),
-html[data-theme="dark"] .app-shell .workspace .sos-row :where(b, strong) {
-  color: #f0f4fa;
 }
 
 /* ============================================================
@@ -2374,7 +2243,6 @@ html[data-theme="dark"] .incident-more-menu button:hover {
   background: #253140;
   color: #9fc2ff;
 }
-html[data-theme="dark"] .incident-tabs button span,
 html[data-theme="dark"] .incident-detail-tabs span,
 html[data-theme="dark"] .task-tabs button span,
 html[data-theme="dark"] .team-tabs button span {
@@ -2403,9 +2271,7 @@ html[data-theme="dark"] .text-action {
 html[data-theme="dark"] .btn-secondary:hover {
   background: var(--surface-hover);
 }
-html[data-theme="dark"] .map-toolbar button:hover {
-  background: #253140;
-}
+
 html[data-theme="dark"] .map-layers {
   background: var(--surface-raised);
   border-color: var(--control-border);
@@ -2490,9 +2356,7 @@ html[data-theme="dark"] .team-operational-map {
   background: #121b25;
   color: var(--text-muted);
 }
-html[data-theme="dark"] .map-toolbar span {
-  background: #3a4859;
-}
+
 html[data-theme="dark"] .cc-panel-header > button:hover {
   background: #253140;
 }
@@ -2564,10 +2428,10 @@ badge ra ngoài mép ---- */
   height: 48px;
 }
 .topbar .btn-icon svg {
-  color: #3b4b63;
+  color: var(--text-secondary);
 }
 .topbar .btn-icon:hover {
-  background: #eef2f7;
+  background: var(--surface-hover);
 }
 .topbar .btn-icon .notification-count {
   top: -3px;
@@ -2576,15 +2440,10 @@ badge ra ngoài mép ---- */
   height: 22px;
   padding: 0 5px;
   font-size: var(--type-metadata, 13px);
-  border: 2px solid #f2f4f7;
+  border: 2px solid var(--surface-app);
   z-index: 2;
 }
-html[data-theme="dark"] .topbar .btn-icon .notification-count {
-  border-color: #10151d;
-}
-html[data-theme="dark"] .topbar .btn-icon svg {
-  color: #c2cedd;
-}
+
 
 /* ---- Button system ---- */
 .btn {
@@ -2608,50 +2467,50 @@ html[data-theme="dark"] .topbar .btn-icon svg {
   border-radius: 8px;
 }
 .btn-secondary {
-  background: #fff;
-  border: 1px solid #c6cfdb;
-  color: #33415c;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.07);
 }
 .btn-secondary:hover {
-  background: #f1f5f9;
-  border-color: #a8b4c4;
-  color: #1d2939;
+  background: var(--surface-hover);
+  border-color: var(--border-default);
+  color: var(--text-primary);
 }
 .btn-secondary:active {
-  background: #e8edf3;
+  background: var(--surface-hover);
 }
 .btn-ghost {
-  color: #3f4e66;
+  color: var(--text-secondary);
 }
 .btn-ghost:hover {
-  background: #edf1f6;
-  color: #101828;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 .btn-danger {
-  background: #fff;
-  border: 1px solid #f3b7af;
-  color: #b42318;
+  background: var(--surface-card);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-fg);
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
 }
 .btn-danger:hover {
-  background: #fef3f2;
-  border-color: #e08d84;
-  color: #912018;
+  background: var(--danger-surface);
+  border-color: var(--danger-border);
+  color: var(--danger-fg);
 }
 /* nút hành động trong hàng bảng / card: từ link chữ -> chip rõ ràng */
 .row-action {
-  border: 1px solid #cbd4e0;
+  border: 1px solid var(--border-default);
   border-radius: 7px;
-  background: #fff;
+  background: var(--surface-card);
   padding: 5px 11px;
-  color: #1d4ed8;
+  color: var(--primary);
   font-weight: 650;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
 }
 .row-action:hover {
-  background: #eff4ff;
-  border-color: #9fbbf2;
+  background: var(--info-surface);
+  border-color: var(--info-border);
 }
 html[data-theme="dark"] .row-action {
   background: #16202c;
@@ -2764,9 +2623,9 @@ html[data-theme="dark"] .btn-danger:hover {
 
 /* Nút SOS 1 Chạm */
 .sos-panic-btn {
-  background: #fef2f2;
-  color: #dc2626;
-  border-color: #fecaca;
+  background: var(--danger-surface);
+  color: var(--danger-fg);
+  border-color: var(--danger-border);
   box-shadow: 0 1px 2px rgba(220, 38, 38, 0.08);
 }
 .sos-panic-btn:hover:not(:disabled) {
@@ -2790,23 +2649,23 @@ html[data-theme="dark"] .btn-danger:hover {
 
 /* Nút Phát định vị Realtime */
 .live-beacon-btn.active {
-  background: #ecfdf5;
-  color: #059669;
-  border-color: #a7f3d0;
+  background: var(--success-surface);
+  color: var(--success-fg);
+  border-color: var(--success-border);
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 .live-beacon-btn.active:hover {
-  background: #d1fae5;
-  border-color: #6ee7b7;
+  background: var(--success-surface);
+  border-color: var(--success-border);
 }
 .live-beacon-btn.inactive {
-  background: #f8fafc;
-  color: #64748b;
-  border-color: #cbd5e1;
+  background: var(--surface-subtle);
+  color: var(--muted);
+  border-color: var(--border-default);
 }
 .live-beacon-btn.inactive:hover {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--surface-hover);
+  color: var(--text-secondary);
 }
 .beacon-radar-ping {
   width: 7px;
@@ -2827,11 +2686,11 @@ html[data-theme="dark"] .btn-danger:hover {
 .helper-btn {
   padding: 0 7px;
   background: transparent;
-  color: #94a3b8;
+  color: var(--text-muted);
   border-color: transparent;
 }
 .helper-btn:hover {
-  color: #3b82f6;
+  color: var(--primary);
   background: rgba(59, 130, 246, 0.08);
 }
 
@@ -2856,7 +2715,7 @@ html[data-theme="dark"] .btn-danger:hover {
 .tracking-toast-msg button {
   background: none;
   border: 0;
-  color: #94a3b8;
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
 }
@@ -2919,7 +2778,7 @@ html[data-theme="dark"] .btn-danger:hover {
 .tracking-modal-header .close-btn {
   background: none;
   border: 0;
-  color: #94a3b8;
+  color: var(--text-muted);
   cursor: pointer;
 }
 .tracking-modal-body {
@@ -2940,12 +2799,12 @@ html[data-theme="dark"] .btn-danger:hover {
   border-radius: 9px;
 }
 .mode-explain-card.panic {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--danger-surface);
+  border: 1px solid var(--danger-border);
 }
 .mode-explain-card.beacon {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--success-surface);
+  border: 1px solid var(--success-border);
 }
 .mode-explain-title {
   display: flex;
@@ -2962,13 +2821,13 @@ html[data-theme="dark"] .btn-danger:hover {
   font-size: 13.5px;
   line-height: 1.5;
   margin: 0 0 8px;
-  color: #334155;
+  color: var(--text-secondary);
 }
 .mode-explain-card ul {
   margin: 0;
   padding-left: 18px;
   font-size: 13px;
-  color: #475467;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 .tracking-modal-footer {
@@ -3059,7 +2918,7 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   max-width: 160px;
   padding: 2px 7px;
   border-radius: 10px;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--surface-raised);
   font-size: 11px;
   font-weight: 650;
   white-space: nowrap;
@@ -3073,19 +2932,19 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
 }
 
 .om-live-marker.rescue-team .om-live-icon { background: #0e7490; }
-.om-live-marker.rescue-team .om-live-name { background: #ecfeff; color: #0e5c6f; }
+.om-live-marker.rescue-team .om-live-name { background: var(--tint-cyan); color: var(--tint-cyan-fg); }
 .om-live-marker.rescue-team .om-live-pulse {
   background: rgba(14, 116, 144, 0.35);
   animation: beaconPing 2s infinite;
 }
 .om-live-marker.citizen .om-live-icon { background: #059669; }
-.om-live-marker.citizen .om-live-name { background: #ecfdf5; color: #065f46; }
+.om-live-marker.citizen .om-live-name { background: var(--tint-green); color: var(--tint-green-fg); }
 .om-live-marker.citizen .om-live-pulse {
   background: rgba(16, 185, 129, 0.32);
   animation: beaconPing 2.2s infinite;
 }
 .om-live-marker.officer .om-live-icon { background: #2563eb; }
-.om-live-marker.officer .om-live-name { background: #eff6ff; color: #1d4ed8; }
+.om-live-marker.officer .om-live-name { background: var(--tint-blue); color: var(--tint-blue-fg); }
 .om-live-marker.officer .om-live-pulse {
   background: rgba(37, 99, 235, 0.3);
   animation: beaconPing 2.2s infinite;
@@ -3095,8 +2954,8 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   animation: panicPulse 1.2s infinite;
 }
 .om-live-marker.panic-sos .om-live-name {
-  background: #fef2f2;
-  color: #b42318;
+  background: var(--danger-surface);
+  color: var(--danger-fg);
 }
 .om-live-marker.panic-sos .om-live-pulse {
   background: rgba(220, 38, 38, 0.45);
@@ -3122,9 +2981,9 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   animation: panicPulse 1.2s infinite;
 }
 .om-live-marker.own.panic-sos .om-live-name {
-  background: #fef2f2;
-  color: #b42318;
-  border-color: #fecaca;
+  background: var(--danger-surface);
+  color: var(--danger-fg);
+  border-color: var(--danger-border);
 }
 
 /* ================================================================
@@ -3169,7 +3028,7 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
 .beacon-scope-note {
   margin: 0 0 12px;
   font-size: 13px;
-  color: #475569;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 .beacon-scope-sub {
@@ -3179,7 +3038,7 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #64748b;
+  color: var(--muted);
 }
 .beacon-scope-groups {
   display: flex;
@@ -3200,13 +3059,13 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   cursor: pointer;
 }
 .beacon-scope-group:hover {
-  border-color: #86c98f;
-  background: #f6fef9;
+  border-color: var(--success-border);
+  background: var(--success-surface);
 }
 .beacon-scope-group input {
   width: 16px;
   height: 16px;
-  accent-color: #16a34a;
+  accent-color: var(--success-fg);
   flex: none;
   cursor: pointer;
 }
@@ -3220,23 +3079,23 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
 }
 .beacon-scope-group b {
   font-size: 13.5px;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 .beacon-scope-group small {
   font-size: 12.5px;
-  color: #64748b;
+  color: var(--muted);
   white-space: nowrap;
 }
 .beacon-scope-search {
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0 12px;
   margin-top: 12px;
-  color: #64748b;
-  background: #fff;
+  color: var(--muted);
+  background: var(--surface-card);
 }
 .beacon-scope-search input {
   flex: 1;
@@ -3245,7 +3104,7 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   height: 36px;
   font-size: 13.5px;
   background: transparent;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 .beacon-scope-chips {
   display: flex;
@@ -3255,15 +3114,15 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   margin-top: 10px;
 }
 .beacon-scope-chips small {
-  color: #64748b;
+  color: var(--muted);
   margin-left: auto;
 }
 .beacon-scope-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: #dcfce7;
-  color: #166534;
+  background: var(--success-surface);
+  color: var(--success-fg);
   border-radius: 999px;
   padding: 3px 6px 3px 10px;
   font-size: 12.5px;
@@ -3275,12 +3134,12 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   border: none;
   background: transparent;
   cursor: pointer;
-  color: #166534;
+  color: var(--success-fg);
   padding: 2px;
   border-radius: 999px;
 }
 .beacon-scope-chip button:hover {
-  background: #bbf7d0;
+  background: var(--success-surface);
 }
 .beacon-scope-list {
   list-style: none;
@@ -3289,8 +3148,8 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   max-height: 220px;
   overflow-y: scroll;
   scrollbar-width: thin;
-  scrollbar-color: #94a3b8 #f1f5f9;
-  border: 1px solid #e2e8f0;
+  scrollbar-color: var(--text-muted) #f1f5f9;
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
 /* Khi có thanh cuộn custom: ẩn thanh native để khỏi 2 thanh chồng nhau. */
@@ -3316,7 +3175,7 @@ html[data-theme="dark"] .mode-explain-card.beacon ul {
   right: 5px;
   width: 8px;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: var(--border);
   cursor: pointer;
 }
 .beacon-scope-thumb {
@@ -3344,13 +3203,13 @@ html[data-theme="dark"] .beacon-scope-thumb {
   width: 10px;
 }
 .beacon-scope-list::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--surface-hover);
   border-radius: 0 9px 9px 0;
 }
 .beacon-scope-list::-webkit-scrollbar-thumb {
   background: #94a3b8;
   border-radius: 8px;
-  border: 2px solid #f1f5f9;
+  border: 2px solid var(--surface-hover);
 }
 .beacon-scope-list::-webkit-scrollbar-thumb:hover {
   background: #64748b;
@@ -3368,7 +3227,7 @@ html[data-theme="dark"] .beacon-scope-list::-webkit-scrollbar-thumb {
 /* Thân modal định vị: thanh cuộn mảnh nhưng nhìn thấy được khi tràn. */
 .tracking-modal-body {
   scrollbar-width: thin;
-  scrollbar-color: #94a3b8 transparent;
+  scrollbar-color: var(--text-muted) transparent;
 }
 .tracking-modal-body::-webkit-scrollbar {
   width: 10px;
@@ -3386,7 +3245,7 @@ html[data-theme="dark"] .tracking-modal-body::-webkit-scrollbar-thumb {
   background: #475569;
 }
 .beacon-scope-list li + li {
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--surface-hover);
 }
 .beacon-scope-list label {
   display: flex;
@@ -3396,30 +3255,30 @@ html[data-theme="dark"] .tracking-modal-body::-webkit-scrollbar-thumb {
   cursor: pointer;
 }
 .beacon-scope-list label:hover {
-  background: #f8fafc;
+  background: var(--surface-subtle);
 }
 .beacon-scope-list input {
   margin-top: 3px;
-  accent-color: #16a34a;
+  accent-color: var(--success-fg);
 }
 .beacon-scope-list span b {
   font-size: 13.5px;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 .beacon-scope-list span i {
   font-style: normal;
   font-size: 12.5px;
-  color: #64748b;
+  color: var(--muted);
 }
 .beacon-scope-list span small {
   display: block;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 .beacon-scope-empty {
   padding: 14px;
   text-align: center;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 13px;
 }
 .beacon-scope-footer {

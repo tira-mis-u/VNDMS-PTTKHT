@@ -1017,10 +1017,17 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       "communication",
     );
   };
-  const createSos = (input: NewSosInput) => {
-    enforcePermission("sos_create", [
-      { type: "SosRequest", id: "new", geographicScope: input.location.address },
-    ]);
+  const createSos = (input: NewSosInput, options?: { securityAudited?: boolean }) => {
+    // Caller (nút SOS Panic) có dòng nhật ký chuyên biệt PANIC_ALERT_TRIGGERED
+    // riêng → truyền securityAudited:true để không nhân đôi thành 2 dòng + 2
+    // thông báo cho MỘT lần bấm (owner request 2026-09). Các nơi gọi khác
+    // (portal công dân, form tiếp nhận) giữ dòng generic.
+    enforcePermission(
+      "sos_create",
+      [{ type: "SosRequest", id: "new", geographicScope: input.location.address }],
+      undefined,
+      options?.securityAudited ? { logGranted: false } : undefined,
+    );
     const maxNum = Math.max(
       100,
       ...sosRequests.map((item) => Number(item.id.replace(/\D/g, "")) || 0),
@@ -1089,6 +1096,12 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       current.map((item) => (item.id === sosId ? changed : item)),
     );
     pushSosEvent(sosId, "Người gửi đã rút lại yêu cầu SOS", "cancelled");
+    recordSecurityAudit(
+      "OPERATIONAL_MUTATION",
+      `Rút lại yêu cầu SOS ${sosId} do chính tài khoản gửi (trước khi điều phối)`,
+      "SOS",
+      sosId,
+    );
   };
   const closeSos = (sosId: string) => {
     enforcePermission("sos_close", [sosResource(sosId)]);
@@ -1440,17 +1453,49 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     return currentUser;
   };
   const markAlertRead = (alertKey: string) => {
-    const { alert } = findDerivedAlert(alertKey);
+    const { snapshot, alert } = findDerivedAlert(alertKey);
     const user = assertAlertReadable(alert);
+    // No-op guard: cảnh báo ĐÃ đọc bởi chính người này → bấm tiếp không sinh
+    // dòng ALERT_INTERACTION thứ hai cho cùng một trạng thái (owner 2026-09).
+    if (
+      snapshot.alertInteractions.some(
+        (item) =>
+          item.alertKey === alertKey &&
+          item.readBy.some((receipt) => receipt.userId === user.id),
+      )
+    )
+      return;
     setAlertInteractions((current) =>
       markAlertReadReceipt(current, alertKey, user.id, now()),
     );
+    recordSecurityAudit(
+      "ALERT_INTERACTION",
+      `Đánh dấu đã đọc cảnh báo tác nghiệp ${alert.title ?? alertKey}`,
+      "OperationalAlert",
+      alertKey,
+    );
   };
   const markAlertUnread = (alertKey: string) => {
-    const { alert } = findDerivedAlert(alertKey);
+    const { snapshot, alert } = findDerivedAlert(alertKey);
     const user = assertAlertReadable(alert);
+    // No-op guard đối xứng với markAlertRead: chưa có receipt thì "hủy đánh
+    // dấu đã đọc" không đổi gì → không sinh dòng ALERT_INTERACTION (owner 09-26).
+    if (
+      !snapshot.alertInteractions.some(
+        (item) =>
+          item.alertKey === alertKey &&
+          item.readBy.some((receipt) => receipt.userId === user.id),
+      )
+    )
+      return;
     setAlertInteractions((current) =>
       removeAlertReadReceipt(current, alertKey, user.id),
+    );
+    recordSecurityAudit(
+      "ALERT_INTERACTION",
+      `Hủy đánh dấu đã đọc cảnh báo tác nghiệp ${alert.title ?? alertKey}`,
+      "OperationalAlert",
+      alertKey,
     );
   };
   const markAllAlertsRead = () => {
@@ -1472,6 +1517,12 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
           markAlertReadReceipt(accumulator, item.key, currentUser.id, now()),
         current,
       ),
+    );
+    recordSecurityAudit(
+      "ALERT_INTERACTION",
+      `Đánh dấu đã đọc toàn bộ ${visible.length} cảnh báo tác nghiệp trong phạm vi`,
+      "OperationalAlert",
+      null,
     );
   };
   const acknowledgeAlert = (alertKey: string) => {

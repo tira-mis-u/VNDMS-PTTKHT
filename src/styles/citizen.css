@@ -226,7 +226,7 @@
 }
 
 .citizen-stat-card {
-  background: #fff;
+  background: var(--surface-card);
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 12px;
   padding: 18px 20px;
@@ -246,32 +246,32 @@
 }
 
 .citizen-stat-icon.red {
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--danger-surface);
+  color: var(--danger-fg);
 }
 .citizen-stat-icon.blue {
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--info-surface);
+  color: var(--primary);
 }
 .citizen-stat-icon.amber {
-  background: #fffbeb;
+  background: var(--warning-surface);
   color: #d97706;
 }
 .citizen-stat-icon.green {
-  background: #f0fdf4;
-  color: #16a34a;
+  background: var(--success-surface);
+  color: var(--success-fg);
 }
 
 .citizen-stat-info b {
   display: block;
   font-size: 22px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .citizen-stat-info span {
   font-size: 13px;
-  color: #64748b;
+  color: var(--muted);
   font-weight: 500;
 }
 
@@ -283,7 +283,7 @@
 }
 
 .citizen-section-card {
-  background: #fff;
+  background: var(--surface-card);
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -293,7 +293,7 @@
 
 .citizen-card-header {
   padding: 18px 22px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--surface-hover);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -307,11 +307,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .citizen-card-header small {
-  color: #64748b;
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -332,21 +332,21 @@
 }
 
 .citizen-alert-item.critical {
-  background: #fef2f2;
+  background: var(--danger-surface);
   border-color: #dc2626;
-  color: #991b1b;
+  color: var(--danger-fg);
 }
 
 .citizen-alert-item.warning {
-  background: #fffbeb;
+  background: var(--warning-surface);
   border-color: #f59e0b;
-  color: #92400e;
+  color: var(--warning-fg);
 }
 
 .citizen-alert-item.info {
-  background: #eff6ff;
+  background: var(--info-surface);
   border-color: #3b82f6;
-  color: #1e40af;
+  color: var(--info-fg);
 }
 
 .citizen-alert-item h4 {
@@ -375,10 +375,10 @@
 }
 
 .citizen-sos-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 16px;
-  background: #fafafa;
+  background: var(--surface-muted);
 }
 
 .citizen-sos-head {
@@ -390,12 +390,12 @@
 
 .citizen-sos-head b {
   font-size: 14px;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .citizen-sos-desc {
   font-size: 13.5px;
-  color: #334155;
+  color: var(--text-secondary);
   margin: 0 0 10px;
   line-height: 1.45;
 }
@@ -405,7 +405,7 @@
   flex-wrap: wrap;
   gap: 12px;
   font-size: 12.5px;
-  color: #64748b;
+  color: var(--muted);
   align-items: center;
 }
 
@@ -424,10 +424,10 @@
 }
 
 .citizen-shelter-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 16px;
-  background: #fff;
+  background: var(--surface-card);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -437,12 +437,12 @@
   font-size: 14.5px;
   font-weight: 700;
   margin: 0;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .citizen-shelter-card p {
   font-size: 13px;
-  color: #64748b;
+  color: var(--muted);
   margin: 0;
   display: flex;
   align-items: center;
@@ -452,11 +452,11 @@
 .citizen-shelter-capacity {
   margin-top: 6px;
   font-size: 12.5px;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .citizen-shelter-capacity b {
-  color: #16a34a;
+  color: var(--success-fg);
 }
 
 /* Hotline Card */
@@ -469,26 +469,26 @@
 
 .citizen-hotline-item {
   border: 1px solid #fee2e2;
-  background: #fff5f5;
+  background: var(--danger-surface);
   border-radius: 10px;
   padding: 12px 14px;
   display: flex;
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  color: #991b1b;
+  color: var(--danger-fg);
   transition: transform 0.15s;
 }
 
 .citizen-hotline-item:hover {
   transform: translateY(-2px);
-  background: #fee2e2;
+  background: var(--danger-surface);
 }
 
 .citizen-hotline-item .hotline-num {
   font-size: 20px;
   font-weight: 900;
-  color: #dc2626;
+  color: var(--danger-fg);
   font-family: var(--font-family-mono, monospace);
 }
 
@@ -511,7 +511,7 @@
   gap: 12px;
   align-items: flex-start;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--surface-hover);
 }
 
 .citizen-guide-item:last-child {
@@ -523,8 +523,8 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: #f1f5f9;
-  color: #1e293b;
+  background: var(--surface-hover);
+  color: var(--text-primary);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -534,12 +534,12 @@
   font-size: 13.5px;
   font-weight: 700;
   margin: 0 0 3px;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .citizen-guide-content p {
   font-size: 12.5px;
-  color: #64748b;
+  color: var(--muted);
   margin: 0;
   line-height: 1.45;
 }
@@ -553,7 +553,7 @@
   transform: translate(-50%, -50%);
   width: min(600px, calc(100vw - 32px));
   max-height: min(90vh, 760px);
-  background: #fff;
+  background: var(--surface-card);
   border-radius: 16px;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
   display: flex;
@@ -601,11 +601,11 @@
 
 .citizen-sos-modal-footer {
   padding: 16px 24px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  background: #f8fafc;
+  background: var(--surface-subtle);
 }
 
 /* Responsive */
@@ -675,7 +675,7 @@
   content: "";
   width: 10px;
   height: 10px;
-  background: #fff;
+  background: var(--surface-card);
   clip-path: polygon(50% 0%, 0% 60%, 30% 60%, 30% 100%, 70% 100%, 70% 60%, 100% 60%);
 }
 
@@ -859,17 +859,17 @@ html[data-theme="dark"] .citizen-sos-modal-footer {
   gap: 10px;
   margin-top: 10px;
   padding: 8px 10px;
-  background: #fff;
-  border: 1px solid #fecaca;
+  background: var(--surface-card);
+  border: 1px solid var(--danger-border);
   border-radius: 8px;
   font-size: 13px;
-  color: #7f1d1d;
+  color: var(--danger-fg);
 }
 .citizen-undo-track {
   flex: 1;
   height: 6px;
   min-width: 60px;
-  background: #fee2e2;
+  background: var(--danger-surface);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -905,9 +905,9 @@ html[data-theme="dark"] .citizen-sos-modal-footer {
 .citizen-request-filters button {
   padding: 6px 14px;
   border-radius: 20px;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #475569;
+  border: 1px solid var(--border-default);
+  background: var(--surface-card);
+  color: var(--text-secondary);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -932,13 +932,14 @@ html[data-theme="dark"] .citizen-sos-modal-footer {
   align-items: center;
   gap: 12px;
   max-width: calc(100% - 140px);
-  background: rgba(255, 255, 255, 0.97);
-  border: 1px solid #dbe3ec;
+  background: var(--map-overlay-bg);
+  border: 1px solid var(--map-overlay-border);
   border-radius: 10px;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(6px);
   padding: 8px 8px 8px 14px;
   font-size: 12.5px;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 .citizen-map-selected > div {
   display: flex;
@@ -947,32 +948,32 @@ html[data-theme="dark"] .citizen-sos-modal-footer {
   min-width: 0;
 }
 .citizen-map-selected small {
-  color: #64748b;
+  color: var(--muted);
 }
 .citizen-map-selected button {
   flex: none;
-  border: 1px solid #cbd5e1;
-  background: #fff;
+  border: 1px solid var(--border-default);
+  background: var(--surface-card);
   border-radius: 7px;
   padding: 5px 10px;
   font-size: 12px;
   font-weight: 600;
-  color: #175cd3;
+  color: var(--primary);
   cursor: pointer;
   white-space: nowrap;
 }
 .citizen-map-selected button:hover {
-  background: #eff6ff;
+  background: var(--info-surface);
 }
 .citizen-map-selected button[aria-label="Đóng"] {
   border: none;
-  color: #64748b;
+  color: var(--muted);
   padding: 5px;
   display: grid;
   place-items: center;
 }
 
 .citizen-legend-hint {
-  color: #64748b;
+  color: var(--muted);
   font-weight: 500;
 }

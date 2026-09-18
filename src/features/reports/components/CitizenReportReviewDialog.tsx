@@ -42,7 +42,7 @@ export function CitizenReportReviewDialog({
   return (
     <>
       <DialogBackdrop onClick={onClose} />
-      <div className="incident-form-dialog sos-form-dialog">
+      <div className="incident-form-dialog sos-form-dialog" role="dialog" aria-modal="true">
         <header>
           <h2>Đánh giá phản ánh {report.code}</h2>
           <button onClick={onClose}>

@@ -444,7 +444,7 @@
   position: absolute;
   left: 9px;
   bottom: 25px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--map-overlay-bg);
   border: 1px solid #dfe4ea;
   border-radius: 5px;
   padding: 6px;

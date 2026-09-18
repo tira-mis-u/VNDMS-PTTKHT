@@ -58,6 +58,15 @@ export type AuditAction =
   | "SESSION_EXPIRED"
   | "PERMISSION_DENIED"
   | "MUTATION_AUTHORIZED"
+  /**
+   * Mọi thao tác nghiệp vụ đã được cấp quyền trên bản ghi điều hành/ứng phó
+   * (sự cố, nhiệm vụ, đội, điểm sơ tán, SOS, phản ánh, cảnh báo công bố…).
+   * Tách khỏi MUTATION_AUTHORIZED (chỉ còn dùng cho thay đổi TÀI KHOẢN) để
+   * nhật ký lọc/đọc được theo nhóm chức năng thay vì hòa vào mục tài khoản.
+   */
+  | "OPERATIONAL_MUTATION"
+  /** Tương tác hàng đợi cảnh báo: đánh dấu đã đọc/đọc lại/đọc tất cả. */
+  | "ALERT_INTERACTION"
   | "USER_REGISTERED"
   | "USER_ACTIVATED"
   | "USER_DEACTIVATED"

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ChevronRight, MapPin, Search, Truck, X } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { Badge, Input, PageSectionHeader } from "@/components/ui";
+import { Select as UiSelect } from "@/components/ui/Select";
 import { ReliefSectionTabs } from "../components/ReliefSectionTabs";
 
 /**
@@ -109,7 +110,7 @@ export function ShipmentListPage({ navigate }: { navigate: (path: string) => voi
             )}
           </label>
           <label className="filter-select">
-            <select
+            <UiSelect
               aria-label="Trạng thái chuyến hàng"
               value={status}
               onChange={(event) => setStatus(event.target.value)}
@@ -117,7 +118,7 @@ export function ShipmentListPage({ navigate }: { navigate: (path: string) => voi
               {statuses.map((option) => (
                 <option key={option}>{option}</option>
               ))}
-            </select>
+            </UiSelect>
           </label>
         </div>
 

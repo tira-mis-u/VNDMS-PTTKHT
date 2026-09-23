@@ -140,9 +140,6 @@
   color: var(--muted);
   font-size: var(--type-metadata, 13px);
 }
-.incident-row-progress .progress-track {
-  margin-top: 5px;
-}
 .incident-updated {
   color: var(--text-secondary);
   font-size: var(--type-metadata, 13px);
@@ -163,6 +160,29 @@
 .incident-empty span {
   font-size: 13px;
 }
+/* Banner hướng dẫn bước tiếp theo trong trang chi tiết sự cố (CTA tại chỗ). */
+.incident-flow-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.incident-flow-note--warn {
+  border: 1px solid var(--warning-border);
+  background: var(--warning-surface);
+  color: var(--text-secondary);
+}
+.incident-flow-note--info {
+  border: 1px solid var(--info-border);
+  background: var(--info-surface);
+  color: var(--primary);
+}
+
 .incident-form-dialog {
   position: fixed;
   z-index: 140;
@@ -942,9 +962,6 @@
   justify-content: space-between;
   font-size: var(--type-metadata, 13px);
   color: var(--text-secondary);
-}
-.context-progress .progress-track {
-  height: 5px;
 }
 .context-workflow {
   padding: 13px 14px;

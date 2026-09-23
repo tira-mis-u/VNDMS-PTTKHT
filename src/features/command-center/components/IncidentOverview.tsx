@@ -1,6 +1,6 @@
 import { ChevronRight } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Progress, SectionHeader } from "@/components/ui";
+import { Badge, SectionHeader } from "@/components/ui";
 const tone = (status: string) =>
   status === "Đã kiểm soát"
     ? "green"
@@ -56,10 +56,6 @@ export function IncidentOverview({
             </span>
             <span className="cc-progress-cell">
               <span>{incident.progress}%</span>
-              <Progress
-                value={incident.progress}
-                tone={incident.progress > 50 ? "green" : "blue"}
-              />
             </span>
             <ChevronRight size={16} />
           </button>

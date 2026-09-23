@@ -233,3 +233,90 @@ test("resolveAlertsForUser giữ nguyên thứ tự derivation", () => {
   );
   assert.ok(alertClock.getTime() > 0);
 });
+
+// ── Vòng đời điều hành sự cố: điều phối phải dẫn tới hành động, không treo ──
+
+test("incident_dispatch_no_task: đội đã điều nhưng chưa có nhiệm vụ → nhắc giao; có task mở thì alert tắt", () => {
+  const base = structuredClone(load());
+  const inc = base.incidents.find((i) => i.id === "INC-YAGI-05")!;
+  // đưa sự cố về đúng trạng thái "vừa điều phối xong, chưa giao việc"
+  inc.status = "Đang điều phối";
+  inc.assignedTeamId = "CH-HN-01";
+  base.tasks = base.tasks.filter((t) => t.incidentId !== inc.id);
+  const derived = deriveOperationalAlerts(base);
+  const alert = derived.find(
+    (a) => a.condition === "incident_dispatch_no_task",
+  );
+  assert.ok(alert, "phải nhắc giao nhiệm vụ khi đội đang chờ không việc");
+  assert.equal(alert!.source.id, inc.id);
+  assert.ok(alert!.message.includes("CH-HN-01"));
+  // giao một nhiệm vụ → condition biến mất tự nhiên
+  const withTask = structuredClone(base);
+  withTask.tasks.push({
+    id: "TSK-TEST-01",
+    incidentId: inc.id,
+    title: "Kiểm tra hiện trường",
+    type: "Khảo sát hiện trường",
+    priority: "Cao",
+    status: "Chờ giao",
+    teamId: "",
+    assignee: "",
+    location: inc.location.name,
+    progress: 0,
+    dueAt: "22/08/2026 12:00",
+    createdAt: "21/08/2026 08:00",
+    updatedAt: "21/08/2026 08:00",
+    description: "",
+  } as never);
+  assert.ok(
+    !deriveOperationalAlerts(withTask).some(
+      (a) =>
+        a.condition === "incident_dispatch_no_task" && a.source.id === inc.id,
+    ),
+    "có nhiệm vụ mở rồi thì không được nhắc nữa",
+  );
+});
+
+test("incident_all_tasks_completed: mọi nhiệm vụ xong → nhắc chốt kiểm soát; đổi trạng thái thì alert tắt", () => {
+  const base = structuredClone(load());
+  const inc = base.incidents.find((i) => i.id === "INC-YAGI-02")!;
+  inc.status = "Đang xử lý";
+  const owned = base.tasks.filter(
+    (t) => t.incidentId === inc.id && t.status !== "Đã hủy",
+  );
+  if (!owned.length) {
+    base.tasks.push({
+      id: "TSK-TEST-02",
+      incidentId: inc.id,
+      title: "Rút kinh nghiệm",
+      type: "Khảo sát hiện trường",
+      priority: "Trung bình",
+      status: "Hoàn thành",
+      teamId: "CH-HN-01",
+      assignee: "",
+      location: inc.location.name,
+      progress: 100,
+      dueAt: "22/08/2026 12:00",
+      createdAt: "21/08/2026 08:00",
+      updatedAt: "21/08/2026 09:00",
+      description: "",
+    } as never);
+  } else {
+    for (const t of base.tasks)
+      if (t.incidentId === inc.id) t.status = "Hoàn thành" as never;
+  }
+  const alert = deriveOperationalAlerts(base).find(
+    (a) =>
+      a.condition === "incident_all_tasks_completed" &&
+      a.source.id === inc.id,
+  );
+  assert.ok(alert, "phải nhắc cán bộ chốt sự cố khi mọi nhiệm vụ đã xong");
+  inc.status = "Đã kiểm soát";
+  assert.ok(
+    !deriveOperationalAlerts(base).some(
+      (a) =>
+        a.condition === "incident_all_tasks_completed" && a.source.id === inc.id,
+    ),
+    "đã kiểm soát rồi thì không nhắc nữa",
+  );
+});

@@ -211,6 +211,48 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  /** Phản hồi vòng đời sự cố: khi đội thực sự vào cuộc với một nhiệm vụ của
+   * sự cố (tiếp nhận / bắt đầu / báo xong / hoàn thành), trạng thái
+   * "Đang điều phối" tự chuyển sang "Đang xử lý" kèm dòng timeline — hết cảnh
+   * điều phối xong là treo vô thời hạn vì phải nhớ đổi tay. Quyền quyết định
+   * "Đã kiểm soát"/"Đóng" vẫn thuộc cán bộ (nút Chuyển trạng thái + chuông
+   * nhắc khi mọi nhiệm vụ hoàn thành). */
+  const advanceIncidentOnTaskEngagement = (
+    incidentId: string,
+    nextTasks: IncidentTask[],
+    taskId: string,
+  ) => {
+    const incident = incidents.find((item) => item.id === incidentId);
+    if (!incident || incident.status !== "Đang điều phối") return;
+    const engaged = nextTasks.some(
+      (task) =>
+        task.incidentId === incidentId &&
+        [
+          "Đã tiếp nhận",
+          "Đang thực hiện",
+          "Chờ xác nhận",
+          "Hoàn thành",
+        ].includes(task.status),
+    );
+    if (!engaged) return;
+    setIncidents((current) =>
+      current.map((item) =>
+        item.id === incidentId
+          ? { ...item, status: "Đang xử lý" as const, updatedAt: now() }
+          : item,
+      ),
+    );
+    pushEvent(
+      incidentId,
+      `${taskId} — đội đã vào cuộc; sự cố tự chuyển sang ĐANG XỬ LÝ`,
+      "status",
+    );
+    logDutySystem(
+      `Sự cố ${incidentId} tự chuyển ĐANG XỬ LÝ (đội tiếp nhận ${taskId})`,
+      { kind: "incident", id: incidentId, code: incidentId },
+    );
+  };
+
   const createIncident = (data: CreateIncidentInput) => {
     enforcePermission("create", [
       { type: "Incident", id: "new", geographicScope: data.location.name },
@@ -425,6 +467,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     );
     setTasks(next);
     syncIncidentProgress(task.incidentId, next);
+    advanceIncidentOnTaskEngagement(task.incidentId, next, taskId);
     if (task.teamId) {
       setTeams((current) =>
         current.map((team) => {
@@ -506,67 +549,6 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       }
     }
   };
-  const updateTaskProgress = (taskId: string, progress: number) => {
-    enforcePermission("task_update", taskResources(taskId));
-    const task = tasks.find((item) => item.id === taskId);
-    if (!task || ["Hoàn thành", "Đã hủy"].includes(task.status)) return;
-    const value = Math.max(0, Math.min(100, progress));
-    const entersExecution = value > 0 && task.status === "Đã tiếp nhận";
-    const next = tasks.map((item) =>
-      item.id === taskId
-        ? {
-            ...item,
-            progress: value,
-            status: (entersExecution
-              ? "Đang thực hiện"
-              : item.status) as TaskStatus,
-            updatedAt: now(),
-          }
-        : item,
-    );
-    setTasks(next);
-    if (entersExecution && task.teamId) {
-      setTeams((current) =>
-        current.map((team) =>
-          team.id === task.teamId
-            ? recalculateTeamAssignment(team, next, now())
-            : team,
-        ),
-      );
-      pushTeamEvent(
-        task.teamId,
-        `${taskId} bắt đầu thực hiện qua cập nhật tiến độ`,
-        "task_status",
-        task.teamId,
-      );
-      const linkedSos = sosRequests.find(
-        (item) => item.linkedTaskId === taskId,
-      );
-      if (linkedSos) {
-        setSosRequests((current) =>
-          current.map((item) =>
-            item.id === linkedSos.id && item.status === "Đã điều phối"
-              ? transitionSos(item, "Đang cứu hộ", now())
-              : item,
-          ),
-        );
-        pushSosEvent(
-          linkedSos.id,
-          `Bắt đầu cứu hộ theo tiến độ ${taskId}`,
-          "rescue",
-          task.teamId,
-        );
-      }
-    }
-    syncIncidentProgress(task.incidentId, next);
-    pushEvent(
-      task.incidentId,
-      `Cập nhật tiến độ ${taskId} lên ${value}%`,
-      "task_progress",
-      task.teamId || actorName,
-    );
-  };
-
   const addTaskUpdate = (
     taskId: string,
     message: string,
@@ -1133,6 +1115,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const next = tasks.map((item) => (item.id === taskId ? reported : item));
     setTasks(next);
     setTaskReviews((current) => [review, ...current]);
+    advanceIncidentOnTaskEngagement(task.incidentId, next, taskId);
     pushTeamEvent(
       task.teamId,
       `${taskId} báo hoàn thành, chờ cán bộ xác nhận`,
@@ -1544,7 +1527,13 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       { id: user.id, name: actorName },
       now(),
     );
-    setAlertInteractions(outcome.interactions);
+    // Xác nhận ngầm định ĐÃ ĐỌC: bấm "Xác nhận tiếp nhận" là dấu chấm chưa đọc
+    // phải tắt trên mọi màn hình (bell, danh sách, chi tiết) — người dùng không
+    // phải bấm thêm nút "đã đọc" thứ hai. markAlertReadReceipt idempotent theo
+    // (key, user) nên không sinh bản ghi trùng.
+    setAlertInteractions(
+      markAlertReadReceipt(outcome.interactions, alertKey, user.id, now()),
+    );
     setAlertEvents((current) => [outcome.event, ...current]);
   };
   const atomic =
@@ -1596,7 +1585,6 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     createTask: atomic(createTask),
     assignTaskTeam: atomic(assignTaskTeam),
     transitionTask: atomic(transitionTask),
-    updateTaskProgress: atomic(updateTaskProgress),
     addTaskUpdate: atomic(addTaskUpdate),
     dispatchTeamToTask: atomic(dispatchTeamToTask),
     updateTeamStatus: atomic(updateTeamStatus),

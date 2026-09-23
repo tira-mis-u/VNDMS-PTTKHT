@@ -31,6 +31,8 @@ import {
 import { alertSeverityLabels, alertSeverityTones } from "@/domain/alerts/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { DialogBackdrop, Badge, Button, EmptyState, Input, Textarea } from "@/components/ui";
+import { canReleaseTaskAssignment } from "@/application/tasks/taskUseCases";
+import type { IncidentTask } from "@/domain/tasks/types";
 
 export function ActionDialog({
   action,
@@ -180,6 +182,17 @@ function OutcomeView({
               }}
             >
               Mở chi tiết
+              <ChevronRight size={15} />
+            </Button>
+          )}
+          {outcome.secondaryPath && (
+            <Button
+              onClick={() => {
+                onClose();
+                navigate(outcome.secondaryPath!);
+              }}
+            >
+              {outcome.secondaryLabel ?? "Tiếp theo"}
               <ChevronRight size={15} />
             </Button>
           )}
@@ -639,6 +652,63 @@ function AcknowledgeAlertAction({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** Điểm chết "tất cả đội đều bận": thay vì chỉ hướng dẫn chung, liệt kê từng
+ * đội đang bị giữ bởi nhiệm vụ dở dang (chưa cho phép thu hồi từ hộp thoại
+ * điều phối theo lifecycle) kèm liên động mở đúng nhiệm vụ đó để xử lý
+ * (báo hoàn thành/hủy) — lối ra duy nhất hợp lệ của luồng (owner 2026-09). */
+function BusyTeamLedger({
+  teams,
+  tasks,
+  onClose,
+  navigate,
+}: {
+  teams: readonly { id: string; name: string; currentTask?: string | null }[];
+  tasks: readonly IncidentTask[];
+  onClose: () => void;
+  navigate: (path: string) => void;
+}) {
+  const blocked = teams
+    .map((team) => ({
+      team,
+      task: tasks.find((item) => item.id === team.currentTask),
+    }))
+    .filter(
+      (
+        item,
+      ): item is {
+        team: { id: string; name: string; currentTask?: string | null };
+        task: IncidentTask;
+      } => Boolean(item.task) && !canReleaseTaskAssignment(item.task!),
+    );
+  if (!blocked.length) return null;
+  return (
+    <div className="busy-team-ledger" role="list">
+      <span className="busy-team-ledger-title">
+        Đội đang bị giữ bởi nhiệm vụ dở dang — mở nhiệm vụ để báo xong hoặc
+        điều chỉnh, đội sẽ tự giải phóng:
+      </span>
+      {blocked.map(({ team, task }) => (
+        <div className="busy-team-ledger-row" role="listitem" key={team.id}>
+          <span>
+            <b>{team.id}</b> — {team.name} · nhiệm vụ <b>{task.id}</b> ·{" "}
+            {task.status} (tiến độ {task.progress}%) · sự cố {task.incidentId}
+          </span>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              onClose();
+              navigate(`/tasks/${task.id}`);
+            }}
+          >
+            Mở nhiệm vụ
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DispatchTeamAction({
   navigate,
   onClose,
@@ -785,28 +855,40 @@ function DispatchTeamAction({
                   : "Tất cả đội đang thực hiện nhiệm vụ dở dang nên chưa thu hồi được. Hoàn thành hoặc báo xong nhiệm vụ để giải phóng đội, hoặc điều chỉnh trạng thái đội sang “Sẵn sàng”."
             }
             action={
-              !incidents.length || recalls.length ? undefined : (
-                <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      onClose();
-                      navigate("/teams");
-                    }}
-                  >
-                    Mở danh sách đội
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      onClose();
-                      navigate("/tasks");
-                    }}
-                  >
-                    Mở danh sách nhiệm vụ
-                  </Button>
-                </div>
+              !incidents.length ? undefined : (
+                <>
+                  <BusyTeamLedger
+                    teams={context.teams}
+                    tasks={store.tasks}
+                    onClose={onClose}
+                    navigate={navigate}
+                  />
+                  {!recalls.length && (
+                    <div
+                      style={{ display: "flex", gap: "8px", marginTop: "4px" }}
+                    >
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          onClose();
+                          navigate("/teams");
+                        }}
+                      >
+                        Mở danh sách đội
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          onClose();
+                          navigate("/tasks");
+                        }}
+                      >
+                        Mở danh sách nhiệm vụ
+                      </Button>
+                    </div>
+                  )}
+                </>
               )
             }
           />
@@ -861,16 +943,26 @@ function DispatchTeamAction({
             title="Không có đội nào thu hồi được"
             description="Chỉ thu hồi được đội đang giữ nhiệm vụ chưa tiếp nhận (“Chờ giao”/“Đã giao”). Các đội hiện đều đang thực hiện dở dang — hoàn thành hoặc báo xong nhiệm vụ để giải phóng đội."
             action={
-              <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    onClose();
-                    navigate("/tasks");
-                  }}
+              <div style={{ width: "100%" }}>
+                <BusyTeamLedger
+                  teams={context.teams}
+                  tasks={store.tasks}
+                  onClose={onClose}
+                  navigate={navigate}
+                />
+                <div
+                  style={{ display: "flex", gap: "8px", marginTop: "4px" }}
                 >
-                  Mở danh sách nhiệm vụ
-                </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      onClose();
+                      navigate("/tasks");
+                    }}
+                  >
+                    Mở danh sách nhiệm vụ
+                  </Button>
+                </div>
               </div>
             }
           />
@@ -1092,7 +1184,8 @@ function SosTriageAction({
         ) : (
           <div className="action-dialog-context" role="note">
             <LifeBuoy size={14} /> Không có đội nào sẵn sàng trong phạm vi hiện
-            tại — hãy chọn hành động khác hoặc kiểm tra phân hệ Đội cứu hộ.
+            tại — hãy chọn hành động khác, hoặc mở “Điều phối đội cứu hộ” để
+            xem đội nào đang bị giữ bởi nhiệm vụ nào và xử lý từ đó.
           </div>
         ))}
       <ActionMeta

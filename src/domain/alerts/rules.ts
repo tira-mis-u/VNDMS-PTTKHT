@@ -162,6 +162,49 @@ function deriveIncidentAlerts(input: AlertDerivationInput): DerivedAlert[] {
           detectedAt: incident.createdAt,
         }),
       );
+    // Điều phối "cho có": đội đã được điều tới nhưng chưa có nhiệm vụ nào đang
+    // mở cho sự cố → đội đứng chờ vô thời hạn. Alert tự biến mất ngay khi một
+    // nhiệm vụ được giao cho sự cố này.
+    if (incident.status === "Đang điều phối" && incident.assignedTeamId) {
+      const hasOpenTask = input.tasks.some(
+        (task) =>
+          task.incidentId === incident.id &&
+          OPEN_TASK.includes(task.status),
+      );
+      if (!hasOpenTask)
+        alerts.push(
+          makeAlert({
+            ...base,
+            condition: "incident_dispatch_no_task",
+            severity: incident.severity === "Khẩn cấp" ? "critical" : "high",
+            title: `Sự cố ${incident.code} có đội nhưng chưa có nhiệm vụ`,
+            message: `${incident.assignedTeamId} đã được điều phối tới “${incident.title}” nhưng chưa có nhiệm vụ nào đang mở cho sự cố. Giao nhiệm vụ để đội bắt đầu — nếu không, điều phối chỉ nằm trên giấy.`,
+            detectedAt: incident.updatedAt,
+          }),
+        );
+    }
+    // Mọi nhiệm vụ của sự cố đã xong → nhắc cán bộ chốt "Đã kiểm soát"
+    // (quyết định vẫn là của người; alert tự tắt sau khi đổi trạng thái).
+    if (incident.status === "Đang xử lý" || incident.status === "Đang điều phối") {
+      const incidentTasks = input.tasks.filter(
+        (task) =>
+          task.incidentId === incident.id && task.status !== "Đã hủy",
+      );
+      if (
+        incidentTasks.length > 0 &&
+        incidentTasks.every((task) => task.status === "Hoàn thành")
+      )
+        alerts.push(
+          makeAlert({
+            ...base,
+            condition: "incident_all_tasks_completed",
+            severity: "medium",
+            title: `Sự cố ${incident.code} đã xong toàn bộ nhiệm vụ`,
+            message: `${incidentTasks.length} nhiệm vụ của “${incident.title}” đều đã hoàn thành, tiến độ ${incident.progress}%. Cân nhắc chuyển sự cố sang “Đã kiểm soát” hoặc đóng khi hiện trường xác nhận an toàn.`,
+            detectedAt: incident.updatedAt,
+          }),
+        );
+    }
   }
   return alerts;
 }

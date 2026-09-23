@@ -2169,7 +2169,6 @@ html:not([data-theme="dark"])
   .app-body
   .workspace
   :where(
-    .progress-milestones > span,
     .field-update-list article > div > span,
     .sos-reporter-grid > div > span
   ) {

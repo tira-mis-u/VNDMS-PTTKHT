@@ -15,7 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress, SectionHeader , DetailMapWeather } from "@/components/ui";
+import { Badge, Button, SectionHeader , DetailMapWeather } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   TeamActionDialogs,
@@ -224,10 +224,6 @@ export function TeamDetailPage({
                     <b>{task.progress}%</b>
                     {task.status}
                   </span>
-                  <Progress
-                    value={task.progress}
-                    tone={task.progress === 100 ? "green" : "blue"}
-                  />
                   <small>Hạn {task.dueAt}</small>
                 </div>
                 {incident && (

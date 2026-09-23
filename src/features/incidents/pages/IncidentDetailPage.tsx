@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress, SectionHeader } from "@/components/ui";
+import { Badge, Button, SectionHeader } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   IncidentActionDialogs,
@@ -77,6 +77,41 @@ export function IncidentDetailPage({
     document
       .getElementById(section)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  /** CTA đúng chỗ, đúng lúc: "đội đã điều nhưng chưa có việc" và "xong hết
+   * nhiệm vụ — chốt sự cố". Không bắt người dùng tự suy ra bước tiếp theo. */
+  const openTasksForIncident = incidentTasks.filter((item) =>
+    [
+      "Chờ giao",
+      "Đã giao",
+      "Đã tiếp nhận",
+      "Đang thực hiện",
+      "Chờ xác nhận",
+    ].includes(item.status),
+  );
+  const flowNote =
+    incident.status === "Đang điều phối" && !openTasksForIncident.length
+      ? {
+          tone: "warn" as const,
+          text: `Đội ${team?.id ?? incident.assignedTeamId ?? "chưa rõ"} đã được điều phối nhưng sự cố chưa có nhiệm vụ nào đang mở — chưa giao nhiệm vụ thì đội chỉ đứng chờ.`,
+          action: can("task_create")
+            ? { label: "Giao nhiệm vụ ngay", run: () => setDialog("task") }
+            : null,
+        }
+      : (incident.status === "Đang xử lý" ||
+          incident.status === "Đang điều phối") &&
+        incidentTasks.length > 0 &&
+        incidentTasks.every((item) => item.status === "Hoàn thành")
+        ? {
+            tone: "info" as const,
+            text: "Toàn bộ nhiệm vụ của sự cố đã hoàn thành — cân nhắc chuyển sang “Đã kiểm soát” (hoặc đóng) khi hiện trường xác nhận an toàn.",
+            action: can("update")
+              ? {
+                  label: "Chuyển trạng thái",
+                  run: () => setDialog("status"),
+                }
+              : null,
+          }
+        : null;
   return (
     <div className="workspace-content incident-detail-page">
       <header className="incident-detail-header">
@@ -193,6 +228,16 @@ export function IncidentDetailPage({
           <button onClick={() => jump("bao-cao")}>Báo cáo hiện trường</button>
         </nav>
       </header>
+      {flowNote && (
+        <div className={`incident-flow-note incident-flow-note--${flowNote.tone}`} role="note">
+          <span>{flowNote.text}</span>
+          {flowNote.action && (
+            <Button size="sm" onClick={flowNote.action.run}>
+              {flowNote.action.label}
+            </Button>
+          )}
+        </div>
+      )}
       <div className="incident-detail-layout">
         <main className="incident-detail-main">
           <section
@@ -490,13 +535,9 @@ export function IncidentDetailPage({
           </dl>
           <div className="context-progress">
             <span>
-              <b>Tiến độ xử lý</b>
+              <b>Tiến độ xử lý (tự động theo nhiệm vụ)</b>
               <strong>{incident.progress}%</strong>
             </span>
-            <Progress
-              value={incident.progress}
-              tone={incident.progress >= 80 ? "green" : "blue"}
-            />
           </div>
           <div className="context-workflow">
             <span>Vòng đời xử lý</span>

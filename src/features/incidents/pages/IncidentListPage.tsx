@@ -13,7 +13,7 @@ import {
 import type { IncidentSeverity } from "@/domain/incidents/types";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { defaultScopedArea, scopeAreaOptions } from "@/application/areas/scopedAreas";
-import { DialogBackdrop, Badge, Button, PageSectionHeader, Progress, Input, Textarea } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, PageSectionHeader, Input, Textarea } from "@/components/ui";
 
 const severityTone = (severity: string) =>
   severity === "Khẩn cấp"
@@ -197,10 +197,6 @@ options={["Tất cả khu vực", ...areaOptions]}
               </span>
               <span className="incident-row-progress">
                 <b>{item.progress}%</b>
-                <Progress
-                  value={item.progress}
-                  tone={item.progress >= 80 ? "green" : "blue"}
-                />
               </span>
               <span className="incident-updated">
                 {item.updatedAt.split(" ")[1]}

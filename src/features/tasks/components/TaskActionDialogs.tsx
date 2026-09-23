@@ -10,7 +10,6 @@ export type TaskDialog =
   | "transition"
   | "assign"
   | "update"
-  | "progress"
   | "cancel"
   /** Đơn vị cứu hộ báo xong (→ Chờ xác nhận). */
   | "report-done"
@@ -34,8 +33,7 @@ export function TaskActionDialogs({
         <Transition task={task} onClose={onClose} />
       )}{" "}
       {mode === "assign" && <Assign task={task} onClose={onClose} />}{" "}
-      {mode === "update" && <FieldUpdate task={task} onClose={onClose} />}{" "}
-      {mode === "progress" && <ProgressUpdate task={task} onClose={onClose} />}{" "}
+      {mode === "update" && <FieldUpdate task={task} onClose={onClose} />}{""}
       {mode === "cancel" && <Cancel task={task} onClose={onClose} />}
       {mode === "report-done" && <ReportDone task={task} onClose={onClose} />}
       {mode === "review" && <Review task={task} onClose={onClose} />}
@@ -466,61 +464,6 @@ function FieldUpdate({
         />
         <span>Thiết bị đang ngoại tuyến, chờ đồng bộ khi có mạng</span>
       </label>
-    </Frame>
-  );
-}
-function ProgressUpdate({
-  task,
-  onClose,
-}: {
-  task: IncidentTask;
-  onClose: () => void;
-}) {
-  const { updateTaskProgress } = useOperationalState();
-  const [value, setValue] = useState(task.progress);
-  return (
-    <Frame
-      title="Cập nhật tiến độ"
-      eyebrow={task.id}
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button
-            onClick={() => {
-              updateTaskProgress(task.id, value);
-              onClose();
-            }}
-          >
-            Cập nhật {value}%
-          </Button>
-        </>
-      }
-    >
-      <div className="progress-picker">
-        <strong>{value}%</strong>
-        <Input
-          type="range"
-          min="0"
-          max="100"
-          step="25"
-          value={value}
-          onChange={(e) => setValue(Number(e.target.value))}
-        />
-        <div>
-          <span>0%</span>
-          <span>25%</span>
-          <span>50%</span>
-          <span>75%</span>
-          <span>100%</span>
-        </div>
-      </div>
-      <p className="form-hint">
-        Tiến độ sự cố liên quan sẽ được tính lại theo trung bình tiến độ của các
-        nhiệm vụ chưa hủy.
-      </p>
     </Frame>
   );
 }

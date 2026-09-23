@@ -289,9 +289,10 @@ export function AlertListPage({
                   {canAcknowledge(alert) && (
                     <Button
                       size="sm"
+                      title="Xác nhận đã tiếp nhận và sẽ xử lý (đồng thời đánh dấu đã đọc)"
                       onClick={() => run(() => store.acknowledgeAlert(alert.key))}
                     >
-                      Xác nhận
+                      Xác nhận tiếp nhận
                     </Button>
                   )}
                   {alert.status === "Chưa đọc" ? (

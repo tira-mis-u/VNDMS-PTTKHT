@@ -117,9 +117,6 @@
   color: var(--muted);
   font-size: var(--type-metadata, 13px);
 }
-.task-row-progress .progress-track {
-  margin-top: 5px;
-}
 .task-deadline {
   display: grid;
   grid-template-columns: 13px 1fr;
@@ -221,51 +218,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.task-progress-body {
-  padding: 17px 18px;
-}
-.task-progress-body > div:first-child {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-}
-.task-progress-body > div:first-child strong {
-  font-size: 27.5px;
-  color: var(--text-secondary);
-}
-.task-progress-body > div:first-child span {
-  font-size: var(--type-metadata, 13px);
-  color: var(--muted);
-}
-.task-progress-body > .progress-track {
-  height: 7px;
-  margin-top: 10px;
-}
-.progress-milestones {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-}
-.progress-milestones span {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-muted);
-  font-size: var(--type-metadata, 13px);
-}
-.progress-milestones i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #d0d5dd;
-}
-.progress-milestones span.reached {
-  color: var(--primary);
-}
-.progress-milestones span.reached i {
-  background: #175cd3;
 }
 .field-update-list {
   padding: 4px 16px;
@@ -471,27 +423,6 @@
   align-items: center;
   gap: 7px;
   color: var(--muted);
-  font-size: var(--type-metadata, 13px);
-}
-.progress-picker {
-  grid-column: 1/-1;
-  padding: 8px 4px;
-}
-.progress-picker > strong {
-  display: block;
-  text-align: center;
-  font-size: 29.5px;
-  color: var(--text-secondary);
-  margin-bottom: 14px;
-}
-.progress-picker input {
-  width: 100%;
-  accent-color: var(--primary);
-}
-.progress-picker > div {
-  display: flex;
-  justify-content: space-between;
-  color: var(--text-muted);
   font-size: var(--type-metadata, 13px);
 }
 @media (max-width: 1200px) {

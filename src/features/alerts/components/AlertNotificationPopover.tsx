@@ -167,15 +167,15 @@ export function AlertNotificationPopover({
                             onClick={() => run(() => store.markAlertRead(alert.key))}
                           >
                             <Check size={14} />
-                            <span>Đã đọc</span>
                           </button>
                         )}
                         {canAcknowledge(alert) && (
                           <button
                             className="alert-ack-action"
+                            title="Xác nhận đã tiếp nhận và sẽ xử lý (đồng thời đánh dấu đã đọc)"
                             onClick={() => run(() => store.acknowledgeAlert(alert.key))}
                           >
-                            Xác nhận
+                            Xác nhận tiếp nhận
                           </button>
                         )}
                         <button

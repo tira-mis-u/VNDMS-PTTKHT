@@ -18,7 +18,7 @@ import {
   TASK_LIFECYCLE,
 } from "@/domain/tasks/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress, SectionHeader , DetailMapWeather } from "@/components/ui";
+import { Badge, Button, SectionHeader , DetailMapWeather } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   TaskActionDialogs,
@@ -159,11 +159,6 @@ export function TaskDetailPage({
                 </Button>
               )}
             {can("task_update") && (
-              <Button variant="secondary" onClick={() => setDialog("progress")}>
-                Cập nhật tiến độ
-              </Button>
-            )}
-            {can("task_update") && (
               <Button variant="secondary" onClick={() => setDialog("update")}>
                 Thêm cập nhật
               </Button>
@@ -252,32 +247,6 @@ export function TaskDetailPage({
                   <b>{task.location}</b>
                   <small>{task.type}</small>
                 </div>
-              </div>
-            </div>
-          </section>
-          <section id="tien-do" className="incident-detail-section task-progress-section">
-            <SectionHeader
-              title="Tiến độ tác chiến"
-              description="Tiến độ được dùng để tính lại tiến độ sự cố liên quan"
-              action={can("task_update") ? "Cập nhật" : undefined}
-              onAction={() => setDialog("progress")}
-            />
-            <div className="task-progress-body">
-              <div>
-                <strong>{task.progress}%</strong>
-                <span>{task.status}</span>
-              </div>
-              <Progress
-                value={task.progress}
-                tone={task.progress === 100 ? "green" : "blue"}
-              />
-              <div className="progress-milestones">
-                {[0, 25, 50, 75, 100].map((v) => (
-                  <span className={task.progress >= v ? "reached" : ""} key={v}>
-                    <i />
-                    {v}%
-                  </span>
-                ))}
               </div>
             </div>
           </section>
@@ -550,13 +519,9 @@ export function TaskDetailPage({
           </dl>
           <div className="context-progress">
             <span>
-              <b>Tiến độ</b>
+              <b>Tiến độ (tự động theo vòng đời)</b>
               <strong>{task.progress}%</strong>
             </span>
-            <Progress
-              value={task.progress}
-              tone={task.progress === 100 ? "green" : "blue"}
-            />
           </div>
           <div className="task-state-machine">
             <span>Vòng đời nhiệm vụ</span>

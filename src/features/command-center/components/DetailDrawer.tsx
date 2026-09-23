@@ -127,7 +127,6 @@ export function DetailDrawer({
                   <b>Tiến độ xử lý</b>
                   <strong>{incident.progress}%</strong>
                 </span>
-                <Progress value={incident.progress} tone="green" />
               </div>
               <DrawerTimeline
                 items={store.events

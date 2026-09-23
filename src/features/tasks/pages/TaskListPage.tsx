@@ -13,7 +13,7 @@ import {
 import type { TaskPriority } from "@/domain/tasks/types";
 import { isTaskOverdue, taskPriorityRank } from "@/domain/tasks/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { DialogBackdrop, Badge, Button, PageSectionHeader, Progress, Input, Textarea } from "@/components/ui";
+import { DialogBackdrop, Badge, Button, PageSectionHeader, Input, Textarea } from "@/components/ui";
 import { getDutyLog, linkDutyEntryToTask } from "@/infrastructure/duty/dutyLogStore";
 
 const tabs = [
@@ -62,6 +62,23 @@ export function TaskListPage({
       ? null
       : new URLSearchParams(window.location.search).get("fromDuty"),
   );
+  /** Tạo nhiệm vụ NGAY SAU điều phối (?newTask=1&incident=..&team=..): form mở
+   * sẵn với sự cố + đội đã điền — điều phối không còn là bước cụt. */
+  const [dispatchPrefill] = useState<{
+    incidentId: string;
+    teamId: string;
+  } | null>(() =>
+    typeof window === "undefined"
+      ? null
+      : (() => {
+          const q = new URLSearchParams(window.location.search);
+          if (!q.get("newTask")) return null;
+          return {
+            incidentId: q.get("incident") ?? "",
+            teamId: q.get("team") ?? "",
+          };
+        })(),
+  );
   const dutyPrefillTitle = useMemo(() => {
     if (!dutyEntryId) return "";
     const entry = getDutyLog().find((item) => item.id === dutyEntryId);
@@ -70,8 +87,8 @@ export function TaskListPage({
     return firstLine.length > 90 ? `${firstLine.slice(0, 90)}…` : firstLine;
   }, [dutyEntryId]);
   useEffect(() => {
-    if (dutyEntryId) setOpen(true);
-  }, [dutyEntryId]);
+    if (dutyEntryId || dispatchPrefill) setOpen(true);
+  }, [dutyEntryId, dispatchPrefill]);
   // TINH GIẢN dropdown (4→2): bỏ "Sự cố" + "Khu vực" — tên sự cố mẹ và địa
   // bàn đã gộp vào ô tìm kiếm; trang chi tiết sự cố vẫn liệt kê nhiệm vụ của
   // nó. Chỉ giữ Ưu tiên + Đội (2 câu hỏi lọc thật sự khác nhau).
@@ -217,10 +234,6 @@ export function TaskListPage({
                 </span>
                 <span className="task-row-progress">
                   <b>{task.progress}%</b>
-                  <Progress
-                    value={task.progress}
-                    tone={task.progress === 100 ? "green" : "blue"}
-                  />
                 </span>
                 <span className={`task-deadline ${overdue ? "overdue" : ""}`}>
                   <Clock3 size={12} />
@@ -238,6 +251,8 @@ export function TaskListPage({
       {open && (
         <CreateTaskDialog
           initialTitle={dutyPrefillTitle}
+          initialIncidentId={dispatchPrefill?.incidentId || undefined}
+          initialTeamId={dispatchPrefill?.teamId || undefined}
           dutySource={dutyEntryId ? (getDutyLog().find((item) => item.id === dutyEntryId)?.text ?? "") : ""}
           onClose={() => {
             setOpen(false);
@@ -245,6 +260,9 @@ export function TaskListPage({
             if (typeof window !== "undefined") {
               const url = new URL(window.location.href);
               url.searchParams.delete("fromDuty");
+              url.searchParams.delete("newTask");
+              url.searchParams.delete("incident");
+              url.searchParams.delete("team");
               window.history.replaceState({}, "", url.pathname + url.search);
             }
           }}
@@ -297,10 +315,15 @@ function CreateTaskDialog({
   onCreate,
   initialTitle,
   dutySource,
+  initialIncidentId,
+  initialTeamId,
 }: {
   onClose: () => void;
   initialTitle?: string;
   dutySource?: string;
+  /** Tiền chọn từ luồng "điều phối → giao nhiệm vụ ngay" (?newTask=1). */
+  initialIncidentId?: string;
+  initialTeamId?: string;
   onCreate: (data: {
     incidentId: string;
     title: string;
@@ -314,12 +337,26 @@ function CreateTaskDialog({
   }) => void;
 }) {
   const { incidents, teams } = useOperationalState();
-  const [title, setTitle] = useState(initialTitle ?? "");
+  const preselected = incidents.find(
+    (item) => item.id === initialIncidentId && item.status !== "Đã đóng",
+  );
+  const [title, setTitle] = useState(
+    initialTitle ||
+      (preselected ? `Ứng phó hiện trường ${preselected.title}`.slice(0, 90) : ""),
+  );
   const [type, setType] = useState("Cứu hộ");
-  const [incidentId, setIncident] = useState(incidents[0]?.id ?? "");
+  const [incidentId, setIncident] = useState(
+    preselected?.id ?? incidents[0]?.id ?? "",
+  );
   const [priority, setPriority] = useState<TaskPriority>("Cao");
-  const [teamId, setTeam] = useState("");
-  const [location, setLocation] = useState(incidents[0]?.location.name ?? "");
+  const [teamId, setTeam] = useState(
+    initialTeamId && teams.some((item) => item.id === initialTeamId)
+      ? initialTeamId
+      : "",
+  );
+  const [location, setLocation] = useState(
+    preselected?.location.name ?? incidents[0]?.location.name ?? "",
+  );
   const [dueAt, setDue] = useState("21/08/2026 12:00");
   const [description, setDescription] = useState("");
   const submit = (e: FormEvent) => {

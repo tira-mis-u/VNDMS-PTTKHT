@@ -94,48 +94,15 @@ export function Select({
   );
   const selected = options[selectedIndex];
 
-  useEffect(() => {
-    if (!open) return;
-    const closeOutside = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (
-        !root.current?.contains(target) &&
-        !popover.current?.contains(target)
-      )
-        setOpen(false);
-    };
-    const closeOnViewportChange = (event?: Event) => {
-      // Khi người dùng cuộn danh sách các options bên trong chính popover dropdown, không được đóng menu!
-      if (
-        event &&
-        popover.current &&
-        (event.target === popover.current || popover.current.contains(event.target as Node))
-      ) {
-        return;
-      }
-      setOpen(false);
-    };
-    document.addEventListener("pointerdown", closeOutside);
-    window.addEventListener("resize", closeOnViewportChange);
-    // Trình duyệt có thể tự cuộn control vào khung nhìn ngay khi người dùng mở
-    // menu. Chỉ bắt đầu theo dõi cuộn sau nhịp mở để menu không tự đóng.
-    const scrollTimer = window.setTimeout(
-      () => window.addEventListener("scroll", closeOnViewportChange, true),
-      200,
-    );
-    return () => {
-      window.clearTimeout(scrollTimer);
-      document.removeEventListener("pointerdown", closeOutside);
-      window.removeEventListener("resize", closeOnViewportChange);
-      window.removeEventListener("scroll", closeOnViewportChange, true);
-    };
-  }, [open]);
-
-  const openMenu = () => {
-    if (options.length === 0) return;
-    setActiveIndex(selectedIndex);
+  // Tính lại vị trí popover theo vị trí HIỆN TẠI của trigger. Trả về false khi
+  // trigger đã cuộn ra khỏi khung nhìn — khi đó menu nên đóng. Tách thành hàm
+  // riêng để dùng chung lúc mở và lúc cuộn/resize: menu trong dialog (bảng
+  // cuộn được) bám theo trigger thay vì đóng phụp khi trình dụng tự cuộn.
+  const placeMenu = () => {
     const rect = trigger.current?.getBoundingClientRect();
-    if (rect) {
+    if (!rect) return false;
+    if (rect.bottom < 4 || rect.top > window.innerHeight - 4) return false;
+    {
       // Menu đặt theo viewport (portal) nhưng KHÔNG được lọt thỏm/bay ra khỏi
       // dialog chứa control: kẹp kích thước & vị trí vào trong box dialog khi
       // trigger nằm trong dialog (role="dialog" hoặc các hộp thoại form dùng chung).
@@ -189,8 +156,52 @@ export function Select({
           : { position: "fixed", left, top: rect.bottom + 6, width },
       );
     }
+    return true;
+  };
+
+  const openMenu = () => {
+    if (options.length === 0) return;
+    setActiveIndex(selectedIndex);
+    placeMenu();
     setOpen(true);
   };
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOutside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        !root.current?.contains(target) &&
+        !popover.current?.contains(target)
+      )
+        setOpen(false);
+    };
+    const followViewport = (event?: Event) => {
+      // Khi người dùng cuộn danh sách các options bên trong chính popover,
+      // không tính lại vị trí (menu đứng yên, chỉ list cuộn).
+      if (
+        event &&
+        popover.current &&
+        (event.target === popover.current ||
+          popover.current.contains(event.target as Node))
+      ) {
+        return;
+      }
+      // Cuộn hộp thoại/thay đổi viewport: menu BÁM THEO trigger (đúng vị trí
+      // mới) thay vì đóng — hết cảnh "bấm mở rồi auto-đóng vì scroll" trong
+      // dialog; chỉ đóng khi trigger đã cuộn ra khỏi khung nhìn.
+      if (!placeMenu()) setOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    window.addEventListener("resize", followViewport);
+    window.addEventListener("scroll", followViewport, true);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      window.removeEventListener("resize", followViewport);
+      window.removeEventListener("scroll", followViewport, true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const choose = (index: number) => {
     const option = options[index];

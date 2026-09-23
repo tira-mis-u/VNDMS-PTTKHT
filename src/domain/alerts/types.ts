@@ -27,6 +27,8 @@ export type AlertCondition =
   | "incident_critical_active"
   | "incident_high_early_stage"
   | "incident_no_team"
+  | "incident_dispatch_no_task"
+  | "incident_all_tasks_completed"
   | "sos_p1_verified_unassigned"
   | "sos_waiting_too_long"
   | "sos_contact_lost"
@@ -144,6 +146,8 @@ export const alertConditionLabels: Record<AlertCondition, string> = {
   incident_critical_active: "Sự cố khẩn cấp đang xử lý",
   incident_high_early_stage: "Sự cố mức cao còn ở giai đoạn đầu",
   incident_no_team: "Sự cố chưa có đội phụ trách",
+  incident_dispatch_no_task: "Sự cố đã điều phối nhưng chưa giao nhiệm vụ",
+  incident_all_tasks_completed: "Mọi nhiệm vụ của sự cố đã hoàn thành",
   sos_p1_verified_unassigned: "SOS P1 đã xác minh chưa điều phối",
   sos_waiting_too_long: "SOS chờ xử lý quá lâu",
   sos_contact_lost: "SOS mất liên lạc",

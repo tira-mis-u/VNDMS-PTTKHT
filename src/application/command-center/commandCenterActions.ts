@@ -550,6 +550,11 @@ export interface CommandCenterActionOutcome {
   entityId?: string;
   entityPath?: string;
   message: string;
+  /** Bước nghiệp vụ tự nhiên tiếp theo (vd. điều phối xong → giao nhiệm vụ
+   * cho đội) — dẫn người dùng thẳng sang form đã prefill thay vì để họ tự
+   * đi tìm menu. */
+  secondaryLabel?: string;
+  secondaryPath?: string;
 }
 
 export function executeCommandCenterAction(
@@ -584,6 +589,10 @@ export function executeCommandCenterAction(
       entityId: plan.incidentId,
       entityPath: `/incidents/${plan.incidentId}`,
       message: `Đã điều đội ${plan.teamId} tới ${plan.incidentId}.`,
+      // Vòng đời sự cố chỉ thật sự chạy khi đội có nhiệm vụ — mở form giao
+      // nhiệm vụ đã điền sẵn sự cố + đội ngay sau khi điều phối.
+      secondaryLabel: "Giao nhiệm vụ cho đội ngay",
+      secondaryPath: `/tasks?newTask=1&incident=${plan.incidentId}&team=${plan.teamId}`,
     };
   }
   if (plan.kind === "recall_team") {

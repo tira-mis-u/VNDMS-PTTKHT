@@ -122,7 +122,6 @@ export interface OperationalStore {
   createTask: (data: NewTaskInput) => string;
   assignTaskTeam: (taskId: string, teamId: string) => void;
   transitionTask: (taskId: string, status: TaskStatus) => void;
-  updateTaskProgress: (taskId: string, progress: number) => void;
   addTaskUpdate: (
     taskId: string,
     message: string,

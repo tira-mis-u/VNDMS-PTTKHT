@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { TaskPriority } from "@/domain/tasks/types";
 import { isTaskOverdue, taskPriorityRank } from "@/domain/tasks/rules";
+import { isTeamAvailableForNewAssignment } from "@/application/teams/teamUseCases";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { DialogBackdrop, Badge, Button, PageSectionHeader, Input, Textarea } from "@/components/ui";
 import { getDutyLog, linkDutyEntryToTask } from "@/infrastructure/duty/dutyLogStore";
@@ -359,20 +360,34 @@ function CreateTaskDialog({
   );
   const [dueAt, setDue] = useState("21/08/2026 12:00");
   const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
+  const availableTeams = teams.filter(isTeamAvailableForNewAssignment);
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!title || !incidentId) return;
-    onCreate({
-      incidentId,
-      title,
-      type,
-      priority,
-      teamId,
-      assignee: "",
-      location,
-      dueAt,
-      description,
-    });
+    setError("");
+    if (!title.trim() || !incidentId) {
+      setError("Vui lòng nhập tên nhiệm vụ và chọn sự cố liên quan.");
+      return;
+    }
+    try {
+      onCreate({
+        incidentId,
+        title: title.trim(),
+        type,
+        priority,
+        teamId,
+        assignee: "",
+        location,
+        dueAt,
+        description,
+      });
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Không thể tạo nhiệm vụ. Dữ liệu chưa được thay đổi.",
+      );
+    }
   };
   return (
     <>
@@ -388,6 +403,11 @@ function CreateTaskDialog({
           </button>
         </header>
         <div className="incident-form-body">
+          {error && (
+            <p className="team-form-error" role="alert">
+              {error}
+            </p>
+          )}
           {dutySource ? (
             <p className="duty-source-banner" title={dutySource}>
               Tạo từ mục chỉ đạo trong sổ trực ban: “{dutySource.length > 120 ? `${dutySource.slice(0, 120)}…` : dutySource}”
@@ -455,12 +475,17 @@ function CreateTaskDialog({
             <span>Đội thực hiện</span>
             <UiSelect value={teamId} onChange={(e) => setTeam(e.target.value)}>
               <option value="">Chưa giao</option>
-              {teams.map((t) => (
+              {availableTeams.map((t) => (
                 <option value={t.id} key={t.id}>
                   {t.id} — {t.status}
                 </option>
               ))}
             </UiSelect>
+            {teamId && !availableTeams.some((team) => team.id === teamId) ? (
+              <small className="team-form-error" role="alert">
+                Đội đã chọn không còn đủ điều kiện nhận nhiệm vụ. Hãy chọn đội khác hoặc tạo nhiệm vụ chưa giao đội.
+              </small>
+            ) : null}
           </label>
           <label className="field field-full">
             <span>Địa điểm</span>
@@ -489,7 +514,10 @@ function CreateTaskDialog({
           <Button type="button" variant="secondary" onClick={onClose}>
             Hủy
           </Button>
-          <Button type="submit" disabled={!title || !incidentId}>
+          <Button
+            type="submit"
+            disabled={!title.trim() || !incidentId || (!!teamId && !availableTeams.some((team) => team.id === teamId))}
+          >
             Tạo nhiệm vụ
           </Button>
         </footer>

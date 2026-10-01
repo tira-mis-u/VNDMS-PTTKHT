@@ -8,6 +8,7 @@ import type {
 } from "@/domain/incidents/types";
 import type { RescueTeam } from "@/domain/teams/types";
 import type { TaskPriority } from "@/domain/tasks/types";
+import { isTeamAvailableForNewAssignment } from "@/application/teams/teamUseCases";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { DialogBackdrop, Badge, Button, Input, Textarea } from "@/components/ui";
 
@@ -93,20 +94,34 @@ function TaskForm({
   const [location, setLocation] = useState(incident.location.name);
   const [dueAt, setDue] = useState("21/08/2026 12:00");
   const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
+  const availableTeams = teams.filter(isTeamAvailableForNewAssignment);
   const submit = () => {
-    if (!title) return;
-    createTask({
-      incidentId: incident.id,
-      title,
-      type,
-      priority,
-      teamId,
-      assignee,
-      location,
-      dueAt,
-      description,
-    });
-    onClose();
+    setError("");
+    if (!title.trim()) {
+      setError("Vui lòng nhập tên nhiệm vụ.");
+      return;
+    }
+    try {
+      createTask({
+        incidentId: incident.id,
+        title: title.trim(),
+        type,
+        priority,
+        teamId,
+        assignee,
+        location,
+        dueAt,
+        description,
+      });
+      onClose();
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Không thể tạo nhiệm vụ. Dữ liệu chưa được thay đổi.",
+      );
+    }
   };
   return (
     <DialogFrame
@@ -118,12 +133,20 @@ function TaskForm({
           <Button variant="secondary" onClick={onClose}>
             Hủy
           </Button>
-          <Button onClick={submit} disabled={!title}>
+          <Button
+            onClick={submit}
+            disabled={!title.trim() || (!!teamId && !availableTeams.some((team) => team.id === teamId))}
+          >
             Tạo nhiệm vụ
           </Button>
         </>
       }
     >
+      {error && (
+        <p className="team-form-error" role="alert">
+          {error}
+        </p>
+      )}
       <label className="field field-full">
         <span>Tên nhiệm vụ *</span>
         <Input
@@ -157,12 +180,17 @@ function TaskForm({
         <span>Đội thực hiện</span>
         <UiSelect value={teamId} onChange={(e) => setTeam(e.target.value)}>
           <option value="">Chưa giao</option>
-          {teams.map((t) => (
+          {availableTeams.map((t) => (
             <option value={t.id} key={t.id}>
               {t.id} — {t.name}
             </option>
           ))}
         </UiSelect>
+        {teamId && !availableTeams.some((team) => team.id === teamId) ? (
+          <small className="team-form-error" role="alert">
+            Đội đã chọn không còn đủ điều kiện nhận nhiệm vụ. Hãy chọn đội khác hoặc tạo nhiệm vụ chưa giao đội.
+          </small>
+        ) : null}
       </label>
       <label className="field">
         <span>Người phụ trách</span>

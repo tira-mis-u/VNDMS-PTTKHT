@@ -6,6 +6,7 @@ import {
   getTeamTransitions,
   openTasksForTeam,
 } from "../../src/domain/teams/rules";
+import { isTeamAvailableForNewAssignment } from "../../src/application/teams/teamUseCases";
 import {
   initialTasks,
   initialTeams,
@@ -40,4 +41,14 @@ test("nhiệm vụ mở của đội loại nhiệm vụ đã kết thúc", () =
     initialTeams.find((team) => team.id === "CH-01")?.currentTask,
     "TSK-0241",
   );
+});
+
+test("biểu mẫu chỉ cho giao nhiệm vụ ngay cho đội còn điều phối được", () => {
+  const resting = initialTeams.find((team) => team.id === "CH-05")!;
+  const busy = initialTeams.find((team) => team.id === "CH-01")!;
+  const ready = { ...resting, status: "Sẵn sàng" as const };
+
+  assert.equal(isTeamAvailableForNewAssignment(resting), false);
+  assert.equal(isTeamAvailableForNewAssignment(busy), false);
+  assert.equal(isTeamAvailableForNewAssignment(ready), true);
 });

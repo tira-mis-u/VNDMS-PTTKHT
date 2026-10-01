@@ -65,6 +65,15 @@ export function assertTeamDispatchable(
 }
 
 
+/** Predicate for assignment forms; the command still revalidates on submit. */
+export function isTeamAvailableForNewAssignment(team: RescueTeam) {
+  return (
+    !["Mất liên lạc", "Không khả dụng", "Tạm nghỉ"].includes(team.status) &&
+    team.communicationStatus !== "Mất liên lạc" &&
+    !team.currentTask
+  );
+}
+
 export function changeTeamStatus(
   team: RescueTeam,
   status: TeamStatus,

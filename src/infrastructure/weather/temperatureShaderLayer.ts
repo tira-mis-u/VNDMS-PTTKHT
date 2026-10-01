@@ -1,11 +1,14 @@
 import type { CustomLayerInterface, Map as MapLibreMap } from "maplibre-gl";
+import earcut from "earcut";
 import geojsonData from "../../data/gis/geoBoundaries-VNM-ADM1_simplified.json" with { type: "json" };
 import type { ForecastGridSample, StationForecast } from "./ecmwfWeatherService";
 
-// Bounding box bao phủ toàn bộ lãnh thổ Việt Nam & hải đảo
+// Sampling extent for the existing VNM ADM1 geometry. This is only the texture
+// coordinate frame; territory inclusion is decided exclusively by the geometry mask.
+// maxLng must include the ADM1 dataset's easternmost point (~114.997°E).
 const VN_BOUNDS = {
   minLng: 102.0,
-  maxLng: 114.5,
+  maxLng: 115.0,
   minLat: 8.0,
   maxLat: 24.0,
 };
@@ -21,128 +24,66 @@ function latToMercatorY(lat: number): number {
 }
 
 /**
- * Mặt nạ lãnh thổ Việt Nam — CLIP ĐỊA LÝ CHÍNH XÁC, render-time.
- *
- * Hai bài học đã đo bằng số trên chính dataset ADM1 của dự án:
- *  1) Lỗ trắng cũ (STATE A) KHÔNG phải do union thiếu — union 64 ring tỉnh ở
- *     lưới cao phủ kín 30/30 điểm đất liền (gồm Mù Cang Chải, Sa Pa, Lũng Cú,
- *     Pù Rình…, khoảng cách tới land cell = 0). Lỗ cũ do mesh tam giác tai tỉnh
- *     bị simplify ăn mòn — mesh đó đã bỏ.
- *  2) Tràn ra ngoài biên giới (STATE B) do giãn nở hình thái 7px@640 ≈ 19km
- *     quanh mọi ring (kể cả biên giới đất liền TQ/Lào/Cam) + blur lan thêm.
- *     Giãn nở là công cụ SAI: nó hàn khe nội tỉnh bằng cái giá vẽ màu ra
- *     nước bạn.
- *
- * Cách đúng: KHÔNG nới rộng hình học. Raster union chính xác từng ring ở
- * lưới cao gấp 2 (supersample) để biên raster ≥0.7km/cell, rồi hạ mẫu lấy
- * ĐỘ PHỦ 0–255 (anti-aliasing thật ở mức dưới pixel, mép mềm 1 texel chứ
- * không phải vành 19km). Fragment discard khi ngoài lãnh thổ — NDMapVN bên
- * dưới hiện nguyên trạng: biển/Hà Nội/Vientiane không hề có màu nhiệt.
- * Diện tích phủ đo được = 14.1% bbox ≈ đúng tỉ lệ đất VN trong bbox (13.9%),
- * tức mask không thừa không thiếu.
+ * Build a cached triangle mesh from each ADM1 Polygon/MultiPolygon.
+ * Earcut receives every ring of each GeoJSON Polygon, so holes are respected;
+ * provinces remain separate fill components but share the original boundary
+ * coordinates and do not pass through a fixed-resolution raster mask.
+ * Coordinates are triangulated in Web Mercator, matching MapLibre's matrix.
  */
-const MASK_RES = 1280;
-const MASK_SS = 2; // mỗi texel mask = 2×2 ô raster con → độ phủ biên 4 mức
-let cachedLandMask: Uint8Array | null = null;
+let cachedTerritoryMesh: { vertexData: Float32Array; vertexCount: number } | null = null;
 
-function ringsOfFeature(feature: any): number[][][] {
+function polygonsOfFeature(feature: any): number[][][][] {
   const geom = feature?.geometry;
   if (!geom) return [];
-  const polys: number[][][][] =
-    geom.type === "Polygon"
-      ? [geom.coordinates]
-      : geom.type === "MultiPolygon"
-        ? geom.coordinates
-        : [];
-  // even-odd theo TỪNG polygon của TỪNG tỉnh (đảo/hole xử lý đúng), sau đó
-  // OR liên tỉnh = union lãnh thổ — biên giới nội tỉnh CHUNG vertex trong
-  // dataset nên union không để lại khe.
-  return polys.map((poly) => poly[0]); // chỉ lấy outer ring của mỗi polygon
+  return geom.type === "Polygon"
+    ? [geom.coordinates]
+    : geom.type === "MultiPolygon"
+      ? geom.coordinates
+      : [];
 }
 
-export function buildLandMaskTexture(): Uint8Array {
-  if (cachedLandMask) return cachedLandMask;
+function buildTerritoryMesh(): { vertexData: Float32Array; vertexCount: number } {
+  if (cachedTerritoryMesh) return cachedTerritoryMesh;
+  const data: number[] = [];
   const features = (geojsonData as any).features || [];
-  const S = MASK_RES * MASK_SS;
-  const bits = new Uint8Array(S * S);
-  const spanLng = VN_BOUNDS.maxLng - VN_BOUNDS.minLng;
-  const spanLat = VN_BOUNDS.maxLat - VN_BOUNDS.minLat;
+  const mercatorNorth = latToMercatorY(VN_BOUNDS.maxLat);
+  const mercatorSouth = latToMercatorY(VN_BOUNDS.minLat);
+  const spanX = VN_BOUNDS.maxLng - VN_BOUNDS.minLng;
+  const spanY = mercatorSouth - mercatorNorth;
 
-  // Raster hóa scanline từng ring ở lưới S: dòng y nào cắt cạnh ring thì lấp
-  // even-odd, OR liên tỉnh = union ĐÚNG biên giới, không xấp xỉ hình hộp.
-  for (const f of features) {
-    for (const ring of ringsOfFeature(f)) {
-      if (!ring || ring.length < 3) continue;
-      let minLatR = Infinity;
-      let maxLatR = -Infinity;
-      for (const p of ring) {
-        if (p[1] < minLatR) minLatR = p[1];
-        if (p[1] > maxLatR) maxLatR = p[1];
+  for (const feature of features) {
+    for (const polygon of polygonsOfFeature(feature)) {
+      const rings = polygon.filter((ring) => ring && ring.length >= 4);
+      if (!rings.length) continue;
+      const vertices: number[] = [];
+      const holes: number[] = [];
+      for (let ringIndex = 0; ringIndex < rings.length; ringIndex++) {
+        const ring = rings[ringIndex];
+        if (ringIndex > 0) holes.push(vertices.length / 2);
+        const closes = ring.length > 1 &&
+          ring[0][0] === ring[ring.length - 1][0] &&
+          ring[0][1] === ring[ring.length - 1][1];
+        const vertexLength = closes ? ring.length - 1 : ring.length;
+        for (let i = 0; i < vertexLength; i++) vertices.push(ring[i][0], ring[i][1]);
       }
-      const y0 = Math.max(0, Math.floor(((VN_BOUNDS.maxLat - maxLatR) / spanLat) * (S - 1)));
-      const y1 = Math.min(S - 1, Math.ceil(((VN_BOUNDS.maxLat - minLatR) / spanLat) * (S - 1)));
-      for (let y = y0; y <= y1; y++) {
-        const lat = VN_BOUNDS.maxLat - (y / (S - 1)) * spanLat;
-        const xs: number[] = [];
-        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-          const yi = ring[i][1];
-          const yj = ring[j][1];
-          if (yi > lat !== yj > lat) {
-            const t = (lat - yi) / (yj - yi);
-            xs.push(ring[i][0] + t * (ring[j][0] - ring[i][0]));
-          }
-        }
-        xs.sort((a, b) => a - b);
-        for (let k = 0; k + 1 < xs.length; k += 2) {
-          const xa = Math.max(0, Math.round(((xs[k] - VN_BOUNDS.minLng) / spanLng) * (S - 1)));
-          const xb = Math.min(S - 1, Math.round(((xs[k + 1] - VN_BOUNDS.minLng) / spanLng) * (S - 1)));
-          for (let x = xa; x <= xb; x++) bits[y * S + x] = 1;
-        }
+      const indices = earcut(vertices, holes, 2);
+      for (const index of indices) {
+        const lng = vertices[index * 2];
+        const lat = vertices[index * 2 + 1];
+        const x = lngToMercatorX(lng);
+        const y = latToMercatorY(lat);
+        const u = (lng - VN_BOUNDS.minLng) / spanX;
+        const v = (y - mercatorNorth) / spanY;
+        data.push(x, y, u, v);
       }
     }
   }
 
-  // Hạ mẫu MASK_SS×MASK_SS → độ phủ texel 0–255: viền răng cưa biến thành
-  // dải anti-alias ~1 texel (≈1.4km), đúng chuẩn "antialiasing edge do GPU".
-  const mask = new Uint8Array(MASK_RES * MASK_RES);
-  for (let y = 0; y < MASK_RES; y++) {
-    for (let x = 0; x < MASK_RES; x++) {
-      const sy = y * MASK_SS;
-      const sx = x * MASK_SS;
-      let sum = 0;
-      for (let dy = 0; dy < MASK_SS; dy++) {
-        for (let dx = 0; dx < MASK_SS; dx++) sum += bits[(sy + dy) * S + sx + dx];
-      }
-      mask[y * MASK_RES + x] = Math.round((sum / (MASK_SS * MASK_SS)) * 255);
-    }
-  }
-
-  cachedLandMask = mask;
-  return mask;
-}
-
-/**
- * Hình học phủ: một tứ giác kín VN_BOUNDS (2 tam giác) thay vì mesh tỉnh —
- * mảnh nào rơi ra ngoài đất liền bị mặt nạ alpha triệt tiêu trong fragment.
- * UV quy chiếu tuyến tính theo lng/lat ĐÚNG như cách sinh texture nhiệt & mask.
- */
-function buildCoverageQuad(): { vertexData: Float32Array; vertexCount: number } {
-  const spanLng = VN_BOUNDS.maxLng - VN_BOUNDS.minLng;
-  const spanLat = VN_BOUNDS.maxLat - VN_BOUNDS.minLat;
-  const corner = (lng: number, lat: number) => [
-    lngToMercatorX(lng),
-    latToMercatorY(lat),
-    (lng - VN_BOUNDS.minLng) / spanLng,
-    (VN_BOUNDS.maxLat - lat) / spanLat,
-  ];
-  const tl = corner(VN_BOUNDS.minLng, VN_BOUNDS.maxLat);
-  const tr = corner(VN_BOUNDS.maxLng, VN_BOUNDS.maxLat);
-  const bl = corner(VN_BOUNDS.minLng, VN_BOUNDS.minLat);
-  const br = corner(VN_BOUNDS.maxLng, VN_BOUNDS.minLat);
-  return {
-    vertexData: new Float32Array([...tl, ...tr, ...br, ...tl, ...br, ...bl]),
-    vertexCount: 6,
+  cachedTerritoryMesh = {
+    vertexData: new Float32Array(data),
+    vertexCount: data.length / 4,
   };
+  return cachedTerritoryMesh;
 }
 
 /**
@@ -163,8 +104,11 @@ function generateTemperatureGrid(
 
   const range = Math.max(1, maxDomainTemp - minDomainTemp);
 
+  const mercatorNorth = latToMercatorY(VN_BOUNDS.maxLat);
+  const mercatorSouth = latToMercatorY(VN_BOUNDS.minLat);
   for (let y = 0; y < height; y++) {
-    const lat = VN_BOUNDS.maxLat - (y / (height - 1)) * (VN_BOUNDS.maxLat - VN_BOUNDS.minLat);
+    const mercatorY = mercatorNorth + (y / (height - 1)) * (mercatorSouth - mercatorNorth);
+    const lat = (2 * Math.atan(Math.exp(Math.PI * (1 - 2 * mercatorY))) - Math.PI / 2) * (180 / Math.PI);
     for (let x = 0; x < width; x++) {
       const lng = VN_BOUNDS.minLng + (x / (width - 1)) * (VN_BOUNDS.maxLng - VN_BOUNDS.minLng);
 
@@ -206,8 +150,8 @@ void main() {
 const FRAGMENT_SHADER_SRC = `
 precision highp float;
 uniform sampler2D u_temp;
-uniform sampler2D u_land;
 uniform float u_opacity;
+uniform float u_debug_solid;
 varying vec2 v_uv;
 
 // Dải màu nhiệt độ chuẩn khí tượng liên tục (Continuous Field Color Ramp)
@@ -230,20 +174,15 @@ vec3 getMeteorologicalColor(float norm) {
 }
 
 void main() {
-    // 1. CLIP ĐỊA LÝ: texel mask = độ phủ hình học thật của lãnh thổ VN trong
-    //    pixel (0..1). Ngoài biên giới → giá trị 0 → hủy fragment, NDMapVN
-    //    hiện nguyên trạng. KHÔNG có vành nới rộng, KHÔNG polygon trắng đè.
-    float land = texture2D(u_land, v_uv).r;
-    if (land < 0.012) discard;
+    // Debug solid bypasses the temperature texture and production alpha.
+    if (u_debug_solid > 0.5) {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+        return;
+    }
 
-    // 2. Nhiệt độ nội suy bi-linear phần cứng — liền mạch trên TOÀN BỘ đất liền
-    //    (union 64 tỉnh tại raster 1280, đã kiểm 30/30 điểm không lỗ).
     float normT = texture2D(u_temp, v_uv).r;
     vec3 col = getMeteorologicalColor(normT);
-
-    // 3. Alpha = độ phủ mask: trong lãnh thổ = nét 100%, chỉ dải ~1 texel
-    //    (≈1.4km) tại biên là anti-alias GPU theo đúng thiết kế.
-    gl_FragColor = vec4(col, u_opacity * clamp(land * 1.6, 0.0, 1.0));
+    gl_FragColor = vec4(col, u_opacity);
 }
 `;
 
@@ -257,16 +196,16 @@ export class TemperatureShaderLayer implements CustomLayerInterface {
   private program: WebGLProgram | null = null;
   private vertexBuffer: WebGLBuffer | null = null;
   private tempTexture: WebGLTexture | null = null;
-  private landTexture: WebGLTexture | null = null;
   private vertexCount = 0;
 
   private aPosLoc = -1;
   private aUvLoc = -1;
   private uMatrixLoc: WebGLUniformLocation | null = null;
   private uTempLoc: WebGLUniformLocation | null = null;
-  private uLandLoc: WebGLUniformLocation | null = null;
   private uOpacityLoc: WebGLUniformLocation | null = null;
+  private uDebugSolidLoc: WebGLUniformLocation | null = null;
 
+  private debugSolid = false;
   private visible = true;
   private opacity = 0.50;
   private pendingSamples: Array<{ lng: number; lat: number; temp: number }> = [];
@@ -288,6 +227,11 @@ export class TemperatureShaderLayer implements CustomLayerInterface {
     if (this.map) {
       this.map.triggerRepaint();
     }
+  }
+
+  setDebugSolid(enabled: boolean) {
+    this.debugSolid = enabled;
+    this.map?.triggerRepaint();
   }
 
   updateWeatherData(stations: StationForecast[], gridSamples: ForecastGridSample[]) {
@@ -401,47 +345,19 @@ export class TemperatureShaderLayer implements CustomLayerInterface {
     this.aUvLoc = gl.getAttribLocation(prog, "a_uv");
     this.uMatrixLoc = gl.getUniformLocation(prog, "u_matrix");
     this.uTempLoc = gl.getUniformLocation(prog, "u_temp");
-    this.uLandLoc = gl.getUniformLocation(prog, "u_land");
     this.uOpacityLoc = gl.getUniformLocation(prog, "u_opacity");
+    this.uDebugSolidLoc = gl.getUniformLocation(prog, "u_debug_solid");
 
-    // Hình học: tứ giác phủ VN_BOUNDS — mặt nạ đất liền quyết định phần hiển thị
-    const { vertexData, vertexCount } = buildCoverageQuad();
+    // Tessellated territory mesh is cached in geographic coordinates projected
+    // to the same normalized Web Mercator world used by MapLibre's matrix.
+    const { vertexData, vertexCount } = buildTerritoryMesh();
     this.vertexCount = vertexCount;
-
     this.vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
-    // Tạo Temperature Grid Texture
     this.tempTexture = gl.createTexture();
-    if (this.pendingSamples.length > 0) {
-      this.uploadTempTexture(this.pendingSamples);
-    } else {
-      this.uploadTempTexture([]);
-    }
-
-    // Mặt nạ lãnh thổ: union 64 tỉnh raster đúng biên giới (supersample coverage)
-    this.landTexture = gl.createTexture();
-    if (this.landTexture) {
-      const land = buildLandMaskTexture();
-      gl.bindTexture(gl.TEXTURE_2D, this.landTexture);
-      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.LUMINANCE,
-        MASK_RES,
-        MASK_RES,
-        0,
-        gl.LUMINANCE,
-        gl.UNSIGNED_BYTE,
-        land,
-      );
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    }
+    this.uploadTempTexture(this.pendingSamples);
   }
 
   private renderLogged = false;
@@ -452,7 +368,6 @@ export class TemperatureShaderLayer implements CustomLayerInterface {
       !this.program ||
       !this.vertexBuffer ||
       !this.tempTexture ||
-      !this.landTexture ||
       this.vertexCount === 0
     ) {
       return;
@@ -490,18 +405,14 @@ export class TemperatureShaderLayer implements CustomLayerInterface {
     // Truyền Uniforms
     gl.uniformMatrix4fv(this.uMatrixLoc, false, matrix);
     gl.uniform1f(this.uOpacityLoc, this.opacity);
+    gl.uniform1f(this.uDebugSolidLoc, this.debugSolid ? 1 : 0);
 
     // Texture 0: Temperature continuous field
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.tempTexture);
     gl.uniform1i(this.uTempLoc, 0);
 
-    // Texture 1: Land mask (clip địa lý chính xác theo union lãnh thổ)
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, this.landTexture);
-    gl.uniform1i(this.uLandLoc, 1);
-
-    // Vẽ phủ toàn khung bounding box — mặt nạ cắt còn đúng phần đất Việt Nam
+    // Draw the cached ADM1 triangle mesh; map water/labels remain in their existing layers.
     gl.drawArrays(gl.TRIANGLES, 0, this.vertexCount);
   }
 
@@ -511,13 +422,11 @@ export class TemperatureShaderLayer implements CustomLayerInterface {
 
     if (this.vertexBuffer) gl.deleteBuffer(this.vertexBuffer);
     if (this.tempTexture) gl.deleteTexture(this.tempTexture);
-    if (this.landTexture) gl.deleteTexture(this.landTexture);
     if (this.program) gl.deleteProgram(this.program);
 
     this.program = null;
     this.vertexBuffer = null;
     this.tempTexture = null;
-    this.landTexture = null;
     this.vertexCount = 0;
     this.gl = null;
     this.map = null;

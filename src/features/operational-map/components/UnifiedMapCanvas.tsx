@@ -832,10 +832,41 @@ export function UnifiedMapCanvas({
         ? "water-offset"
         : (layerIdSet.has("water") ? "water" : firstRoadOrSymbolId);
 
+      const debugState = new URLSearchParams(window.location.search).get("heatmapDebugState");
+      const debugDisableWater = new URLSearchParams(window.location.search).get("debugDisableWater") === "1";
       const shaderLayer = new TemperatureShaderLayer(true, 0.55);
       temperatureShaderRef.current = shaderLayer;
+      shaderLayer.setDebugSolid(debugState === "B" || debugState === "C");
+      if (debugState === "A") shaderLayer.setVisible(false);
       shaderLayer.updateWeatherData(weatherStationsRef.current, gridSamplesRef.current);
       map.addLayer(shaderLayer as any, waterInsertId);
+
+      // Opt-in diagnostic only; production layer order/style remain unchanged.
+      if (debugDisableWater) {
+        for (const id of ["water-offset", "water"]) {
+          if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
+        }
+      }
+
+      // Diagnostic-only source comparison: outline NDAMap's own vector-tile
+      // water polygons (coastline/shoreline) in blue over the red solid clip.
+      if (
+        new URLSearchParams(window.location.search).get("debugBoundaryCompare") === "1" &&
+        map.getSource("basemap")
+      ) {
+        map.addLayer({
+          id: "debug-ndamap-water-outline",
+          type: "line",
+          source: "basemap",
+          "source-layer": "water",
+          filter: ["==", ["get", "class"], "ocean"],
+          paint: {
+            "line-color": "#0066ff",
+            "line-width": 2,
+            "line-opacity": 1,
+          },
+        });
+      }
 
       // 3. Thêm nguồn GeoJSON nhiệt độ ECMWF-IFS (phục vụ tra cứu trạm quan trắc & lưới 79 điểm)
       map.addSource("om-weather", {

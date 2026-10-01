@@ -230,8 +230,6 @@ function distanceKm(raw: string): number {
   return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY;
 }
 
-const UNAVAILABLE_TEAM_STATUS = new Set(["Mất liên lạc", "Không khả dụng"]);
-
 function DispatchForm({
   incident,
   onClose,
@@ -241,17 +239,26 @@ function DispatchForm({
 }) {
   const { teams, dispatchTeam } = useOperationalState();
   const [selected, setSelected] = useState(incident.assignedTeamId ?? "");
-  const ordered = [...teams].sort((a, b) => {
-    const rank = (t: (typeof teams)[number]) =>
-      UNAVAILABLE_TEAM_STATUS.has(t.status) ? 1 : 0;
-    return rank(a) - rank(b) || distanceKm(a.distance) - distanceKm(b.distance);
-  });
-  const nearestId = ordered.find(
-    (t) => !UNAVAILABLE_TEAM_STATUS.has(t.status),
-  )?.id;
+  const [error, setError] = useState("");
+  const availableTeams = teams
+    .filter(isTeamAvailableForNewAssignment)
+    .sort((a, b) => distanceKm(a.distance) - distanceKm(b.distance));
+  const canSubmit = availableTeams.some((team) => team.id === selected);
+  const nearestId = availableTeams[0]?.id;
   const submit = () => {
-    if (selected) dispatchTeam(incident.id, selected);
-    onClose();
+    setError("");
+    try {
+      if (!canSubmit)
+        throw new Error(
+          "Hãy chọn một đội đang sẵn sàng, có liên lạc và chưa nhận nhiệm vụ khác.",
+        );
+      dispatchTeam(incident.id, selected);
+      onClose();
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : "Không thể điều phối đội.",
+      );
+    }
   };
   return (
     <DialogFrame
@@ -263,17 +270,18 @@ function DispatchForm({
           <Button variant="secondary" onClick={onClose}>
             Hủy
           </Button>
-          <Button disabled={!selected} onClick={submit}>
+          <Button disabled={!canSubmit} onClick={submit}>
             Xác nhận điều phối
           </Button>
         </>
       }
     >
       <p className="form-hint">
-        Danh sách xếp đội sẵn sàng gần hiện trường nhất lên đầu.
+        Chỉ hiển thị đội đang sẵn sàng, có liên lạc và chưa nhận nhiệm vụ khác;
+        đội gần hiện trường nhất được xếp đầu.
       </p>
       <div className="dispatch-team-list">
-        {ordered.map((team) => (
+        {availableTeams.map((team) => (
           <TeamOption
             key={team.id}
             team={team}
@@ -283,6 +291,22 @@ function DispatchForm({
           />
         ))}
       </div>
+      {!availableTeams.length && (
+        <p className="team-form-error" role="alert">
+          Chưa có đội nào đủ điều kiện điều phối. Cập nhật trạng thái đội hoặc
+          gỡ phân công đang mở trước.
+        </p>
+      )}
+      {selected && !canSubmit && (
+        <p className="team-form-error" role="alert">
+          Đội được chọn trước đó không còn đủ điều kiện điều phối. Hãy chọn đội khác.
+        </p>
+      )}
+      {error && (
+        <p className="team-form-error" role="alert">
+          {error}
+        </p>
+      )}
     </DialogFrame>
   );
 }

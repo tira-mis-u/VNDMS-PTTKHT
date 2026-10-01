@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
+import { isTeamAvailableForNewAssignment } from "@/application/teams/teamUseCases";
 import { Badge, Button, SectionHeader , DetailMapWeather } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
 import {
@@ -75,10 +76,7 @@ export function TeamDetailPage({
   const incident = incidents.find(
     (item) => item.id === (team.currentIncident ?? task?.incidentId),
   );
-  const canDispatch =
-    can("team_assign") &&
-    !team.currentTask &&
-    !["Mất liên lạc", "Không khả dụng", "Tạm nghỉ"].includes(team.status);
+  const canDispatch = can("team_assign") && isTeamAvailableForNewAssignment(team);
   return (
     <div className="workspace-content team-detail-page">
       <header className="team-detail-header">

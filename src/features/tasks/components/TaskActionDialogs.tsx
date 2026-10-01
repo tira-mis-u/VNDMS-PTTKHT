@@ -4,6 +4,7 @@ import { AlertTriangle, X } from "lucide-react";
 import type { IncidentTask, TaskStatus } from "@/domain/tasks/types";
 import type { RescueTeam } from "@/domain/teams/types";
 import { getValidTransitions, TASK_LIFECYCLE } from "@/domain/tasks/rules";
+import { isTeamAvailableForNewAssignment } from "@/application/teams/teamUseCases";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import { DialogBackdrop, Badge, Button, Input, Textarea } from "@/components/ui";
 export type TaskDialog =
@@ -174,6 +175,8 @@ function Assign({
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const history = task.assignmentHistory ?? [];
+  const availableTeams = teams.filter(isTeamAvailableForNewAssignment);
+  const selectedIsAvailable = availableTeams.some((team) => team.id === selected);
   return (
     <Frame
       title={reassigning ? "Phân công lại nhiệm vụ" : "Điều phối đội thực hiện"}
@@ -185,7 +188,7 @@ function Assign({
             Hủy
           </Button>
           <Button
-            disabled={!selected || (reassigning && (!reason.trim() || selected === task.teamId))}
+            disabled={!selectedIsAvailable || (reassigning && (!reason.trim() || selected === task.teamId))}
             onClick={() => {
               try {
                 if (reassigning) reassignTask(task.id, selected, reason);
@@ -216,7 +219,7 @@ function Assign({
         </label>
       )}
       <div className="dispatch-team-list">
-        {teams.map((team) => (
+        {availableTeams.map((team) => (
           <Team
             key={team.id}
             team={team}
@@ -225,6 +228,17 @@ function Assign({
           />
         ))}
       </div>
+      {!availableTeams.length && (
+        <p className="team-form-error" role="alert">
+          Chưa có đội nào đủ điều kiện điều phối. Cập nhật trạng thái đội hoặc
+          gỡ phân công đang mở trước.
+        </p>
+      )}
+      {selected && !selectedIsAvailable && (
+        <p className="team-form-error" role="alert">
+          Đội đang được phân công không thể nhận thêm nhiệm vụ. Chọn một đội khác đủ điều kiện.
+        </p>
+      )}
       {history.length > 0 && (
         <p className="form-hint">
           Lịch sử phân công: {history.map((h) => `${h.fromTeamId ?? "—"} → ${h.toTeamId} (${h.at}, ${h.actor}: ${h.reason})`).join("; ")}

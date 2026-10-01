@@ -93,6 +93,38 @@ test("cập nhật vị trí phục hồi đội mất liên lạc và cập nh�
   );
 });
 
+test("trạng thái không khả dụng hoặc tạm nghỉ không bị ghi đè bởi đồng bộ nhiệm vụ/vị trí", () => {
+  const unavailable = {
+    ...clone(initialTeams.find((item) => item.id === "CH-05")!),
+    status: "Không khả dụng" as const,
+  };
+  const assignedTask = {
+    ...clone(initialTasks.find((item) => item.id === "TSK-0242")!),
+    teamId: unavailable.id,
+    status: "Đã giao" as const,
+  };
+  const whileAssigned = recalculateTeamAssignment(
+    unavailable,
+    [assignedTask],
+    "21/08/2026 10:45",
+  );
+  const afterRelease = recalculateTeamAssignment(
+    unavailable,
+    [],
+    "21/08/2026 10:45",
+  );
+  const afterLocationLoss = applyTeamLocation(
+    unavailable,
+    { ...unavailable.location, communicationStatus: "Mất liên lạc" },
+    "21/08/2026 10:45",
+  );
+
+  assert.equal(whileAssigned.status, "Không khả dụng");
+  assert.equal(afterRelease.status, "Không khả dụng");
+  assert.equal(afterLocationLoss.status, "Không khả dụng");
+  assert.equal(afterLocationLoss.communicationStatus, "Mất liên lạc");
+});
+
 test("query danh sách kết hợp tìm kiếm, loại đội, năng lực và phân công", () => {
   const result = filterAndSortTeams(clone(initialTeams), {
     tab: "Tất cả",

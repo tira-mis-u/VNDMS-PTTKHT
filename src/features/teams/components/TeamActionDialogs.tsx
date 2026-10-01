@@ -114,6 +114,7 @@ function Dispatch({
   onRequestStatus?: () => void;
 }) {
   const { incidents, tasks, dispatchTeamToTask } = useOperationalState();
+  const [error, setError] = useState("");
   // Đội chưa đủ điều kiện: KHÔNG dựng form chết — giải thích lý do và đưa
   // nút đi tiếp (đồng bộ điều kiện với nút "Điều phối đội" ngoài trang).
   const blockedStatus = ["Mất liên lạc", "Không khả dụng", "Tạm nghỉ"].includes(team.status)
@@ -122,59 +123,6 @@ function Dispatch({
       ? "mất liên lạc (kênh liên lạc)"
       : null;
   const blockedTask = !blockedStatus && team.currentTask ? team.currentTask : null;
-  if (blockedStatus || blockedTask) {
-    const task = blockedTask
-      ? tasks.find((item) => item.id === blockedTask)
-      : undefined;
-    return (
-      <Frame
-        title="Chưa thể điều phối đội này"
-        eyebrow={`${team.id} · ${team.name}`}
-        onClose={onClose}
-        footer={
-          <Button variant="secondary" onClick={onClose}>
-            Đóng
-          </Button>
-        }
-      >
-        <div className="dispatch-team-context">
-          <AlertTriangle size={16} />
-          <div>
-            <b>
-              {blockedTask
-                ? `Đội đang thực hiện nhiệm vụ ${blockedTask}`
-                : `Đội đang ở trạng thái “${blockedStatus}”`}
-            </b>
-            <span>
-              {blockedTask
-                ? `Hoàn thành hoặc báo xong “${task?.title ?? blockedTask}” để giải phóng đội.`
-                : "Chuyển đội sang “Sẵn sàng” trước khi điều phối."}
-            </span>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-          {blockedTask ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                onClose();
-                navigate(`/tasks/${blockedTask}`);
-              }}
-            >
-              Mở {blockedTask}
-            </Button>
-          ) : (
-            onRequestStatus && (
-              <Button size="sm" onClick={onRequestStatus}>
-                Cập nhật trạng thái đội
-              </Button>
-            )
-          )}
-        </div>
-      </Frame>
-    );
-  }
-  const [error, setError] = useState("");
   const openIncidents = incidents.filter(
     (incident) => incident.status !== "Đã đóng",
   );
@@ -203,6 +151,58 @@ function Dispatch({
       "",
   );
   const [note, setNote] = useState("");
+  if (blockedStatus || blockedTask) {
+    const blockedTaskDetail = blockedTask
+      ? tasks.find((item) => item.id === blockedTask)
+      : undefined;
+    return (
+      <Frame
+        title="Chưa thể điều phối đội này"
+        eyebrow={`${team.id} · ${team.name}`}
+        onClose={onClose}
+        footer={
+          <Button variant="secondary" onClick={onClose}>
+            Đóng
+          </Button>
+        }
+      >
+        <div className="dispatch-team-context">
+          <AlertTriangle size={16} />
+          <div>
+            <b>
+              {blockedTask
+                ? `Đội đang thực hiện nhiệm vụ ${blockedTask}`
+                : `Đội đang ở trạng thái “${blockedStatus}”`}
+            </b>
+            <span>
+              {blockedTask
+                ? `Hoàn thành hoặc báo xong “${blockedTaskDetail?.title ?? blockedTask}” để giải phóng đội.`
+                : "Chuyển đội sang “Sẵn sàng” trước khi điều phối."}
+            </span>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
+          {blockedTask ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                onClose();
+                navigate(`/tasks/${blockedTask}`);
+              }}
+            >
+              Mở {blockedTask}
+            </Button>
+          ) : (
+            onRequestStatus && (
+              <Button size="sm" onClick={onRequestStatus}>
+                Cập nhật trạng thái đội
+              </Button>
+            )
+          )}
+        </div>
+      </Frame>
+    );
+  }
   const changeIncident = (id: string) => {
     setIncident(id);
     const first = tasks.find(
@@ -380,8 +380,9 @@ function Status({ team, onClose }: { team: RescueTeam; onClose: () => void }) {
         </UiSelect>
       </label>
       <p className="form-hint">
-        Quy tắc chuyển trạng thái được kiểm tra tại application/domain layer.
-        Đội còn nhiệm vụ mở không thể chuyển về Sẵn sàng.
+        Có thể chuyển sang mọi trạng thái nghiệp vụ khác để phản ánh tình hình
+        thực địa. Đội còn nhiệm vụ mở không thể chuyển về Sẵn sàng; hãy chọn
+        trạng thái phù hợp hoặc kết thúc/gỡ phân công trước.
       </p>
       <ErrorMessage message={error} />
     </Frame>

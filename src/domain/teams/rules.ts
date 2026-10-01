@@ -2,17 +2,21 @@ import type { IncidentTask } from "../tasks/types";
 import type { RescueTeam, TeamAvailability, TeamStatus } from "./types";
 
 export const teamStatusTransitions: Record<TeamStatus, TeamStatus[]> = {
-  "Sẵn sàng": ["Đang điều động", "Tạm nghỉ", "Không khả dụng"],
-  "Đang điều động": ["Đang thực hiện", "Sẵn sàng", "Mất liên lạc"],
-  "Đang thực hiện": ["Sẵn sàng", "Mất liên lạc", "Không khả dụng"],
-  "Tạm nghỉ": ["Sẵn sàng", "Không khả dụng"],
+  // Cập nhật trạng thái là thao tác phục hồi thực địa: một đội có thể được
+  // đưa về bất kỳ trạng thái nghiệp vụ khác nào. Việc trở về "Sẵn sàng" vẫn
+  // bị chặn riêng khi đội còn nhiệm vụ mở (xem getAllowedTeamTransitions).
+  "Sẵn sàng": ["Đang điều động", "Đang thực hiện", "Tạm nghỉ", "Mất liên lạc", "Không khả dụng"],
+  "Đang điều động": ["Sẵn sàng", "Đang thực hiện", "Tạm nghỉ", "Mất liên lạc", "Không khả dụng"],
+  "Đang thực hiện": ["Sẵn sàng", "Đang điều động", "Tạm nghỉ", "Mất liên lạc", "Không khả dụng"],
+  "Tạm nghỉ": ["Sẵn sàng", "Đang điều động", "Đang thực hiện", "Mất liên lạc", "Không khả dụng"],
   "Mất liên lạc": [
     "Đang điều động",
     "Đang thực hiện",
     "Sẵn sàng",
+    "Tạm nghỉ",
     "Không khả dụng",
   ],
-  "Không khả dụng": ["Sẵn sàng", "Tạm nghỉ"],
+  "Không khả dụng": ["Sẵn sàng", "Đang điều động", "Đang thực hiện", "Tạm nghỉ", "Mất liên lạc"],
 };
 
 export const teamOperationalRank: Record<TeamStatus, number> = {

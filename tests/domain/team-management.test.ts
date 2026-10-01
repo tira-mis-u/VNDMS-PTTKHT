@@ -13,15 +13,19 @@ import {
 } from "../../src/data/scenarios/red-river-flood/operationalSeed";
 
 test("vòng đời đội chỉ công bố transition hợp lệ", () => {
-  assert.deepEqual(getTeamTransitions("Sẵn sàng"), [
+  const statuses = [
+    "Sẵn sàng",
     "Đang điều động",
+    "Đang thực hiện",
     "Tạm nghỉ",
+    "Mất liên lạc",
     "Không khả dụng",
-  ]);
-  assert.equal(
-    getTeamTransitions("Đang thực hiện").includes("Tạm nghỉ"),
-    false,
-  );
+  ] as const;
+  for (const current of statuses) {
+    const targets = getTeamTransitions(current);
+    assert.equal(targets.includes(current), false);
+    assert.deepEqual([...targets].sort(), statuses.filter((status) => status !== current).sort());
+  }
   assert.equal(
     getAllowedTeamTransitions(
       initialTeams.find((team) => team.id === "CH-01")!,

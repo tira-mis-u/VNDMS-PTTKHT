@@ -117,8 +117,12 @@ export function applyTeamLocation(
         ? "Đang điều động"
         : "Sẵn sàng"
       : team.status;
+  // Mất tín hiệu GPS không được phép ghi đè một quyết định điều hành như
+  // "Tạm nghỉ" hoặc "Không khả dụng". Chỉ đội đang hoạt động mới chuyển sang
+  // trạng thái Mất liên lạc theo tín hiệu thiết bị.
   const status =
-    location.communicationStatus === "Mất liên lạc"
+    location.communicationStatus === "Mất liên lạc" &&
+    !["Tạm nghỉ", "Không khả dụng"].includes(team.status)
       ? "Mất liên lạc"
       : restoredStatus;
   return {
@@ -177,9 +181,11 @@ export function recalculateTeamAssignment(
   const remaining = openTasksForTeam(team.id, tasks)[0];
   if (remaining) {
     const status: TeamStatus =
-      remaining.status === "Đang thực hiện"
-        ? "Đang thực hiện"
-        : "Đang điều động";
+      ["Mất liên lạc", "Không khả dụng", "Tạm nghỉ"].includes(team.status)
+        ? team.status
+        : remaining.status === "Đang thực hiện"
+          ? "Đang thực hiện"
+          : "Đang điều động";
     return {
       ...team,
       currentTask: remaining.id,
@@ -192,7 +198,11 @@ export function recalculateTeamAssignment(
     };
   }
   const status: TeamStatus =
-    team.communicationStatus === "Mất liên lạc" ? "Mất liên lạc" : "Sẵn sàng";
+    team.communicationStatus === "Mất liên lạc"
+      ? "Mất liên lạc"
+      : ["Tạm nghỉ", "Không khả dụng"].includes(team.status)
+        ? team.status
+        : "Sẵn sàng";
   return {
     ...team,
     currentTask: null,

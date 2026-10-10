@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { calculateShelterCapacity } from "@/domain/shelters/rules";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
-import { Badge, Button, Progress, SectionHeader , DetailMapWeather } from "@/components/ui";
+import { Badge, Button, Progress, SectionHeader, DetailMapWeather } from "@/components/ui";
 import { operationalMapFocusPath } from "@/app/routes/router";
 import {
   ShelterActionDialogs,
@@ -216,7 +216,7 @@ export function ShelterDetailPage({
                   variant="secondary"
                   onClick={() => openDialog("resources")}
                 >
-                  Cập nhật nguồn lực
+                  Cập nhật điều kiện vận hành
                 </Button>
               )}
             </div>

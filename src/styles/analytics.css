@@ -104,7 +104,7 @@
 }
 .analytics-secondary {
   background: var(--surface-card);
-  border: 1px solid #d6dce3;
+  border: 1px solid var(--border-default);
   color: var(--text-secondary);
 }
 .analytics-secondary:disabled {
@@ -602,7 +602,7 @@
 }
 .report-cover {
   text-align: center;
-  border-bottom: 2px solid #344054;
+  border-bottom: 2px solid var(--border-strong);
   padding-bottom: 22px;
   margin-bottom: 23px;
 }
@@ -731,7 +731,7 @@
 .report-audit {
   display: flex;
   gap: 10px;
-  border-top: 2px solid #344054;
+  border-top: 2px solid var(--border-strong);
   padding-top: 14px;
   color: var(--text-secondary);
 }
@@ -1177,27 +1177,184 @@
 .report-audit span,
 .report-audit p,
 .report-audit b { font-size: var(--type-metadata, 13px); }
+/* ─── Dark mode overrides: analytics & operational report ──────────────────
+ * Bao phủ TOÀN BỘ text elements trong phân tích tác nghiệp để đảm bảo
+ * tương phản đọc được ở cả light và dark theme (issue #9).
+ * ─────────────────────────────────────────────────────────────────────── */
+
+/* General analytics buttons */
 html[data-theme="dark"] .analytics-page .analytics-primary { color: #fff; }
-[data-theme="dark"] .operational-report { color: #e5e7eb; }
-[data-theme="dark"] .report-document-state,
-[data-theme="dark"] .report-subject,
-[data-theme="dark"] .report-block p,
-[data-theme="dark"] .report-block li { color: #cbd5e1; }
-[data-theme="dark"] .report-official-head,
+html[data-theme="dark"] .analytics-secondary {
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+/* Tab navigation */
+html[data-theme="dark"] .analytics-tabs button { color: var(--muted); }
+html[data-theme="dark"] .analytics-tabs button.active { color: var(--primary); }
+
+/* Metric cards */
+html[data-theme="dark"] .analytics-metric > div > span { color: var(--text-secondary); }
+html[data-theme="dark"] .analytics-metric strong { color: var(--text-primary); }
+html[data-theme="dark"] .analytics-metric p { color: var(--muted); }
+
+/* Section containers */
+html[data-theme="dark"] .analytics-section > header h2 { color: var(--text-primary); }
+html[data-theme="dark"] .analytics-section > header p { color: var(--muted); }
+
+/* Exception list */
+html[data-theme="dark"] .analytics-exception-list > button { color: var(--text-secondary); }
+html[data-theme="dark"] .analytics-exception-list p { color: var(--muted); }
+
+/* Bar charts */
+html[data-theme="dark"] .analytics-bar-row > div:first-child { color: var(--text-secondary); }
+html[data-theme="dark"] .analytics-bar-row b { color: var(--text-primary); }
+html[data-theme="dark"] .analytics-bar-row b small { color: var(--muted); }
+html[data-theme="dark"] .analytics-bar-track { background: var(--surface-muted); }
+
+/* Inline facts */
+html[data-theme="dark"] .analytics-inline-facts span { color: var(--muted); }
+html[data-theme="dark"] .analytics-inline-facts b { color: var(--text-primary); }
+
+/* Tables */
+html[data-theme="dark"] .analytics-table th,
+html[data-theme="dark"] .analytics-compact-table th { color: var(--muted); }
+html[data-theme="dark"] .analytics-table td,
+html[data-theme="dark"] .analytics-compact-table td { color: var(--text-secondary); }
+html[data-theme="dark"] .analytics-compact-table td small { color: var(--muted); }
+
+/* List rows */
+html[data-theme="dark"] .analytics-list-rows span { color: var(--muted); }
+html[data-theme="dark"] .analytics-list-rows strong { color: var(--text-secondary); }
+
+/* Capability list */
+html[data-theme="dark"] .analytics-capability-list span { color: var(--muted); }
+html[data-theme="dark"] .analytics-capability-list em { color: var(--text-secondary); }
+
+/* Project list */
+html[data-theme="dark"] .analytics-project-list span { color: var(--muted); }
+html[data-theme="dark"] .analytics-project-list em { color: var(--danger-fg); }
+
+/* Report builder */
+html[data-theme="dark"] .report-types > span { color: var(--text-secondary); }
+html[data-theme="dark"] .report-types button { color: var(--text-secondary); background: var(--surface-muted); }
+html[data-theme="dark"] .report-types button.active { color: var(--primary); background: var(--info-surface); border-color: var(--info-border); }
+
+/* Operational report container */
+[data-theme="dark"] .operational-report {
+  color: var(--text-primary);
+  background: var(--surface-card);
+  border-color: var(--border-subtle);
+}
+
+/* Report cover header */
+[data-theme="dark"] .report-cover h1 { color: var(--text-primary); }
+[data-theme="dark"] .report-agency b { color: var(--text-primary); }
+[data-theme="dark"] .report-agency span { color: var(--text-secondary); }
+
+/* Document state block */
+[data-theme="dark"] .report-document-state { color: var(--text-secondary); }
+[data-theme="dark"] .report-document-state b { color: var(--danger-fg); }
+
+/* Report subject/summary */
+[data-theme="dark"] .report-subject { color: var(--text-secondary); }
+[data-theme="dark"] .report-summary { color: var(--text-secondary); }
+
+/* Metadata grid */
+[data-theme="dark"] .report-official-head { border-color: var(--border-default); }
 [data-theme="dark"] .report-metadata-grid,
-[data-theme="dark"] .report-metadata-grid > div,
-[data-theme="dark"] .report-table-wrap,
-[data-theme="dark"] .report-table th,
-[data-theme="dark"] .report-table td,
-[data-theme="dark"] .report-action-columns > div,
-[data-theme="dark"] .report-recommendations,
-[data-theme="dark"] .report-recommendations > div { border-color: #334155; }
-[data-theme="dark"] .report-kpi-grid > div,
-[data-theme="dark"] .report-table th { background: #172033; }
-[data-theme="dark"] .report-table th,
-[data-theme="dark"] .report-metadata-grid dt,
-[data-theme="dark"] .report-table td > span,
-[data-theme="dark"] .report-recommendations small { color: #aebdce; }
+[data-theme="dark"] .report-metadata-grid > div { border-color: var(--border-default); }
+[data-theme="dark"] .report-metadata-grid dt { color: var(--muted); }
+[data-theme="dark"] .report-metadata-grid dd { color: var(--text-primary); }
+
+/* KPI grid */
+[data-theme="dark"] .report-kpi-grid > div {
+  background: var(--surface-subtle);
+  border-color: var(--border-subtle);
+}
+[data-theme="dark"] .report-kpi-grid span { color: var(--text-secondary); }
+[data-theme="dark"] .report-kpi-grid b { color: var(--text-primary); }
+
+/* Report sections text */
+[data-theme="dark"] .report-block h2 { color: var(--text-primary); border-color: var(--border-subtle); }
+[data-theme="dark"] .report-block h2 span { color: var(--primary); }
+[data-theme="dark"] .report-block p,
+[data-theme="dark"] .report-block li { color: var(--text-secondary); }
+[data-theme="dark"] .report-block h3 { color: var(--text-primary); }
+
+/* Issue/exception table */
+[data-theme="dark"] .report-table-wrap { border-color: var(--border-default); }
+[data-theme="dark"] .report-table th {
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+}
+[data-theme="dark"] .report-table td {
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+}
+[data-theme="dark"] .report-table td > b { color: var(--text-primary); }
+[data-theme="dark"] .report-table td > span { color: var(--muted); }
+
+/* Action columns */
+[data-theme="dark"] .report-action-columns > div { border-color: var(--border-subtle); }
+[data-theme="dark"] .report-action-columns h3 { color: var(--text-primary); }
+[data-theme="dark"] .report-action-columns li { color: var(--text-secondary); }
+
+/* Recommendations */
+[data-theme="dark"] .report-recommendations { border-color: var(--border-subtle); }
+[data-theme="dark"] .report-recommendations > div { border-color: var(--border-subtle); }
+[data-theme="dark"] .report-recommendations > div > span { color: var(--muted); }
+[data-theme="dark"] .report-recommendations p { color: var(--text-secondary); }
+[data-theme="dark"] .report-recommendations small { color: var(--muted); }
+
+/* Recovery/pending list */
+[data-theme="dark"] .report-recovery-list li { color: var(--text-secondary); }
+
+/* Resource list */
+[data-theme="dark"] .report-resource-list li { color: var(--text-secondary); }
+
+/* Audit footer */
+[data-theme="dark"] .report-audit {
+  color: var(--text-secondary);
+  border-top-color: var(--border-strong);
+}
+[data-theme="dark"] .report-audit b { color: var(--text-primary); }
+[data-theme="dark"] .report-audit span { color: var(--text-secondary); }
+[data-theme="dark"] .report-audit p { color: var(--muted); }
+
+/* Status pills and basis tags */
+[data-theme="dark"] .analytics-status {
+  background: var(--chip-surface);
+  color: var(--chip-fg);
+}
+[data-theme="dark"] .analytics-status.danger {
+  background: var(--danger-surface);
+  color: var(--danger-fg);
+}
+[data-theme="dark"] .analytics-status.warning {
+  background: var(--warning-surface);
+  color: var(--warning-fg);
+}
+[data-theme="dark"] .analytics-status.success {
+  background: var(--success-surface);
+  color: var(--success-fg);
+}
+[data-theme="dark"] .metric-basis.recorded {
+  background: var(--success-surface);
+  color: var(--success-fg);
+}
+[data-theme="dark"] .metric-basis.derived {
+  background: var(--info-surface);
+  color: var(--primary);
+}
+
+/* Data warning banner */
+[data-theme="dark"] .report-data-warning {
+  background: var(--warning-surface);
+  color: var(--warning-fg);
+  border-color: var(--warning-border);
+}
 @media (max-width: 900px) {
   .report-cover .report-metadata-grid,
   .report-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

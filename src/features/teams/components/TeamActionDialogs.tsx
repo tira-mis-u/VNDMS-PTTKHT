@@ -334,7 +334,13 @@ function Dispatch({
 function Status({ team, onClose }: { team: RescueTeam; onClose: () => void }) {
   const { updateTeamStatus } = useOperationalState();
   const options = getAllowedTeamTransitions(team);
-  const [status, setStatus] = useState<TeamStatus>(options[0] ?? team.status);
+  // Ưu tiên chọn "Sẵn sàng" làm mặc định (nếu có trong options) vì đây là
+  // trạng thái thường cần thiết để mở khóa điều phối. Nếu không có, chọn
+  // option đầu tiên. Fix issue #7: trước đây default là options[0] bất kể
+  // ngữ nghĩa, khiến user không biết cần chọn "Sẵn sàng" để dispatch được.
+  const defaultStatus: TeamStatus =
+    options.includes("Sẵn sàng") ? "Sẵn sàng" : (options[0] ?? team.status);
+  const [status, setStatus] = useState<TeamStatus>(defaultStatus);
   const [error, setError] = useState("");
   const submit = () => {
     try {
@@ -348,6 +354,17 @@ function Status({ team, onClose }: { team: RescueTeam; onClose: () => void }) {
       );
     }
   };
+  // Xác định hint về khả năng điều phối sau khi chuyển trạng thái
+  const dispatchHint =
+    status === "Sẵn sàng" && !team.currentTask
+      ? "✓ Sau khi chuyển sang Sẵn sàng, đội có thể được điều phối ngay."
+      : status === "Sẵn sàng" && team.currentTask
+        ? "⚠ Đội còn nhiệm vụ mở — chuyển về Sẵn sàng sẽ bị chặn. Gỡ phân công trước."
+        : ["Đang điều động", "Đang thực hiện"].includes(status)
+          ? "✓ Trạng thái hoạt động — đội vẫn được tính là đang nhiệm vụ."
+          : ["Không khả dụng", "Tạm nghỉ", "Mất liên lạc"].includes(status)
+            ? "⚠ Trạng thái này sẽ khóa điều phối. Cần chuyển về Sẵn sàng trước khi điều phối mới."
+            : null;
   return (
     <Frame
       title="Cập nhật trạng thái đội"
@@ -370,19 +387,28 @@ function Status({ team, onClose }: { team: RescueTeam; onClose: () => void }) {
       </label>
       <label className="field field-full">
         <span>Chuyển sang</span>
-        <UiSelect
-          value={status}
-          onChange={(event) => setStatus(event.target.value as TeamStatus)}
-        >
-          {options.map((option) => (
-            <option key={option}>{option}</option>
-          ))}
-        </UiSelect>
+        {options.length > 0 ? (
+          <UiSelect
+            value={status}
+            onChange={(event) => setStatus(event.target.value as TeamStatus)}
+          >
+            {options.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </UiSelect>
+        ) : (
+          <Input value="Không có trạng thái khả dụng" disabled />
+        )}
       </label>
+      {dispatchHint && (
+        <p className="form-hint" style={{ marginTop: 0 }}>
+          {dispatchHint}
+        </p>
+      )}
       <p className="form-hint">
-        Có thể chuyển sang mọi trạng thái nghiệp vụ khác để phản ánh tình hình
-        thực địa. Đội còn nhiệm vụ mở không thể chuyển về Sẵn sàng; hãy chọn
-        trạng thái phù hợp hoặc kết thúc/gỡ phân công trước.
+        Có thể chuyển sang mọi trạng thái nghiệp vụ để phản ánh tình hình thực
+        địa. Để điều phối đội vào nhiệm vụ mới, đội cần ở trạng thái{" "}
+        <strong>Sẵn sàng</strong> và không có nhiệm vụ mở.
       </p>
       <ErrorMessage message={error} />
     </Frame>

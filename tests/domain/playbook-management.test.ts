@@ -100,5 +100,7 @@ test("required step phải hoàn thành trước completion; optional có thể 
   );
 });
 test("progress được dẫn xuất từ step execution", () => {
-  assert.equal(calculateExecutionProgress(initialPlaybookExecutions[0]), 50);
+  // Seed có 16 stepExecutions: 10 hoàn thành (5 tiền-lũ + PBS-01..05),
+  // 2 đang thực hiện, 4 bị chặn → round(10/16 * 100) = 63.
+  assert.equal(calculateExecutionProgress(initialPlaybookExecutions[0]), 63);
 });

@@ -282,7 +282,7 @@ Dự án **chưa có**:
 
 Phiên đăng nhập, người dùng và nhật ký nằm trong bộ nhớ trình duyệt — người dùng có thể sửa bằng DevTools. **Không dùng frontend này làm ranh giới bảo mật thật.**
 
-Ngoài ra, phần khí tượng có giới hạn khoa học phải nêu: bộ dò bão chạy trên lưới 1° nên **mốc đổ bộ là xấp xỉ theo nút lưới**, không phải toạ độ cắt bờ chính xác; GloFAS cho lưu lượng chứ không cho mực nước nên hệ thống **không suy ra cấp báo động I/II/III**.
+Ngoài ra, phần khí tượng có giới hạn khoa học phải nêu: bộ dò bão chạy trên lưới 1° nên **mốc đổ bộ là xấp xỉ theo nút lưới**, không phải tọa độ cắt bờ chính xác; GloFAS cho lưu lượng chứ không cho mực nước nên hệ thống **không suy ra cấp báo động I/II/III**.
 
 ---
 

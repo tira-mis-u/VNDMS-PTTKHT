@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef, useState, useCallback } from "react";
 import type {
   IncidentSeverity,
   IncidentStatus,
@@ -98,6 +98,7 @@ import { createAuthorizedOperationalView } from "../../application/authorization
 import { createOperationalResourceContext } from "../../application/authorization/operationalResourceContext";
 import { createOperationalTimeline } from "../../application/operations/operationalTimeline";
 import { inMemoryOperationalRepository } from "../../infrastructure/persistence/inMemoryOperationalRepository";
+import { supabaseOperationalRepository } from "../../infrastructure/persistence/supabaseOperationalRepository";
 import {
   appendSystemDutyEntry,
   type DutyLink,
@@ -109,6 +110,10 @@ import { useAtomicOperationalState } from "./useAtomicOperationalState";
 import { useOperationalSecurity } from "./useOperationalSecurity";
 
 export function OperationalProvider({ children }: { children: ReactNode }) {
+  const [persistenceMode, setPersistenceMode] = useState<"supabase" | "demo">("demo");
+  const [persistenceError, setPersistenceError] = useState<string | null>(null);
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+
   const {
     session,
     currentUser,
@@ -155,6 +160,72 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     currentOperationalSnapshot,
     executeAtomic,
   } = useAtomicOperationalState(inMemoryOperationalRepository.load());
+
+  // Lưu bất đồng bộ kèm hoàn tác khi Supabase từ chối / lỗi mạng
+  const saveWithRollback = useCallback(
+    (promise: Promise<void>, label: string, rollback?: () => void): void => {
+      promise
+        .then(() => {
+          setPersistenceError(null);
+          setLastSyncAt(new Date().toLocaleTimeString("vi-VN"));
+        })
+        .catch((err: any) => {
+          const errMsg = err?.message ?? String(err);
+          console.error(`[VNDMS/Supabase] Lỗi lưu ${label}:`, errMsg);
+          setPersistenceError(`Lỗi lưu ${label}: ${errMsg}`);
+          if (rollback) {
+            rollback();
+          }
+          recordSecurityAudit(
+            "OPERATIONAL_MUTATION",
+            `Lỗi đồng bộ Supabase (${label}): ${errMsg}. Đã hoàn tác giao diện.`,
+            "SupabasePersistence",
+            label,
+          );
+        });
+    },
+    [recordSecurityAudit],
+  );
+
+  const fireAndForget = (promise: Promise<void>, label: string, rollback?: () => void) => {
+    saveWithRollback(promise, label, rollback);
+  };
+
+  // Bootstrap: tải snapshot từ Supabase sau khi mount và đồng bộ vào state.
+  const bootstrapDoneRef = useRef(false);
+  useEffect(() => {
+    if (bootstrapDoneRef.current) return;
+    bootstrapDoneRef.current = true;
+    supabaseOperationalRepository
+      .load()
+      .then((snapshot) => {
+        setIncidents(snapshot.incidents);
+        setTasks(snapshot.tasks);
+        setTaskUpdates(snapshot.taskUpdates);
+        setTaskReviews(snapshot.taskReviews);
+        setTeams(snapshot.teams);
+        setShelters(snapshot.shelters);
+        setSosRequests(snapshot.sosRequests);
+        setCitizenReports(snapshot.citizenReports);
+        setPublishedAlerts(snapshot.publishedAlerts);
+
+        const isLive = snapshot.metadata.source?.includes("Live");
+        setPersistenceMode(isLive ? "supabase" : "demo");
+        if (!isLive) {
+          setPersistenceError(snapshot.metadata.source ?? "Đang sử dụng dữ liệu mẫu nội bộ");
+        } else {
+          setPersistenceError(null);
+        }
+        setLastSyncAt(new Date().toLocaleTimeString("vi-VN"));
+      })
+      .catch((err) => {
+        const msg = err?.message ?? String(err);
+        console.warn("[VNDMS/Supabase] Không thể tải dữ liệu từ Supabase, chuyển sang chế độ dữ liệu mẫu nội bộ:", msg);
+        setPersistenceMode("demo");
+        setPersistenceError(`Chế độ dữ liệu mẫu nội bộ: Không thể kết nối Supabase (${msg})`);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const now = () => currentOperationalSnapshot().metadata.asOf;
   const timeOnly = () => now().split(" ")[1] ?? now();
   const {
@@ -265,17 +336,26 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const id = `INC-${String(number).padStart(4, "0")}`;
     const incident = createIncidentEntity(id, data, actorName, now());
     setIncidents((current) => [incident, ...current]);
+    fireAndForget(
+      supabaseOperationalRepository.saveIncident(incident),
+      `Incident ${id}`,
+      () => setIncidents((current) => current.filter((item) => item.id !== id)),
+    );
     pushEvent(id, `Tạo sự cố ${id}: ${data.title}`, "created");
     logDutySystem(`Tạo sự cố ${id}: ${data.title}`, { kind: "incident", id, code: id });
     return id;
   };
   const updateStatus = (id: string, status: IncidentStatus) => {
     enforcePermission("update", [incidentResource(id)]);
+    let updated: ReturnType<typeof changeIncidentStatus> | undefined;
     setIncidents((current) =>
-      current.map((item) =>
-        item.id === id ? changeIncidentStatus(item, status, now()) : item,
-      ),
+      current.map((item) => {
+        if (item.id !== id) return item;
+        updated = changeIncidentStatus(item, status, now());
+        return updated;
+      }),
     );
+    if (updated) fireAndForget(supabaseOperationalRepository.saveIncident(updated), `Incident ${id}`);
     pushEvent(
       id,
       `Chuyển trạng thái sự cố sang ${status.toUpperCase()}`,
@@ -285,11 +365,15 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
   };
   const updateSeverity = (id: string, severity: IncidentSeverity) => {
     enforcePermission("severity", [incidentResource(id)]);
+    let updated: ReturnType<typeof changeIncidentSeverity> | undefined;
     setIncidents((current) =>
-      current.map((item) =>
-        item.id === id ? changeIncidentSeverity(item, severity, now()) : item,
-      ),
+      current.map((item) => {
+        if (item.id !== id) return item;
+        updated = changeIncidentSeverity(item, severity, now());
+        return updated;
+      }),
     );
+    if (updated) fireAndForget(supabaseOperationalRepository.saveIncident(updated), `Incident ${id}`);
     pushEvent(
       id,
       `Cập nhật mức độ sự cố thành ${severity.toUpperCase()}`,
@@ -365,6 +449,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       : created;
     const next = [task, ...tasks];
     setTasks(next);
+    fireAndForget(
+      supabaseOperationalRepository.saveTask(task),
+      `Task ${id}`,
+      () => setTasks((current) => current.filter((item) => item.id !== id)),
+    );
     if (data.teamId) {
       setTeams((current) =>
         current.map((item) =>
@@ -416,6 +505,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     };
     const next = tasks.map((item) => (item.id === taskId ? assigned : item));
     setTasks(next);
+    fireAndForget(supabaseOperationalRepository.saveTask(assigned), `Task ${taskId}`);
     setTeams((current) =>
       current.map((item) => {
         if (item.id === teamId)
@@ -466,6 +556,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       item.id === taskId ? transitioned : item,
     );
     setTasks(next);
+    fireAndForget(supabaseOperationalRepository.saveTask(transitioned), `Task ${taskId}`);
     syncIncidentProgress(task.incidentId, next);
     advanceIncidentOnTaskEngagement(task.incidentId, next, taskId);
     if (task.teamId) {
@@ -573,6 +664,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       networkStatus,
     };
     setTaskUpdates((current) => [update, ...current]);
+    fireAndForget(supabaseOperationalRepository.saveTaskUpdate(update), `TaskUpdate ${update.id}`);
     setTasks((current) =>
       current.map((item) =>
         item.id === taskId ? { ...item, updatedAt: now() } : item,
@@ -630,26 +722,32 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     );
     const next = tasks.map((item) => (item.id === taskId ? assigned : item));
     setTasks(next);
-    setTeams((current) =>
-      current.map((item) => {
-        if (item.id === teamId)
-          return assignTeamToOperation(item, taskId, incidentId, now());
-        if (task.teamId && task.teamId !== teamId && item.id === task.teamId)
-          return recalculateTeamAssignment(item, next, now());
-        return item;
-      }),
-    );
+    fireAndForget(supabaseOperationalRepository.saveTask(assigned), `Task ${taskId}`);
+    const nextTeams = teams.map((item) => {
+      if (item.id === teamId)
+        return assignTeamToOperation(item, taskId, incidentId, now());
+      if (task.teamId && task.teamId !== teamId && item.id === task.teamId)
+        return recalculateTeamAssignment(item, next, now());
+      return item;
+    });
+    setTeams(nextTeams);
+    const assignedTeamEntity = nextTeams.find((item) => item.id === teamId);
+    if (assignedTeamEntity) fireAndForget(supabaseOperationalRepository.saveTeam(assignedTeamEntity), `Team ${teamId}`);
+    if (task.teamId && task.teamId !== teamId) {
+      const prevTeam = nextTeams.find((item) => item.id === task.teamId);
+      if (prevTeam) fireAndForget(supabaseOperationalRepository.saveTeam(prevTeam), `Team ${prevTeam.id}`);
+    }
+    const updatedIncident = {
+      ...incident,
+      assignedTeamId: incident.assignedTeamId ?? teamId,
+      updatedAt: now(),
+    };
     setIncidents((current) =>
       current.map((item) =>
-        item.id === incidentId
-          ? {
-              ...item,
-              assignedTeamId: item.assignedTeamId ?? teamId,
-              updatedAt: now(),
-            }
-          : item,
+        item.id === incidentId ? updatedIncident : item,
       ),
     );
+    fireAndForget(supabaseOperationalRepository.saveIncident(updatedIncident), `Incident ${incidentId}`);
     syncIncidentProgress(incidentId, next);
     const message = `Điều phối ${teamId} thực hiện ${taskId} tới ${destination}${note ? `: ${note}` : ""}`;
     pushTeamEvent(teamId, message, "dispatch");
@@ -664,6 +762,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setTeams((current) =>
       current.map((item) => (item.id === teamId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveTeam(changed), `Team ${teamId}`);
     pushTeamEvent(
       teamId,
       `Chuyển trạng thái đội sang ${status.toUpperCase()}`,
@@ -673,11 +772,15 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
   };
   const updateTeamLocation = (teamId: string, location: TeamLocation) => {
     enforcePermission("team_update_location", [teamResource(teamId)]);
+    const team = teams.find((item) => item.id === teamId);
+    if (!team) return;
+    const changed = applyTeamLocation(team, location, now());
     setTeams((current) =>
       current.map((item) =>
-        item.id === teamId ? applyTeamLocation(item, location, now()) : item,
+        item.id === teamId ? changed : item,
       ),
     );
+    fireAndForget(supabaseOperationalRepository.saveTeam(changed), `Team ${teamId}`);
     pushTeamEvent(
       teamId,
       `Cập nhật vị trí đội với độ chính xác ±${location.accuracy} m`,
@@ -694,6 +797,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setTeams((current) =>
       current.map((item) => (item.id === teamId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveTeam(changed), `Team ${teamId}`);
     if (input.leader !== team.leader)
       setTasks((current) =>
         current.map((task) =>
@@ -723,6 +827,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setTeams((current) =>
       current.map((item) => (item.id === teamId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveTeam(changed), `Team ${teamId}`);
     pushTeamEvent(
       teamId,
       `Cập nhật ${capabilities.length} năng lực tác chiến`,
@@ -746,6 +851,8 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setTeams((current) =>
       current.map((item) => (item.id === teamId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveTeam(changed), `Team ${teamId}`);
+    fireAndForget(supabaseOperationalRepository.saveTask(released), `Task ${task.id}`);
     const replacementTeam =
       next.find(
         (item) =>
@@ -791,6 +898,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setShelters((current) =>
       current.map((item) => (item.id === shelterId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveShelter(changed), `Shelter ${shelterId}`);
     pushShelterEvent(
       shelterId,
       `Cập nhật sức chứa ${capacity} chỗ, dự phòng ${reservedCapacity} chỗ`,
@@ -805,6 +913,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setShelters((current) =>
       current.map((item) => (item.id === shelterId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveShelter(changed), `Shelter ${shelterId}`);
     pushShelterEvent(
       shelterId,
       `Cập nhật số người đang tiếp nhận: ${occupancy}`,
@@ -823,6 +932,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setShelters((current) =>
       current.map((item) => (item.id === shelterId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveShelter(changed), `Shelter ${shelterId}`);
     pushShelterEvent(
       shelterId,
       open ? "Mở điểm sơ tán để tiếp nhận" : "Tạm đóng điểm sơ tán",
@@ -841,6 +951,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setShelters((current) =>
       current.map((item) => (item.id === shelterId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveShelter(changed), `Shelter ${shelterId}`);
     pushShelterEvent(
       shelterId,
       "Cập nhật điều kiện vận hành và nguồn lực",
@@ -856,6 +967,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
     pushSosEvent(sosId, "Hoàn tất xác minh thông tin SOS", "verified");
     logDutySystem(`Xác minh SOS ${sosId}`, { kind: "sos", id: sosId, code: sosId });
   };
@@ -867,6 +979,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
     pushSosEvent(sosId, "Từ chối SOS sau xác minh", "rejected");
     logDutySystem(`Từ chối SOS ${sosId} sau xác minh`, { kind: "sos", id: sosId, code: sosId });
   };
@@ -882,6 +995,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
     pushSosEvent(sosId, `Liên kết với sự cố ${incidentId}`, "incident");
     pushEvent(
       incidentId,
@@ -950,6 +1064,9 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         item.id === sosId ? linkSosTaskAndTeam(item, id, teamId, now()) : item,
       ),
     );
+    // Persist updated SOS with linked task & team
+    const updatedSos = sosRequests.find((item) => item.id === sosId);
+    if (updatedSos) fireAndForget(supabaseOperationalRepository.saveSosRequest({ ...updatedSos, linkedTaskId: id, assignedTeamId: teamId }), `SOS ${sosId}`);
     pushSosEvent(sosId, `Tạo nhiệm vụ ${id} và giao cho ${teamId}`, "dispatch");
     return id;
   };
@@ -961,6 +1078,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
     pushSosEvent(sosId, `Điều chỉnh ưu tiên thành ${priority}`, "triage");
   };
   const updateSosLocation = (sosId: string, location: SosLocation) => {
@@ -972,6 +1090,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
     pushSosEvent(sosId, `Cập nhật vị trí: ${location.address}`, "location");
   };
   const addSosUpdate = (sosId: string, message: string) => {
@@ -993,6 +1112,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
     pushSosEvent(
       sosId,
       "Không thể liên lạc với người báo tin",
@@ -1017,6 +1137,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const id = `SOS-${String(maxNum + 1).padStart(4, "0")}`;
     const newSos = createSosRequest(id, input, now(), currentUser?.id ?? null);
     setSosRequests((current) => [newSos, ...current]);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(newSos),
+      `SOS ${id}`,
+      () => setSosRequests((current) => current.filter((item) => item.id !== id)),
+    );
     pushSosEvent(
       id,
       `Gửi yêu cầu SOS khẩn cấp tại ${input.location.address}`,
@@ -1043,6 +1168,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
     pushSosEvent(sosId, `Đánh dấu đã xử lý: ${summary}`, "resolved");
     logDutySystem(`Xử lý xong SOS ${sosId}`, { kind: "sos", id: sosId, code: sosId });
   };
@@ -1054,6 +1180,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
     pushSosEvent(
       sosId,
       "Hủy yêu cầu SOS theo quyết định điều hành",
@@ -1077,6 +1204,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
     pushSosEvent(sosId, "Người gửi đã rút lại yêu cầu SOS", "cancelled");
     recordSecurityAudit(
       "OPERATIONAL_MUTATION",
@@ -1093,6 +1221,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
+    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
     pushSosEvent(sosId, "Xác nhận kết quả và đóng SOS", "closed");
     logDutySystem(`Đóng SOS ${sosId}`, { kind: "sos", id: sosId, code: sosId });
   };
@@ -1114,7 +1243,9 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const reported = reportTaskDoneEntity(task, now());
     const next = tasks.map((item) => (item.id === taskId ? reported : item));
     setTasks(next);
+    fireAndForget(supabaseOperationalRepository.saveTask(reported), `Task ${taskId}`);
     setTaskReviews((current) => [review, ...current]);
+    fireAndForget(supabaseOperationalRepository.saveTaskReview(review), `TaskReview ${review.id}`);
     advanceIncidentOnTaskEngagement(task.incidentId, next, taskId);
     pushTeamEvent(
       task.teamId,
@@ -1156,6 +1287,8 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const rejected = reviewTaskResultEntity(task, false, now());
     const next = tasks.map((item) => (item.id === taskId ? rejected : item));
     setTasks(next);
+    fireAndForget(supabaseOperationalRepository.saveTask(rejected), `Task ${taskId}`);
+    fireAndForget(supabaseOperationalRepository.saveTaskReview(decided), `TaskReview ${decided.id}`);
     syncIncidentProgress(task.incidentId, next);
     pushTeamEvent(
       task.teamId,
@@ -1190,6 +1323,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     );
     const next = tasks.map((item) => (item.id === taskId ? reassigned : item));
     setTasks(next);
+    fireAndForget(supabaseOperationalRepository.saveTask(reassigned), `Task ${taskId}`);
     // Báo cáo đang chờ xác nhận (nếu có) không còn giá trị sau khi đổi đội.
     setTaskReviews((current) =>
       current.map((r) =>
@@ -1252,6 +1386,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const id = `RPT-${String(number).padStart(4, "0")}`;
     const report = createCitizenReportEntity(id, input, currentUser.id, now());
     setCitizenReports((current) => [report, ...current]);
+    fireAndForget(
+      supabaseOperationalRepository.saveCitizenReport(report),
+      `CitizenReport ${id}`,
+      () => setCitizenReports((current) => current.filter((item) => item.id !== id)),
+    );
     setCitizenReportEvents((current) => [
       {
         id: `RPE-${Date.now()}-${current.length + 1}`,
@@ -1285,6 +1424,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setCitizenReports((current) =>
       current.map((r) => (r.id === reportId ? reviewed : r)),
     );
+    fireAndForget(supabaseOperationalRepository.saveCitizenReport(reviewed), `CitizenReport ${reportId}`);
     setCitizenReportEvents((current) => [
       {
         id: `RPE-${Date.now()}-${current.length + 1}`,
@@ -1327,6 +1467,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const id = `PUB-${String(number).padStart(4, "0")}`;
     const draft = createPublishedAlertDraft(id, input, actorName, now());
     setPublishedAlerts((current) => [draft, ...current]);
+    fireAndForget(
+      supabaseOperationalRepository.savePublishedAlert(draft),
+      `PublishedAlert ${id}`,
+      () => setPublishedAlerts((current) => current.filter((item) => item.id !== id)),
+    );
     pushPublishedAlertEvent(id, "drafted", `Soạn nháp cảnh báo: ${draft.title}`);
     return id;
   };
@@ -1338,6 +1483,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setPublishedAlerts((current) =>
       current.map((a) => (a.id === alertId ? updated : a)),
     );
+    fireAndForget(supabaseOperationalRepository.savePublishedAlert(updated), `PublishedAlert ${alertId}`);
     pushPublishedAlertEvent(
       alertId,
       "updated",
@@ -1354,6 +1500,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setPublishedAlerts((current) =>
       current.map((a) => (a.id === alertId ? published : a)),
     );
+    fireAndForget(supabaseOperationalRepository.savePublishedAlert(published), `PublishedAlert ${alertId}`);
     pushPublishedAlertEvent(alertId, "published", `Công bố cảnh báo tới người dân: ${alert.title}`);
     logDutySystem(`Công bố cảnh báo tới người dân: ${alert.title}`);
   };
@@ -1365,6 +1512,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setPublishedAlerts((current) =>
       current.map((a) => (a.id === alertId ? withdrawn : a)),
     );
+    fireAndForget(supabaseOperationalRepository.savePublishedAlert(withdrawn), `PublishedAlert ${alertId}`);
     pushPublishedAlertEvent(alertId, "withdrawn", `Thu hồi cảnh báo: ${reason.trim()}`);
   };
 
@@ -1401,6 +1549,9 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
           : item,
       ),
     );
+    // Persist closed incident
+    const closedIncident = { ...incident, status: "Đã đóng" as const, assignedTeamId: null, progress: 100, closedAt: now(), updatedAt: now() };
+    fireAndForget(supabaseOperationalRepository.saveIncident(closedIncident), `Incident ${id}`);
     if (incident.assignedTeamId)
       setTeams((current) =>
         current.map((team) =>
@@ -1568,6 +1719,9 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     users,
     securityAuditEvents,
     role,
+    persistenceMode,
+    persistenceError,
+    lastSyncAt,
     can,
     login,
     register,

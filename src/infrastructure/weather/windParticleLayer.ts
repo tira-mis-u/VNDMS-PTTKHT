@@ -126,7 +126,7 @@ export class WindField {
     this.maxSpeed = maxSpeed;
   }
 
-  /** Tra cứu (u, v) theo km/h tại một toạ độ bất kỳ. */
+  /** Tra cứu (u, v) theo km/h tại một tọa độ bất kỳ. */
   sample(lng: number, lat: number): { u: number; v: number } | null {
     if (lng < FIELD_LNG_MIN || lng > FIELD_LNG_MAX) return null;
     if (lat < FIELD_LAT_MIN || lat > FIELD_LAT_MAX) return null;

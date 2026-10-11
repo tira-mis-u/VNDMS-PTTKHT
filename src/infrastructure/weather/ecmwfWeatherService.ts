@@ -485,10 +485,10 @@ export async function fetchEcmwfWeatherData(force = false): Promise<StationForec
   // 2. Kiểm tra Cooldown khi gặp 429
   if (now < apiCooldownUntil) {
     if (cachedRealStations) {
-      console.info("[VNDMS/ECMWF] Đang trong cooldown 429. Dùng Tier 2 (Cached Real Data).");
+      console.info("[VNDMS/ECMWF] Đang tạm dừng yêu cầu 429. Dùng Cấp 2 (Dữ liệu thực lưu đệm).");
       return cachedRealStations.data;
     }
-    console.info("[VNDMS/ECMWF] Đang trong cooldown 429. Dùng Tier 3 (Fallback Data).");
+    console.info("[VNDMS/ECMWF] Đang tạm dừng yêu cầu 429. Dùng Cấp 3 (Dữ liệu dự phòng).");
     currentMetadata = {
       provider: "Open-Meteo",
       model: "ECMWF-IFS",
@@ -1224,7 +1224,7 @@ function presetGrid(preset: HistoricalStormPreset) {
  * Nạp trường khí áp/gió ERA5 cho một cơn bão trong quá khứ và dựng lại đường đi
  * bằng đúng `detectStormField` đang dùng cho dự báo.
  *
- * API archive giới hạn số toạ độ mỗi lần gọi nên lưới được chia lô 80 điểm;
+ * API archive giới hạn số tọa độ mỗi lần gọi nên lưới được chia lô 80 điểm;
  * đo thực tế với lưới 240 điểm × 8 ngày × bước 3 giờ: 3 lô, ~690 KB, ~1,8 giây.
  */
 export async function fetchHistoricalStormField(

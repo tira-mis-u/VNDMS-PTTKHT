@@ -1,26 +1,22 @@
 -- ==============================================================================
--- CẤP QUYỀN TRUY CẬP (GRANT PERMISSIONS) CHO POSTGREST ANON / AUTHENTICATED
+-- CẤP QUYỀN TRUY CẬP TỐI THIỂU (LEAST PRIVILEGE GRANTS) CHO SUPABASE
 -- ==============================================================================
--- Dán đoạn này vào Supabase SQL Editor và nhấn Run để sửa lỗi 'permission denied'
+-- Dán đoạn này vào Supabase SQL Editor và nhấn Run nếu cần cập nhật lại quyền truy cập
 
-GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.sos_requests TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.location_history TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.incidents TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.shelters TO anon, authenticated, service_role;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon;
 
--- Cập nhật Policy RLS
-DROP POLICY IF EXISTS "Công khai xem danh sách sự cố" ON public.incidents;
-DROP POLICY IF EXISTS "Cho phép cập nhật sự cố" ON public.incidents;
-DROP POLICY IF EXISTS "Cho phép đọc sự cố" ON public.incidents;
-DROP POLICY IF EXISTS "Cho phép ghi sự cố" ON public.incidents;
-CREATE POLICY "Cho phép đọc sự cố" ON public.incidents FOR SELECT USING (true);
-CREATE POLICY "Cho phép ghi sự cố" ON public.incidents FOR ALL USING (true);
+-- anon (công chúng chưa đăng nhập): chỉ tra cứu điểm sơ tán, xem cảnh báo công bố, gửi SOS khẩn cấp
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT SELECT ON public.shelters TO anon;
+GRANT SELECT ON public.published_alerts TO anon;
+GRANT INSERT ON public.sos_requests TO anon;
 
-DROP POLICY IF EXISTS "Công khai xem điểm sơ tán" ON public.shelters;
-DROP POLICY IF EXISTS "Cho phép đọc điểm sơ tán" ON public.shelters;
-DROP POLICY IF EXISTS "Cho phép ghi điểm sơ tán" ON public.shelters;
-CREATE POLICY "Cho phép đọc điểm sơ tán" ON public.shelters FOR SELECT USING (true);
-CREATE POLICY "Cho phép ghi điểm sơ tán" ON public.shelters FOR ALL USING (true);
+-- authenticated (người dùng đã đăng nhập): truy cập theo chính sách RLS
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+
+-- service_role: toàn quyền bảo trì hệ thống
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO service_role;

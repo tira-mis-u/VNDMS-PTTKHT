@@ -209,7 +209,7 @@ export function BeaconScopeModal({
           <p className="beacon-scope-note">
             {quickSelectRoles
               ? "Chia sẻ định vị cho từng người cụ thể (kể cả công dân khác) hoặc chọn nhanh cả nhóm Cán bộ PCTT / Đơn vị cứu hộ — không có lựa chọn \"Tất cả công dân\". Bạn luôn thấy vị trí của chính mình."
-              : "Vị trí realtime của bạn hiển thị trên Bản đồ tác nghiệp cho những người được tick dưới đây — tick nhanh cả nhóm vai trò (kể cả Tất cả công dân) hoặc chọn từng người. Bạn luôn thấy vị trí của chính mình."}
+              : "Vị trí thời gian thực của bạn hiển thị trên Bản đồ tác nghiệp cho những người được đánh dấu dưới đây — chọn nhanh cả nhóm vai trò (kể cả Tất cả công dân) hoặc chọn từng người. Bạn luôn thấy vị trí của chính mình."}
           </p>
 
           {error && (

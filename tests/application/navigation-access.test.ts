@@ -131,7 +131,7 @@ test("nhãn hai quần đảo do nền bản đồ quốc gia cung cấp, không
   // trong mã nguồn. Từ khi nền bản đồ là NDAMaps (bản đồ số quốc gia), nhãn
   // hai quần đảo nằm sẵn trong vector tile chính thức, nên hàm chèn nhãn được
   // giữ lại ở dạng no-op có ghi chú. Kiểm thử này khóa lại quyết định đó để
-  // không ai lặng lẽ chèn lại toạ độ tự suy diễn.
+  // không ai lặng lẽ chèn lại tọa độ tự suy diễn.
   const source = readFileSync("src/infrastructure/gis/mapConfig.ts", "utf8");
   assert.match(source, /export function addVietnamSeaLabels/);
   assert.match(source, /Hoàng Sa/);

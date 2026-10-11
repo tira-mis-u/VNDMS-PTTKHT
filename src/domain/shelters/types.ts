@@ -48,6 +48,7 @@ export interface Shelter {
   openingTime: string | null;
   closingTime: string | null;
   linkedIncidentIds: string[];
+  activeEvacuationOperationIds?: string[];
   notes: string;
   updatedAt: string;
 }

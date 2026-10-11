@@ -154,7 +154,7 @@ uniform float u_opacity;
 uniform float u_debug_solid;
 varying vec2 v_uv;
 
-// Dải màu nhiệt độ chuẩn khí tượng liên tục (Continuous Field Color Ramp)
+// Dải màu nhiệt độ chuẩn khí tượng liên tục
 vec3 getMeteorologicalColor(float norm) {
     vec3 c0 = vec3(0.24, 0.55, 0.94); // ~18°C - Lam mát
     vec3 c1 = vec3(0.16, 0.78, 0.52); // ~22°C - Xanh ngọc
@@ -174,7 +174,7 @@ vec3 getMeteorologicalColor(float norm) {
 }
 
 void main() {
-    // Debug solid bypasses the temperature texture and production alpha.
+    // Chế độ kiểm tra bỏ qua kết cấu nhiệt độ và độ trong suốt vận hành.
     if (u_debug_solid > 0.5) {
         gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
         return;

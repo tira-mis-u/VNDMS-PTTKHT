@@ -3,13 +3,13 @@ import { useEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Building2, LifeBuoy, MapPin, Radio } from "lucide-react";
 import { Marker } from "maplibre-gl";
-import type { Incident } from "@/domain/incidents/types";
-import type { RescueTeam } from "@/domain/teams/types";
-import type { Shelter } from "@/domain/shelters/types";
-import type { EvacuationOperation } from "@/domain/evacuations/types";
-import type { SosRequest } from "@/domain/sos/types";
-import type { SimulationState } from "@/domain/simulation/types";
-import { useDualMapEngine, MapEngineBadge } from "@/infrastructure/gis/useDualMapEngine";
+import type { Incident } from "../../../domain/incidents/types";
+import type { RescueTeam } from "../../../domain/teams/types";
+import type { Shelter } from "../../../domain/shelters/types";
+import type { EvacuationOperation } from "../../../domain/evacuations/types";
+import type { SosRequest } from "../../../domain/sos/types";
+import type { SimulationState } from "../../../domain/simulation/types";
+import { useDualMapEngine, MapEngineBadge } from "../../../infrastructure/gis/useDualMapEngine";
 
 export function SimulationOperationalMap({
   simulation,
@@ -33,7 +33,7 @@ export function SimulationOperationalMap({
     center: [105.842, 21.06],
     zoom: 11.7,
     seaLabelPrefix: "simulation",
-    onMapLibreLoad(map) {
+    onMapLibreLoad(map: any) {
       // Sông Hồng mô phỏng
       map.addSource("sim-red-river", {
         type: "geojson",
@@ -115,7 +115,7 @@ export function SimulationOperationalMap({
     // Tuyến sơ tán
     evacuations.forEach((op) => {
       const coords = op.route.status === "Đang dùng tuyến thay thế" ? op.route.alternativeCoordinates : op.route.coordinates;
-      const path = coords.map(([lng, lat]) => ({ lat, lng }));
+      const path = coords.map(([lng, lat]: [number, number]) => ({ lat, lng }));
       gpolylinesRef.current.push(new google.maps.Polyline({ path, map, strokeColor: "#067647", strokeWeight: 2, strokeOpacity: 0.85 }));
     });
 

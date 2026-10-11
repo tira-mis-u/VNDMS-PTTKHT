@@ -16,7 +16,7 @@
  *      mùa cũng thành "áp thấp nhiệt đới".
  *
  * ─── TIÊU CHÍ CỦA PHIÊN BẢN NÀY ───────────────────────────────────────────
- * Một tâm chỉ được công nhận khi thoả ĐỒNG THỜI:
+ * Một tâm chỉ được công nhận khi thỏa ĐỒNG THỜI:
  *   (a) nằm trên biển (lọc theo cao độ điểm lưới do API trả về);
  *   (b) là cực tiểu khí áp cục bộ và p ≤ 1004 hPa;
  *   (c) ĐỘ HỤT KHÍ ÁP so với môi trường xung quanh (vành 3–6°) ≥ 4 hPa —

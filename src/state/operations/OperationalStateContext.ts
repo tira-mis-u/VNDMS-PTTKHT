@@ -84,6 +84,9 @@ export interface OperationalStore {
   users: AuthUser[];
   securityAuditEvents: SecurityAuditEvent[];
   role: UserRole;
+  persistenceMode: "supabase" | "demo";
+  persistenceError: string | null;
+  lastSyncAt: string | null;
   can: (
     permission: Permission,
     resourceScope?: string,

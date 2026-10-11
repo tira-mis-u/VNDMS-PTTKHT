@@ -44,7 +44,6 @@
     "src/domain/evacuations/**",
     "src/domain/ai/**",
     "src/data/scenarios/**/playbookSeed.ts",
-    "src/data/scenarios/**/shelterEvacuationSeed.ts",
     "src/features/command-center/components/LogisticsExceptions.tsx",
     "src/features/command-center/components/PlaybookOperations.tsx",
     "src/features/command-center/components/RecoveryExceptions.tsx",

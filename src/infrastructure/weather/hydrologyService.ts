@@ -21,7 +21,7 @@
  * được số liệu trạm thuỷ văn quốc gia thì thay nguồn tại đúng chỗ này.
  */
 
-/** Điểm lấy dữ liệu: toạ độ đã dò để rơi đúng ô lưới sông của GloFAS. */
+/** Điểm lấy dữ liệu: tọa độ đã dò để rơi đúng ô lưới sông của GloFAS. */
 export const HYDRO_STATIONS: Array<{
   id: string;
   river: string;
@@ -183,7 +183,7 @@ function unavailable(reason: string): HydrologySnapshot {
 
 /**
  * Lấy dữ liệu mưa + dòng chảy cho toàn bộ lưu vực theo dõi.
- * Hai lời gọi mạng cho toàn bộ 13 điểm (Open-Meteo nhận danh sách toạ độ),
+ * Hai lời gọi mạng cho toàn bộ 13 điểm (Open-Meteo nhận danh sách tọa độ),
  * kết quả cache 30 phút cho cả phiên làm việc.
  */
 export async function fetchHydrologyData(force = false): Promise<HydrologySnapshot> {

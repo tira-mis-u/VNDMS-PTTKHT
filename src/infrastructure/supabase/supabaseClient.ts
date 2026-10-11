@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { LEGACY_ROLE_MAP } from "@/domain/shared/auth";
-import type { AuthUser, GeographicScope } from "@/domain/auth/types";
+import { LEGACY_ROLE_MAP } from "../../domain/shared/auth";
+import type { AuthUser, GeographicScope } from "../../domain/auth/types";
 
 function normalizeSupabaseUrl(rawUrl?: string): string {
   if (!rawUrl) return "";
@@ -21,9 +21,34 @@ function normalizeSupabaseUrl(rawUrl?: string): string {
   return "";
 }
 
-const rawSupabaseUrl = (import.meta.env?.VITE_SUPABASE_URL as string | undefined)?.trim();
+function getEnvVar(key: string): string {
+  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) {
+    return String(import.meta.env[key]).trim();
+  }
+  const proc = (globalThis as unknown as { process?: { env?: Record<string, string | undefined>; getBuiltinModule?: (m: string) => any } }).process;
+  if (proc?.env?.[key]) {
+    return String(proc.env[key]).trim();
+  }
+  if (proc && typeof proc.getBuiltinModule === "function") {
+    try {
+      const fs = proc.getBuiltinModule("fs");
+      if (fs && fs.existsSync && fs.existsSync(".env")) {
+        const content = fs.readFileSync(".env", "utf8");
+        const match = content.match(new RegExp(`^${key}=(.*)$`, "m"));
+        if (match && match[1]) {
+          const val = match[1].trim();
+          if (proc.env) proc.env[key] = val;
+          return val;
+        }
+      }
+    } catch {}
+  }
+  return "";
+}
+
+const rawSupabaseUrl = getEnvVar("VITE_SUPABASE_URL");
 export const supabaseUrl = normalizeSupabaseUrl(rawSupabaseUrl);
-const supabaseAnonKey = (import.meta.env?.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim();
+const supabaseAnonKey = getEnvVar("VITE_SUPABASE_ANON_KEY");
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&

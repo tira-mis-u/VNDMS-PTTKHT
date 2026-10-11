@@ -246,12 +246,12 @@ export function LiveTrackingQuickBar() {
       setIsBeaconActive(true);
       flashMessage(
         scope === null
-          ? "Đã BẬT phát tín hiệu định vị Realtime. Vị trí của bạn đang được truyền lên hệ thống."
+          ? "Đã BẬT phát tín hiệu định vị thời gian thực. Vị trí của bạn đang được truyền lên hệ thống."
           : `Đã BẬT phát định vị — chỉ ${scope.length} người được chỉ định thấy vị trí của bạn.`,
       );
       recordSecurityAudit(
         "LIVE_BEACON_TOGGLED",
-        `Tài khoản ${currentUser.displayName} (@${currentUser.username}) đã BẬT phát định vị Realtime (GPS Beacon)${scope === null ? "" : `, giới hạn ${scope.length} người được thấy`}.`,
+        `Tài khoản ${currentUser.displayName} (@${currentUser.username}) đã BẬT phát định vị thời gian thực${scope === null ? "" : `, giới hạn ${scope.length} người được thấy`}.`,
         "LiveBeacon",
         currentUser.id,
       );
@@ -270,7 +270,7 @@ export function LiveTrackingQuickBar() {
     flashMessage("Đã TẮT phát tín hiệu định vị.");
     recordSecurityAudit(
       "LIVE_BEACON_TOGGLED",
-      `Tài khoản ${currentUser?.displayName} (@${currentUser?.username}) đã TẮT phát định vị Realtime.`,
+      `Tài khoản ${currentUser?.displayName} (@${currentUser?.username}) đã TẮT phát định vị thời gian thực.`,
       "LiveBeacon",
       currentUser?.id,
     );
@@ -508,7 +508,7 @@ export function LiveTrackingQuickBar() {
             <header className="tracking-modal-header">
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <Radio size={20} color="#2563eb" />
-                <h3>Phân biệt: Phát tín hiệu SOS vs. Phát định vị Realtime</h3>
+                <h3>Phân biệt: Phát tín hiệu SOS khẩn cấp và Phát định vị thời gian thực</h3>
               </div>
               <button type="button" className="close-btn" onClick={() => setInfoModalOpen(false)}>
                 <X size={18} />
@@ -519,7 +519,7 @@ export function LiveTrackingQuickBar() {
               <div className="mode-explain-card panic">
                 <div className="mode-explain-title">
                   <AlertTriangle size={20} color="#dc2626" />
-                  <h4>1. Phát tín hiệu SOS (SOS Panic)</h4>
+                  <h4>1. Phát tín hiệu SOS khẩn cấp</h4>
                 </div>
                 <p>
                   Dành cho tình huống <b>nguy cấp, cần cứu nạn khẩn</b> (mắc kẹt do lũ quét, sự cố sạt lở đe dọa tính mạng).
@@ -534,13 +534,13 @@ export function LiveTrackingQuickBar() {
               <div className="mode-explain-card beacon">
                 <div className="mode-explain-title">
                   <Radio size={20} color="#16a34a" />
-                  <h4>2. Phát tín hiệu định vị Realtime (Live GPS Beacon)</h4>
+                  <h4>2. Phát định vị thời gian thực (Định vị trực tiếp)</h4>
                 </div>
                 <p>
                   Dành cho chế độ <b>giám sát hành trình, phối hợp tác chiến liên tục</b>.
                 </p>
                 <ul>
-                  <li>Bật nút gạt: vị trí GPS được truyền liên tục theo thời gian thực vào Redis.</li>
+                  <li>Bật nút gạt: vị trí GPS được truyền liên tục theo thời gian thực vào hệ thống.</li>
                   <li>Chọn ai được thấy: mọi cán bộ được phân quyền, hoặc chỉ những người bạn chỉ định.</li>
                   <li>Hiển thị biểu tượng di chuyển trực tiếp trên Bản đồ tác nghiệp thống nhất.</li>
                   <li>Thích hợp cho Chỉ huy điều phối, Đội viên cơ động thực địa và Công dân đang di chuyển sơ tán.</li>

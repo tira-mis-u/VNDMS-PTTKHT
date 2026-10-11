@@ -1277,7 +1277,7 @@ export function UnifiedMapCanvas({
       const popup = new Popup({ offset: 16, closeButton: false }).setHTML(`
         <div style="padding: 2px 2px 0; font-size: 12px; line-height: 1.4;">
           <b style="color: ${ping.isPanicSOS ? 'var(--danger-fg)' : 'var(--primary)'}; display: block; font-size: 13px;">
-            ${ping.isPanicSOS ? ' PHÁT TÍN HIỆU SOS' : ' Tín hiệu định vị Realtime'}
+            ${ping.isPanicSOS ? ' PHÁT TÍN HIỆU SOS' : ' Tín hiệu định vị thời gian thực'}
           </b>
           <div><b>Họ tên:</b> ${escapeHtml(ping.name)}</div>
           <div><b>Vai trò:</b> ${escapeHtml(ping.role)}</div>

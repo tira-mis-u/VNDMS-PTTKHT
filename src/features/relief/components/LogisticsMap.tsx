@@ -2,8 +2,8 @@ import { useEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Building2, MapPin } from "lucide-react";
 import { Marker } from "maplibre-gl";
-import type { DistributionShipment, ReliefRequest, Warehouse } from "@/domain/relief/types";
-import { useDualMapEngine, MapEngineBadge } from "@/infrastructure/gis/useDualMapEngine";
+import type { DistributionShipment, ReliefRequest, Warehouse } from "../../../domain/relief/types";
+import { useDualMapEngine, MapEngineBadge } from "../../../infrastructure/gis/useDualMapEngine";
 
 export function LogisticsMap({
   warehouses,
@@ -24,7 +24,7 @@ export function LogisticsMap({
     center,
     zoom: request ? 11 : 10,
     seaLabelPrefix: "relief",
-    onMapLibreLoad(map) {
+    onMapLibreLoad(map: any) {
       warehouses.forEach((warehouse) => {
         const el = document.createElement("button");
         el.className = "map-marker map-marker-warehouse";
@@ -91,7 +91,7 @@ export function LogisticsMap({
 
     shipments.forEach((shipment) => {
       if (shipment.routeCoordinates.length < 2) return;
-      const path = shipment.routeCoordinates.map(([lng, lat]) => ({ lat, lng }));
+      const path = shipment.routeCoordinates.map(([lng, lat]: [number, number]) => ({ lat, lng }));
       gpolylinesRef.current.push(new google.maps.Polyline({
         path, map,
         strokeColor: shipment.status === "Có sự cố" ? "#b42318" : "#285f89",

@@ -10,6 +10,7 @@ import {
   type UserRole,
 } from "../../domain/shared/auth";
 import { demoCredentials, demoUsers } from "./demoUsers";
+import { isSupabaseConfigured, supabase } from "../supabase/supabaseClient";
 export interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -262,6 +263,15 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
       lastValidatedAt: issued.toISOString(),
     };
     this.storage.setItem(SESSION_KEY, JSON.stringify(session));
+
+    // Đồng bộ phiên Supabase Auth khi có kết nối
+    if (isSupabaseConfigured && supabase) {
+      const email = `${user.username.trim().toLowerCase()}@vndms.gov.vn`;
+      supabase.auth.signInWithPassword({ email, password }).catch((err) => {
+        console.warn("[VNDMS/Auth] Phiên Supabase Auth (chưa đồng bộ hoặc mật khẩu cloud khác):", err?.message);
+      });
+    }
+
     return { user: structuredClone(user), session };
   }
   async register(input: import("../../domain/auth/types").RegisterInput) {
@@ -411,6 +421,9 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
   }
   logout() {
     this.storage.removeItem(SESSION_KEY);
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.signOut().catch(() => {});
+    }
   }
   listUsers() {
     return safeUsers(this.storage);

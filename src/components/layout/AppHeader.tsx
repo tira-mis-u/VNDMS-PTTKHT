@@ -13,6 +13,7 @@ import {
 import { Avatar, Button } from "@/components/ui";
 import { initials, roleLabels } from "@/domain/auth/labels";
 import { DataFreshnessChip } from "./DataFreshnessChip";
+import { DatabasePersistenceChip } from "./DatabasePersistenceChip";
 import { useOperationalState } from "@/state/operations/OperationalStateContext";
 import {
   AlertNotificationBell,
@@ -109,6 +110,7 @@ export function AppHeader({
         </div>
       </div>
       <div className="topbar-actions">
+        <DatabasePersistenceChip />
         <DataFreshnessChip />
         <LiveTrackingQuickBar />
         <div className="topbar-divider" />

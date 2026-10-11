@@ -3,10 +3,10 @@ import { useEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Building2, Hammer, MapPin, ShieldCheck } from "lucide-react";
 import { Marker } from "maplibre-gl";
-import type { DamageAssessment, RecoveryProject } from "@/domain/recovery/types";
-import type { Incident } from "@/domain/incidents/types";
-import type { RescueTeam } from "@/domain/teams/types";
-import { useDualMapEngine, MapEngineBadge } from "@/infrastructure/gis/useDualMapEngine";
+import type { DamageAssessment, RecoveryProject } from "../../../domain/recovery/types";
+import type { Incident } from "../../../domain/incidents/types";
+import type { RescueTeam } from "../../../domain/teams/types";
+import { useDualMapEngine, MapEngineBadge } from "../../../infrastructure/gis/useDualMapEngine";
 
 export default function RecoveryOperationalMap({
   assessments,
@@ -31,7 +31,7 @@ export default function RecoveryOperationalMap({
     center,
     zoom: 12,
     seaLabelPrefix: "recovery",
-    onMapLibreLoad(map) {
+    onMapLibreLoad(map: any) {
       const addMLMarker = (coords: [number, number], className: string, title: string, node: React.ReactNode) => {
         const el = document.createElement("button");
         el.className = `recovery-map-marker ${className}`;
@@ -78,7 +78,7 @@ export default function RecoveryOperationalMap({
 
     assessments.forEach((item) => {
       const isSevere = item.severity === "Phá hủy" || item.severity === "Nghiêm trọng";
-      const paths = item.affectedAreaCoordinates.map(([lng, lat]) => ({ lat, lng }));
+      const paths = item.affectedAreaCoordinates.map(([lng, lat]: [number, number]) => ({ lat, lng }));
       const polygon = new google.maps.Polygon({ paths, map, strokeColor: isSevere ? "#b42318" : "#dc6803", strokeWeight: 2, fillColor: isSevere ? "#d92d20" : "#f79009", fillOpacity: 0.12 });
       gpolygonsRef.current.push(polygon);
       addM(item.location.coordinates, "#667085", `${item.code} — ${item.area}`);

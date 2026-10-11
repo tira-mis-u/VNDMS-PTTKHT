@@ -25,8 +25,8 @@ const auditActionLabels: Record<string, string> = {
   USER_ROLE_CHANGED: "Thay đổi vai trò",
   USER_SCOPE_CHANGED: "Thay đổi phạm vi địa bàn",
   ROLE_MODEL_MIGRATED: "Chuyển đổi mô hình vai trò (V2)",
-  PANIC_ALERT_TRIGGERED: "Phát tín hiệu SOS (SOS Panic)",
-  LIVE_BEACON_TOGGLED: "Bật/Tắt phát định vị Realtime",
+  PANIC_ALERT_TRIGGERED: "Phát tín hiệu SOS khẩn cấp",
+  LIVE_BEACON_TOGGLED: "Bật/Tắt phát định vị thời gian thực",
 };
 const auditResultLabels: Record<string, string> = {
   SUCCESS: "Thành công",

@@ -145,6 +145,17 @@ test("session malformed được loại bỏ an toàn", () => {
   assert.equal(result.valid, false);
   assert.match(result.reason, /không hợp lệ/);
 });
+test("Cloud mode never restores a local cached session as proof of identity", () => {
+  const storage = new MemoryStorage();
+  storage.setItem("vndms.auth.session.v5", JSON.stringify({
+    id: "SES-forged", token: "forged", userId: "USR-CMD-001",
+    issuedAt: "2026-08-21T03:45:00.000Z", expiresAt: "2026-08-21T11:45:00.000Z",
+    lastValidatedAt: "2026-08-21T03:45:00.000Z",
+  }));
+  const restored = new LocalAuthenticationAdapter(storage, clock(), () => "token", true).restoreSession();
+  assert.equal(restored.valid, false);
+  assert.equal(storage.getItem("vndms.auth.session.v5"), null);
+});
 test("tài khoản chuyển sang công dân (minhtri, namanh) vẫn đăng nhập với mật khẩu cũ", async () => {
   for (const [username, id] of [["minhtri", "USR-RSM-001"], ["namanh", "USR-WHS-001"], ["phamdam", "USR-LOC-001"], ["trantuan", "USR-CTZ-001"]] as const) {
     const adapter = new LocalAuthenticationAdapter(new MemoryStorage(), clock(), () => "token");

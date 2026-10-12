@@ -6,6 +6,7 @@ import type {
 import type {
   IncidentTask,
   TaskPriority,
+  TaskReview,
   TaskStatus,
   TaskUpdate,
 } from "../../domain/tasks/types";
@@ -76,7 +77,7 @@ import {
   verifySos as applySosVerification,
   type NewSosInput,
 } from "../../application/sos/sosUseCases";
-import type { SosLocation, SosPriority } from "../../domain/sos/types";
+import type { SosLocation, SosPriority, SosRequest } from "../../domain/sos/types";
 import type { Permission } from "../../lib/permissions/permissions";
 import { hasPermission } from "../../lib/permissions/permissions";
 import { authorizeResources } from "../../lib/security/authorization";
@@ -97,8 +98,10 @@ import type { DerivedAlert } from "../../domain/alerts/types";
 import { createAuthorizedOperationalView } from "../../application/authorization/authorizedOperationalView";
 import { createOperationalResourceContext } from "../../application/authorization/operationalResourceContext";
 import { createOperationalTimeline } from "../../application/operations/operationalTimeline";
+import { createEmptyOperationalSnapshot } from "../../application/operations/operationalSnapshot";
 import { inMemoryOperationalRepository } from "../../infrastructure/persistence/inMemoryOperationalRepository";
 import { supabaseOperationalRepository } from "../../infrastructure/persistence/supabaseOperationalRepository";
+import { isExplicitDemoMode } from "../../infrastructure/supabase/supabaseClient";
 import {
   appendSystemDutyEntry,
   type DutyLink,
@@ -110,7 +113,9 @@ import { useAtomicOperationalState } from "./useAtomicOperationalState";
 import { useOperationalSecurity } from "./useOperationalSecurity";
 
 export function OperationalProvider({ children }: { children: ReactNode }) {
-  const [persistenceMode, setPersistenceMode] = useState<"supabase" | "demo">("demo");
+  const [persistenceMode, setPersistenceMode] = useState<"supabase" | "demo" | "unavailable">(
+    isExplicitDemoMode ? "demo" : "unavailable",
+  );
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
 
@@ -159,7 +164,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setPublishedAlertEvents,
     currentOperationalSnapshot,
     executeAtomic,
-  } = useAtomicOperationalState(inMemoryOperationalRepository.load());
+  } = useAtomicOperationalState(
+    isExplicitDemoMode
+      ? inMemoryOperationalRepository.load()
+      : createEmptyOperationalSnapshot(),
+  );
 
   // Lưu bất đồng bộ kèm hoàn tác khi Supabase từ chối / lỗi mạng
   const saveWithRollback = useCallback(
@@ -191,11 +200,16 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     saveWithRollback(promise, label, rollback);
   };
 
-  // Bootstrap: tải snapshot từ Supabase sau khi mount và đồng bộ vào state.
-  const bootstrapDoneRef = useRef(false);
+  // Nạp snapshot từ Supabase sau khi mount và đồng bộ lại khi người dùng đăng nhập/đổi phiên
+  const lastLoadedUserRef = useRef<string | null>(null);
   useEffect(() => {
-    if (bootstrapDoneRef.current) return;
-    bootstrapDoneRef.current = true;
+    const currentUserId = currentUser?.id ?? null;
+    const currentToken = session?.token ?? null;
+    const userKey = `${currentUserId}:${currentToken}`;
+
+    if (lastLoadedUserRef.current === userKey) return;
+    lastLoadedUserRef.current = userKey;
+
     supabaseOperationalRepository
       .load()
       .then((snapshot) => {
@@ -210,7 +224,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         setPublishedAlerts(snapshot.publishedAlerts);
 
         const isLive = snapshot.metadata.source?.includes("Live");
-        setPersistenceMode(isLive ? "supabase" : "demo");
+        setPersistenceMode(isLive ? "supabase" : isExplicitDemoMode ? "demo" : "unavailable");
         if (!isLive) {
           setPersistenceError(snapshot.metadata.source ?? "Đang sử dụng dữ liệu mẫu nội bộ");
         } else {
@@ -221,11 +235,26 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       .catch((err) => {
         const msg = err?.message ?? String(err);
         console.warn("[VNDMS/Supabase] Không thể tải dữ liệu từ Supabase, chuyển sang chế độ dữ liệu mẫu nội bộ:", msg);
-        setPersistenceMode("demo");
-        setPersistenceError(`Chế độ dữ liệu mẫu nội bộ: Không thể kết nối Supabase (${msg})`);
+        setPersistenceMode(isExplicitDemoMode ? "demo" : "unavailable");
+        setPersistenceError(
+          isExplicitDemoMode
+            ? `Chế độ dữ liệu mẫu nội bộ: Không thể kết nối Supabase (${msg})`
+            : `Supabase Cloud không khả dụng; dữ liệu mẫu không được dùng thay thế (${msg})`,
+        );
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [
+    currentUser?.id,
+    session?.token,
+    setIncidents,
+    setTasks,
+    setTaskUpdates,
+    setTaskReviews,
+    setTeams,
+    setShelters,
+    setSosRequests,
+    setCitizenReports,
+    setPublishedAlerts,
+  ]);
   const now = () => currentOperationalSnapshot().metadata.asOf;
   const timeOnly = () => now().split(" ")[1] ?? now();
   const {
@@ -347,15 +376,17 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
   };
   const updateStatus = (id: string, status: IncidentStatus) => {
     enforcePermission("update", [incidentResource(id)]);
-    let updated: ReturnType<typeof changeIncidentStatus> | undefined;
+    const prevIncident = incidents.find((item) => item.id === id);
+    if (!prevIncident) return;
+    const updated = changeIncidentStatus(prevIncident, status, now());
     setIncidents((current) =>
-      current.map((item) => {
-        if (item.id !== id) return item;
-        updated = changeIncidentStatus(item, status, now());
-        return updated;
-      }),
+      current.map((item) => (item.id === id ? updated : item)),
     );
-    if (updated) fireAndForget(supabaseOperationalRepository.saveIncident(updated), `Incident ${id}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveIncident(updated),
+      `Incident ${id}`,
+      () => setIncidents((current) => current.map((item) => (item.id === id ? prevIncident : item))),
+    );
     pushEvent(
       id,
       `Chuyển trạng thái sự cố sang ${status.toUpperCase()}`,
@@ -365,15 +396,17 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
   };
   const updateSeverity = (id: string, severity: IncidentSeverity) => {
     enforcePermission("severity", [incidentResource(id)]);
-    let updated: ReturnType<typeof changeIncidentSeverity> | undefined;
+    const prevIncident = incidents.find((item) => item.id === id);
+    if (!prevIncident) return;
+    const updated = changeIncidentSeverity(prevIncident, severity, now());
     setIncidents((current) =>
-      current.map((item) => {
-        if (item.id !== id) return item;
-        updated = changeIncidentSeverity(item, severity, now());
-        return updated;
-      }),
+      current.map((item) => (item.id === id ? updated : item)),
     );
-    if (updated) fireAndForget(supabaseOperationalRepository.saveIncident(updated), `Incident ${id}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveIncident(updated),
+      `Incident ${id}`,
+      () => setIncidents((current) => current.map((item) => (item.id === id ? prevIncident : item))),
+    );
     pushEvent(
       id,
       `Cập nhật mức độ sự cố thành ${severity.toUpperCase()}`,
@@ -386,31 +419,45 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       [incidentResource(incidentId), teamResource(teamId)],
       "điều phối đội tới sự cố",
     );
-    setIncidents((current) =>
-      current.map((item) =>
-        item.id === incidentId
-          ? {
-              ...item,
-              assignedTeamId: teamId,
-              status: "Đang điều phối",
-              updatedAt: now(),
-            }
-          : item,
-      ),
-    );
-    setTeams((current) =>
-      current.map((team) =>
-        team.id === teamId
-          ? {
-              ...team,
-              status: "Đang điều động",
-              currentIncident: incidentId,
-              availability: "Đang bận",
-              updatedAt: now(),
-            }
-          : team,
-      ),
-    );
+    const prevIncident = incidents.find((item) => item.id === incidentId);
+    const prevTeam = teams.find((item) => item.id === teamId);
+    const updatedIncident = prevIncident
+      ? {
+          ...prevIncident,
+          assignedTeamId: teamId,
+          status: "Đang điều phối" as const,
+          updatedAt: now(),
+        }
+      : null;
+    const updatedTeam = prevTeam
+      ? {
+          ...prevTeam,
+          status: "Đang điều động" as const,
+          currentIncident: incidentId,
+          availability: "Đang bận" as const,
+          updatedAt: now(),
+        }
+      : null;
+    if (updatedIncident) {
+      setIncidents((current) =>
+        current.map((item) => (item.id === incidentId ? updatedIncident : item)),
+      );
+      fireAndForget(
+        supabaseOperationalRepository.saveIncident(updatedIncident),
+        `Incident ${incidentId}`,
+        prevIncident ? () => setIncidents((cur) => cur.map((it) => it.id === incidentId ? prevIncident : it)) : undefined,
+      );
+    }
+    if (updatedTeam) {
+      setTeams((current) =>
+        current.map((team) => (team.id === teamId ? updatedTeam : team)),
+      );
+      fireAndForget(
+        supabaseOperationalRepository.saveTeam(updatedTeam),
+        `Team ${teamId}`,
+        prevTeam ? () => setTeams((cur) => cur.map((it) => it.id === teamId ? prevTeam : it)) : undefined,
+      );
+    }
     pushEvent(
       incidentId,
       `Đã điều phối ${teamId} phụ trách sự cố`,
@@ -454,13 +501,17 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       `Task ${id}`,
       () => setTasks((current) => current.filter((item) => item.id !== id)),
     );
-    if (data.teamId) {
+    if (data.teamId && team) {
+      const assignedTeam = assignTeamToOperation(team, id, data.incidentId, now());
       setTeams((current) =>
         current.map((item) =>
-          item.id === data.teamId
-            ? assignTeamToOperation(item, id, data.incidentId, now())
-            : item,
+          item.id === data.teamId ? assignedTeam : item,
         ),
+      );
+      fireAndForget(
+        supabaseOperationalRepository.saveTeam(assignedTeam),
+        `Team ${data.teamId}`,
+        () => setTeams((current) => current.map((item) => item.id === data.teamId ? team : item)),
       );
       pushTeamEvent(data.teamId, `Nhận phân công nhiệm vụ ${id}`, "assignment");
     }
@@ -505,28 +556,55 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     };
     const next = tasks.map((item) => (item.id === taskId ? assigned : item));
     setTasks(next);
-    fireAndForget(supabaseOperationalRepository.saveTask(assigned), `Task ${taskId}`);
-    setTeams((current) =>
-      current.map((item) => {
-        if (item.id === teamId)
-          return assignTeamToOperation(item, taskId, task.incidentId, now());
-        if (task.teamId && task.teamId !== teamId && item.id === task.teamId)
-          return recalculateTeamAssignment(item, next, now());
-        return item;
-      }),
+    fireAndForget(
+      supabaseOperationalRepository.saveTask(assigned),
+      `Task ${taskId}`,
+      () => setTasks((current) => current.map((item) => item.id === taskId ? task : item)),
     );
+    const nextTeams = teams.map((item) => {
+      if (item.id === teamId)
+        return assignTeamToOperation(item, taskId, task.incidentId, now());
+      if (task.teamId && task.teamId !== teamId && item.id === task.teamId)
+        return recalculateTeamAssignment(item, next, now());
+      return item;
+    });
+    setTeams(nextTeams);
+    const assignedTeamEntity = nextTeams.find((item) => item.id === teamId);
+    if (assignedTeamEntity) {
+      fireAndForget(
+        supabaseOperationalRepository.saveTeam(assignedTeamEntity),
+        `Team ${teamId}`,
+        () => setTeams((current) => current.map((item) => item.id === teamId ? team : item)),
+      );
+    }
+    if (task.teamId && task.teamId !== teamId) {
+      const prevTeam = teams.find((item) => item.id === task.teamId);
+      const prevTeamEntity = nextTeams.find((item) => item.id === task.teamId);
+      if (prevTeamEntity) {
+        fireAndForget(
+          supabaseOperationalRepository.saveTeam(prevTeamEntity),
+          `Team ${prevTeamEntity.id}`,
+          prevTeam ? () => setTeams((current) => current.map((item) => item.id === task.teamId ? prevTeam : item)) : undefined,
+        );
+      }
+    }
     pushTeamEvent(
       teamId,
       `Được điều phối cho nhiệm vụ ${taskId}`,
       "assignment",
     );
-    setIncidents((current) =>
-      current.map((item) =>
-        item.id === task.incidentId && !item.assignedTeamId
-          ? { ...item, assignedTeamId: teamId, updatedAt: now() }
-          : item,
-      ),
-    );
+    const incident = incidents.find((item) => item.id === task.incidentId);
+    if (incident && !incident.assignedTeamId) {
+      const updatedIncident = { ...incident, assignedTeamId: teamId, updatedAt: now() };
+      setIncidents((current) =>
+        current.map((item) => item.id === task.incidentId ? updatedIncident : item),
+      );
+      fireAndForget(
+        supabaseOperationalRepository.saveIncident(updatedIncident),
+        `Incident ${task.incidentId}`,
+        () => setIncidents((current) => current.map((item) => item.id === task.incidentId ? incident : item)),
+      );
+    }
     pushEvent(
       task.incidentId,
       `Đã điều phối ${teamId} cho nhiệm vụ ${taskId}`,
@@ -556,20 +634,33 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       item.id === taskId ? transitioned : item,
     );
     setTasks(next);
-    fireAndForget(supabaseOperationalRepository.saveTask(transitioned), `Task ${taskId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveTask(transitioned),
+      `Task ${taskId}`,
+      () => setTasks((current) => current.map((item) => item.id === taskId ? task : item)),
+    );
     syncIncidentProgress(task.incidentId, next);
     advanceIncidentOnTaskEngagement(task.incidentId, next, taskId);
-    if (task.teamId) {
-      setTeams((current) =>
-        current.map((team) => {
-          if (team.id !== task.teamId) return team;
-          if (status === "Đã tiếp nhận" || status === "Đang thực hiện")
-            return recalculateTeamAssignment(team, next, now());
-          if (status === "Hoàn thành" || status === "Đã hủy")
-            return recalculateTeamAssignment(team, next, now());
-          return team;
-        }),
+    const updatedIncident = incidents.find((it) => it.id === task.incidentId);
+    if (updatedIncident) {
+      fireAndForget(
+        supabaseOperationalRepository.saveIncident(updatedIncident),
+        `Incident ${task.incidentId}`,
       );
+    }
+    if (task.teamId) {
+      const team = teams.find((item) => item.id === task.teamId);
+      if (team) {
+        const nextTeam = recalculateTeamAssignment(team, next, now());
+        setTeams((current) =>
+          current.map((t) => (t.id === task.teamId ? nextTeam : t)),
+        );
+        fireAndForget(
+          supabaseOperationalRepository.saveTeam(nextTeam),
+          `Team ${task.teamId}`,
+          () => setTeams((current) => current.map((t) => t.id === task.teamId ? team : t)),
+        );
+      }
       pushTeamEvent(
         task.teamId,
         `${taskId} chuyển sang ${status.toUpperCase()}`,
@@ -587,12 +678,18 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const linkedSos = sosRequests.find((item) => item.linkedTaskId === taskId);
     if (linkedSos) {
       if (status === "Đang thực hiện") {
+        const changedSos = linkedSos.status === "Đã điều phối"
+          ? transitionSos(linkedSos, "Đang cứu hộ", now())
+          : linkedSos;
         setSosRequests((current) =>
           current.map((item) =>
-            item.id === linkedSos.id && item.status === "Đã điều phối"
-              ? transitionSos(item, "Đang cứu hộ", now())
-              : item,
+            item.id === linkedSos.id ? changedSos : item,
           ),
+        );
+        fireAndForget(
+          supabaseOperationalRepository.saveSosRequest(changedSos),
+          `SOS ${linkedSos.id}`,
+          () => setSosRequests((cur) => cur.map((it) => it.id === linkedSos.id ? linkedSos : it)),
         );
         pushSosEvent(
           linkedSos.id,
@@ -601,17 +698,22 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
           task.teamId || actorName,
         );
       } else if (status === "Hoàn thành") {
+        const changedSos = ["Đang cứu hộ", "Đã điều phối"].includes(linkedSos.status)
+          ? applySosResolution(
+              linkedSos,
+              `Nhiệm vụ ${taskId} hoàn thành, người yêu cầu đã được hỗ trợ.`,
+              now(),
+            )
+          : linkedSos;
         setSosRequests((current) =>
           current.map((item) =>
-            item.id === linkedSos.id &&
-            ["Đang cứu hộ", "Đã điều phối"].includes(item.status)
-              ? applySosResolution(
-                  item,
-                  `Nhiệm vụ ${taskId} hoàn thành, người yêu cầu đã được hỗ trợ.`,
-                  now(),
-                )
-              : item,
+            item.id === linkedSos.id ? changedSos : item,
           ),
+        );
+        fireAndForget(
+          supabaseOperationalRepository.saveSosRequest(changedSos),
+          `SOS ${linkedSos.id}`,
+          () => setSosRequests((cur) => cur.map((it) => it.id === linkedSos.id ? linkedSos : it)),
         );
         pushSosEvent(
           linkedSos.id,
@@ -619,18 +721,22 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
           "resolved",
         );
       } else if (status === "Đã hủy") {
+        const changedSos: SosRequest = {
+          ...linkedSos,
+          status: "Đã xác minh",
+          linkedTaskId: null,
+          assignedTeamId: null,
+          lastUpdatedAt: now(),
+        };
         setSosRequests((current) =>
           current.map((item) =>
-            item.id === linkedSos.id
-              ? {
-                  ...item,
-                  status: "Đã xác minh",
-                  linkedTaskId: null,
-                  assignedTeamId: null,
-                  lastUpdatedAt: now(),
-                }
-              : item,
+            item.id === linkedSos.id ? changedSos : item,
           ),
+        );
+        fireAndForget(
+          supabaseOperationalRepository.saveSosRequest(changedSos),
+          `SOS ${linkedSos.id}`,
+          () => setSosRequests((cur) => cur.map((it) => it.id === linkedSos.id ? linkedSos : it)),
         );
         pushSosEvent(
           linkedSos.id,
@@ -798,21 +904,27 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
       current.map((item) => (item.id === teamId ? changed : item)),
     );
     fireAndForget(supabaseOperationalRepository.saveTeam(changed), `Team ${teamId}`);
-    if (input.leader !== team.leader)
-      setTasks((current) =>
-        current.map((task) =>
-          task.teamId === teamId &&
-          !["Hoàn thành", "Đã hủy"].includes(task.status)
-            ? {
-                ...task,
-                teamLeader: input.leader,
-                assignee:
-                  task.assignee === team.leader ? input.leader : task.assignee,
-                updatedAt: now(),
-              }
-            : task,
-        ),
-      );
+    if (input.leader !== team.leader) {
+      const updatedTasks = tasks
+        .filter((task) => task.teamId === teamId && !["Hoàn thành", "Đã hủy"].includes(task.status))
+        .map((task) => ({
+          ...task,
+          teamLeader: input.leader,
+          assignee: task.assignee === team.leader ? input.leader : task.assignee,
+          updatedAt: now(),
+        }));
+      if (updatedTasks.length > 0) {
+        setTasks((current) =>
+          current.map((task) => {
+            const matched = updatedTasks.find((u) => u.id === task.id);
+            return matched ?? task;
+          }),
+        );
+        for (const ut of updatedTasks) {
+          fireAndForget(supabaseOperationalRepository.saveTask(ut), `Task ${ut.id}`);
+        }
+      }
+    }
     pushTeamEvent(
       teamId,
       "Cập nhật hồ sơ và phạm vi hoạt động của đội",
@@ -861,13 +973,14 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
           item.teamId !== teamId &&
           !["Hoàn thành", "Đã hủy"].includes(item.status),
       )?.teamId ?? null;
-    setIncidents((current) =>
-      current.map((item) =>
-        item.id === task.incidentId && item.assignedTeamId === teamId
-          ? { ...item, assignedTeamId: replacementTeam, updatedAt: now() }
-          : item,
-      ),
-    );
+    const targetIncident = incidents.find((item) => item.id === task.incidentId && item.assignedTeamId === teamId);
+    if (targetIncident) {
+      const updatedInc = { ...targetIncident, assignedTeamId: replacementTeam, updatedAt: now() };
+      setIncidents((current) =>
+        current.map((item) => (item.id === task.incidentId ? updatedInc : item)),
+      );
+      fireAndForget(supabaseOperationalRepository.saveIncident(updatedInc), `Incident ${task.incidentId}`);
+    }
     pushTeamEvent(
       teamId,
       `Kết thúc điều phối và gỡ khỏi nhiệm vụ ${task.id}`,
@@ -898,7 +1011,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setShelters((current) =>
       current.map((item) => (item.id === shelterId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveShelter(changed), `Shelter ${shelterId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveShelter(changed),
+      `Shelter ${shelterId}`,
+      () => setShelters((current) => current.map((item) => item.id === shelterId ? shelter : item)),
+    );
     pushShelterEvent(
       shelterId,
       `Cập nhật sức chứa ${capacity} chỗ, dự phòng ${reservedCapacity} chỗ`,
@@ -913,7 +1030,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setShelters((current) =>
       current.map((item) => (item.id === shelterId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveShelter(changed), `Shelter ${shelterId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveShelter(changed),
+      `Shelter ${shelterId}`,
+      () => setShelters((current) => current.map((item) => item.id === shelterId ? shelter : item)),
+    );
     pushShelterEvent(
       shelterId,
       `Cập nhật số người đang tiếp nhận: ${occupancy}`,
@@ -932,7 +1053,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setShelters((current) =>
       current.map((item) => (item.id === shelterId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveShelter(changed), `Shelter ${shelterId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveShelter(changed),
+      `Shelter ${shelterId}`,
+      () => setShelters((current) => current.map((item) => item.id === shelterId ? shelter : item)),
+    );
     pushShelterEvent(
       shelterId,
       open ? "Mở điểm sơ tán để tiếp nhận" : "Tạm đóng điểm sơ tán",
@@ -951,7 +1076,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setShelters((current) =>
       current.map((item) => (item.id === shelterId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveShelter(changed), `Shelter ${shelterId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveShelter(changed),
+      `Shelter ${shelterId}`,
+      () => setShelters((current) => current.map((item) => item.id === shelterId ? shelter : item)),
+    );
     pushShelterEvent(
       shelterId,
       "Cập nhật điều kiện vận hành và nguồn lực",
@@ -967,7 +1096,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changed),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(sosId, "Hoàn tất xác minh thông tin SOS", "verified");
     logDutySystem(`Xác minh SOS ${sosId}`, { kind: "sos", id: sosId, code: sosId });
   };
@@ -979,7 +1112,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changed),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(sosId, "Từ chối SOS sau xác minh", "rejected");
     logDutySystem(`Từ chối SOS ${sosId} sau xác minh`, { kind: "sos", id: sosId, code: sosId });
   };
@@ -995,7 +1132,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changed),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(sosId, `Liên kết với sự cố ${incidentId}`, "incident");
     pushEvent(
       incidentId,
@@ -1023,10 +1164,14 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
           : item,
       ),
     );
+    const updatedSos = applySosIncident(sos, id, now());
     setSosRequests((current) =>
-      current.map((item) =>
-        item.id === sosId ? applySosIncident(item, id, now()) : item,
-      ),
+      current.map((item) => (item.id === sosId ? updatedSos : item)),
+    );
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(updatedSos),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
     );
     pushSosEvent(sosId, `Tạo và liên kết sự cố ${id}`, "incident_created");
     pushEvent(
@@ -1059,14 +1204,15 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     if (sos.verificationStatus !== "Đã xác minh")
       throw new Error("Phải xác minh SOS trước khi điều phối.");
     const id = createTask(taskInputFromSos(sos, teamId));
+    const changedSos = linkSosTaskAndTeam(sos, id, teamId, now());
     setSosRequests((current) =>
-      current.map((item) =>
-        item.id === sosId ? linkSosTaskAndTeam(item, id, teamId, now()) : item,
-      ),
+      current.map((item) => (item.id === sosId ? changedSos : item)),
     );
-    // Persist updated SOS with linked task & team
-    const updatedSos = sosRequests.find((item) => item.id === sosId);
-    if (updatedSos) fireAndForget(supabaseOperationalRepository.saveSosRequest({ ...updatedSos, linkedTaskId: id, assignedTeamId: teamId }), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changedSos),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(sosId, `Tạo nhiệm vụ ${id} và giao cho ${teamId}`, "dispatch");
     return id;
   };
@@ -1078,7 +1224,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changed),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(sosId, `Điều chỉnh ưu tiên thành ${priority}`, "triage");
   };
   const updateSosLocation = (sosId: string, location: SosLocation) => {
@@ -1090,7 +1240,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changed),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(sosId, `Cập nhật vị trí: ${location.address}`, "location");
   };
   const addSosUpdate = (sosId: string, message: string) => {
@@ -1112,7 +1266,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changed),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(
       sosId,
       "Không thể liên lạc với người báo tin",
@@ -1168,7 +1326,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changed),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(sosId, `Đánh dấu đã xử lý: ${summary}`, "resolved");
     logDutySystem(`Xử lý xong SOS ${sosId}`, { kind: "sos", id: sosId, code: sosId });
   };
@@ -1180,7 +1342,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changed),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(
       sosId,
       "Hủy yêu cầu SOS theo quyết định điều hành",
@@ -1204,7 +1370,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changed),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(sosId, "Người gửi đã rút lại yêu cầu SOS", "cancelled");
     recordSecurityAudit(
       "OPERATIONAL_MUTATION",
@@ -1221,7 +1391,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setSosRequests((current) =>
       current.map((item) => (item.id === sosId ? changed : item)),
     );
-    fireAndForget(supabaseOperationalRepository.saveSosRequest(changed), `SOS ${sosId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveSosRequest(changed),
+      `SOS ${sosId}`,
+      () => setSosRequests((cur) => cur.map((it) => it.id === sosId ? sos : it)),
+    );
     pushSosEvent(sosId, "Xác nhận kết quả và đóng SOS", "closed");
     logDutySystem(`Đóng SOS ${sosId}`, { kind: "sos", id: sosId, code: sosId });
   };
@@ -1243,9 +1417,17 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const reported = reportTaskDoneEntity(task, now());
     const next = tasks.map((item) => (item.id === taskId ? reported : item));
     setTasks(next);
-    fireAndForget(supabaseOperationalRepository.saveTask(reported), `Task ${taskId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveTask(reported),
+      `Task ${taskId}`,
+      () => setTasks((cur) => cur.map((it) => it.id === taskId ? task : it)),
+    );
     setTaskReviews((current) => [review, ...current]);
-    fireAndForget(supabaseOperationalRepository.saveTaskReview(review), `TaskReview ${review.id}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveTaskReview(review),
+      `TaskReview ${review.id}`,
+      () => setTaskReviews((cur) => cur.filter((r) => r.id !== review.id)),
+    );
     advanceIncidentOnTaskEngagement(task.incidentId, next, taskId);
     pushTeamEvent(
       task.teamId,
@@ -1274,6 +1456,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setTaskReviews((current) =>
       current.map((r) => (r.id === decided.id ? decided : r)),
     );
+    fireAndForget(
+      supabaseOperationalRepository.saveTaskReview(decided),
+      `TaskReview ${decided.id}`,
+      () => setTaskReviews((cur) => cur.map((r) => r.id === pending.id ? pending : r)),
+    );
     if (accepted) {
       // Chấp nhận: đi qua transitionTask để đồng bộ đội, sự cố và SOS liên kết.
       transitionTask(taskId, "Hoàn thành");
@@ -1287,8 +1474,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     const rejected = reviewTaskResultEntity(task, false, now());
     const next = tasks.map((item) => (item.id === taskId ? rejected : item));
     setTasks(next);
-    fireAndForget(supabaseOperationalRepository.saveTask(rejected), `Task ${taskId}`);
-    fireAndForget(supabaseOperationalRepository.saveTaskReview(decided), `TaskReview ${decided.id}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveTask(rejected),
+      `Task ${taskId}`,
+      () => setTasks((cur) => cur.map((it) => it.id === taskId ? task : it)),
+    );
     syncIncidentProgress(task.incidentId, next);
     pushTeamEvent(
       task.teamId,
@@ -1323,44 +1513,72 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     );
     const next = tasks.map((item) => (item.id === taskId ? reassigned : item));
     setTasks(next);
-    fireAndForget(supabaseOperationalRepository.saveTask(reassigned), `Task ${taskId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveTask(reassigned),
+      `Task ${taskId}`,
+      () => setTasks((current) => current.map((item) => item.id === taskId ? task : item)),
+    );
     // Báo cáo đang chờ xác nhận (nếu có) không còn giá trị sau khi đổi đội.
-    setTaskReviews((current) =>
-      current.map((r) =>
-        r.taskId === taskId && r.decision === "Chờ xác nhận"
-          ? {
-              ...r,
-              decision: "Từ chối" as const,
-              reviewedBy: actorName,
-              reviewedAt: now(),
-              reviewNote: `Phân công lại cho ${teamId}: ${reason.trim()}`,
-            }
-          : r,
-      ),
+    const pendingReview = currentOperationalSnapshot().taskReviews.find(
+      (r) => r.taskId === taskId && r.decision === "Chờ xác nhận"
     );
-    setTeams((current) =>
-      current.map((item) => {
-        if (item.id === teamId)
-          return assignTeamToOperation(item, taskId, task.incidentId, now());
-        if (task.teamId && item.id === task.teamId)
-          return recalculateTeamAssignment(item, next, now());
-        return item;
-      }),
-    );
-    if (task.teamId)
+    if (pendingReview) {
+      const rejectedReview: TaskReview = {
+        ...pendingReview,
+        decision: "Từ chối",
+        reviewedBy: actorName,
+        reviewedAt: now(),
+        reviewNote: `Phân công lại cho ${teamId}: ${reason.trim()}`,
+      };
+      setTaskReviews((current) =>
+        current.map((r) => r.id === pendingReview.id ? rejectedReview : r)
+      );
+      fireAndForget(
+        supabaseOperationalRepository.saveTaskReview(rejectedReview),
+        `TaskReview ${rejectedReview.id}`,
+      );
+    }
+    const nextTeams = teams.map((item) => {
+      if (item.id === teamId)
+        return assignTeamToOperation(item, taskId, task.incidentId, now());
+      if (task.teamId && item.id === task.teamId)
+        return recalculateTeamAssignment(item, next, now());
+      return item;
+    });
+    setTeams(nextTeams);
+    const assignedTeamEntity = nextTeams.find((item) => item.id === teamId);
+    if (assignedTeamEntity) {
+      fireAndForget(
+        supabaseOperationalRepository.saveTeam(assignedTeamEntity),
+        `Team ${teamId}`,
+      );
+    }
+    if (task.teamId) {
+      const prevTeam = nextTeams.find((item) => item.id === task.teamId);
+      if (prevTeam) {
+        fireAndForget(
+          supabaseOperationalRepository.saveTeam(prevTeam),
+          `Team ${task.teamId}`,
+        );
+      }
       pushTeamEvent(
         task.teamId,
         `Được rút khỏi ${taskId} (phân công lại: ${reason.trim()})`,
         "assignment",
       );
+    }
     pushTeamEvent(teamId, `Nhận phân công lại nhiệm vụ ${taskId}`, "assignment");
-    setSosRequests((current) =>
-      current.map((item) =>
-        item.linkedTaskId === taskId
-          ? { ...item, assignedTeamId: teamId, lastUpdatedAt: now() }
-          : item,
-      ),
-    );
+    const linkedSos = sosRequests.find((item) => item.linkedTaskId === taskId);
+    if (linkedSos) {
+      const updatedSos = { ...linkedSos, assignedTeamId: teamId, lastUpdatedAt: now() };
+      setSosRequests((current) =>
+        current.map((item) => item.id === linkedSos.id ? updatedSos : item)
+      );
+      fireAndForget(
+        supabaseOperationalRepository.saveSosRequest(updatedSos),
+        `SOS ${linkedSos.id}`,
+      );
+    }
     pushEvent(
       task.incidentId,
       `Phân công lại ${taskId}: ${task.teamId || "chưa có đội"} → ${teamId}. Lý do: ${reason.trim()}`,
@@ -1424,7 +1642,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setCitizenReports((current) =>
       current.map((r) => (r.id === reportId ? reviewed : r)),
     );
-    fireAndForget(supabaseOperationalRepository.saveCitizenReport(reviewed), `CitizenReport ${reportId}`);
+    fireAndForget(
+      supabaseOperationalRepository.saveCitizenReport(reviewed),
+      `CitizenReport ${reportId}`,
+      () => setCitizenReports((cur) => cur.map((r) => r.id === reportId ? report : r)),
+    );
     setCitizenReportEvents((current) => [
       {
         id: `RPE-${Date.now()}-${current.length + 1}`,
@@ -1483,7 +1705,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setPublishedAlerts((current) =>
       current.map((a) => (a.id === alertId ? updated : a)),
     );
-    fireAndForget(supabaseOperationalRepository.savePublishedAlert(updated), `PublishedAlert ${alertId}`);
+    fireAndForget(
+      supabaseOperationalRepository.savePublishedAlert(updated),
+      `PublishedAlert ${alertId}`,
+      () => setPublishedAlerts((cur) => cur.map((a) => a.id === alertId ? alert : a)),
+    );
     pushPublishedAlertEvent(
       alertId,
       "updated",
@@ -1500,7 +1726,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setPublishedAlerts((current) =>
       current.map((a) => (a.id === alertId ? published : a)),
     );
-    fireAndForget(supabaseOperationalRepository.savePublishedAlert(published), `PublishedAlert ${alertId}`);
+    fireAndForget(
+      supabaseOperationalRepository.savePublishedAlert(published),
+      `PublishedAlert ${alertId}`,
+      () => setPublishedAlerts((cur) => cur.map((a) => a.id === alertId ? alert : a)),
+    );
     pushPublishedAlertEvent(alertId, "published", `Công bố cảnh báo tới người dân: ${alert.title}`);
     logDutySystem(`Công bố cảnh báo tới người dân: ${alert.title}`);
   };
@@ -1512,7 +1742,11 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     setPublishedAlerts((current) =>
       current.map((a) => (a.id === alertId ? withdrawn : a)),
     );
-    fireAndForget(supabaseOperationalRepository.savePublishedAlert(withdrawn), `PublishedAlert ${alertId}`);
+    fireAndForget(
+      supabaseOperationalRepository.savePublishedAlert(withdrawn),
+      `PublishedAlert ${alertId}`,
+      () => setPublishedAlerts((cur) => cur.map((a) => a.id === alertId ? alert : a)),
+    );
     pushPublishedAlertEvent(alertId, "withdrawn", `Thu hồi cảnh báo: ${reason.trim()}`);
   };
 
@@ -1551,15 +1785,27 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     );
     // Persist closed incident
     const closedIncident = { ...incident, status: "Đã đóng" as const, assignedTeamId: null, progress: 100, closedAt: now(), updatedAt: now() };
-    fireAndForget(supabaseOperationalRepository.saveIncident(closedIncident), `Incident ${id}`);
-    if (incident.assignedTeamId)
-      setTeams((current) =>
-        current.map((team) =>
-          team.id === incident.assignedTeamId && team.currentIncident === id
-            ? recalculateTeamAssignment(team, tasks, now())
-            : team,
-        ),
-      );
+    fireAndForget(
+      supabaseOperationalRepository.saveIncident(closedIncident),
+      `Incident ${id}`,
+      () => setIncidents((cur) => cur.map((it) => it.id === id ? incident : it)),
+    );
+    if (incident.assignedTeamId) {
+      const assignedTeamId = incident.assignedTeamId;
+      const team = teams.find((t) => t.id === assignedTeamId);
+      if (team && team.currentIncident === id) {
+        const releasedTeam = recalculateTeamAssignment(team, tasks, now());
+        setTeams((current) =>
+          current.map((t) =>
+            t.id === assignedTeamId ? releasedTeam : t,
+          ),
+        );
+        fireAndForget(
+          supabaseOperationalRepository.saveTeam(releasedTeam),
+          `Team ${assignedTeamId}`,
+        );
+      }
+    }
     pushEvent(id, `Đóng sự cố ${id} và ghi nhận hoàn tất xử lý`, "closed");
     logDutySystem(`Đóng sự cố ${id} và ghi nhận hoàn tất xử lý`, { kind: "incident", id, code: id });
   };

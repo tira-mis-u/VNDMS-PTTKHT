@@ -99,7 +99,7 @@ export function buildDeterministicActions(
       ],
       payload: { taskId: startTask.id },
     });
-  const operation = snapshot.evacuationOperations.find(
+  const operation = snapshot.evacuationOperations?.find(
     (item) => item.id === entityId && item.route.status === "Bị chặn",
   );
   if (operation) {

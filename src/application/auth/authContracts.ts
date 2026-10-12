@@ -10,7 +10,7 @@ export interface AuthenticationGateway {
   ): Promise<{ user: AuthUser; session: Session }>;
   register(
     input: import("../../domain/auth/types").RegisterInput,
-  ): Promise<{ user: AuthUser; session: Session }>;
+  ): Promise<import("../../domain/auth/types").RegisterResult>;
   resetPassword(
     usernameOrPhone: string,
     newPassword: string,

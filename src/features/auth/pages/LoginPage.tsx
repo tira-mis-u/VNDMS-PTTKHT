@@ -189,9 +189,9 @@ function ForgotPasswordForm({
         }}>
           <CheckCircle2 size={32} />
         </div>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px" }}>Đặt lại mật khẩu thành công!</h2>
+          <h2 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px" }}>Đã gửi hướng dẫn đặt lại mật khẩu</h2>
         <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "24px" }}>
-          Mật khẩu mới đã được cập nhật cho tài khoản <b>{accountIdentifier}</b>. Bạn có thể sử dụng ngay để đăng nhập vào VNDMS.
+          Nếu tài khoản tồn tại, hãy mở email gửi tới <b>{accountIdentifier}</b> và hoàn tất xác thực trước khi đặt mật khẩu mới. Mật khẩu chưa được đổi trên thiết bị này.
         </p>
         <button
           type="button"
@@ -340,6 +340,8 @@ function RegisterForm({ onSuccess }: { onSuccess: (user: AuthUser) => void }) {
     password.length >= 6 &&
     password === confirm;
 
+  const [pendingEmail, setPendingEmail] = useState(false);
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!valid) return;
@@ -358,9 +360,31 @@ function RegisterForm({ onSuccess }: { onSuccess: (user: AuthUser) => void }) {
       organization: phone.trim() ? `SĐT: ${phone.trim()}` : undefined,
     });
     setBusy(false);
-    if (result.ok && result.user) onSuccess(result.user);
-    else setError(result.error);
+    if (result.ok && result.pendingEmailConfirmation) {
+      setPendingEmail(true);
+    } else if (result.ok && result.user) {
+      onSuccess(result.user);
+    } else {
+      setError(result.error);
+    }
   };
+
+  if (pendingEmail) {
+    return (
+      <div style={{ padding: "32px 24px", textAlign: "center" }}>
+        <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--tint-green, #dcfce7)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <CheckCircle2 size={32} color="#16a34a" />
+        </div>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px" }}>Đăng ký thành công!</h2>
+        <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "24px" }}>
+          Tài khoản <b>{username.trim()}</b> đã được tạo. Vui lòng kiểm tra hộp thư email và nhấp vào liên kết kích hoạt để hoàn tất đăng ký.
+        </p>
+        <small style={{ color: "var(--muted)", fontSize: "12px" }}>
+          Sau khi kích hoạt email, quay lại trang đăng nhập và sử dụng thông tin vừa tạo.
+        </small>
+      </div>
+    );
+  }
 
   return (
     <form className="login-form-inner register-form-inner" onSubmit={submit} id="register-form">
@@ -380,6 +404,7 @@ function RegisterForm({ onSuccess }: { onSuccess: (user: AuthUser) => void }) {
           <span>{error}</span>
         </div>
       )}
+
 
       <label className="auth-field-label">
         <span className="label-text">

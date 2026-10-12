@@ -49,6 +49,8 @@ function getEnvVar(key: string): string {
 const rawSupabaseUrl = getEnvVar("VITE_SUPABASE_URL");
 export const supabaseUrl = normalizeSupabaseUrl(rawSupabaseUrl);
 const supabaseAnonKey = getEnvVar("VITE_SUPABASE_ANON_KEY");
+/** Local data is permitted only when deliberately enabled for a demo/offline run. */
+export const isExplicitDemoMode = getEnvVar("VITE_VNDMS_DEMO_MODE").toLowerCase() === "true";
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&

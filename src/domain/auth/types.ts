@@ -42,6 +42,11 @@ export interface AuthenticationResult {
   user: AuthUser;
   session: Session;
 }
+export interface RegisterResult {
+  user: AuthUser;
+  session: Session | null;
+  pendingEmailConfirmation: boolean;
+}
 export interface AuthorizationDecision {
   allowed: boolean;
   reason: string;

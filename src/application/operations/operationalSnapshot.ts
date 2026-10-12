@@ -44,3 +44,33 @@ export interface OperationalSnapshot {
   alertInteractions: AlertInteraction[];
   alertEvents: AlertEvent[];
 }
+
+export function createEmptyOperationalSnapshot(): OperationalSnapshot {
+  const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+  return {
+    metadata: {
+      scenarioId: "cloud-live",
+      scenarioName: "VNDMS Cloud Database (Live)",
+      asOf: now,
+      source: "Đang tải dữ liệu từ Supabase Cloud...",
+    },
+    incidents: [],
+    events: [],
+    tasks: [],
+    taskUpdates: [],
+    taskReviews: [],
+    teams: [],
+    teamEvents: [],
+    shelters: [],
+    shelterEvents: [],
+    sosRequests: [],
+    sosEvents: [],
+    citizenReports: [],
+    citizenReportEvents: [],
+    publishedAlerts: [],
+    publishedAlertEvents: [],
+    alertInteractions: [],
+    alertEvents: [],
+  };
+}
+

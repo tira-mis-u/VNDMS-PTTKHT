@@ -4,6 +4,7 @@ import type {
   GeographicScope,
   Role,
   SecurityAuditEvent,
+  Session,
 } from "@/domain/auth/types";
 import type { Permission } from "@/lib/permissions/permissions";
 import {
@@ -29,6 +30,12 @@ import {
 } from "@/application/auth/auditPresentation";
 import { permissionLabel } from "@/lib/permissions/labels";
 import { roleLabels } from "@/domain/auth/labels";
+import {
+  isSupabaseConfigured,
+  supabase,
+  toAuthUser,
+  type SupabaseProfileRow,
+} from "@/infrastructure/supabase/supabaseClient";
 
 /** Authentication/session/audit mechanics used by the sole OperationalProvider. */
 export function useOperationalSecurity() {
@@ -187,14 +194,17 @@ export function useOperationalSecurity() {
     const outcome = await registerUser(authGateway, input);
     appendSecurityAudit(outcome.audit);
     if (outcome.ok) {
-      setSession(outcome.session);
-      setCurrentUser(outcome.user);
+      if (outcome.session) {
+        setSession(outcome.session);
+        setCurrentUser(outcome.user);
+      }
       setUsers(authGateway.listUsers());
     }
     return {
       ok: outcome.ok,
       error: outcome.error,
       user: outcome.ok && outcome.user ? outcome.user : undefined,
+      pendingEmailConfirmation: outcome.pendingEmailConfirmation,
     };
   };
   const resetPassword = async (usernameOrPhone: string, newPassword: string) => {
@@ -209,10 +219,78 @@ export function useOperationalSecurity() {
       user: outcome.user,
     };
   };
+
+  // Đồng bộ phiên Supabase Auth khi tải trang hoặc khi trạng thái phiên thay đổi
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+    const client = supabase;
+
+    const { data: authListener } = client.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        if (
+          event === "SIGNED_IN" ||
+          event === "TOKEN_REFRESHED" ||
+          event === "INITIAL_SESSION"
+        ) {
+          if (currentSession?.user) {
+            const { data: verified, error: verifiedError } = await client.auth.getUser(currentSession.access_token);
+            if (verifiedError || !verified.user || verified.user.id !== currentSession.user.id) {
+              await client.auth.signOut();
+              setSession(null);
+              setCurrentUser(null);
+              return;
+            }
+            const { data: profile, error: profileError } = await client
+              .from("profiles")
+              .select("*")
+              .eq("id", verified.user.id)
+              .maybeSingle();
+
+            if (profile && !profileError) {
+              const authUser = toAuthUser(profile as SupabaseProfileRow);
+              if (!authUser.active) {
+                await client.auth.signOut();
+                setSession(null);
+                setCurrentUser(null);
+                return;
+              }
+              setCurrentUser(authUser);
+              const domainSession: Session = {
+                id: `SES-${currentSession.access_token.slice(-12)}`,
+                token: currentSession.access_token,
+                userId: authUser.id,
+                issuedAt: new Date().toISOString(),
+                expiresAt: currentSession.expires_at
+                  ? new Date(currentSession.expires_at * 1000).toISOString()
+                  : new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+                lastValidatedAt: new Date().toISOString(),
+              };
+              setSession(domainSession);
+            } else {
+              await client.auth.signOut();
+              setSession(null);
+              setCurrentUser(null);
+            }
+          }
+        } else if (event === "SIGNED_OUT") {
+          setSession(null);
+          setCurrentUser(null);
+        }
+      },
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   const logout = () => {
     if (currentUser && session)
       appendSecurityAudit(logoutUser(authGateway, currentUser, session));
     else authGateway.logout();
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.signOut().catch(() => {});
+    }
     setSession(null);
     setCurrentUser(null);
   };
@@ -240,7 +318,7 @@ export function useOperationalSecurity() {
         permission: "user_manage",
       }),
     );
-  const updateUserActive = (userId: string, active: boolean) => {
+  const updateUserActive = async (userId: string, active: boolean): Promise<void> => {
     // Tự khóa tài khoản của mình cũng bị chặn ở tầng logic (giữ nguyên như
     // quy tắc tự đổi vai trò: admin chỉ quản trị người khác).
     if (!active && currentUser?.id === userId) {
@@ -270,6 +348,13 @@ export function useOperationalSecurity() {
     const targetUser = users.find((user) => user.id === userId);
     if (!targetUser || targetUser.active === active) return;
     if (!currentUser) return;
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.rpc("admin_update_profile_authorization", {
+        target_id: userId,
+        next_active: active,
+      });
+      if (error) throw new Error(`Không thể cập nhật trạng thái tài khoản trên Supabase: ${error.message}`);
+    }
     const next = setUserActive(
       users,
       userId,
@@ -287,7 +372,7 @@ export function useOperationalSecurity() {
     if (session?.userId === userId)
       setCurrentUser(next.find((item) => item.id === userId) ?? null);
   };
-  const updateUserRole = (userId: string, nextRole: Role) => {
+  const updateUserRole = async (userId: string, nextRole: Role): Promise<void> => {
     // Triệt để ở tầng logic (không chỉ disabled trên UI): admin không thể tự
     // đổi vai trò của chính mình — kể cả khi gọi thẳng vào store. Vẫn đổi được
     // vai trò của admin khác.
@@ -318,6 +403,13 @@ export function useOperationalSecurity() {
     // lớp phòng thủ thứ hai ngay tại store cho mọi nơi gọi khác (AI actions…).
     const roleTarget = users.find((user) => user.id === userId);
     if (!roleTarget || roleTarget.role === nextRole) return;
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.rpc("admin_update_profile_authorization", {
+        target_id: userId,
+        next_role: nextRole,
+      });
+      if (error) throw new Error(`Không thể cập nhật vai trò trên Supabase: ${error.message}`);
+    }
     const next = changeUserRole(
       users,
       userId,
@@ -334,7 +426,7 @@ export function useOperationalSecurity() {
     if (session?.userId === userId)
       setCurrentUser(next.find((item) => item.id === userId) ?? null);
   };
-  const updateUserScope = (userId: string, scope: GeographicScope) => {
+  const updateUserScope = async (userId: string, scope: GeographicScope): Promise<void> => {
     enforcePermission("user_manage", [{ type: "User", id: userId }], undefined, {
       logGranted: false,
     });
@@ -347,6 +439,15 @@ export function useOperationalSecurity() {
         scopeTarget.geographicScope.name === scope.name)
     )
       return;
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.rpc("admin_update_profile_authorization", {
+        target_id: userId,
+        next_scope_level: scope.level,
+        next_scope_name: scope.name,
+        next_scope_code: scope.code,
+      });
+      if (error) throw new Error(`Không thể cập nhật phạm vi trên Supabase: ${error.message}`);
+    }
     const next = changeUserScope(
       users,
       userId,
@@ -365,29 +466,32 @@ export function useOperationalSecurity() {
   };
   const updateSelfProfile = (input: {
     displayName?: string;
-    geographicScope?: GeographicScope;
     organization?: string;
-  }) => {
-    if (!currentUser) return;
+  }): Promise<void> => {
+    if (!currentUser) return Promise.resolve();
     const nowStr = new Date().toISOString();
     // No-op guard: lưu hồ sơ y nguyên giá trị cũ (mở modal → bấm Lưu không sửa
     // gì) không được sinh dòng nhật ký bảo mật (owner request 2026-09).
     const sameProfile =
       (!input.displayName?.trim() ||
         input.displayName.trim() === currentUser.displayName) &&
-      (input.organization === undefined ||
-        input.organization === currentUser.organization) &&
-      (!input.geographicScope ||
-        (input.geographicScope.level === currentUser.geographicScope.level &&
-          input.geographicScope.code === currentUser.geographicScope.code &&
-          input.geographicScope.name === currentUser.geographicScope.name));
-    if (sameProfile) return;
+      (input.organization === undefined || input.organization === currentUser.organization);
+    if (sameProfile) return Promise.resolve();
+    const persist = isSupabaseConfigured && supabase
+      ? supabase.from("profiles").update({
+          full_name: input.displayName?.trim() || currentUser.displayName,
+          display_name: input.displayName?.trim() || currentUser.displayName,
+          organization: input.organization ?? currentUser.organization ?? null,
+          updated_at: nowStr,
+        }).eq("id", currentUser.id)
+      : Promise.resolve({ error: null });
+    return Promise.resolve(persist).then(({ error }) => {
+      if (error) throw new Error(`Không thể lưu hồ sơ trên Supabase: ${error.message}`);
     const next = users.map((u) =>
       u.id === currentUser.id
         ? {
             ...u,
             displayName: input.displayName?.trim() || u.displayName,
-            geographicScope: input.geographicScope || u.geographicScope,
             organization: input.organization ?? u.organization,
             updatedAt: nowStr,
           }
@@ -406,11 +510,12 @@ export function useOperationalSecurity() {
         resourceType: "User",
         resourceId: currentUser.id,
         timestamp: nowStr,
-        geographicScope: input.geographicScope?.name || currentScopeName,
+        geographicScope: currentScopeName,
         result: "SUCCESS",
-        reason: `Người dùng ${currentUser.displayName} (@${currentUser.username}) đã tự cập nhật thông tin cá nhân/liên hệ/địa bàn.`,
+        reason: `Người dùng ${currentUser.displayName} (@${currentUser.username}) đã tự cập nhật thông tin cá nhân/liên hệ.`,
       }),
     );
+    });
   };
   const recordSecurityAudit = (
     action: import("@/domain/auth/types").AuditAction,
@@ -437,6 +542,15 @@ export function useOperationalSecurity() {
   useEffect(() => {
     if (!session) return;
     const timer = window.setInterval(() => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.auth.getUser().then(({ data, error }) => {
+          if (error || !data.user || data.user.id !== session.userId) {
+            setSession(null);
+            setCurrentUser(null);
+          }
+        });
+        return;
+      }
       const validation = authGateway.restoreSession();
       if (!validation.valid) {
         if (validation.expired) {

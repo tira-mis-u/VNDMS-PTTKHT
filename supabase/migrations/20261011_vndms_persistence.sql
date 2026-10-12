@@ -525,6 +525,31 @@ BEGIN
       reauthentication_token = COALESCE(auth.users.reauthentication_token, ''),
       updated_at = NOW();
 
+    INSERT INTO auth.identities (
+      id,
+      user_id,
+      identity_data,
+      provider,
+      provider_id,
+      last_sign_in_at,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      rec.id::text,
+      rec.id,
+      jsonb_build_object('sub', rec.id::text, 'email', rec.email),
+      'email',
+      rec.id::text,
+      NOW(),
+      NOW(),
+      NOW()
+    )
+    ON CONFLICT (provider, provider_id) DO UPDATE SET
+      identity_data = EXCLUDED.identity_data,
+      last_sign_in_at = NOW(),
+      updated_at = NOW();
+
     INSERT INTO public.profiles (
       id, email, full_name, display_name, username, role, scope_level, scope_name, scope_code, active, created_at, updated_at
     )

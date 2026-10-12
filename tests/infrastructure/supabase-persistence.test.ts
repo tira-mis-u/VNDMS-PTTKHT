@@ -177,8 +177,8 @@ test("PERSISTENCE 3: Mapping 2 chiều Task và Team bảo đảm toàn vẹn d�
 });
 
 test("PERSISTENCE 4: Truy vấn Live Supabase Database nạp dữ liệu thật", async () => {
-  if (!isSupabaseConfigured || !supabase) {
-    console.log("Supabase chưa được cấu hình, bỏ qua test live");
+  if (process.env.VNDMS_RUN_LIVE_TESTS !== "true" || !isSupabaseConfigured || !supabase) {
+    console.log("Bỏ qua live Supabase test; chỉ chạy khi VNDMS_RUN_LIVE_TESTS=true và có Cloud được cấu hình.");
     return;
   }
 
@@ -196,7 +196,7 @@ test("PERSISTENCE 4: Truy vấn Live Supabase Database nạp dữ liệu thật"
 });
 
 test("PERSISTENCE 5: Bắt lỗi tường minh, không nuốt ngoại lệ khi ghi vào bảng chưa tồn tại hoặc lỗi RLS", async () => {
-  if (!isSupabaseConfigured || !supabase) return;
+  if (process.env.VNDMS_RUN_LIVE_TESTS !== "true" || !isSupabaseConfigured || !supabase) return;
 
   // Cố ý ghi vào bảng chưa tồn tại để xác nhận repository bắn lỗi rõ ràng
   await assert.rejects(

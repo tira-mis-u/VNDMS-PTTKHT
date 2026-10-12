@@ -63,10 +63,10 @@ export function UserManagementPage({
 
   const selected = store.users.find((user) => user.id === selectedId) ?? null;
 
-  const handleRoleChange = (userId: string, newRole: Role) => {
+  const handleRoleChange = async (userId: string, newRole: Role) => {
     const targetUser = store.users.find((u) => u.id === userId);
     try {
-      store.updateUserRole(userId, newRole);
+      await store.updateUserRole(userId, newRole);
     } catch (error) {
       setFeedback(
         error instanceof Error ? error.message : "Không thể thay đổi vai trò.",
@@ -80,9 +80,15 @@ export function UserManagementPage({
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  const handleStatusToggle = (userId: string, currentActive: boolean) => {
+  const handleStatusToggle = async (userId: string, currentActive: boolean) => {
     const targetUser = store.users.find((u) => u.id === userId);
-    store.updateUserActive(userId, !currentActive);
+    try {
+      await store.updateUserActive(userId, !currentActive);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Không thể cập nhật trạng thái tài khoản.");
+      setTimeout(() => setFeedback(null), 4000);
+      return;
+    }
     setFeedback(
       `Đã ${!currentActive ? "kích hoạt" : "vô hiệu hóa"} tài khoản "${targetUser?.displayName || userId}".`,
     );

@@ -13,6 +13,7 @@ export interface LoginOutcome {
   session: Session | null;
   error: string;
   audit: SecurityAuditEvent;
+  pendingEmailConfirmation?: boolean;
 }
 const auditId = (action: string, timestamp: string, actor: string | null) =>
   `AUD-${action}-${timestamp.replace(/\D/g, "")}-${actor ?? "ANON"}-${crypto.randomUUID()}`;
@@ -83,7 +84,9 @@ export async function registerUser(
     const result = await gateway.register(input);
     return {
       ok: true,
-      ...result,
+      user: result.user,
+      session: result.session,
+      pendingEmailConfirmation: result.pendingEmailConfirmation,
       error: "",
       audit: createSecurityAudit({
         actorId: result.user.id,
@@ -95,7 +98,9 @@ export async function registerUser(
         timestamp,
         geographicScope: result.user.geographicScope.name,
         result: "SUCCESS",
-        reason: "Đăng ký tài khoản tác nghiệp mới thành công.",
+        reason: result.pendingEmailConfirmation
+          ? "Đăng ký tài khoản thành công, đang chờ người dùng kích hoạt email."
+          : "Đăng ký tài khoản tác nghiệp mới thành công.",
       }),
     };
   } catch (error) {
@@ -144,7 +149,7 @@ export async function resetUserPassword(
         timestamp,
         geographicScope: result.user.geographicScope.name,
         result: "SUCCESS",
-        reason: "Đặt lại mật khẩu tài khoản thành công.",
+        reason: "Đã khởi tạo luồng đặt lại mật khẩu. Người dùng phải hoàn tất qua liên kết xác thực.",
       }),
     };
   } catch (error) {

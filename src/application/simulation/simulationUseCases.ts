@@ -193,14 +193,14 @@ export function applyOperationalPropagation(
 ): OperationalSnapshot {
   const snapshot = clone(input);
   const applied = [
-    ...snapshot.events,
-    ...snapshot.teamEvents,
-    ...snapshot.shelterEvents,
-    ...snapshot.evacuationEvents,
-    ...snapshot.sosEvents,
-    ...snapshot.reliefEvents,
-    ...snapshot.playbookEvents,
-    ...snapshot.recoveryEvents,
+    ...(snapshot.events ?? []),
+    ...(snapshot.teamEvents ?? []),
+    ...(snapshot.shelterEvents ?? []),
+    ...(snapshot.evacuationEvents ?? []),
+    ...(snapshot.sosEvents ?? []),
+    ...(snapshot.reliefEvents ?? []),
+    ...(snapshot.playbookEvents ?? []),
+    ...(snapshot.recoveryEvents ?? []),
   ].some((item) => item.id.startsWith(event.id));
   if (applied) return snapshot;
   const timestamp = event.simulationTime;

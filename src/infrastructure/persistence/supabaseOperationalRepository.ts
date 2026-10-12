@@ -1,6 +1,6 @@
-import { supabase, isSupabaseConfigured } from "../supabase/supabaseClient";
+import { supabase, isExplicitDemoMode, isSupabaseConfigured } from "../supabase/supabaseClient";
 import type { IOperationalRepository } from "./operationalRepositoryContracts";
-import type { OperationalSnapshot } from "@/application/operations/operationalSnapshot";
+import { createEmptyOperationalSnapshot, type OperationalSnapshot } from "../../application/operations/operationalSnapshot";
 import { inMemoryOperationalRepository } from "./inMemoryOperationalRepository";
 import type { Incident } from "@/domain/incidents/types";
 import type { IncidentTask, TaskReview, TaskUpdate } from "@/domain/tasks/types";
@@ -459,6 +459,9 @@ export class SupabaseOperationalRepository implements IOperationalRepository {
   async load(): Promise<OperationalSnapshot> {
     const fallback = inMemoryOperationalRepository.load();
     if (!isSupabaseConfigured || !supabase) {
+      if (!isExplicitDemoMode) {
+        throw new Error("Supabase chưa được cấu hình. Chỉ chế độ demo được bật rõ ràng mới dùng dữ liệu cục bộ.");
+      }
       return fallback;
     }
 
@@ -495,38 +498,36 @@ export class SupabaseOperationalRepository implements IOperationalRepository {
       if (taskReviewsRes.error) failedTables.push(`task_reviews (${taskReviewsRes.error.message})`);
 
       if (failedTables.length > 0) {
-        console.warn(`[VNDMS/Supabase] Các bảng chưa sẵn sàng (${failedTables.length}/8 bảng):`, failedTables.join("; "));
+        throw new Error(`Supabase Cloud không sẵn sàng: ${failedTables.join("; ")}`);
       }
-
-      const isFullyLive = failedTables.length === 0;
 
       const incidents = (!incidentsRes.error && incidentsRes.data)
         ? incidentsRes.data.map(rowToIncident)
-        : fallback.incidents;
+        : isExplicitDemoMode ? fallback.incidents : [];
 
       const shelters = (!sheltersRes.error && sheltersRes.data)
         ? sheltersRes.data.map(rowToShelter)
-        : fallback.shelters;
+        : isExplicitDemoMode ? fallback.shelters : [];
 
       const sosRequests = (!sosRes.error && sosRes.data)
         ? sosRes.data.map(rowToSos)
-        : fallback.sosRequests;
+        : isExplicitDemoMode ? fallback.sosRequests : [];
 
       const tasks = (!tasksRes.error && tasksRes.data)
         ? tasksRes.data.map(rowToTask)
-        : fallback.tasks;
+        : isExplicitDemoMode ? fallback.tasks : [];
 
       const teams = (!teamsRes.error && teamsRes.data)
         ? teamsRes.data.map(rowToTeam)
-        : fallback.teams;
+        : isExplicitDemoMode ? fallback.teams : [];
 
       const citizenReports = (!reportsRes.error && reportsRes.data)
         ? reportsRes.data.map(rowToCitizenReport)
-        : fallback.citizenReports;
+        : isExplicitDemoMode ? fallback.citizenReports : [];
 
       const publishedAlerts = (!alertsRes.error && alertsRes.data)
         ? alertsRes.data.map(rowToPublishedAlert)
-        : fallback.publishedAlerts;
+        : isExplicitDemoMode ? fallback.publishedAlerts : [];
 
       const taskReviews = (!taskReviewsRes.error && taskReviewsRes.data)
         ? taskReviewsRes.data.map((r: any): TaskReview => ({
@@ -541,15 +542,15 @@ export class SupabaseOperationalRepository implements IOperationalRepository {
             reviewedAt: r.reviewed_at,
             reviewNote: r.review_note,
           }))
-        : fallback.taskReviews;
+        : isExplicitDemoMode ? fallback.taskReviews : [];
+
+      const baseSnapshot = isExplicitDemoMode ? fallback : createEmptyOperationalSnapshot();
 
       return {
-        ...fallback,
+        ...baseSnapshot,
         metadata: {
-          ...fallback.metadata,
-          source: isFullyLive
-            ? "Supabase Cloud Database (Live)"
-            : `Supabase thiếu ${failedTables.length}/8 bảng (${failedTables.map((t) => t.split(" ")[0]).join(", ")}). Cần chạy file migration: supabase/migrations/20261011_vndms_persistence.sql`,
+          ...baseSnapshot.metadata,
+          source: "Supabase Cloud Database (Live)",
         },
         incidents,
         shelters,
@@ -561,14 +562,11 @@ export class SupabaseOperationalRepository implements IOperationalRepository {
         taskReviews,
       };
     } catch (err: any) {
-      console.warn("[VNDMS/Supabase] Lỗi khi nạp ảnh chụp dữ liệu từ Supabase, chuyển sang dữ liệu dự phòng:", err?.message);
-      return {
-        ...fallback,
-        metadata: {
-          ...fallback.metadata,
-          source: `Dữ liệu mẫu nội bộ (Lỗi kết nối Supabase: ${err?.message ?? "Không xác định"})`,
-        },
-      };
+      console.warn("[VNDMS/Supabase] Không thể nạp dữ liệu Cloud:", err?.message);
+      if (!isExplicitDemoMode) {
+        throw err;
+      }
+      return fallback;
     }
   }
 

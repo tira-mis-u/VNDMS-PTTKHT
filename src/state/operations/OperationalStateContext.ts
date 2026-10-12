@@ -84,7 +84,7 @@ export interface OperationalStore {
   users: AuthUser[];
   securityAuditEvents: SecurityAuditEvent[];
   role: UserRole;
-  persistenceMode: "supabase" | "demo";
+  persistenceMode: "supabase" | "demo" | "unavailable";
   persistenceError: string | null;
   lastSyncAt: string | null;
   can: (
@@ -98,20 +98,19 @@ export interface OperationalStore {
   ) => Promise<{ ok: boolean; error: string; user?: AuthUser }>;
   register: (
     input: import("@/domain/auth/types").RegisterInput,
-  ) => Promise<{ ok: boolean; error: string; user?: AuthUser }>;
+  ) => Promise<{ ok: boolean; error: string; user?: AuthUser; pendingEmailConfirmation?: boolean }>;
   resetPassword: (
     usernameOrPhone: string,
     newPassword: string,
   ) => Promise<{ ok: boolean; error: string; user?: AuthUser }>;
   logout: () => void;
-  updateUserActive: (userId: string, active: boolean) => void;
-  updateUserRole: (userId: string, role: Role) => void;
-  updateUserScope: (userId: string, scope: GeographicScope) => void;
+  updateUserActive: (userId: string, active: boolean) => Promise<void>;
+  updateUserRole: (userId: string, role: Role) => Promise<void>;
+  updateUserScope: (userId: string, scope: GeographicScope) => Promise<void>;
   updateSelfProfile: (input: {
     displayName?: string;
-    geographicScope?: GeographicScope;
     organization?: string;
-  }) => void;
+  }) => Promise<void>;
   recordSecurityAudit: (
     action: import("@/domain/auth/types").AuditAction,
     reason: string,

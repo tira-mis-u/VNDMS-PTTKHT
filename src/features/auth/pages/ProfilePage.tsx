@@ -42,8 +42,6 @@ export function ProfilePage() {
       ? user.organization.replace("SĐT: ", "")
       : identity?.contact || "",
   );
-  const [scopeName, setScopeName] = useState(user.geographicScope.name);
-  const [scopeCode, setScopeCode] = useState(user.geographicScope.code);
 
   const sessionExpiresAt = store.session
     ? new Intl.DateTimeFormat("vi-VN", {
@@ -107,26 +105,21 @@ export function ProfilePage() {
     }
   };
 
-  const handleSaveProfile = (e: FormEvent) => {
+  const handleSaveProfile = async (e: FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) {
       setMessage({ tone: "error", text: "Họ và tên không được để trống." });
       return;
     }
     try {
-      store.updateSelfProfile({
+      await store.updateSelfProfile({
         displayName: displayName.trim(),
         organization: phone.trim() ? `SĐT: ${phone.trim()}` : undefined,
-        geographicScope: {
-          level: user.geographicScope.level,
-          name: scopeName.trim() || user.geographicScope.name,
-          code: scopeCode.trim() || user.geographicScope.code,
-        },
       });
       setIsEditing(false);
       setMessage({
         tone: "success",
-        text: "Thông tin cá nhân, liên hệ và địa bàn đã được cập nhật thành công!",
+        text: "Thông tin cá nhân và liên hệ đã được cập nhật thành công!",
       });
     } catch (err) {
       setMessage({
@@ -230,9 +223,7 @@ export function ProfilePage() {
           <div>
             <span>Thông tin cá nhân & Địa bàn tác nghiệp</span>
             <h2 id="account-info-title">Thông tin tài khoản</h2>
-            <p>
-              Bạn có thể cập nhật họ tên hiển thị, số điện thoại liên hệ và địa bàn cư trú bất kỳ lúc nào.
-            </p>
+            <p>Bạn có thể cập nhật họ tên hiển thị và số điện thoại liên hệ.</p>
           </div>
           {!isEditing ? (
             <Button type="button" onClick={() => setIsEditing(true)}>
@@ -269,26 +260,6 @@ export function ProfilePage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="VD: 0912 345 678"
-                />
-              </label>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px", marginBottom: "20px" }}>
-              <label className="field">
-                <span className="label-text">Địa bàn / Khu vực cư trú</span>
-                <Input
-                  value={scopeName}
-                  onChange={(e) => setScopeName(e.target.value)}
-                  placeholder="VD: Tây Hồ, Hà Nội"
-                />
-              </label>
-
-              <label className="field">
-                <span className="label-text">Mã định danh địa bàn</span>
-                <Input
-                  value={scopeCode}
-                  onChange={(e) => setScopeCode(e.target.value)}
-                  placeholder="VD: HN-TAYHO"
                 />
               </label>
             </div>

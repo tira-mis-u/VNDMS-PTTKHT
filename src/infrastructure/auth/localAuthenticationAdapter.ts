@@ -10,7 +10,13 @@ import {
   type UserRole,
 } from "../../domain/shared/auth";
 import { demoCredentials, demoUsers } from "./demoUsers";
-import { isSupabaseConfigured, supabase } from "../supabase/supabaseClient";
+import {
+  isSupabaseConfigured,
+  isExplicitDemoMode,
+  supabase,
+  toAuthUser,
+  type SupabaseProfileRow,
+} from "../supabase/supabaseClient";
 export interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -227,19 +233,105 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
   private storage: StorageLike;
   private clock: () => Date;
   private tokenFactory: () => string;
+  private useCloudAuth: boolean;
+  private allowLocalDemo: boolean;
   constructor(
     storage: StorageLike,
     clock: () => Date = () => new Date(),
     tokenFactory: () => string = () => crypto.randomUUID(),
+    useCloudAuth?: boolean,
   ) {
     this.storage = storage;
     this.clock = clock;
     this.tokenFactory = tokenFactory;
+    this.useCloudAuth = useCloudAuth ?? (isSupabaseConfigured && !isExplicitDemoMode && typeof window !== "undefined");
+    // Node/test adapters are intentionally local; a browser must opt in through
+    // VITE_VNDMS_DEMO_MODE instead of silently falling back after Cloud failure.
+    this.allowLocalDemo = isExplicitDemoMode || typeof window === "undefined";
   }
   async authenticate(username: string, password: string) {
+    const trimmedUsername = username.trim();
+
+    // 1. Khi Supabase được cấu hình, bắt buộc xác thực tập trung qua Supabase Auth
+    if (this.useCloudAuth && supabase) {
+      const email = trimmedUsername.includes("@")
+        ? trimmedUsername.toLowerCase()
+        : `${trimmedUsername.toLowerCase()}@vndms.gov.vn`;
+
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        if (authError.message.includes("Invalid login credentials")) {
+          throw new Error("Tên đăng nhập hoặc mật khẩu không chính xác.");
+        }
+        if (authError.message.includes("Email not confirmed")) {
+          throw new Error("Tài khoản chưa được xác nhận email trên hệ thống.");
+        }
+        throw new Error(`[Supabase Auth] Đăng nhập thất bại: ${authError.message}`);
+      }
+
+      if (authData.session && authData.user) {
+        // Lấy profile tương ứng từ Supabase profiles table
+        const { data: profileRow } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", authData.user.id)
+          .maybeSingle();
+
+        if (!profileRow) {
+          await supabase.auth.signOut();
+          throw new Error("Hồ sơ phân quyền trên Cloud không tồn tại hoặc không thể đọc. Đăng nhập đã bị hủy.");
+        }
+        const authUser = toAuthUser(profileRow as SupabaseProfileRow);
+        if (!authUser.active) {
+          await supabase.auth.signOut();
+          throw new Error("Tài khoản đã bị vô hiệu hóa trên hệ thống.");
+        }
+
+        const issued = this.clock();
+        const expiresAt = authData.session.expires_at
+          ? new Date(authData.session.expires_at * 1000).toISOString()
+          : new Date(issued.getTime() + 8 * 60 * 60 * 1000).toISOString();
+
+        const session: Session = {
+          id: `SES-${authData.session.access_token.slice(-12)}`,
+          token: authData.session.access_token,
+          userId: authUser.id,
+          issuedAt: issued.toISOString(),
+          expiresAt,
+          lastValidatedAt: issued.toISOString(),
+        };
+
+        this.storage.setItem(SESSION_KEY, JSON.stringify(session));
+
+        // Cập nhật người dùng vào bộ nhớ đệm
+        const existingUsers = safeUsers(this.storage);
+        const userIdx = existingUsers.findIndex(
+          (u) => u.id === authUser.id || u.username.toLowerCase() === authUser.username.toLowerCase(),
+        );
+        if (userIdx >= 0) {
+          existingUsers[userIdx] = authUser;
+        } else {
+          existingUsers.push(authUser);
+        }
+        this.storage.setItem(USERS_KEY, JSON.stringify(existingUsers));
+
+        return { user: structuredClone(authUser), session };
+      }
+
+      throw new Error("Không thể khởi tạo phiên đăng nhập từ Supabase Auth.");
+    }
+
+    if (!this.allowLocalDemo) {
+      throw new Error("Supabase chưa được cấu hình. Bật VITE_VNDMS_DEMO_MODE=true mới dùng được đăng nhập cục bộ.");
+    }
+    // 2. Chế độ cục bộ được bật rõ ràng cho demo/offline
     const users = safeUsers(this.storage);
     const user = users.find(
-      (item) => item.username.toLowerCase() === username.trim().toLowerCase(),
+      (item) => item.username.toLowerCase() === trimmedUsername.toLowerCase(),
     );
     const hash = await sha256(password);
     const credentials = safeCredentials(this.storage);
@@ -264,19 +356,106 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
     };
     this.storage.setItem(SESSION_KEY, JSON.stringify(session));
 
-    // Đồng bộ phiên Supabase Auth khi có kết nối
-    if (isSupabaseConfigured && supabase) {
-      const email = `${user.username.trim().toLowerCase()}@vndms.gov.vn`;
-      supabase.auth.signInWithPassword({ email, password }).catch((err) => {
-        console.warn("[VNDMS/Auth] Phiên Supabase Auth (chưa đồng bộ hoặc mật khẩu cloud khác):", err?.message);
-      });
-    }
-
     return { user: structuredClone(user), session };
   }
-  async register(input: import("../../domain/auth/types").RegisterInput) {
-    const users = safeUsers(this.storage);
+  async register(input: import("../../domain/auth/types").RegisterInput): Promise<import("../../domain/auth/types").RegisterResult> {
     const trimmedUsername = input.username.trim();
+
+    // 1. Khi Supabase được cấu hình, bắt buộc tạo tài khoản tập trung trên Supabase Auth
+    if (this.useCloudAuth && supabase) {
+      const email = trimmedUsername.includes("@")
+        ? trimmedUsername.toLowerCase()
+        : `${trimmedUsername.toLowerCase()}@vndms.gov.vn`;
+
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: input.password,
+        options: {
+          data: {
+            username: trimmedUsername,
+            display_name: input.displayName.trim(),
+            full_name: input.displayName.trim(),
+            // BẢO MẬT: Luôn dùng 'citizen' khi tự đăng ký để ngăn chặn leo thang đặc quyền.
+            // Role chỉ được cấp qua SQL migration hoặc quản trị viên.
+            role: "citizen",
+            scope_level: input.geographicScope?.level ?? "national",
+            scope_name: input.geographicScope?.name ?? "Toàn quốc",
+            scope_code: input.geographicScope?.code ?? "VN",
+          },
+        },
+      });
+
+      if (signUpError) {
+        throw new Error(`[Supabase Auth] Đăng ký không thành công: ${signUpError.message}`);
+      }
+
+      const userId = signUpData.user?.id || `USR-REG-${Date.now().toString(36).toUpperCase()}`;
+      const nowStr = this.clock().toISOString();
+      // Luôn dùng role 'citizen' — server trigger handle_new_user() sẽ ghi profile với role này
+      const newUser: AuthUser = {
+        id: userId,
+        displayName: input.displayName.trim(),
+        username: trimmedUsername,
+        role: "citizen",
+        geographicScope: input.geographicScope ?? {
+          level: "national",
+          code: "VN",
+          name: "Toàn quốc",
+        },
+        active: true,
+        createdAt: nowStr,
+        updatedAt: nowStr,
+      };
+
+      let sessionToken = signUpData.session?.access_token;
+      let expiresAt = signUpData.session?.expires_at
+        ? new Date(signUpData.session.expires_at * 1000).toISOString()
+        : new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+
+      if (!sessionToken) {
+        // Thử đăng nhập tự động nếu Supabase trả session ngay (tài khoản @vndms.gov.vn đã seed)
+        const signInRes = await supabase.auth.signInWithPassword({ email, password: input.password }).catch(() => null);
+        if (signInRes?.data?.session) {
+          sessionToken = signInRes.data.session.access_token;
+          if (signInRes.data.session.expires_at) {
+            expiresAt = new Date(signInRes.data.session.expires_at * 1000).toISOString();
+          }
+        }
+      }
+
+      // Đăng ký thành công nhưng email chưa được xác nhận — KHÔNG ném lỗi, trả trạng thái chờ
+      if (!sessionToken) {
+        return {
+          user: structuredClone(newUser),
+          session: null,
+          pendingEmailConfirmation: true,
+        };
+      }
+
+      const session: Session = {
+        id: `SES-${sessionToken.slice(-12)}`,
+        token: sessionToken,
+        userId: newUser.id,
+        issuedAt: nowStr,
+        expiresAt,
+        lastValidatedAt: nowStr,
+      };
+
+      this.storage.setItem(SESSION_KEY, JSON.stringify(session));
+      const users = safeUsers(this.storage);
+      if (!users.some((u) => u.id === newUser.id)) {
+        users.push(newUser);
+        this.saveUsers(users);
+      }
+
+      return { user: structuredClone(newUser), session, pendingEmailConfirmation: false };
+    }
+
+    if (!this.allowLocalDemo) {
+      throw new Error("Supabase chưa được cấu hình. Bật VITE_VNDMS_DEMO_MODE=true mới dùng được đăng ký cục bộ.");
+    }
+    // 2. Chế độ cục bộ được bật rõ ràng cho demo/offline
+    const users = safeUsers(this.storage);
     if (
       users.some(
         (u) => u.username.toLowerCase() === trimmedUsername.toLowerCase(),
@@ -318,9 +497,31 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
       lastValidatedAt: issued.toISOString(),
     };
     this.storage.setItem(SESSION_KEY, JSON.stringify(session));
-    return { user: structuredClone(newUser), session };
+    return { user: structuredClone(newUser), session, pendingEmailConfirmation: false };
   }
   async resetPassword(usernameOrPhone: string, newPassword: string) {
+    if (this.useCloudAuth && supabase) {
+      const identifier = usernameOrPhone.trim().toLowerCase();
+      const email = identifier.includes("@") ? identifier : `${identifier}@vndms.gov.vn`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}/login`,
+      });
+      if (error) throw new Error(`[Supabase Auth] Không thể gửi email đặt lại mật khẩu: ${error.message}`);
+      // A password is changed only after the user opens the authenticated recovery
+      // link.  Never alter the local credential cache in Cloud mode.
+      return {
+        user: {
+          id: "CLOUD-RESET-PENDING",
+          username: identifier,
+          displayName: identifier,
+          role: "citizen" as UserRole,
+          geographicScope: { level: "national" as import("../../domain/auth/types").GeographicScopeLevel, code: "VN", name: "Toàn quốc" },
+          active: false,
+          createdAt: this.clock().toISOString(),
+          updatedAt: this.clock().toISOString(),
+        } satisfies import("../../domain/auth/types").AuthUser,
+      };
+    }
     const users = safeUsers(this.storage);
     const target = usernameOrPhone.trim().toLowerCase();
     const user = users.find(
@@ -345,6 +546,19 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
     return { user: structuredClone(user) };
   }
   restoreSession(): SessionValidation {
+    if (this.useCloudAuth) {
+      // This synchronous interface cannot validate a JWT with Auth.  Refuse to
+      // restore cached local state; useOperationalSecurity performs the async,
+      // server-verified restoration through auth.getUser().
+      this.storage.removeItem(SESSION_KEY);
+      return {
+        valid: false,
+        session: null,
+        user: null,
+        reason: "Đang chờ Supabase Auth xác minh phiên Cloud.",
+        expired: false,
+      };
+    }
     const raw = this.storage.getItem(SESSION_KEY);
     if (!raw)
       return {

@@ -5,6 +5,7 @@ import type { RescueTeam } from "../../src/domain/teams/types";
 import type { SosRequest } from "../../src/domain/sos/types";
 import type { CitizenReport } from "../../src/domain/reports/types";
 import type { PublishedAlert } from "../../src/domain/published-alerts/types";
+import type { Shelter } from "../../src/domain/shelters/types";
 
 async function verifyAll() {
   console.log("=================================================================");
@@ -18,7 +19,10 @@ async function verifyAll() {
     password: "VNDMS@2026",
   });
   if (authErr) {
-    console.warn("! Cảnh báo đăng nhập Supabase Auth:", authErr.message);
+    console.error("❌ Lỗi đăng nhập Supabase Auth:", authErr.message);
+    throw new Error(
+      `Đăng nhập Supabase Auth thất bại: ${authErr.message}. Vui lòng chạy file migration supabase/migrations/20261012_fix_auth_and_persistence.sql trên Supabase SQL Editor.`
+    );
   } else {
     console.log("✓ Đã đăng nhập Supabase Auth thành công:", authSession.user?.email, `(Role: ${authSession.user?.user_metadata?.role})`);
   }
@@ -252,6 +256,58 @@ async function verifyAll() {
   const { data: dbSos } = await supabase!.from("sos_requests").select("*").eq("id", testSosId).single();
   console.log("✓ DB SosRequest tồn tại:", dbSos?.id, dbSos?.description);
 
+  // 8b. Test Shelter CRUD (Đặc biệt kiểm chứng lỗi permission denied for table shelters)
+  console.log("\n>>> BƯỚC 8b: Kiểm thử Shelter CRUD...");
+  const testShelterId = `TEST-SHELTER-${timestamp}`;
+  const testShelter: Shelter = {
+    id: testShelterId,
+    code: testShelterId,
+    name: "Điểm sơ tán kiểm thử tự động",
+    type: "Trường học",
+    address: "Số 1 Đường Kiểm Thử, Hà Nội",
+    administrativeArea: "Hà Nội",
+    coordinates: [105.85, 21.03],
+    capacity: 300,
+    currentOccupancy: 20,
+    reservedCapacity: 60,
+    status: "Đang tiếp nhận",
+    readiness: "Sẵn sàng",
+    accessibility: "Tiếp cận bình thường",
+    responsibleOfficer: {
+      name: "Cán bộ Test",
+      role: "Trưởng điểm",
+      organization: "Ban Chỉ đạo",
+      phone: "0912345678",
+    },
+    contact: "0912345678",
+    facilities: [
+      { id: "FAC-1", name: "Nước sạch", category: "Nhu yếu phẩm", quantity: 100, status: "Sẵn sàng" },
+      { id: "FAC-2", name: "Y tế dã chiến", category: "Y tế", quantity: 1, status: "Sẵn sàng" },
+    ],
+    medicalCapability: "Sơ cứu cơ bản",
+    waterAvailability: "Đầy đủ",
+    foodAvailability: "Đầy đủ",
+    powerAvailability: "Đầy đủ",
+    sanitationStatus: "Đầy đủ",
+    accessibleForVulnerablePeople: true,
+    openingTime: "06:00",
+    closingTime: "22:00",
+    linkedIncidentIds: [],
+    activeEvacuationOperationIds: [],
+    notes: "Điểm kiểm thử tự động",
+    updatedAt: new Date().toISOString(),
+  };
+  await supabaseOperationalRepository.saveShelter(testShelter);
+  console.log("✓ saveShelter (tạo mới) thành công");
+  const { data: dbShelter } = await supabase!.from("shelters").select("*").eq("id", testShelterId).single();
+  console.log("✓ DB Shelter tồn tại:", dbShelter?.id, dbShelter?.name);
+
+  // Thao tác cập nhật sức chứa / trạng thái tiếp nhận
+  testShelter.currentOccupancy = 75;
+  testShelter.notes = "Đã cập nhật sau kiểm thử";
+  await supabaseOperationalRepository.saveShelter(testShelter);
+  console.log("✓ saveShelter (cập nhật điều kiện vận hành) thành công");
+
   // 9. DỌN DẸP DỮ LIỆU KIỂM THỬ (CLEANUP TEST RECORDS)
   console.log("\n>>> BƯỚC 9: Dọn dẹp các bản ghi kiểm thử...");
   await supabase!.from("task_updates").delete().eq("id", testUpdateId);
@@ -261,7 +317,8 @@ async function verifyAll() {
   await supabase!.from("citizen_reports").delete().eq("id", testReportId);
   await supabase!.from("published_alerts").delete().eq("id", testAlertId);
   await supabase!.from("sos_requests").delete().eq("id", testSosId);
-  console.log("✓ Đã dọn dẹp toàn bộ bản ghi kiểm thử an toàn!");
+  await supabase!.from("shelters").delete().eq("id", testShelterId);
+  console.log("✓ Đã dọn dẹp toàn bộ bản ghi kiểm thử an toàn (kể cả Shelter)!");
 
   console.log("\n=================================================================");
   console.log("XÁC MINH TOÀN DIỆN THÀNH CÔNG: TẤT CẢ 8 BẢNG HOẠT ĐỘNG 100% TRÊN CLOUD!");

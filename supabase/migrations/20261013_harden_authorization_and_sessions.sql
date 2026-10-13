@@ -69,12 +69,12 @@ GRANT INSERT ON TABLE public.sos_requests TO anon;
 GRANT SELECT ON TABLE public.profiles TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.incidents, public.shelters,
   public.teams, public.tasks, public.task_reviews, public.task_updates,
-  public.published_alerts TO authenticated;
-GRANT SELECT, UPDATE ON TABLE public.sos_requests TO authenticated;
-GRANT SELECT, INSERT, UPDATE ON TABLE public.citizen_reports TO authenticated;
+  public.published_alerts, public.sos_requests, public.citizen_reports TO authenticated;
 
 REVOKE UPDATE ON TABLE public.profiles FROM authenticated;
 GRANT UPDATE (full_name, display_name, phone, organization) ON TABLE public.profiles TO authenticated;
+GRANT UPDATE (updated_at) ON TABLE public.profiles TO authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Cập nhật hồ sơ cá nhân" ON public.profiles;
@@ -167,19 +167,77 @@ CREATE POLICY "Người dùng gửi SOS của mình" ON public.sos_requests
   FOR INSERT TO authenticated
   WITH CHECK (owner_user_id = auth.uid()::text AND code <> '' AND description <> '');
 
+DROP POLICY IF EXISTS "Người dùng gửi SOS không định danh khi đăng nhập" ON public.sos_requests;
+CREATE POLICY "Người dùng gửi SOS không định danh khi đăng nhập" ON public.sos_requests
+  FOR INSERT TO authenticated
+  WITH CHECK (owner_user_id IS NULL AND code <> '' AND description <> '');
+
+DROP POLICY IF EXISTS "Cán bộ tác nghiệp quản lý SOS" ON public.sos_requests;
+CREATE POLICY "Cán bộ tác nghiệp quản lý SOS" ON public.sos_requests
+  FOR ALL TO authenticated
+  USING (public.is_operational_staff())
+  WITH CHECK (public.is_operational_staff());
+
 DROP POLICY IF EXISTS "Công dân gửi phản ánh" ON public.citizen_reports;
 DROP POLICY IF EXISTS "Người dùng gửi phản ánh của mình" ON public.citizen_reports;
 CREATE POLICY "Người dùng gửi phản ánh của mình" ON public.citizen_reports
   FOR INSERT TO authenticated
   WITH CHECK (owner_user_id = auth.uid()::text AND code <> '' AND description <> '');
 
--- location_history contains sensitive movement data.  It was the one exposed
--- operational table without RLS.  Only active operational staff can read it;
--- writing is reserved for service-role/server ingestion.
+DROP POLICY IF EXISTS "Cán bộ tác nghiệp quản lý phản ánh" ON public.citizen_reports;
+CREATE POLICY "Cán bộ tác nghiệp quản lý phản ánh" ON public.citizen_reports
+  FOR ALL TO authenticated
+  USING (public.is_operational_staff())
+  WITH CHECK (public.is_operational_staff());
+
+DROP POLICY IF EXISTS "Người dùng xóa SOS của mình" ON public.sos_requests;
+CREATE POLICY "Người dùng xóa SOS của mình" ON public.sos_requests
+  FOR DELETE TO authenticated
+  USING (owner_user_id = auth.uid()::text);
+
+DROP POLICY IF EXISTS "Người dùng xóa phản ánh của mình" ON public.citizen_reports;
+CREATE POLICY "Người dùng xóa phản ánh của mình" ON public.citizen_reports
+  FOR DELETE TO authenticated
+  USING (owner_user_id = auth.uid()::text);
+
+-- Ensure operational staff can manage incidents during task coordination
+DROP POLICY IF EXISTS "Cán bộ tác nghiệp quản lý sự cố" ON public.incidents;
+CREATE POLICY "Cán bộ tác nghiệp quản lý sự cố" ON public.incidents
+  FOR ALL TO authenticated
+  USING (public.is_operational_staff())
+  WITH CHECK (public.is_operational_staff());
+
+-- location_history contains sensitive movement data.
 REVOKE ALL ON TABLE public.location_history FROM anon, authenticated;
 GRANT SELECT ON TABLE public.location_history TO authenticated;
+GRANT INSERT ON TABLE public.location_history TO authenticated;
 ALTER TABLE public.location_history ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Cán bộ tác nghiệp xem lịch sử vị trí" ON public.location_history;
 CREATE POLICY "Cán bộ tác nghiệp xem lịch sử vị trí" ON public.location_history
   FOR SELECT TO authenticated
   USING (public.is_operational_staff());
+
+DROP POLICY IF EXISTS "Cán bộ tác nghiệp ghi lịch sử vị trí" ON public.location_history;
+CREATE POLICY "Cán bộ tác nghiệp ghi lịch sử vị trí" ON public.location_history
+  FOR INSERT TO authenticated
+  WITH CHECK (public.is_operational_staff());
+
+-- Tự động xác nhận email cho người dùng mới đăng ký (không bắt buộc verify email)
+CREATE OR REPLACE FUNCTION public.auto_confirm_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = auth, public, pg_temp
+AS $$
+BEGIN
+  IF NEW.email_confirmed_at IS NULL THEN
+    NEW.email_confirmed_at := NOW();
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_auto_confirm ON auth.users;
+CREATE TRIGGER on_auth_user_auto_confirm
+  BEFORE INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.auto_confirm_new_user();

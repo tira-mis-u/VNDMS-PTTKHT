@@ -1,0 +1,315 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0" pages="2">
+  <diagram id="page_Component_Diagram" name="Biểu đồ thành phần (Component Diagram)">
+    <mxGraphModel dx="1357" dy="511" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1350" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="page_Component_Diagram_title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;" value="&lt;b style=&quot;font-size:20px;color:#000000;&quot;&gt;BIỂU ĐỒ THÀNH PHẦN — HỆ THỐNG QUẢN LÝ THIÊN TAI &amp; CỨU HỘ CỨU NẠN (VNDMS)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="28" width="1100" x="40" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="page_Component_Diagram_subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;" value="&lt;span style=&quot;font-size:13px;color:#374151;&quot;&gt;Mô hình hóa các thành phần phần mềm (Components) và quan hệ phụ thuộc (Dependencies) theo kiến trúc phân tầng hệ thống.&lt;/span&gt;" vertex="1">
+          <mxGeometry height="20" width="1100" x="40" y="48" as="geometry" />
+        </mxCell>
+        <mxCell id="page_Component_Diagram_col1_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" value="&lt;b style=&quot;font-size:14px;color:#000000;&quot;&gt;TẦNG TRÌNH DIỄN (PRESENTATION TIER)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="24" width="260" x="90" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="page_Component_Diagram_col2_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" value="&lt;b style=&quot;font-size:14px;color:#000000;&quot;&gt;TẦNG NGHIỆP VỤ &amp; DỊCH VỤ (BUSINESS TIER)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="24" width="320" x="460" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="page_Component_Diagram_col3_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" value="&lt;b style=&quot;font-size:14px;color:#000000;&quot;&gt;TẦNG DỮ LIỆU &amp; NGOẠI VI (DATA &amp; EXTERNAL TIER)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="24" width="320" x="910" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_citizen" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;CitizenWebPortal&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Cổng thông tin &amp;amp; Báo nạn SOS&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="210" x="100" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_command" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;CommandCenterWeb&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Trung tâm chỉ huy &amp;amp; Điều hành PCTT&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="210" x="100" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_rescue_app" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;RescueFieldApp&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Ứng dụng tác nghiệp Đội cứu hộ&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="210" x="100" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_auth" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;AuthSecurityService&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Xác thực tài khoản &amp;amp; Phân quyền RBAC&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="230" x="510" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_incident_sos" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;IncidentSOSModule&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Xử lý Sự cố &amp;amp; Yêu cầu cứu nạn SOS&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="230" x="520" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_dispatch" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;RescueDispatchModule&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Điều phối &amp;amp; Phân công nhiệm vụ cứu hộ&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="230" x="520" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_gis" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;GisMapEngine&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Bản đồ số GIS &amp;amp; Điểm sơ tán an toàn&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="230" x="520" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_weather" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;WeatherPipeline&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Dự báo khí tượng &amp;amp; Cảnh báo thiên tai&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="230" x="520" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_db" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;DatabaseServer&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Hệ quản trị CSDL quan hệ PostgreSQL&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="220" x="980" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_storage" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;MediaStorageServer&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Kho lưu trữ ảnh &amp;amp; Tệp hiện trường&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="220" x="980" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_notify" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;NotificationService&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Hệ thống phát thông báo cảnh báo khẩn&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="220" x="980" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_ext_weather" parent="1" style="shape=component;align=left;spacingLeft=34;whiteSpace=wrap;html=1;rounded=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;shadow=0;" value="&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;line-height:1.25;&quot;&gt;OpenMeteoWeatherAPI&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;color:#374151;margin-top:2px;line-height:1.2;&quot;&gt;Cổng dịch vụ khí tượng quốc tế&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="220" x="980" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="dep_c_auth" edge="1" parent="1" source="comp_citizen" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1.003;exitY=0.706;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;exitPerimeter=0;" target="comp_auth" value="«xác thực»">
+          <mxGeometry relative="1" x="-0.4564" y="12" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_c_sos" edge="1" parent="1" source="comp_citizen" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" target="comp_incident_sos" value="«gửi SOS &amp; phản ánh»">
+          <mxGeometry relative="1" x="-0.0422" y="8" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_cmd_auth" edge="1" parent="1" source="comp_command" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=0;entryY=0.4;entryDx=0;entryDy=0;" target="comp_auth" value="«kiểm tra quyền»">
+          <mxGeometry relative="1" x="0.4171" y="-10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="450" y="362" />
+              <mxPoint x="450" y="164" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_cmd_sos" edge="1" parent="1" source="comp_command" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;" target="comp_incident_sos" value="«quản lý sự cố»">
+          <mxGeometry relative="1" x="-0.4083" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="250" y="320" />
+              <mxPoint x="410" y="320" />
+              <mxPoint x="410" y="282" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_cmd_disp" edge="1" parent="1" source="comp_command" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1.001;exitY=0.669;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitPerimeter=0;" target="comp_dispatch" value="«điều phối cứu hộ»">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_cmd_gis" edge="1" parent="1" source="comp_command" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" target="comp_gis" value="«lớp bản đồ số»">
+          <mxGeometry relative="1" x="0.5269" y="-12" as="geometry">
+            <mxPoint x="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_cmd_wth" edge="1" parent="1" source="comp_command" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" target="comp_weather" value="«theo dõi bão lũ»">
+          <mxGeometry relative="1" x="0.6317" y="-12" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="175" y="410" />
+              <mxPoint x="175" y="530" />
+              <mxPoint x="360" y="530" />
+              <mxPoint x="360" y="578" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_res_disp" edge="1" parent="1" source="comp_rescue_app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;" target="comp_dispatch" value="«báo cáo tiến độ»">
+          <mxGeometry relative="1" x="0.0707" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="205" y="450" />
+              <mxPoint x="460" y="450" />
+              <mxPoint x="460" y="408" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_auth_db" edge="1" parent="1" source="comp_auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.2;entryDx=0;entryDy=0;" target="comp_db" value="«truy vấn tài khoản»">
+          <mxGeometry relative="1" x="-0.3182" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="950" y="170" />
+              <mxPoint x="950" y="194" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_sos_db" edge="1" parent="1" source="comp_incident_sos" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="comp_db" value="«lưu trữ SOS &amp; sự cố»">
+          <mxGeometry relative="1" x="0.36" y="15" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_sos_store" edge="1" parent="1" source="comp_incident_sos" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" target="comp_storage" value="«lưu ảnh hiện trường»">
+          <mxGeometry relative="1" x="0.5632" y="8" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_disp_db" edge="1" parent="1" source="comp_dispatch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;" target="comp_db" value="«ghi nhật ký nhiệm vụ»">
+          <mxGeometry relative="1" x="0.6023" y="-14" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="800" y="378" />
+              <mxPoint x="800" y="236" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_disp_notif" edge="1" parent="1" source="comp_dispatch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" target="comp_notify" value="«phát lệnh cứu hộ»">
+          <mxGeometry relative="1" x="0.5804" y="-12" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="800" y="402" />
+              <mxPoint x="800" y="478" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_gis_db" edge="1" parent="1" source="comp_gis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.3;entryY=1;entryDx=0;entryDy=0;" target="comp_db" value="«truy vấn điểm sơ tán»">
+          <mxGeometry relative="1" x="0.4101" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="830" y="510" />
+              <mxPoint x="830" y="300" />
+              <mxPoint x="1046" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep_wth_ext" edge="1" parent="1" source="comp_weather" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;endSize=8;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="comp_ext_weather" value="«gọi API khí tượng»">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="page_Deployment_Diagram" name="Biểu đồ triển khai (Deployment Diagram)">
+    <mxGraphModel dx="1493" dy="563" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1350" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="page_Deployment_Diagram_title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;" value="&lt;b style=&quot;font-size:20px;color:#000000;&quot;&gt;BIỂU ĐỒ TRIỂN KHAI — HỆ THỐNG QUẢN LÝ THIÊN TAI &amp; CỨU HỘ CỨU NẠN (VNDMS)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="28" width="1100" x="40" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="page_Deployment_Diagram_subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;" value="&lt;span style=&quot;font-size:13px;color:#374151;&quot;&gt;Mô hình hóa kiến trúc triển khai thực tế của VNDMS: GitHub (CI/CD) → Vercel Edge Cloud (*.vercel.app) → Supabase Cloud (*.supabase.co).&lt;/span&gt;" vertex="1">
+          <mxGeometry height="20" width="1100" x="40" y="48" as="geometry" />
+        </mxCell>
+        <mxCell id="page_Deployment_Diagram_col1_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" value="&lt;b style=&quot;font-size:14px;color:#000000;&quot;&gt;CLIENT NODES (THIẾT BỊ ĐẦU CUỐI)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="24" width="280" x="50" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="page_Deployment_Diagram_col2_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" value="&lt;b style=&quot;font-size:14px;color:#000000;&quot;&gt;BUILD &amp; APPLICATION HOSTING TIER&lt;/b&gt;" vertex="1">
+          <mxGeometry height="24" width="340" x="450" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="page_Deployment_Diagram_col3_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" value="&lt;b style=&quot;font-size:14px;color:#000000;&quot;&gt;CLOUD BACKEND &amp; EXTERNAL DATA TIER&lt;/b&gt;" vertex="1">
+          <mxGeometry height="24" width="340" x="850" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="node_client_citizen" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;align=center;verticalAlign=top;spacingTop=10;shadow=0;" value="&lt;div style=&quot;font-size:11.5px;color:#374151;&quot;&gt;&amp;laquo;device&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#000000;&quot;&gt;Citizen Device (PC / Smartphone)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="170" width="250" x="70" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="art_citizen_web" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Web Browser (Chrome/Safari)&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Truy cập https://vndms.vercel.app&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="220" x="90" y="172" as="geometry" />
+        </mxCell>
+        <mxCell id="art_citizen_gps" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;HTML5 Geolocation API&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Định vị GPS tọa độ cứu nạn khẩn cấp&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="220" x="90" y="228" as="geometry" />
+        </mxCell>
+        <mxCell id="node_client_command" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;align=center;verticalAlign=top;spacingTop=10;shadow=0;" value="&lt;div style=&quot;font-size:11.5px;color:#374151;&quot;&gt;&amp;laquo;device&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#000000;&quot;&gt;Command Workstation (Cán bộ PCTT)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="181" width="250" x="70" y="292" as="geometry" />
+        </mxCell>
+        <mxCell id="art_command_web" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Web Browser (Desktop)&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Bảng điều khiển Trung tâm chỉ huy PCTT&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="220" x="90" y="372" as="geometry" />
+        </mxCell>
+        <mxCell id="art_command_gis" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Dual GIS Map Viewport&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Bản đồ số tác nghiệp Leaflet/OpenLayers&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="220" x="90" y="423" as="geometry" />
+        </mxCell>
+        <mxCell id="node_client_rescue" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;align=center;verticalAlign=top;spacingTop=10;shadow=0;" value="&lt;div style=&quot;font-size:11.5px;color:#374151;&quot;&gt;&amp;laquo;device&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#000000;&quot;&gt;Rescue Tablet / Mobile (Đội cứu hộ)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="170" width="260" x="70" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="art_rescue_pwa" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Rescue Mobile Web / PWA&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Giao diện tiếp nhận &amp;amp; Báo cáo nhiệm vụ&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="220" x="100" y="552" as="geometry" />
+        </mxCell>
+        <mxCell id="art_rescue_storage" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;IndexedDB Offline Cache&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Lưu trữ cục bộ khi mất kết nối mạng&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="220" x="100" y="603" as="geometry" />
+        </mxCell>
+        <mxCell id="node_github" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;align=center;verticalAlign=top;spacingTop=10;shadow=0;" value="&lt;div style=&quot;font-size:11.5px;color:#374151;&quot;&gt;&amp;laquo;execution environment&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#000000;&quot;&gt;GitHub Cloud (github.com)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="170" width="260" x="490" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="art_git_repo" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;VNDMS Git Repository&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Mã nguồn dự án (TypeScript, React 18)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="230" x="510" y="172" as="geometry" />
+        </mxCell>
+        <mxCell id="art_git_actions" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;GitHub Actions / Webhooks&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;CI/CD pipeline kích hoạt tự động build&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="230" x="510" y="228" as="geometry" />
+        </mxCell>
+        <mxCell id="node_vercel" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;align=center;verticalAlign=top;spacingTop=10;shadow=0;" value="&lt;div style=&quot;font-size:11.5px;color:#374151;&quot;&gt;&amp;laquo;execution environment&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#000000;&quot;&gt;Vercel Cloud (*.vercel.app)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="267" width="260" x="480" y="336" as="geometry" />
+        </mxCell>
+        <mxCell id="art_vercel_cdn" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Global Edge Network (CDN)&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Phân phối tài nguyên tĩnh &amp;amp; SSL Terminator&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="230" x="505" y="401" as="geometry" />
+        </mxCell>
+        <mxCell id="art_vercel_spa" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Production Web App Bundle&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Gói tối ưu hóa React 18 + Vite (SPA)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="230" x="505" y="451" as="geometry" />
+        </mxCell>
+        <mxCell id="art_vercel_services" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Client Application Services&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Quản lý trạng thái Sự cố, SOS &amp;amp; Điều phối&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="230" x="505" y="501" as="geometry" />
+        </mxCell>
+        <mxCell id="art_weather_cache" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;In-Memory Weather Cache&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Bộ đệm 3-Tier khử trùng lặp dữ liệu khí tượng&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="230" x="505" y="551" as="geometry" />
+        </mxCell>
+        <mxCell id="node_supabase" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;align=center;verticalAlign=top;spacingTop=10;shadow=0;" value="&lt;div style=&quot;font-size:11.5px;color:#374151;&quot;&gt;&amp;laquo;execution environment&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#000000;&quot;&gt;Supabase Cloud (*.supabase.co)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="280" width="280" x="900" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="art_supabase_db" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Managed PostgreSQL 15 DB&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Cơ sở dữ liệu quan hệ lưu trữ 18 bảng VNDMS&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="250" x="925" y="228" as="geometry" />
+        </mxCell>
+        <mxCell id="art_supabase_auth" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Supabase Auth &amp;amp; RLS Policies&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Xác thực JWT &amp;amp; Chính sách bảo mật hàng (RLS)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="250" x="925" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="art_supabase_realtime" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Supabase Realtime Engine&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;WebSockets đồng bộ thay đổi cứu nạn tức thì&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="250" x="925" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="art_supabase_storage" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Supabase Storage (S3 Buckets)&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Lưu trữ tệp tin ảnh hiện trường &amp;amp; Báo cáo&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="250" x="925" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="node_open_meteo" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;align=center;verticalAlign=top;spacingTop=10;shadow=0;" value="&lt;div style=&quot;font-size:11.5px;color:#374151;&quot;&gt;&amp;laquo;execution environment&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#000000;&quot;&gt;Open-Meteo &amp;amp; ECMWF Cloud&lt;/div&gt;" vertex="1">
+          <mxGeometry height="129" width="280" x="890" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="art_meteo_api" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#4b5563;strokeWidth=1;fontFamily=Arial;align=center;verticalAlign=middle;shadow=0;" value="&lt;div style=&quot;font-size:10.5px;color:#4b5563;&quot;&gt;&amp;laquo;artifact&amp;raquo;&lt;/div&gt;&lt;div style=&quot;font-size:14.5px;font-weight:bold;color:#000000;&quot;&gt;Global Weather Forecast APIs&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#374151;&quot;&gt;Dịch vụ cung cấp dự báo bão, mưa lũ toàn cầu&lt;/div&gt;" vertex="1">
+          <mxGeometry height="46" width="250" x="910" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="link_git_vercel" edge="1" parent="1" source="node_github" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=0.462;exitY=0.998;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitPerimeter=0;" target="node_vercel" value="«Git Webhook / Auto Deploy»">
+          <mxGeometry relative="1" x="0.0847" y="10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="link_c1_vercel" edge="1" parent="1" source="node_client_citizen" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" target="node_vercel" value="«HTTPS / WSS (Port 443)»">
+          <mxGeometry relative="1" x="0.1111" y="20" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="320" y="205" />
+              <mxPoint x="400" y="205" />
+              <mxPoint x="400" y="340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="link_c2_vercel" edge="1" parent="1" source="node_client_command" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.45;entryDx=0;entryDy=0;" target="node_vercel" value="«HTTPS / WSS (Port 443)»">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="link_c3_vercel" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;entryX=0;entryY=0.8;entryDx=0;entryDy=0;" target="node_vercel" value="«HTTPS / WSS (Port 443)»">
+          <mxGeometry relative="1" x="-0.1753" y="-10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="400" y="625" />
+              <mxPoint x="400" y="556" />
+            </Array>
+            <mxPoint x="330" y="625" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="link_vercel_supabase" edge="1" parent="1" source="node_vercel" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;" target="node_supabase" value="«HTTPS REST / PostgreSQL&lt;br&gt;(Port 5432) / WSS»">
+          <mxGeometry relative="1" x="-0.4473" y="-20" as="geometry">
+            <mxPoint x="-20" y="20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="link_vercel_meteo" edge="1" parent="1" source="node_vercel" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=12;fontColor=#000000;labelBackgroundColor=none;labelBorderColor=none;whiteSpace=nowrap;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="node_open_meteo" value="«REST HTTPS (Port 443)»">
+          <mxGeometry relative="1" x="-0.2664" y="-13" as="geometry">
+            <mxPoint x="13" y="-13" as="offset" />
+            <Array as="points">
+              <mxPoint x="740" y="543" />
+              <mxPoint x="810" y="543" />
+              <mxPoint x="810" y="590" />
+              <mxPoint x="890" y="590" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

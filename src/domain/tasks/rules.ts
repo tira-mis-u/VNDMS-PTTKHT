@@ -3,7 +3,7 @@ import type { IncidentTask, TaskPriority, TaskStatus } from "./types";
 export const taskTransitions: Record<TaskStatus, TaskStatus[]> = {
   "Chờ giao": ["Đã giao", "Đã hủy"],
   "Đã giao": ["Đã tiếp nhận", "Đã hủy"],
-  "Đã tiếp nhận": ["Đang thực hiện"],
+  "Đã tiếp nhận": ["Đang thực hiện", "Đã hủy"],
   "Đang thực hiện": ["Chờ xác nhận", "Hoàn thành", "Đã hủy"],
   // Cán bộ chấp nhận → Hoàn thành; từ chối (có lý do) → quay lại thực hiện.
   "Chờ xác nhận": ["Hoàn thành", "Đang thực hiện"],

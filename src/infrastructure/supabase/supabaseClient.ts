@@ -92,24 +92,43 @@ export interface SupabaseProfileRow {
  * Chuyển đổi SupabaseProfileRow sang domain AuthUser
  */
 export function toAuthUser(row: SupabaseProfileRow): AuthUser {
+  const shortId = typeof row.id === "string" ? row.id.slice(0, 8) : "user";
+  const emailPrefix = typeof (row as any).email === "string" ? (row as any).email.split("@")[0] : "";
+  const rawRole = row.role || "citizen";
+  const mappedRole = (LEGACY_ROLE_MAP[rawRole] ?? rawRole) as AuthUser["role"];
+  const finalRole = ["admin", "disaster_officer", "rescue_unit", "citizen"].includes(mappedRole)
+    ? mappedRole
+    : "citizen";
+
+  const resolvedUsername =
+    row.username ||
+    emailPrefix ||
+    `user_${shortId}`;
+
+  const resolvedDisplayName =
+    row.display_name ||
+    (row as any).full_name ||
+    resolvedUsername ||
+    `Người dùng ${shortId}`;
+
   return {
     id: row.id,
-    username: row.username,
-    displayName: row.display_name,
+    username: resolvedUsername,
+    displayName: resolvedDisplayName,
     // Hồ sơ lưu vai cũ (trước V2) được ánh xạ sang mô hình 4 vai khi đọc.
-    role: (LEGACY_ROLE_MAP[row.role] ?? row.role) as AuthUser["role"],
+    role: finalRole,
     geographicScope: {
-      level: row.scope_level as GeographicScope["level"],
-      name: row.scope_name,
-      code: row.scope_code,
+      level: ((row.scope_level || "national") as GeographicScope["level"]),
+      name: row.scope_name || "Toàn quốc",
+      code: row.scope_code || "VN",
     },
     active: row.active ?? true,
     teamId: row.team_id ?? undefined,
     warehouseId: row.warehouse_id ?? undefined,
     organization: row.organization ?? undefined,
     phone: row.phone ?? undefined,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
   };
 }
 

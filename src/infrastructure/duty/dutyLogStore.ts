@@ -1,3 +1,6 @@
+import { supabase, isSupabaseConfigured } from "../supabase/supabaseClient";
+import type { RealtimeChannel } from "@supabase/supabase-js";
+
 /**
  * NHẬT KÝ TRỰC BAN & BÀN GIAO CA (DÙNG CHUNG NHIỀU ĐIỂM TRỰC)
  * ─────────────────────────────────────────────────────────────────────────
@@ -170,7 +173,64 @@ function sameEntries(a: DutyLogEntry[], b: DutyLogEntry[]) {
   );
 }
 
+export function dutyEntryToRow(entry: DutyLogEntry): Record<string, unknown> {
+  return {
+    id: entry.id,
+    at: entry.at,
+    actor: entry.actor,
+    actor_role: entry.actorRole,
+    actor_id: entry.actorId ?? null,
+    source: entry.source ?? "manual",
+    kind: entry.kind,
+    text: entry.text,
+    status: entry.status ?? null,
+    task_id: entry.taskId ?? null,
+    shift_ref: entry.shiftRef ?? null,
+    follow_up: entry.followUp ?? false,
+    handover: entry.handover ?? null,
+    link: entry.link ?? null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+export function rowToDutyEntry(row: any): DutyLogEntry {
+  return {
+    id: String(row.id),
+    at: String(row.at),
+    actor: String(row.actor || ""),
+    actorRole: String(row.actor_role || ""),
+    actorId: row.actor_id ? String(row.actor_id) : undefined,
+    source: (row.source === "system" ? "system" : "manual") as "manual" | "system",
+    kind: (row.kind || "Ghi nhận") as DutyEntryKind,
+    text: String(row.text || ""),
+    status: row.status ? (row.status as "open" | "done") : undefined,
+    taskId: row.task_id ? String(row.task_id) : undefined,
+    shiftRef: row.shift_ref ? String(row.shift_ref) : undefined,
+    followUp: Boolean(row.follow_up),
+    handover: row.handover && typeof row.handover === "object" ? row.handover : undefined,
+    link: row.link && typeof row.link === "object" ? row.link : undefined,
+  };
+}
+
 async function fetchRemote(): Promise<DutyLogEntry[] | null> {
+  // 1. Kéo từ Supabase Cloud dùng chung
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("duty_logs")
+        .select("*")
+        .order("at", { ascending: false })
+        .limit(MAX_ENTRIES);
+
+      if (!error && Array.isArray(data)) {
+        return data.map(rowToDutyEntry);
+      }
+    } catch {
+      // Bảng chưa có hoặc mạng lỗi -> thử tiếp endpoint dự phòng
+    }
+  }
+
+  // 2. Dự phòng: endpoint Vite dev server /api/duty-log (Redis/RAM)
   try {
     const response = await fetch("/api/duty-log");
     if (!response.ok) return null;
@@ -232,6 +292,22 @@ export async function syncDutyLogFromServer(): Promise<boolean> {
 }
 
 async function pushDutyEntry(entry: DutyLogEntry) {
+  let ok = false;
+  // 1. Supabase Cloud (chính)
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const row = dutyEntryToRow(entry);
+      const { error } = await supabase.from("duty_logs").upsert(row, { onConflict: "id" });
+      if (!error) {
+        ok = true;
+        setSyncStatus({ state: "synced", lastSyncedAt: new Date().toISOString() });
+      }
+    } catch {
+      // Ngoại tuyến: giữ bản đệm localStorage
+    }
+  }
+
+  // 2. Endpoint dev server /api/duty-log (dự phòng)
   try {
     const response = await fetch("/api/duty-log", {
       method: "POST",
@@ -240,10 +316,15 @@ async function pushDutyEntry(entry: DutyLogEntry) {
     });
     const payload = (await response.json()) as { success: boolean };
     if (response.ok && payload.success) {
+      ok = true;
       setSyncStatus({ state: "synced", lastSyncedAt: new Date().toISOString() });
     }
   } catch {
-    /* ngoại tuyến: bản đệm localStorage giữ lại, lần poll sau đẩy tiếp */
+    /* ignore */
+  }
+
+  if (!ok && !syncStatus.lastSyncedAt) {
+    setSyncStatus({ state: "local" });
   }
 }
 
@@ -269,6 +350,27 @@ function queuePendingRetract(id: string, actor: string) {
 }
 
 async function pushRetract(id: string, actor: string): Promise<boolean> {
+  let ok = false;
+  // 1. Supabase Cloud
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data } = await supabase.from("duty_logs").select("text").eq("id", id).maybeSingle();
+      const currentText = data?.text ?? "";
+      const retractedText = currentText.startsWith(RETRACT_MARK)
+        ? currentText
+        : `[Đã thu hồi bởi ${actor}] ${currentText}`;
+
+      const { error } = await supabase
+        .from("duty_logs")
+        .update({ text: retractedText, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (!error) ok = true;
+    } catch {
+      // ignore
+    }
+  }
+
+  // 2. Dự phòng /api/duty-log/retract
   try {
     const response = await fetch("/api/duty-log/retract", {
       method: "POST",
@@ -276,10 +378,12 @@ async function pushRetract(id: string, actor: string): Promise<boolean> {
       body: JSON.stringify({ id, actor }),
     });
     const payload = (await response.json()) as { success: boolean };
-    return response.ok && payload.success;
+    if (response.ok && payload.success) ok = true;
   } catch {
-    return false;
+    // ignore
   }
+
+  return ok;
 }
 
 async function sendRetract(id: string, actor: string) {
@@ -311,12 +415,88 @@ export function subscribeDutySync(fn: (status: DutySyncStatus) => void) {
   return () => statusSubscribers.delete(fn);
 }
 
-/** Bật/tắt thăm dò máy chủ (gọi khi panel trực ban mount/unmount). */
+let realtimeChannel: RealtimeChannel | null = null;
+
+/**
+ * Đăng ký Supabase Realtime cho sổ trực ban — các phòng chỉ huy cập nhật
+ * tức thì (sub-second) như một kênh chat trực tiếp không cần chờ poll.
+ */
+export function setupDutyLogRealtime(): void {
+  if (!isBrowser() || !isSupabaseConfigured || !supabase || realtimeChannel) return;
+
+  try {
+    realtimeChannel = supabase
+      .channel("vndms_duty_logs_realtime_channel")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "duty_logs" },
+        (payload: any) => {
+          if (payload.eventType === "INSERT") {
+            const newEntry = rowToDutyEntry(payload.new);
+            const current = readAll();
+            if (!current.some((e) => e.id === newEntry.id)) {
+              const merged = mergeDutyEntries(current, [newEntry]);
+              persist(merged);
+              setSyncStatus({ state: "synced", lastSyncedAt: new Date().toISOString() });
+            }
+          } else if (payload.eventType === "UPDATE") {
+            const updatedEntry = rowToDutyEntry(payload.new);
+            const current = readAll();
+            const next = current.map((e) => (e.id === updatedEntry.id ? updatedEntry : e));
+            persist(next);
+            setSyncStatus({ state: "synced", lastSyncedAt: new Date().toISOString() });
+          } else if (payload.eventType === "DELETE") {
+            const deletedId = (payload.old as any)?.id;
+            if (deletedId) {
+              const current = readAll();
+              persist(current.filter((e) => e.id !== deletedId));
+              setSyncStatus({ state: "synced", lastSyncedAt: new Date().toISOString() });
+            }
+          }
+        },
+      )
+      .subscribe((status: string) => {
+        if (status === "SUBSCRIBED") {
+          setSyncStatus({ state: "synced" });
+        }
+      });
+  } catch (err) {
+    console.warn("[VNDMS/DutyLog] Không thể kết nối Supabase Realtime:", err);
+  }
+}
+
+export function teardownDutyLogRealtime(): void {
+  if (realtimeChannel && supabase) {
+    try {
+      supabase.removeChannel(realtimeChannel);
+    } catch {
+      // ignore
+    }
+    realtimeChannel = null;
+  }
+}
+
+let activeSyncCount = 0;
+
+/** Bật/tắt đồng bộ Realtime & thăm dò máy chủ (gọi khi panel trực ban mount/unmount). */
 export function startDutyLogSync() {
-  if (!isBrowser() || pollTimer) return () => stopDutyLogSync();
+  if (!isBrowser()) return () => stopDutyLogSync();
+  activeSyncCount++;
+
+  setupDutyLogRealtime();
   void syncDutyLogFromServer();
-  pollTimer = setInterval(() => void syncDutyLogFromServer(), POLL_INTERVAL_MS);
-  return () => stopDutyLogSync();
+
+  if (!pollTimer) {
+    pollTimer = setInterval(() => void syncDutyLogFromServer(), POLL_INTERVAL_MS);
+  }
+
+  return () => {
+    activeSyncCount = Math.max(0, activeSyncCount - 1);
+    if (activeSyncCount === 0) {
+      stopDutyLogSync();
+      teardownDutyLogRealtime();
+    }
+  };
 }
 
 export function stopDutyLogSync() {
@@ -468,6 +648,15 @@ export function deleteDutyEntry(id: string, actorId: string): boolean {
     localStorage.setItem(DELETED_KEY, JSON.stringify([...deleted]));
   } catch {
     /* vẫn xóa được trong phiên */
+  }
+  if (isSupabaseConfigured && supabase) {
+    try {
+      void (async () => {
+        await supabase.from("duty_logs").delete().eq("id", id);
+      })();
+    } catch {
+      // ignore
+    }
   }
   void sendRetract(id, target.actor ?? actorId);
   return true;

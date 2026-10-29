@@ -1,7 +1,10 @@
 import type { AuditGateway } from "../../application/auth/authContracts";
 import type { SecurityAuditEvent } from "../../domain/auth/types";
 import type { StorageLike } from "./localAuthenticationAdapter";
+import { SupabaseAuditAdapter, createAuditAdapter } from "./supabaseAuditAdapter";
+
 const KEY = "vndms.security.audit.v1";
+
 export class LocalAuditAdapter implements AuditGateway {
   private storage: StorageLike;
   constructor(storage: StorageLike) {
@@ -23,5 +26,8 @@ export class LocalAuditAdapter implements AuditGateway {
     this.storage.setItem(KEY, JSON.stringify(events.slice(0, 500)));
   }
 }
-export const browserAuditAdapter = () =>
-  new LocalAuditAdapter(window.localStorage);
+
+export const browserAuditAdapter = (): SupabaseAuditAdapter =>
+  createAuditAdapter(typeof window !== "undefined" ? window.localStorage : undefined);
+
+export { SupabaseAuditAdapter, createAuditAdapter };

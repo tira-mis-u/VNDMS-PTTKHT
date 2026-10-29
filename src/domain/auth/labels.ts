@@ -83,11 +83,17 @@ export const auditTimestampLabel = (value: string) => {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString("vi-VN");
 };
 
-export function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(-2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
+export function initials(name?: string | null): string {
+  if (!name || typeof name !== "string") return "--";
+  const trimmed = name.trim();
+  if (!trimmed) return "--";
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (!parts.length) return "--";
+  return (
+    parts
+      .slice(-2)
+      .map((part) => part[0] ?? "")
+      .join("")
+      .toUpperCase() || "--"
+  );
 }

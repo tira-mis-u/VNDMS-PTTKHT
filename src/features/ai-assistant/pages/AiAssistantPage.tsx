@@ -141,7 +141,7 @@ export function AiAssistantPage({
               <small>Người dùng và phạm vi</small>
               <b>
                 {store.currentUser?.displayName} ·{" "}
-                {store.currentUser?.geographicScope.name}
+                {store.currentUser?.geographicScope?.name}
               </b>
             </span>
           </div>
@@ -410,7 +410,7 @@ export function AiAssistantPage({
               <p>{pending.action.affectedResources.join(" · ")}</p>
               <small>
                 Người thực hiện: {store.currentUser?.displayName} ·{" "}
-                {store.currentUser?.geographicScope.name}
+                {store.currentUser?.geographicScope?.name}
               </small>
             </section>
             <div className="ai-confirm-warning">

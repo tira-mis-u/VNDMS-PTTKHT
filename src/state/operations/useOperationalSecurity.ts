@@ -123,11 +123,40 @@ export function useOperationalSecurity() {
   const role: UserRole = currentUser?.role ?? "citizen";
   const actorName = currentUser?.displayName ?? "Người dùng chưa xác thực";
   const currentScopeName =
-    currentUser?.geographicScope.name ?? "Không xác định";
+    currentUser?.geographicScope?.name ?? "Không xác định";
   const appendSecurityAudit = (event: SecurityAuditEvent) => {
     setSecurityAuditEvents((current) => [event, ...current].slice(0, 500));
     auditGateway.append(event);
   };
+
+  // Đồng bộ nhật ký an ninh dùng chung từ Supabase Cloud & lắng nghe Realtime
+  useEffect(() => {
+    let isMounted = true;
+    if (auditGateway && typeof (auditGateway as any).fetchRemote === "function") {
+      (auditGateway as any).fetchRemote().then((merged: SecurityAuditEvent[]) => {
+        if (isMounted && merged && merged.length > 0) {
+          setSecurityAuditEvents(merged);
+        }
+      });
+    }
+
+    let unsub: (() => void) | undefined;
+    if (auditGateway && typeof (auditGateway as any).subscribeRealtime === "function") {
+      unsub = (auditGateway as any).subscribeRealtime((event: SecurityAuditEvent) => {
+        if (isMounted) {
+          setSecurityAuditEvents((curr) => {
+            if (curr.some((e) => e.id === event.id)) return curr;
+            return [event, ...curr].slice(0, 500);
+          });
+        }
+      });
+    }
+
+    return () => {
+      isMounted = false;
+      unsub?.();
+    };
+  }, [auditGateway, session?.userId]);
   const can = (
     permission: Permission,
     resourceScope?: string,

@@ -46,7 +46,7 @@ export async function loginUser(
         resourceType: "Session",
         resourceId: result.session.id,
         timestamp,
-        geographicScope: result.user.geographicScope.name,
+        geographicScope: result.user.geographicScope?.name ?? "Không xác định",
         result: "SUCCESS",
         reason: "Xác thực bằng bộ kết nối thử nghiệm thành công.",
       }),
@@ -96,7 +96,7 @@ export async function registerUser(
         resourceType: "User",
         resourceId: result.user.id,
         timestamp,
-        geographicScope: result.user.geographicScope.name,
+        geographicScope: result.user.geographicScope?.name ?? "Không xác định",
         result: "SUCCESS",
         reason: result.pendingEmailConfirmation
           ? "Đăng ký tài khoản thành công, đang chờ người dùng kích hoạt email."
@@ -147,7 +147,7 @@ export async function resetUserPassword(
         resourceType: "User",
         resourceId: result.user.id,
         timestamp,
-        geographicScope: result.user.geographicScope.name,
+        geographicScope: result.user.geographicScope?.name ?? "Không xác định",
         result: "SUCCESS",
         reason: "Đã khởi tạo luồng đặt lại mật khẩu. Người dùng phải hoàn tất qua liên kết xác thực.",
       }),
@@ -193,7 +193,7 @@ export function logoutUser(
     resourceType: "Session",
     resourceId: session.id,
     timestamp: now().toISOString(),
-    geographicScope: user.geographicScope.name,
+    geographicScope: user.geographicScope?.name ?? "Không xác định",
     result: "SUCCESS",
     reason: "Phiên đăng nhập đã được hủy trên bộ xác thực cục bộ.",
   });

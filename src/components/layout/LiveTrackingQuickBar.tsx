@@ -315,7 +315,7 @@ export function LiveTrackingQuickBar() {
         await pushLiveLocationPing(ping);
 
         // Tự động kích hoạt hệ thống cứu nạn SOS chính thức
-        const addr = `Tọa độ GPS khẩn cấp: ${coords[1].toFixed(5)}, ${coords[0].toFixed(5)} (${currentUser.geographicScope.name})`;
+        const addr = `Tọa độ GPS khẩn cấp: ${coords[1].toFixed(5)}, ${coords[0].toFixed(5)} (${currentUser.geographicScope?.name ?? "Không xác định"})`;
         const sosId = await createSos(
           {
           reporter: {
@@ -326,7 +326,7 @@ export function LiveTrackingQuickBar() {
           location: {
             name: `Vị trí khẩn cấp của ${currentUser.displayName}`,
             address: addr,
-            administrativeArea: currentUser.geographicScope.name,
+            administrativeArea: currentUser.geographicScope?.name ?? "Không xác định",
             coordinates: coords,
             accessCondition: "Tiếp cận bình thường",
             floodDepth: "Chưa đo",

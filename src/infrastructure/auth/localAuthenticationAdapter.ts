@@ -197,18 +197,26 @@ function safeUsers(storage: StorageLike): AuthUser[] {
     // ghi đè vai trò/mật khẩu của tài khoản khác (danh sách ngoại lệ do
     // migration ghi lại).
     const synced = parsed.map((user: AuthUser) => {
+      // Normalize: đảm bảo geographicScope không bao giờ null/undefined —
+      // tránh crash khi data cũ trong localStorage thiếu trường này.
+      const safeUser: AuthUser = {
+        ...user,
+        displayName: user.displayName || user.username || `Người dùng ${String(user.id).slice(0, 8)}`,
+        username: user.username || String(user.id).slice(0, 8),
+        geographicScope: user.geographicScope ?? { level: "national", name: "Toàn quốc", code: "VN" },
+      };
       const demo = demoUsers.find(
-        (d) => d.id === user.id || d.username.toLowerCase() === user.username?.toLowerCase(),
+        (d) => d.id === safeUser.id || d.username.toLowerCase() === safeUser.username?.toLowerCase(),
       );
       if (demo) {
         return {
-          ...user,
+          ...safeUser,
           username: demo.username,
-          displayName: user.displayName || demo.displayName,
-          role: V2_ACCOUNT_ROLE_MAP[user.id] ?? V2_ACCOUNT_ROLE_MAP[demo.id] ?? user.role,
+          displayName: safeUser.displayName || demo.displayName,
+          role: V2_ACCOUNT_ROLE_MAP[safeUser.id] ?? V2_ACCOUNT_ROLE_MAP[demo.id] ?? safeUser.role,
         };
       }
-      return user;
+      return safeUser;
     });
 
     demoUsers.forEach((demo) => {

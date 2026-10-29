@@ -192,7 +192,7 @@ export function AppHeader({
                   </span>
                   <span>
                     <small>Phạm vi được phân quyền</small>
-                    <b>{user.geographicScope.name}</b>
+                    <b>{user.geographicScope?.name ?? "Toàn quốc"}</b>
                   </span>
                 </div>
                 {user.teamId && (

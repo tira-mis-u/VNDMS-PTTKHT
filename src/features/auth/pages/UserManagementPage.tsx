@@ -49,15 +49,22 @@ export function UserManagementPage({
 
   const rows = useMemo(
     () =>
-      store.users.filter(
-        (user) =>
-          (!query ||
-            `${user.displayName} ${user.username} ${user.id} ${user.geographicScope.name}`
-              .toLowerCase()
-              .includes(query.toLowerCase())) &&
-          (roleFilter === "all" || user.role === roleFilter) &&
-          (statusFilter === "all" || String(user.active) === statusFilter),
-      ),
+      store.users.filter((user) => {
+        if (!user) return false;
+        const displayName = user.displayName || "";
+        const username = user.username || "";
+        const id = user.id || "";
+        const scopeName = user.geographicScope?.name || "Toàn quốc";
+        const queryMatches =
+          !query ||
+          `${displayName} ${username} ${id} ${scopeName}`
+            .toLowerCase()
+            .includes(query.toLowerCase());
+        const roleMatches = roleFilter === "all" || user.role === roleFilter;
+        const statusMatches =
+          statusFilter === "all" || String(user.active) === statusFilter;
+        return queryMatches && roleMatches && statusMatches;
+      }),
     [store.users, query, roleFilter, statusFilter],
   );
 
@@ -206,6 +213,15 @@ export function UserManagementPage({
               {rows.map((user) => {
                 const badgeStyle = ROLE_COLORS[user.role] || ROLE_COLORS.citizen;
                 const isSelf = user.id === store.currentUser?.id;
+                const displayName = user.displayName || user.username || `Tài khoản ${user.id.slice(0, 8)}`;
+                const username = user.username || user.id.slice(0, 8);
+                const scopeName = user.geographicScope?.name || "Toàn quốc";
+                const roleLabel = roleLabels[user.role] || user.role;
+                const updatedDisplay =
+                  typeof user.updatedAt === "string" && user.updatedAt.includes("T")
+                    ? user.updatedAt.split("T")[0]
+                    : (user.updatedAt || "--/--/----");
+
                 return (
                   <tr
                     key={user.id}
@@ -223,11 +239,11 @@ export function UserManagementPage({
                               border: `1px solid ${badgeStyle.border}`,
                             }}
                           >
-                            {initials(user.displayName)}
+                            {initials(displayName)}
                           </span>
                           <div>
                             <b>
-                              {user.displayName} {isSelf && <small className="self-tag">(Bạn)</small>}
+                              {displayName} {isSelf && <small className="self-tag">(Bạn)</small>}
                             </b>
                             <small>{user.id}</small>
                           </div>
@@ -235,7 +251,7 @@ export function UserManagementPage({
                       </div>
                     </td>
                     <td>
-                      <code className="username-tag">@{user.username}</code>
+                      <code className="username-tag">@{username}</code>
                     </td>
                     {/* Ô có control riêng: chặn bubble để không mở drawer ngoài ý muốn */}
                     <td onClick={(event) => event.stopPropagation()}>
@@ -276,7 +292,7 @@ export function UserManagementPage({
                             borderColor: badgeStyle.border,
                           }}
                         >
-                          {roleLabels[user.role]}
+                          {roleLabel}
                         </span>
                       )}
                     </td>
@@ -287,7 +303,7 @@ export function UserManagementPage({
                         title="Bấm để chỉnh sửa phạm vi địa lý"
                       >
                         <MapPin size={13} />
-                        <span>{user.geographicScope.name || "Toàn quốc"}</span>
+                        <span>{scopeName}</span>
                       </button>
                     </td>
                     <td onClick={(event) => event.stopPropagation()}>
@@ -316,15 +332,13 @@ export function UserManagementPage({
                     </td>
                     <td>
                       <small className="updated-date">
-                        {user.updatedAt.includes("T")
-                          ? user.updatedAt.split("T")[0]
-                          : user.updatedAt}
+                        {updatedDisplay}
                       </small>
                     </td>
                     <td>
                       <button
                         className="row-open"
-                        aria-label={`Mở chi tiết tài khoản ${user.displayName}`}
+                        aria-label={`Mở chi tiết tài khoản ${displayName}`}
                         onClick={() => setSelectedId(user.id)}
                       >
                         <ChevronRight size={16} />
@@ -371,12 +385,15 @@ function UserDrawer({
   onRoleChange: (userId: string, role: Role) => void;
   onStatusToggle: (userId: string, currentActive: boolean) => void;
 }) {
-  const [scopeName, setScopeName] = useState(user.geographicScope.name);
-  const [scopeCode, setScopeCode] = useState(user.geographicScope.code);
+  const [scopeName, setScopeName] = useState(user.geographicScope?.name || "Toàn quốc");
+  const [scopeCode, setScopeCode] = useState(user.geographicScope?.code || "VN");
   const [scopeLevel, setScopeLevel] = useState<GeographicScopeLevel>(
-    user.geographicScope.level,
+    user.geographicScope?.level || "national",
   );
   const [savedScope, setSavedScope] = useState(false);
+
+  const displayName = user.displayName || user.username || `Tài khoản ${user.id.slice(0, 8)}`;
+  const username = user.username || user.id.slice(0, 8);
 
   const audits = store.securityAuditEvents
     .filter((item) => item.actorId === user.id || item.resourceId === user.id)
@@ -405,15 +422,15 @@ function UserDrawer({
         className="admin-user-drawer"
         role="dialog"
         aria-modal="true"
-        aria-label={`Chi tiết tài khoản ${user.displayName}`}
+        aria-label={`Chi tiết tài khoản ${displayName}`}
       >
         <header>
-          <div className="drawer-avatar">{initials(user.displayName)}</div>
+          <div className="drawer-avatar">{initials(displayName)}</div>
           <div>
             <small>Hồ sơ & Phân quyền tài khoản</small>
-            <h2>{user.displayName}</h2>
+            <h2>{displayName}</h2>
             <span>
-              @{user.username} · ID: {user.id}
+              @{username} · ID: {user.id}
             </span>
           </div>
           <button onClick={close} aria-label="Đóng chi tiết tài khoản">

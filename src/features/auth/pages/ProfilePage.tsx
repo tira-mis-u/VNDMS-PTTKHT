@@ -162,7 +162,7 @@ export function ProfilePage() {
           <div className="profile-hero-badges">
             <span>
               <MapPinned size={16} />
-              {user.geographicScope.name}
+              {user.geographicScope?.name ?? "Toàn quốc"}
             </span>
             {user.teamId && (
               <span>
@@ -299,7 +299,7 @@ export function ProfilePage() {
               <dt>Phạm vi địa lý</dt>
               <dd>
                 <MapPinned size={17} />
-                {user.geographicScope.name} ({user.geographicScope.code})
+                {user.geographicScope?.name ?? "Toàn quốc"} ({user.geographicScope?.code ?? "VN"})
               </dd>
             </div>
             <div>

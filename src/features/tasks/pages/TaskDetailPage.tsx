@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  Ban,
   ChevronRight,
   Clock3,
   MapPin,
@@ -161,6 +162,16 @@ export function TaskDetailPage({
             {can("task_update") && (
               <Button variant="secondary" onClick={() => setDialog("update")}>
                 Thêm cập nhật
+              </Button>
+            )}
+            {transitions.includes("Đã hủy") && can("task_cancel") && (
+              <Button
+                variant="secondary"
+                style={{ borderColor: "var(--danger-border, #f87171)", color: "var(--danger-fg, #ef4444)" }}
+                onClick={() => setDialog("cancel")}
+              >
+                <Ban size={15} />
+                Hủy nhiệm vụ
               </Button>
             )}
             <div className="more-wrap">

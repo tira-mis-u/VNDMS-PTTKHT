@@ -12,6 +12,7 @@ import { NotFoundPage } from "@/components/shared/NotFoundPage";
 import { PlaceholderPage } from "@/components/shared/PlaceholderPage";
 import { AccessDeniedPage } from "@/features/auth/pages/AccessDeniedPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { ApplicationErrorBoundary } from "@/app/ApplicationErrorBoundary";
 
 const CommandCenter = lazy(() =>
   import("@/features/command-center").then((module) => ({
@@ -323,6 +324,7 @@ export default function App() {
           closeMobile={() => setMobileOpen(false)}
         />
         <div className="workspace">
+          <ApplicationErrorBoundary area="workspace" softReset>
           <Suspense
             fallback={
               <div className="workspace-content route-loading" role="status">
@@ -333,6 +335,7 @@ export default function App() {
           >
             {content}
           </Suspense>
+          </ApplicationErrorBoundary>
         </div>
       </div>
     </div>

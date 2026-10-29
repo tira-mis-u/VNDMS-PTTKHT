@@ -34,8 +34,12 @@ import {
   isSupabaseConfigured,
   supabase,
   toAuthUser,
+  fetchSupabaseUsers,
   type SupabaseProfileRow,
 } from "@/infrastructure/supabase/supabaseClient";
+
+const isUuid = (id: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
 /** Authentication/session/audit mechanics used by the sole OperationalProvider. */
 export function useOperationalSecurity() {
@@ -234,7 +238,18 @@ export function useOperationalSecurity() {
         ) {
           if (currentSession?.user) {
             const { data: verified, error: verifiedError } = await client.auth.getUser(currentSession.access_token);
-            if (verifiedError || !verified.user || verified.user.id !== currentSession.user.id) {
+            if (verifiedError) {
+              const isAuthRevoked = verifiedError.status === 401 || verifiedError.status === 403;
+              if (isAuthRevoked) {
+                await client.auth.signOut();
+                setSession(null);
+                setCurrentUser(null);
+              } else {
+                console.warn("[VNDMS/Auth] Tạm thời không thể xác thực phiên qua Cloud (lỗi mạng/hạ tầng):", verifiedError.message);
+              }
+              return;
+            }
+            if (!verified.user || verified.user.id !== currentSession.user.id) {
               await client.auth.signOut();
               setSession(null);
               setCurrentUser(null);
@@ -266,6 +281,16 @@ export function useOperationalSecurity() {
                 lastValidatedAt: new Date().toISOString(),
               };
               setSession(domainSession);
+
+              // Tự động kéo danh sách người dùng mới nhất từ Supabase Cloud profiles nếu có quyền quản trị
+              if (authUser.role === "admin" || authUser.role === "disaster_officer") {
+                fetchSupabaseUsers().then((cloudUsers) => {
+                  if (cloudUsers && cloudUsers.length > 0) {
+                    setUsers(cloudUsers);
+                    authGateway.saveUsers(cloudUsers);
+                  }
+                });
+              }
             } else {
               await client.auth.signOut();
               setSession(null);
@@ -348,7 +373,7 @@ export function useOperationalSecurity() {
     const targetUser = users.find((user) => user.id === userId);
     if (!targetUser || targetUser.active === active) return;
     if (!currentUser) return;
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && isUuid(userId)) {
       const { error } = await supabase.rpc("admin_update_profile_authorization", {
         target_id: userId,
         next_active: active,
@@ -403,7 +428,7 @@ export function useOperationalSecurity() {
     // lớp phòng thủ thứ hai ngay tại store cho mọi nơi gọi khác (AI actions…).
     const roleTarget = users.find((user) => user.id === userId);
     if (!roleTarget || roleTarget.role === nextRole) return;
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && isUuid(userId)) {
       const { error } = await supabase.rpc("admin_update_profile_authorization", {
         target_id: userId,
         next_role: nextRole,
@@ -439,7 +464,7 @@ export function useOperationalSecurity() {
         scopeTarget.geographicScope.name === scope.name)
     )
       return;
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && isUuid(userId)) {
       const { error } = await supabase.rpc("admin_update_profile_authorization", {
         target_id: userId,
         next_scope_level: scope.level,
@@ -542,13 +567,33 @@ export function useOperationalSecurity() {
   useEffect(() => {
     if (!session) return;
     const timer = window.setInterval(() => {
+      // 1. Phiên cục bộ hoặc dự phòng tác nghiệp (SES-LOCAL- hoặc tài khoản USR-)
+      if (session.id.startsWith("SES-LOCAL-") || session.userId.startsWith("USR-")) {
+        if (new Date(session.expiresAt).getTime() <= Date.now()) {
+          setSession(null);
+          setCurrentUser(null);
+        }
+        return;
+      }
+
+      // 2. Phiên Cloud Supabase
       if (isSupabaseConfigured && supabase) {
-        supabase.auth.getUser().then(({ data, error }) => {
-          if (error || !data.user || data.user.id !== session.userId) {
-            setSession(null);
-            setCurrentUser(null);
-          }
-        });
+        supabase.auth
+          .getUser()
+          .then(({ data, error }) => {
+            // CHỈ đăng xuất khi có kết luận dứt khoát là token bị thu hồi hoặc sai user (401/403).
+            // Tuyệt đối KHÔNG đăng xuất vì mạng gián đoạn, lỗi 500 hoặc Supabase khởi động lại.
+            if (error && (error.status === 401 || error.status === 403)) {
+              setSession(null);
+              setCurrentUser(null);
+            } else if (data?.user && data.user.id !== session.userId) {
+              setSession(null);
+              setCurrentUser(null);
+            }
+          })
+          .catch(() => {
+            // Lỗi mạng hoặc Supabase tạm ngắt: giữ nguyên phiên làm việc để không gián đoạn
+          });
         return;
       }
       const validation = authGateway.restoreSession();

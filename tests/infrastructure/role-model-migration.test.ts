@@ -170,3 +170,36 @@ test("adapter: tài khoản cũ đăng nhập được với mật khẩu cũ sa
   const fresh = new LocalAuthenticationAdapter(new MemoryStorage(), clock, () => "token");
   assert.deepEqual(fresh.listUsers().map((user) => user.id), demoUsers.map((user) => user.id));
 });
+
+test("safeUsers deduplicates accounts with the same username, preferring Cloud UUID identity", () => {
+  const storage = new MemoryStorage();
+  const mixedUsers = [
+    {
+      id: "a0000000-0000-0000-0000-000000000001",
+      username: "thuantq",
+      displayName: "Trần Quốc Thuận",
+      role: "admin",
+      geographicScope: { level: "national", name: "Toàn quốc", code: "VN" },
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "USR-CMD-001",
+      username: "thuantq",
+      displayName: "Trần Quốc Thuận",
+      role: "admin",
+      geographicScope: { level: "national", name: "Toàn quốc", code: "VN" },
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+  storage.setItem(USERS_KEY, JSON.stringify(mixedUsers));
+  storage.setItem(ROLE_MODEL_VERSION_KEY, "2");
+  const adapter = new LocalAuthenticationAdapter(storage, clock, () => "token");
+  const users = adapter.listUsers();
+  const thuantqAccounts = users.filter((u) => u.username === "thuantq");
+  assert.equal(thuantqAccounts.length, 1, "Chỉ được phép có duy nhất 1 tài khoản thuantq");
+  assert.equal(thuantqAccounts[0].id, "a0000000-0000-0000-0000-000000000001", "Phải giữ lại tài khoản Cloud Auth UUID");
+});

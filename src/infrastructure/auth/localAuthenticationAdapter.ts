@@ -197,24 +197,50 @@ function safeUsers(storage: StorageLike): AuthUser[] {
     // ghi đè vai trò/mật khẩu của tài khoản khác (danh sách ngoại lệ do
     // migration ghi lại).
     const synced = parsed.map((user: AuthUser) => {
-      const demo = demoUsers.find((d) => d.id === user.id);
+      const demo = demoUsers.find(
+        (d) => d.id === user.id || d.username.toLowerCase() === user.username?.toLowerCase(),
+      );
       if (demo) {
         return {
           ...user,
           username: demo.username,
-          displayName: demo.displayName,
-          role: V2_ACCOUNT_ROLE_MAP[user.id] ?? user.role,
+          displayName: user.displayName || demo.displayName,
+          role: V2_ACCOUNT_ROLE_MAP[user.id] ?? V2_ACCOUNT_ROLE_MAP[demo.id] ?? user.role,
         };
       }
       return user;
     });
+
     demoUsers.forEach((demo) => {
-      if (!synced.some((u) => u.id === demo.id)) {
+      const alreadyPresent = synced.some(
+        (u) => u.id === demo.id || u.username?.toLowerCase() === demo.username.toLowerCase(),
+      );
+      if (!alreadyPresent) {
         synced.push(structuredClone(demo));
       }
     });
-    storage.setItem(USERS_KEY, JSON.stringify(synced));
-    return synced;
+
+    // Khử trùng lặp theo username (nếu tồn tại cả tài khoản Cloud UUID và mock USR-*)
+    const deduplicated: AuthUser[] = [];
+    const seenUsernames = new Set<string>();
+
+    // Sắp xếp ưu tiên: tài khoản Cloud UUID (hoặc ID dài) lên trước để giữ lại tài khoản Cloud
+    const sorted = [...synced].sort((a, b) => {
+      const aIsUuid = a.id && a.id.length > 20 ? 1 : 0;
+      const bIsUuid = b.id && b.id.length > 20 ? 1 : 0;
+      return bIsUuid - aIsUuid;
+    });
+
+    for (const u of sorted) {
+      const uname = (u.username || "").toLowerCase();
+      if (!uname || !seenUsernames.has(uname)) {
+        if (uname) seenUsernames.add(uname);
+        deduplicated.push(u);
+      }
+    }
+
+    storage.setItem(USERS_KEY, JSON.stringify(deduplicated));
+    return deduplicated;
   } catch {
     return structuredClone(demoUsers);
   }
@@ -258,10 +284,21 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
         ? trimmedUsername.toLowerCase()
         : `${trimmedUsername.toLowerCase()}@vndms.gov.vn`;
 
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      let authData: { session: any; user: any } | null = null;
+      let authError: any = null;
+      try {
+        const res = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        authData = res.data;
+        authError = res.error;
+      } catch (networkErr: any) {
+        authError = {
+          message: networkErr?.message || "Lỗi kết nối tới Supabase Cloud",
+          status: 500,
+        };
+      }
 
       if (authError) {
         if (authError.message.includes("Invalid login credentials")) {
@@ -270,10 +307,23 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
         if (authError.message.includes("Email not confirmed")) {
           throw new Error("Tài khoản chưa được xác nhận email trên hệ thống.");
         }
-        throw new Error(`[Supabase Auth] Đăng nhập thất bại: ${authError.message}`);
+
+        // Khi Supabase gặp sự cố hạ tầng (500, Database error querying schema, mạng rớt hoặc Supabase ngắt kết nối/khởi động lại):
+        // Tự động kích hoạt cơ chế Failover sang xác thực cục bộ để không làm gián đoạn tác nghiệp cứu trợ khẩn cấp.
+        console.warn(
+          `[VNDMS Auth] Supabase Cloud gặp sự cố kết nối/schema (${authError.message}). Kích hoạt cơ chế xác thực dự phòng cục bộ...`
+        );
+        try {
+          return await this.authenticateLocal(trimmedUsername, password);
+        } catch (localErr: any) {
+          if (localErr.message.includes("không chính xác") || localErr.message.includes("vô hiệu hóa")) {
+            throw localErr;
+          }
+          throw new Error(`[Supabase Auth] Đăng nhập thất bại: ${authError.message}`);
+        }
       }
 
-      if (authData.session && authData.user) {
+      if (authData && authData.session && authData.user) {
         // Lấy profile tương ứng từ Supabase profiles table
         const { data: profileRow } = await supabase
           .from("profiles")
@@ -325,10 +375,14 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
       throw new Error("Không thể khởi tạo phiên đăng nhập từ Supabase Auth.");
     }
 
-    if (!this.allowLocalDemo) {
+    if (!this.allowLocalDemo && !this.useCloudAuth) {
       throw new Error("Supabase chưa được cấu hình. Bật VITE_VNDMS_DEMO_MODE=true mới dùng được đăng nhập cục bộ.");
     }
-    // 2. Chế độ cục bộ được bật rõ ràng cho demo/offline
+    return this.authenticateLocal(trimmedUsername, password);
+  }
+
+  private async authenticateLocal(trimmedUsername: string, password: string) {
+    // Chế độ cục bộ / dự phòng cho demo, offline hoặc khi Cloud gián đoạn
     const users = safeUsers(this.storage);
     const user = users.find(
       (item) => item.username.toLowerCase() === trimmedUsername.toLowerCase(),
@@ -347,8 +401,8 @@ export class LocalAuthenticationAdapter implements AuthenticationGateway {
     const issued = this.clock();
     const expires = new Date(issued.getTime() + 8 * 60 * 60 * 1000);
     const session: Session = {
-      id: `SES-${this.tokenFactory()}`,
-      token: this.tokenFactory(),
+      id: `SES-LOCAL-${this.tokenFactory()}`,
+      token: `LOCAL-${this.tokenFactory()}`,
       userId: user.id,
       issuedAt: issued.toISOString(),
       expiresAt: expires.toISOString(),

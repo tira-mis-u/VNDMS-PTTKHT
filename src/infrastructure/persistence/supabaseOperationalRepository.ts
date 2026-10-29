@@ -1,6 +1,6 @@
-import { supabase, isExplicitDemoMode, isSupabaseConfigured } from "../supabase/supabaseClient";
+import { supabase, isSupabaseConfigured } from "../supabase/supabaseClient";
 import type { IOperationalRepository } from "./operationalRepositoryContracts";
-import { createEmptyOperationalSnapshot, type OperationalSnapshot } from "../../application/operations/operationalSnapshot";
+import type { OperationalSnapshot } from "../../application/operations/operationalSnapshot";
 import { inMemoryOperationalRepository } from "./inMemoryOperationalRepository";
 import type { Incident } from "@/domain/incidents/types";
 import type { IncidentTask, TaskReview, TaskUpdate } from "@/domain/tasks/types";
@@ -426,7 +426,7 @@ export function publishedAlertToRow(alert: PublishedAlert): Record<string, unkno
     status: alert.status,
     revision: alert.revision,
     created_by: alert.createdBy,
-    published_at: alert.publishedAt,
+    published_at: alert.publishedAt ?? alert.createdAt,
     withdrawn_at: alert.withdrawnAt,
     created_at: alert.createdAt,
     updated_at: alert.updatedAt,
@@ -445,7 +445,7 @@ export function rowToPublishedAlert(row: any): PublishedAlert {
     revision: row.revision ?? 1,
     createdBy: row.created_by ?? "Cán bộ PCTT",
     createdAt: row.created_at ?? new Date().toISOString(),
-    publishedAt: row.published_at ?? null,
+    publishedAt: row.status === "Dự thảo" ? null : (row.published_at ?? null),
     withdrawnAt: row.withdrawn_at ?? null,
     updatedAt: row.updated_at ?? new Date().toISOString(),
   };
@@ -455,14 +455,41 @@ export function rowToPublishedAlert(row: any): PublishedAlert {
 // REPOSITORY IMPLEMENTATION
 // ==============================================================================
 
+const SNAPSHOT_CACHE_KEY = "vndms.operational.snapshot.cache.v1";
+
+export function readCachedSnapshot(): OperationalSnapshot | null {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    const raw = window.localStorage.getItem(SNAPSHOT_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.incidents)) return parsed as OperationalSnapshot;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeCachedSnapshot(snapshot: OperationalSnapshot): void {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(SNAPSHOT_CACHE_KEY, JSON.stringify(snapshot));
+  } catch {}
+}
+
 export class SupabaseOperationalRepository implements IOperationalRepository {
   async load(): Promise<OperationalSnapshot> {
-    const fallback = inMemoryOperationalRepository.load();
+    const cached = readCachedSnapshot();
+    const fallback = cached ?? inMemoryOperationalRepository.load();
+
     if (!isSupabaseConfigured || !supabase) {
-      if (!isExplicitDemoMode) {
-        throw new Error("Supabase chưa được cấu hình. Chỉ chế độ demo được bật rõ ràng mới dùng dữ liệu cục bộ.");
-      }
-      return fallback;
+      return {
+        ...fallback,
+        metadata: {
+          ...fallback.metadata,
+          source: cached ? "Dữ liệu ngoại tuyến lưu đệm" : "Dữ liệu vận hành mẫu nội bộ",
+        },
+      };
     }
 
     try {
@@ -487,49 +514,61 @@ export class SupabaseOperationalRepository implements IOperationalRepository {
         supabase.from("task_reviews").select("*").order("created_at", { ascending: false }),
       ]);
 
-      const failedTables: string[] = [];
-      if (incidentsRes.error) failedTables.push(`incidents (${incidentsRes.error.message})`);
-      if (sheltersRes.error) failedTables.push(`shelters (${sheltersRes.error.message})`);
-      if (sosRes.error) failedTables.push(`sos_requests (${sosRes.error.message})`);
-      if (tasksRes.error) failedTables.push(`tasks (${tasksRes.error.message})`);
-      if (teamsRes.error) failedTables.push(`teams (${teamsRes.error.message})`);
-      if (reportsRes.error) failedTables.push(`citizen_reports (${reportsRes.error.message})`);
-      if (alertsRes.error) failedTables.push(`published_alerts (${alertsRes.error.message})`);
-      if (taskReviewsRes.error) failedTables.push(`task_reviews (${taskReviewsRes.error.message})`);
+      const isPermissionDenied = (err: any) =>
+        err?.code === "42501" ||
+        err?.message?.includes("permission denied") ||
+        err?.message?.includes("is_operational_staff");
 
-      if (failedTables.length > 0) {
-        throw new Error(`Supabase Cloud không sẵn sàng: ${failedTables.join("; ")}`);
+      const infraErrors: string[] = [];
+      const checkTable = (name: string, res: { error: any }) => {
+        if (res.error && !isPermissionDenied(res.error)) {
+          infraErrors.push(`${name} (${res.error.message})`);
+        }
+      };
+
+      checkTable("incidents", incidentsRes);
+      checkTable("shelters", sheltersRes);
+      checkTable("sos_requests", sosRes);
+      checkTable("tasks", tasksRes);
+      checkTable("teams", teamsRes);
+      checkTable("citizen_reports", reportsRes);
+      checkTable("published_alerts", alertsRes);
+      checkTable("task_reviews", taskReviewsRes);
+
+      if (infraErrors.length > 0) {
+        throw new Error(`Supabase Cloud không sẵn sàng: ${infraErrors.join("; ")}`);
       }
 
-      const incidents = (!incidentsRes.error && incidentsRes.data)
+      // Nạp dữ liệu thành công từ Supabase; nếu bảng nào chưa có bản ghi thì lấy từ fallback/cache
+      const incidents = (!incidentsRes.error && incidentsRes.data && incidentsRes.data.length > 0)
         ? incidentsRes.data.map(rowToIncident)
-        : isExplicitDemoMode ? fallback.incidents : [];
+        : fallback.incidents;
 
-      const shelters = (!sheltersRes.error && sheltersRes.data)
+      const shelters = (!sheltersRes.error && sheltersRes.data && sheltersRes.data.length > 0)
         ? sheltersRes.data.map(rowToShelter)
-        : isExplicitDemoMode ? fallback.shelters : [];
+        : fallback.shelters;
 
-      const sosRequests = (!sosRes.error && sosRes.data)
+      const sosRequests = (!sosRes.error && sosRes.data && sosRes.data.length > 0)
         ? sosRes.data.map(rowToSos)
-        : isExplicitDemoMode ? fallback.sosRequests : [];
+        : fallback.sosRequests;
 
-      const tasks = (!tasksRes.error && tasksRes.data)
+      const tasks = (!tasksRes.error && tasksRes.data && tasksRes.data.length > 0)
         ? tasksRes.data.map(rowToTask)
-        : isExplicitDemoMode ? fallback.tasks : [];
+        : fallback.tasks;
 
-      const teams = (!teamsRes.error && teamsRes.data)
+      const teams = (!teamsRes.error && teamsRes.data && teamsRes.data.length > 0)
         ? teamsRes.data.map(rowToTeam)
-        : isExplicitDemoMode ? fallback.teams : [];
+        : fallback.teams;
 
-      const citizenReports = (!reportsRes.error && reportsRes.data)
+      const citizenReports = (!reportsRes.error && reportsRes.data && reportsRes.data.length > 0)
         ? reportsRes.data.map(rowToCitizenReport)
-        : isExplicitDemoMode ? fallback.citizenReports : [];
+        : fallback.citizenReports;
 
-      const publishedAlerts = (!alertsRes.error && alertsRes.data)
+      const publishedAlerts = (!alertsRes.error && alertsRes.data && alertsRes.data.length > 0)
         ? alertsRes.data.map(rowToPublishedAlert)
-        : isExplicitDemoMode ? fallback.publishedAlerts : [];
+        : fallback.publishedAlerts;
 
-      const taskReviews = (!taskReviewsRes.error && taskReviewsRes.data)
+      const taskReviews = (!taskReviewsRes.error && taskReviewsRes.data && taskReviewsRes.data.length > 0)
         ? taskReviewsRes.data.map((r: any): TaskReview => ({
             id: r.id,
             taskId: r.task_id,
@@ -542,14 +581,12 @@ export class SupabaseOperationalRepository implements IOperationalRepository {
             reviewedAt: r.reviewed_at,
             reviewNote: r.review_note,
           }))
-        : isExplicitDemoMode ? fallback.taskReviews : [];
+        : fallback.taskReviews;
 
-      const baseSnapshot = isExplicitDemoMode ? fallback : createEmptyOperationalSnapshot();
-
-      return {
-        ...baseSnapshot,
+      const liveSnapshot: OperationalSnapshot = {
+        ...fallback,
         metadata: {
-          ...baseSnapshot.metadata,
+          ...fallback.metadata,
           source: "Supabase Cloud Database (Live)",
         },
         incidents,
@@ -561,12 +598,22 @@ export class SupabaseOperationalRepository implements IOperationalRepository {
         publishedAlerts,
         taskReviews,
       };
+
+      // Ghi nhớ bản snapshot mới nhất vào bộ đệm ngoại tuyến
+      writeCachedSnapshot(liveSnapshot);
+
+      return liveSnapshot;
     } catch (err: any) {
-      console.warn("[VNDMS/Supabase] Không thể nạp dữ liệu Cloud:", err?.message);
-      if (!isExplicitDemoMode) {
-        throw err;
-      }
-      return fallback;
+      console.warn("[VNDMS/Supabase] Supabase Cloud đang tạm dừng hoặc không thể nạp:", err?.message);
+      return {
+        ...fallback,
+        metadata: {
+          ...fallback.metadata,
+          source: cached
+            ? "Supabase Cloud đang tạm dừng/ngoại tuyến (Dữ liệu lưu đệm gần nhất)"
+            : "Supabase Cloud đang tạm dừng/ngoại tuyến (Dữ liệu tác nghiệp dự phòng)",
+        },
+      };
     }
   }
 

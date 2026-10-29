@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint src tests scripts vite.config.ts",
     "preview": "vite preview",
+    "seed:yagi": "tsx scripts/seed-yagi.ts",
     "test": "tsx --test tests/**/*.test.ts",
     "test:focused": "tsx --test tests/infrastructure/weather-pipeline.test.ts tests/infrastructure/role-model-migration.test.ts tests/application/operational-mutation-boundary.test.ts tests/application/p0-resource-mutation-authorization.test.ts tests/application/final-readiness-hardening.test.ts tests/application/phase2-operational-insights.test.ts tests/application/unified-operational-map.test.ts tests/application/task-result-review.test.ts tests/application/citizen-report-management.test.ts tests/application/published-alert-management.test.ts tests/integration/alert-cross-module.test.ts"
   },

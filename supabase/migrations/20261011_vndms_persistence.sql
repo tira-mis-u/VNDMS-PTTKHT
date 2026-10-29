@@ -495,7 +495,7 @@ BEGIN
       id, instance_id, email, encrypted_password, email_confirmed_at,
       raw_app_meta_data, raw_user_meta_data, aud, role, created_at, updated_at,
       confirmation_token, recovery_token, email_change_token_new, email_change,
-      email_change_token_current, reauthentication_token, phone, phone_change, phone_change_token,
+      email_change_token_current, reauthentication_token,
       is_super_admin, is_sso_user, is_anonymous
     )
     VALUES (
@@ -510,7 +510,7 @@ BEGIN
       'authenticated',
       NOW(),
       NOW(),
-      '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '',
       false, false, false
     )
     ON CONFLICT (id) DO UPDATE SET
@@ -536,9 +536,9 @@ BEGIN
       updated_at
     )
     VALUES (
-      rec.id::text,
       rec.id,
-      jsonb_build_object('sub', rec.id::text, 'email', rec.email),
+      rec.id,
+      jsonb_build_object('sub', rec.id::text, 'email', rec.email, 'email_verified', true, 'phone_verified', false),
       'email',
       rec.id::text,
       NOW(),
@@ -575,10 +575,7 @@ BEGIN
     email_change_token_new = COALESCE(email_change_token_new, ''),
     email_change = COALESCE(email_change, ''),
     email_change_token_current = COALESCE(email_change_token_current, ''),
-    reauthentication_token = COALESCE(reauthentication_token, ''),
-    phone = COALESCE(phone, ''),
-    phone_change = COALESCE(phone_change, ''),
-    phone_change_token = COALESCE(phone_change_token, '')
+    reauthentication_token = COALESCE(reauthentication_token, '')
   WHERE confirmation_token IS NULL 
      OR recovery_token IS NULL 
      OR email_change_token_new IS NULL 

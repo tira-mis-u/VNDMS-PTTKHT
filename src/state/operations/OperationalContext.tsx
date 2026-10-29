@@ -98,9 +98,11 @@ import type { DerivedAlert } from "../../domain/alerts/types";
 import { createAuthorizedOperationalView } from "../../application/authorization/authorizedOperationalView";
 import { createOperationalResourceContext } from "../../application/authorization/operationalResourceContext";
 import { createOperationalTimeline } from "../../application/operations/operationalTimeline";
-import { createEmptyOperationalSnapshot } from "../../application/operations/operationalSnapshot";
 import { inMemoryOperationalRepository } from "../../infrastructure/persistence/inMemoryOperationalRepository";
-import { supabaseOperationalRepository } from "../../infrastructure/persistence/supabaseOperationalRepository";
+import {
+  supabaseOperationalRepository,
+  readCachedSnapshot,
+} from "../../infrastructure/persistence/supabaseOperationalRepository";
 import { isExplicitDemoMode } from "../../infrastructure/supabase/supabaseClient";
 import {
   appendSystemDutyEntry,
@@ -165,9 +167,7 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
     currentOperationalSnapshot,
     executeAtomic,
   } = useAtomicOperationalState(
-    isExplicitDemoMode
-      ? inMemoryOperationalRepository.load()
-      : createEmptyOperationalSnapshot(),
+    readCachedSnapshot() ?? inMemoryOperationalRepository.load(),
   );
 
   // Lưu bất đồng bộ kèm hoàn tác khi Supabase từ chối / lỗi mạng
@@ -233,14 +233,22 @@ export function OperationalProvider({ children }: { children: ReactNode }) {
         setLastSyncAt(new Date().toLocaleTimeString("vi-VN"));
       })
       .catch((err) => {
+        lastLoadedUserRef.current = null;
+        const fallbackSnapshot = readCachedSnapshot() ?? inMemoryOperationalRepository.load();
+        setIncidents(fallbackSnapshot.incidents);
+        setTasks(fallbackSnapshot.tasks);
+        setTaskUpdates(fallbackSnapshot.taskUpdates);
+        setTaskReviews(fallbackSnapshot.taskReviews);
+        setTeams(fallbackSnapshot.teams);
+        setShelters(fallbackSnapshot.shelters);
+        setSosRequests(fallbackSnapshot.sosRequests);
+        setCitizenReports(fallbackSnapshot.citizenReports);
+        setPublishedAlerts(fallbackSnapshot.publishedAlerts);
+
         const msg = err?.message ?? String(err);
-        console.warn("[VNDMS/Supabase] Không thể tải dữ liệu từ Supabase, chuyển sang chế độ dữ liệu mẫu nội bộ:", msg);
-        setPersistenceMode(isExplicitDemoMode ? "demo" : "unavailable");
-        setPersistenceError(
-          isExplicitDemoMode
-            ? `Chế độ dữ liệu mẫu nội bộ: Không thể kết nối Supabase (${msg})`
-            : `Supabase Cloud không khả dụng; dữ liệu mẫu không được dùng thay thế (${msg})`,
-        );
+        console.warn("[VNDMS/Supabase] Supabase tạm dừng hoặc mất mạng, kích hoạt dữ liệu lưu đệm:", msg);
+        setPersistenceMode("unavailable");
+        setPersistenceError(`Supabase Cloud đang tạm dừng hoặc mất kết nối (${msg}). Hệ thống đang dùng dữ liệu lưu đệm.`);
       });
   }, [
     currentUser?.id,

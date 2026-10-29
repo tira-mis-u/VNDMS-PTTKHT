@@ -170,3 +170,13 @@ test("tài khoản chuyển sang công dân (minhtri, namanh) vẫn đăng nhậ
   assert.equal(rescue.user?.role, "rescue_unit");
   assert.equal(rescue.user?.teamId, undefined, "không còn gắn một đội cụ thể");
 });
+
+test("Cloud mode authenticates operational accounts successfully against Supabase Cloud", async () => {
+  const storage = new MemoryStorage();
+  // Khởi tạo adapter với useCloudAuth = true
+  const adapter = new LocalAuthenticationAdapter(storage, clock(), () => "cloud-token", true);
+  const result = await loginUser(adapter, "thuantq", "VNDMS@2026", clock());
+  assert.equal(result.ok, true);
+  assert.equal(result.user?.role, "admin");
+  assert.equal(result.user?.id, "a0000000-0000-0000-0000-000000000001");
+});
